@@ -1,0 +1,17 @@
+/* 1. TOÀN BỘ @IMPORT PHẢI NẰM ĐẦU TIÊN */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import "tailwindcss";
+@import "flowbite/src/themes/default";
+
+/* 2. KHAI BÁO PLUGIN FLOWBITE */
+@plugin "flowbite/plugin";
+@source "../node_modules/flowbite";
+@source "../node_modules/flowbite-react";
+
+/* 3. KHAI BÁO MÀU CHỦ ĐẠO (TAILWIND V4) */
+@theme {
+  --color-flygold: #F5A21B;
+  /* Màu vàng cam của Fly Visa */
+  --color-flygold-hover: #D98C12;
+  /* Màu đậm hơn khi hover chuột */
+}

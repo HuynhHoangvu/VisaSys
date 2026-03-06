@@ -1,0 +1,147 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+model Column {
+  id      String @id
+  title   String
+  order   Int    
+  
+  tasks   Task[] 
+}
+
+model Task {
+  id             String  @id
+  content        String
+  price          String
+  phone          String
+  email          String?
+  description    String?
+  source         String?
+  assignedTo     String
+  
+  visaType       String?
+  passportNumber String?
+  maritalStatus  String?
+  dependents     Int?
+  priorityDate   String?
+  educationLevel String?
+  englishScore   String?
+  workExperience String?
+  jobType         String?    @default("Nhân viên")
+  checklistType   String?    @default("tourism")
+  columnId       String?
+  column         Column? @relation(fields: [columnId], references: [id])
+  createdAt DateTime @default(now())
+  documents      Json?      @default("{}")
+  processingColId String    @default("proc-col-1")
+  activities     Activity[] 
+}
+
+model Activity {
+  id        String  @id
+  completed Boolean @default(false)
+  type      String
+  summary   String
+  assignee  String
+  status    String
+  fileName  String?
+  fileUrl   String?
+  dueText   String?
+  createdAt DateTime @default(now())
+  jobType         String?  @default("Nhân viên")
+  taskId    String
+  task      Task    @relation(fields: [taskId], references: [id], onDelete: Cascade)
+}
+model Department {
+  id        String     @id @default(uuid())
+  name      String     @unique // Ví dụ: Sale, Xử lý hồ sơ, Kế toán...
+  
+  // Quan hệ 1 phòng ban có nhiều nhân viên
+  employees Employee[] 
+}
+
+model Employee {
+  id             String     @id @default(uuid())
+  employeeCode   String     @unique 
+  email          String     @unique
+  name           String
+  password       String     
+  role           String     
+  baseSalary     Float      @default(6000000) 
+  commissionRate Float      @default(0) 
+  salesRecords      SalesRecord[]
+  departmentId   String?
+  department     Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+
+  // [THÊM DÒNG NÀY]: 1 Nhân viên có nhiều lượt chấm công
+  attendanceRecords AttendanceRecord[]
+  
+  createdAt      DateTime   @default(now())
+}
+
+// [THÊM BẢNG MỚI NÀY VÀO CUỐI FILE]
+model AttendanceRecord {
+  id         String   @id @default(uuid())
+  date       String   // Lưu chuỗi ngày: "24/02/2026"
+  inTime     String   // "08:00"
+  outTime    String   // "-"
+  status     String   // "Đúng giờ" | "Đi muộn" | "Vắng không phép"
+  fine       Float    @default(0)
+
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  createdAt  DateTime @default(now())
+}
+model Notification {
+  id        String   @id @default(uuid())
+  sender    String   
+  message   String  
+  receiver  String   
+  isRead    Boolean  @default(false) 
+  taskId    String?
+  createdAt DateTime @default(now())
+}
+model SalesRecord {
+  id         String   @id @default(uuid())
+  customer   String   
+  service    String 
+  profit     Float    
+  note       String? 
+
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  createdAt  DateTime @default(now())
+}
+model DocFolder {
+  id        String    @id @default(uuid())
+  name      String
+  parentId  String?   // Nếu null nghĩa là thư mục gốc
+  createdAt DateTime  @default(now())
+
+  files     DocFile[] // 1 thư mục có nhiều file
+}
+
+model DocFile {
+  id         String    @id @default(uuid())
+  name       String
+  size       String
+  fileUrl    String
+  uploadedBy String
+  createdAt  DateTime  @default(now())
+
+  folderId   String?
+  folder     DocFolder? @relation(fields: [folderId], references: [id], onDelete: Cascade)
+}

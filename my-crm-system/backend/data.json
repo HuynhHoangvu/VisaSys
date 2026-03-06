@@ -1,0 +1,101 @@
+{
+  "tasks": {
+    "task-1": {
+      "id": "task-1",
+      "content": "Nguyễn Văn A - Visa Úc",
+      "price": "20.000.000đ",
+      "phone": "0123456789",
+      "email": "nguyenvana@gmail.com",
+      "description": "Khách hàng quan tâm đến dịch vụ visa Úc diện tay nghề. Cần check lại bằng cấp.",
+      "source": "Website",
+      "assignedTo": "Nguyễn Văn A",
+      "visaType": "Skilled Worker (Úc)",
+      "passportNumber": "C1234567",
+      "maritalStatus": "Đã kết hôn",
+      "dependents": 2,
+      "educationLevel": "Đại học",
+      "englishScore": "IELTS 6.5",
+      "workExperience": "5 năm - Kỹ sư phần mềm"
+    },
+    "task-2": {
+      "id": "task-2",
+      "content": "Trần Thị B - Du học Canada",
+      "price": "50.000.000đ",
+      "phone": "0987654321",
+      "email": "tranthib@gmail.com",
+      "description": "Đang tư vấn lộ trình du học sau đó xin định cư AIP.",
+      "source": "Facebook",
+      "assignedTo": "Lê Văn C",
+      "visaType": "AIP (Canada)",
+      "maritalStatus": "Độc thân",
+      "dependents": 0,
+      "educationLevel": "Cấp 3",
+      "englishScore": "IELTS 5.5"
+    },
+    "task-3": {
+      "id": "task-3",
+      "content": "Trần Thị C - EB3 Mỹ",
+      "price": "70.000.000đ",
+      "phone": "0987654322",
+      "email": "tranthic@gmail.com",
+      "description": "Khách đã chốt Job hãng gà. Đang chờ duyệt LC.",
+      "source": "Giới thiệu",
+      "assignedTo": "Trần Thị B",
+      "visaType": "EB-3 (Mỹ)",
+      "passportNumber": "B9876543",
+      "maritalStatus": "Đã kết hôn",
+      "dependents": 3,
+      "priorityDate": "2023-11-15",
+      "workExperience": "Lao động phổ thông"
+    },
+    "task-4": {
+      "id": "task-4",
+      "content": "Trần Thị D - Xuất khẩu lao động",
+      "price": "60.000.000đ",
+      "phone": "0987654321",
+      "email": "tranthid@gmail.com",
+      "description": "Quan tâm diện điều dưỡng viên.",
+      "source": "Zalo",
+      "assignedTo": "Trần Thị B",
+      "visaType": "Xuất khẩu lao động",
+      "educationLevel": "Trung cấp/Cao đẳng",
+      "workExperience": "2 năm - Điều dưỡng"
+    }
+  },
+  "columns": {
+    "col-1": {
+      "id": "col-1",
+      "title": "Khách hàng mới",
+      "taskIds": [
+        "task-2"
+      ]
+    },
+    "col-2": {
+      "id": "col-2",
+      "title": "Đang Tư Vấn",
+      "taskIds": [
+        "task-3"
+      ]
+    },
+    "col-3": {
+      "id": "col-3",
+      "title": "Đã ký hợp đồng",
+      "taskIds": [
+        "task-4"
+      ]
+    },
+    "col-4": {
+      "id": "col-4",
+      "title": "Đang thu hồ sơ",
+      "taskIds": [
+        "task-1"
+      ]
+    }
+  },
+  "columnOrder": [
+    "col-1",
+    "col-2",
+    "col-3",
+    "col-4"
+  ]
+}

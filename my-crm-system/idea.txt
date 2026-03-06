@@ -1,0 +1,14 @@
+
+quản lý hoa hồng sale nữa
+
+
+Diện visa thêm lao động châu âu  V
+bằng cấp cao nhât ( không bằng cấp)
+
+mỗi khi nhắc nhở hồ sơ thì cái form sẽ đổi viển form để dễ nhận biết màu đỏ popup thông báo
+
+filter để tìm kiếm
+
+hoa hồng thì sếp có thể điều chỉnh được tại lỡ có thêm thưởng đồ (nhớ đề phần ghi chú lại để sếp nhớ đã cộng gì)
+lương thì sếp cũng điều chỉnh được
+trước mắt khi sale đó kéo qua phần Đã ký 1 hồ sơ lao động sẽ được cộng hoa hồng 1.500.000
