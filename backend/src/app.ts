@@ -8,15 +8,19 @@ import hrRoutes from "./routes/hr.routes.js";
 import notificationRoutes from "./routes/notification.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 import taskRoutes from "./routes/task.routes.js"; // Thêm dòng này cùng chỗ với các import routes khác
-import path from "path/win32";
+import path from "path";
 import docsRoutes from "./routes/docs.routes.js";
 const app = express();
 
 // ==========================================
 // CORS CONFIG - FIXED
 // ==========================================
+const allowedOrigins = [
+  process.env.FRONTEND_URL || "http://localhost:5173"
+];
+
 const corsOptions = {
-  origin: "http://localhost:5173",
+  origin: allowedOrigins,
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
@@ -43,11 +47,11 @@ app.use(
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: false,
-      httpOnly: true,
-      maxAge: 24 * 60 * 60 * 1000,
-      sameSite: "lax",
-    },
+  secure: process.env.NODE_ENV === "production", // true trên Render (HTTPS)
+  httpOnly: true,
+  maxAge: 24 * 60 * 60 * 1000,
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+},
   })
 );
 

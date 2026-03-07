@@ -6,12 +6,12 @@ let io: Server;
 
 export const initSocket = (server: HTTPServer) => {
   io = new Server(server, {
-    cors: {
-      origin: "http://localhost:5173", // Link React của bạn
-      methods: ["GET", "POST", "PUT", "DELETE"],
-      credentials: true,
-    },
-  });
+  cors: {
+    origin: process.env.FRONTEND_URL || "http://localhost:5173",
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
+  },
+});
   return io;
 };
 
