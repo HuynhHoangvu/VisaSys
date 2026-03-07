@@ -9,13 +9,3 @@
     "restartPolicyType": "ON_FAILURE"
   }
 }
-```
-
----
-
-## Bước 2 — Kiểm tra `.gitignore` trong backend
-
-Mở file `.gitignore`, đảm bảo **KHÔNG có** các dòng này (xóa nếu có):
-```
-generated/
-dist/
