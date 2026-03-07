@@ -1,10 +1,14 @@
 // src/routes/task.routes.ts
 import { Router } from "express";
-import { createTask, deleteTask, moveProcessingTask, moveTask, updateTask } from "../controllers/task.controller.js";
+import { createTask, deleteTask, moveProcessingTask, moveTask, sendNotification, updateTask } from "../controllers/task.controller.js";
 import { uploadDoc } from "../middlewares/upload.js";
 
 const router = Router();
+// Route chuyển cột BO
+router.put("/:id/processing-move", moveProcessingTask);
 
+// Route gửi thông báo (Nếu bạn có file notifications.routes.ts riêng thì để bên đó, nhớ đổi url cho khớp)
+router.post("/notifications/send", sendNotification);
 // Endpoint: POST /api/tasks
 router.post("/", createTask);
 router.put("/:id", updateTask);         

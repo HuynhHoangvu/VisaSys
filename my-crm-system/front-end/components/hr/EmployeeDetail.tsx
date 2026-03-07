@@ -1,6 +1,10 @@
 import React, { useState } from "react";
 import { Card, Avatar, Button, Modal, TextInput, Select } from "flowbite-react";
-import { type Employee, type AuthUser } from "../../types";
+import {
+  type Employee,
+  type AuthUser,
+  type LeaveRequestData,
+} from "../../types";
 import LeaveRequestModal from "./LeaveRequestModal";
 
 interface EmployeeDetailProps {
@@ -26,8 +30,9 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
   const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
   const [isBonusModalOpen, setIsBonusModalOpen] = useState(false);
   const isDirector =
-  currentUser?.role.toLowerCase().includes("giám đốc") ||
-  currentUser?.role.toLowerCase().includes("admin");
+    currentUser?.role.toLowerCase().includes("giám đốc") ||
+    currentUser?.role.toLowerCase().includes("admin") ||
+    currentUser?.role.toLowerCase().includes("phó giám đốc");
   const [bonusAmount, setBonusAmount] = useState("");
   const [bonusNote, setBonusNote] = useState("");
   const [bonusType, setBonusType] = useState("Thưởng");
@@ -41,12 +46,31 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
   );
 
   // ==========================================
-  // THUẬT TOÁN TÍNH LƯƠNG CHUẨN XÁC 100%
+  // THUẬT TOÁN TÍNH LƯƠNG
   // ==========================================
   let totalBonusAndCommission = 0;
   let manualFines = 0;
   let salaryAdvances = 0;
 
+  const handleSubmitLeaveRequest = async (data: LeaveRequestData) => {
+    try {
+      const response = await fetch(
+        `http://localhost:3001/api/hr/employees/${employee.id}/leave`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        },
+      );
+
+      if (!response.ok) throw new Error("Lỗi gửi đơn");
+
+      alert("Đã gửi đơn xin nghỉ phép thành công! Vui lòng chờ Quản lý duyệt.");
+      // Chỗ này gọi lại fetchData() để cập nhật lại giao diện nếu cần
+    } catch (error) {
+      alert("Có lỗi xảy ra khi gửi đơn!" + error);
+    }
+  };
   // Chạy qua từng dòng giao dịch để phân loại chính xác
   safeSalesRecords.forEach((record) => {
     const amount = Number(record.profit) || 0; // Lấy số tiền
@@ -284,7 +308,7 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
                       </td>
                       <td className="px-4 py-4">
                         <span
-                          className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${record.status === "Đúng giờ" ? "bg-green-100 text-green-700" : record.status === "Đi muộn" ? "bg-yellow-100 text-yellow-700" : "bg-red-100 text-red-700"}`}
+                          className={`px-2.5 py-1 rounded-full text-2xs font-bold uppercase tracking-wider ${record.status === "Đúng giờ" ? "bg-green-100 text-green-700" : record.status === "Đi muộn" ? "bg-yellow-100 text-yellow-700" : "bg-red-100 text-red-700"}`}
                         >
                           {record.status}
                         </span>
@@ -433,7 +457,7 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
         show={isLeaveModalOpen}
         onClose={() => setIsLeaveModalOpen(false)}
         employeeName={employee.name}
-        onSubmit={() => {}}
+        onSubmit={handleSubmitLeaveRequest}
       />
     </div>
   );

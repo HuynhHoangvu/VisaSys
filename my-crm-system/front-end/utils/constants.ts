@@ -41,6 +41,7 @@ export const getRequirementsList = (jobType: string) => {
       name: "Tờ khai visa online",
       note: "Khai trên ImmiAccount (PDF)",
       required: true,
+      templateUrl: "/templates/to-khai-visa-uc.pdf",
     },
     {
       id: "p14",
@@ -207,7 +208,7 @@ export const getStudyAbroadRequirements = () => {
 
     { id: "sa27", section: "3. Giấy tờ trường học & Visa", name: "Thư mời nhập học", note: "Do trường cấp (Scan)", required: true },
     { id: "sa28", section: "3. Giấy tờ trường học & Visa", name: "COE (Xác nhận đăng ký học)", note: "Tùy quốc gia (Scan)", required: true },
-    { id: "sa29", section: "3. Giấy tờ trường học & Visa", name: "Đơn xin visa du học", note: "Điền theo form online (PDF)", required: true },
+    { id: "sa29", section: "3. Giấy tờ trường học & Visa", name: "Đơn xin visa du học", note: "Điền theo form online (PDF)",templateUrl: "/templates/to-khai-visa-uc.pdf", required: true },
 
     { id: "sa13", section: "4. Hồ sơ tài chính & Bảo trợ", name: "Sổ tiết kiệm", note: "Chứng minh tài chính (Scan)", required: true },
     { id: "sa14", section: "4. Hồ sơ tài chính & Bảo trợ", name: "Sao kê ngân hàng", note: "3–6 tháng gần nhất (PDF)", required: false },

@@ -37,29 +37,12 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
       localStorage.setItem("flyvisa_user", JSON.stringify(data));
 
       onLoginSuccess(data);
-
-      onLoginSuccess(data);
     } catch (err) {
       setError(err.message || "Không thể kết nối đến máy chủ.");
     } finally {
       setIsLoading(false);
     }
   };
-
-  // Tài khoản test (có thể hardcode để demo)
-  const fillTestAccount = (type: "admin" | "sale" | "staff") => {
-    if (type === "admin") {
-      setEmail("admin@flyvisa.com");
-      setPassword("123");
-    } else if (type === "sale") {
-      setEmail("sale@flyvisa.com");
-      setPassword("sale123");
-    } else {
-      setEmail("staff@flyvisa.com");
-      setPassword("staff123");
-    }
-  };
-
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-gray-50 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]">
       <div className="w-full max-w-md p-4">
@@ -128,23 +111,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
               />
             </div>
 
-            {/* Quick test buttons (chỉ để demo, có thể xóa sau) */}
-            <div className="flex gap-2 text-xs">
-              <button
-                type="button"
-                onClick={() => fillTestAccount("admin")}
-                className="px-2 py-1 bg-gray-100 rounded hover:bg-gray-200"
-              >
-                Admin Test
-              </button>
-              <button
-                type="button"
-                onClick={() => fillTestAccount("sale")}
-                className="px-2 py-1 bg-gray-100 rounded hover:bg-gray-200"
-              >
-                Sale Test
-              </button>
-            </div>
+           
 
             <Button
               type="submit"

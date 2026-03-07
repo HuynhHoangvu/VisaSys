@@ -7,7 +7,9 @@ export const getNotifications = async (req: Request, res: Response) => {
     const { saleName } = req.params; // Lấy tên Sale từ URL
     const notifs = await prisma.notification.findMany({
       where: { 
-        receiver: saleName as string,
+        receiver: {
+          has: saleName as string
+        },
         isRead: false // Chỉ lấy tin chưa đọc
       },
       orderBy: { createdAt: 'desc' }

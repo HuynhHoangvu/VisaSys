@@ -9,7 +9,6 @@ interface ActivityListModalProps {
   activities: Activity[];
   onCompleteActivity: (id: string) => void;
   onDeleteActivity: (id: string) => void;
-  // THÊM PROP NÀY ĐỂ KÍCH HOẠT CHỨC NĂNG SỬA
   onEditActivity: (id: string) => void;
 }
 

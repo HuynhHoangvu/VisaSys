@@ -212,3 +212,188 @@ export const addManualBonus = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Lỗi lưu thưởng phạt" });
   }
 };
+// ==========================================
+// 3. CHỐT LƯƠNG & RESET THÁNG MỚI (CHỈ GIÁM ĐỐC)
+// ==========================================
+export const finalizeMonthSalary = async (req: Request, res: Response) => {
+  try {
+    const { monthYear } = req.body; // VD: Nhận vào "02/2026"
+
+    if (!monthYear) {
+      return res.status(400).json({ error: "Vui lòng cung cấp tháng chốt lương!" });
+    }
+
+    // Lấy toàn bộ nhân viên kèm dữ liệu chấm công và thưởng phạt hiện tại
+    const employees = await prisma.employee.findMany({
+      include: {
+        salesRecords: true,
+        attendanceRecords: true,
+      }
+    });
+
+    // Bắt đầu Transaction (Đảm bảo an toàn tuyệt đối cho dữ liệu)
+    await prisma.$transaction(async (tx) => {
+      // 1. Duyệt qua từng nhân viên để tính toán
+      for (const emp of employees) {
+        let totalBonusAndCommission = 0;
+        let manualFines = 0;
+        let salaryAdvances = 0;
+
+        // Phân loại tiền từ bảng SalesRecord giống hệt logic Frontend
+        emp.salesRecords.forEach((record) => {
+          const amount = Number(record.profit) || 0;
+          const type = record.service;
+
+          if (type === "Phạt") {
+            manualFines += Math.abs(amount);
+          } else if (type === "Tạm ứng") {
+            salaryAdvances += Math.abs(amount);
+          } else {
+            totalBonusAndCommission += amount;
+          }
+        });
+
+        // Tính tiền phạt đi muộn
+        const attendanceFines = emp.attendanceRecords.reduce(
+          (sum, r) => sum + (r.fine || 0), 
+          0
+        );
+
+        const totalDeductions = manualFines + attendanceFines;
+        const currentBaseSalary = (emp.baseSalary || 0) - salaryAdvances;
+        const finalSalary = currentBaseSalary + totalBonusAndCommission - totalDeductions;
+
+        // 2. Lưu vào bảng Lịch Sử Lương (SalaryHistory)
+        await tx.salaryHistory.create({
+          data: {
+            monthYear: monthYear,
+            baseSalary: emp.baseSalary || 0,
+            totalBonus: totalBonusAndCommission,
+            totalDeduction: totalDeductions + salaryAdvances, // Tổng trừ (phạt + đi muộn + tạm ứng)
+            finalSalary: finalSalary,
+            employeeId: emp.id
+          }
+        });
+      }
+
+      // 3. XÓA TRẮNG DỮ LIỆU CŨ ĐỂ SANG THÁNG MỚI
+      await tx.salesRecord.deleteMany({});
+      await tx.attendanceRecord.deleteMany({});
+    });
+
+    // Báo cho Frontend biết để load lại màn hình
+    getIO().emit("data_changed");
+    res.status(200).json({ message: "Chốt lương và reset dữ liệu thành công!" });
+
+  } catch (error) {
+    console.error("Lỗi khi chốt lương:", error);
+    res.status(500).json({ error: "Lỗi hệ thống khi chốt lương" });
+  }
+};
+// ==========================================
+// 4. XEM LỊCH SỬ LƯƠNG ĐÃ CHỐT
+// ==========================================
+export const getSalaryHistory = async (req: Request, res: Response) => {
+  try {
+    const history = await prisma.salaryHistory.findMany({
+      include: {
+        // Lấy thêm tên và mã nhân viên để hiển thị cho đẹp
+        employee: {
+          select: { name: true, employeeCode: true, department: true }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc' // Sắp xếp cái mới chốt lên đầu
+      }
+    });
+    res.json(history);
+  } catch (error) {
+    console.error("Lỗi lấy lịch sử lương:", error);
+    res.status(500).json({ error: "Lỗi hệ thống khi lấy lịch sử lương" });
+  }
+};
+// ==========================================
+// 5. XỬ LÝ ĐƠN XIN NGHỈ PHÉP
+// ==========================================
+// ==========================================
+// 5. XỬ LÝ ĐƠN XIN NGHỈ PHÉP & THÔNG BÁO
+// ==========================================
+export const createLeaveRequest = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params; // ID của nhân viên xin nghỉ
+    const { type, startDate, endDate, reason } = req.body;
+
+    // 1. Lấy thông tin nhân viên để lấy tên người gửi
+    const emp = await prisma.employee.findUnique({ 
+      where: { id: id as string } 
+    });
+
+    if (!emp) {
+      return res.status(404).json({ error: "Không tìm thấy nhân viên" });
+    }
+
+    // 2. Tạo đơn xin nghỉ vào Database
+    const newRequest = await prisma.leaveRequest.create({
+      data: {
+        type,
+        startDate,
+        endDate,
+        reason,
+        employeeId: id as string,
+        status: "Chờ duyệt"
+      }
+    });
+
+    // 3. TẠO THÔNG BÁO GỬI CHO CẤP TRÊN (Giám đốc / Admin)
+    await prisma.notification.create({
+      data: {
+        sender: emp.name, // Tên người gửi đơn
+        message: `Nhân viên ${emp.name} vừa gửi đơn xin ${type.toLowerCase()}. Vui lòng kiểm tra và xét duyệt!`,
+        receiver:  ["Giám đốc","Admin"], // Bạn có thể đổi thành "Admin" tùy thuộc vào logic Frontend của bạn
+      }
+    });
+
+    // 4. Bắn Socket để rung chuông thông báo trên màn hình sếp ngay lập tức
+    getIO().emit("data_changed"); 
+    getIO().emit("new_notification"); // Kích hoạt chuông thông báo ở Header
+
+    res.status(201).json(newRequest);
+  } catch (error) {
+    console.error("Lỗi tạo đơn nghỉ phép:", error);
+    res.status(500).json({ error: "Lỗi hệ thống khi gửi đơn" });
+  }
+};
+// Lấy toàn bộ danh sách đơn xin nghỉ phép
+export const getLeaveRequests = async (req: Request, res: Response) => {
+  try {
+    const requests = await prisma.leaveRequest.findMany({
+      include: {
+        employee: {
+          select: { name: true, department: true }
+        }
+      },
+      orderBy: { createdAt: 'desc' } // Đơn mới nhất xếp lên đầu
+    });
+    res.json(requests);
+  } catch (error) {
+    res.status(500).json({ error: "Lỗi lấy danh sách nghỉ phép" });
+  }
+};
+
+// Cập nhật trạng thái (Duyệt / Từ chối)
+export const updateLeaveRequestStatus = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body; // "Đã duyệt" hoặc "Từ chối"
+
+    const updatedRequest = await prisma.leaveRequest.update({
+      where: { id: id as string },
+      data: { status }
+    });
+
+    getIO().emit("data_changed"); // Báo cho frontend load lại dữ liệu
+    res.json(updatedRequest);
+  } catch (error) {
+    res.status(500).json({ error: "Lỗi cập nhật trạng thái đơn" });
+  }
+};

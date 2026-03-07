@@ -119,7 +119,16 @@ export interface LeaveRequestData {
   endDate: string;
   reason: string;
 }
-
+export interface LeaveRequest extends LeaveRequestData {
+  id: string;
+  status: "Chờ duyệt" | "Đã duyệt" | "Từ chối";
+  employeeId: string;
+  createdAt: string;
+  employee?: {
+    name: string;
+    department: string;
+  };
+}
 
 // ==========================================
 // 3. AUTH & NOTIFICATION TYPES (Hệ thống)
@@ -168,4 +177,26 @@ export interface DocFile {
 export interface CreateFolderData {
   name: string;
   parentId: string | null;
+}
+
+export interface SalaryHistory {
+  id: string;
+  monthYear: string;
+  baseSalary: number;
+  totalBonus: number;
+  totalDeduction: number;
+  finalSalary: number;
+  employee?: {
+    name: string;
+    employeeCode: string;
+    department: string;
+  };
+  createdAt: string;
+}
+export interface CustomerDetailModalProps {
+  show: boolean;
+  onClose: () => void;
+  task: Task | null;
+  onUpdateCustomer?: (updatedTask: Task) => void;
+  currentUser?: AuthUser | null;
 }

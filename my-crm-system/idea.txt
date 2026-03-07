@@ -12,3 +12,7 @@ filter để tìm kiếm
 hoa hồng thì sếp có thể điều chỉnh được tại lỡ có thêm thưởng đồ (nhớ đề phần ghi chú lại để sếp nhớ đã cộng gì)
 lương thì sếp cũng điều chỉnh được
 trước mắt khi sale đó kéo qua phần Đã ký 1 hồ sơ lao động sẽ được cộng hoa hồng 1.500.000
+
+
+postgresql://postgres:[wW*dVEiNQ3Q-t8A]@db.yyeogdxeieyfxbzqwwhi.supabase.co:5432/postgres
+thêm giấy tờ khác

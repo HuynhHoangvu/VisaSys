@@ -122,6 +122,8 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({
               <option value="">-- Chọn vai trò --</option>
               <option value="Trưởng phòng">Trưởng phòng</option>
               <option value="Nhân viên">Nhân viên</option>
+              <option value="Giám đốc">Giám đốc</option>
+              <option value="Phó giám đốc">Phó giám đốc</option>
             </Select>
           </div>
           <div>

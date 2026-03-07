@@ -82,6 +82,8 @@ model Employee {
   commissionRate Float      @default(0) 
   salesRecords      SalesRecord[]
   departmentId   String?
+  salaryHistories   SalaryHistory[]
+  leaveRequests     LeaveRequest[]
   department     Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
 
   // [THÊM DÒNG NÀY]: 1 Nhân viên có nhiều lượt chấm công
@@ -108,7 +110,7 @@ model Notification {
   id        String   @id @default(uuid())
   sender    String   
   message   String  
-  receiver  String   
+  receiver  String[] 
   isRead    Boolean  @default(false) 
   taskId    String?
   createdAt DateTime @default(now())
@@ -144,4 +146,30 @@ model DocFile {
 
   folderId   String?
   folder     DocFolder? @relation(fields: [folderId], references: [id], onDelete: Cascade)
+}
+model SalaryHistory {
+  id              String   @id @default(uuid())
+  monthYear       String   // VD: "02/2026"
+  baseSalary      Float    // Lương cơ bản tại thời điểm chốt
+  totalBonus      Float    // Tổng tiền thưởng + hoa hồng
+  totalDeduction  Float    // Tổng tiền phạt + đi muộn + tạm ứng
+  finalSalary     Float    // Tiền lương thực nhận cuối cùng
+
+  employeeId      String
+  employee        Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  createdAt       DateTime @default(now())
+}
+model LeaveRequest {
+  id          String   @id @default(uuid())
+  type        String   // "Nghỉ ốm", "Nghỉ phép năm"...
+  startDate   String   // "YYYY-MM-DD"
+  endDate     String   // "YYYY-MM-DD"
+  reason      String
+  status      String   @default("Chờ duyệt") // Trạng thái: "Chờ duyệt", "Đã duyệt", "Từ chối"
+
+  employeeId  String
+  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime @default(now())
 }

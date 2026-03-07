@@ -1,10 +1,10 @@
 import React, { useState } from "react";
-import { type AuthUser } from "../../types"; // Đảm bảo import đúng đường dẫn
+import { type AuthUser } from "../../types";
 
 interface SidebarProps {
   currentView: string;
   setCurrentView: (view: string) => void;
-  currentUser: AuthUser; // Nhận thông tin user để phân quyền
+  currentUser: AuthUser; 
 }
 
 interface Workspace {
@@ -18,7 +18,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   currentUser,
 }) => {
   const [workspaces, setWorkspaces] = useState<Workspace[]>([
-    { id: "ws-1", name: "Fly Visa (Mặc định)" },
+    { id: "ws-1", name: "Fly Visa" },
   ]);
 
   const [activeWorkspaceId, setActiveWorkspaceId] = useState<string>("ws-1");
@@ -41,6 +41,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   // Kiểm tra xem User có phải là Sếp không (Giám đốc hoặc Trưởng phòng)
   const isBoss =
     currentUser.role.toLowerCase().includes("giám đốc") ||
+    currentUser?.role.toLowerCase().includes("phó giám đốc") ||
     currentUser.role.toLowerCase().includes("trưởng phòng") ||
     currentUser.id === "admin";
 

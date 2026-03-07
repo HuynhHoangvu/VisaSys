@@ -389,6 +389,7 @@ const App: React.FC = () => {
         onClose={() => setIsDetailOpen(false)}
         task={activeTaskId ? boardData.tasks[activeTaskId] : null}
         onUpdateCustomer={handleUpdateCustomer}
+        currentUser={currentUser}
       />
       <ActivityListModal
         show={isActivityListOpen}

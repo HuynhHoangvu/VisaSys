@@ -8,33 +8,27 @@ import {
   Label,
   Spinner,
 } from "flowbite-react";
-// ĐẢM BẢO IMPORT VISA_SERVICES VÀ CUSTOMER_SOURCES
-import type { Task, Activity } from "../../types";
+import type { Task, CustomerDetailModalProps } from "../../types";
 import { VISA_SERVICES, CUSTOMER_SOURCES } from "../../utils/constants";
-
-interface CustomerDetailModalProps {
-  show: boolean;
-  onClose: () => void;
-  task: Task | null;
-  onUpdateCustomer?: (updatedTask: Task) => void;
-}
 
 const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
   show,
   onClose,
   task,
   onUpdateCustomer,
+  currentUser,
 }) => {
   const [formData, setFormData] = useState<Task | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [newNote, setNewNote] = useState("");
 
+  // State cho phần Ghi chú & Upload
+  const [newNote, setNewNote] = useState("");
+  const [isSubmittingNote, setIsSubmittingNote] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Đảm bảo formData luôn đồng bộ khi prop task thay đổi
   useEffect(() => {
     setFormData(task);
   }, [task]);
@@ -42,27 +36,31 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
   if (!task || !formData) return null;
 
   // LÀM MƯỢT LOGIC: Khi đổi Visa Type, tự động đổi luôn Tiêu đề hiển thị
-const handleChange = (field: keyof Task, value: string) => {
+  const handleChange = (field: keyof Task, value: string) => {
     setSaved(false);
     setFormData((prev) => {
       if (!prev) return null;
 
       const updatedData = { ...prev, [field]: value };
 
-      // KHI THAY ĐỔI DIỆN VISA
       if (field === "visaType") {
-        // 1. Đổi đuôi Tiêu đề
-        const namePart = prev.content.split(" - ")[0]; 
-        updatedData.content = `${namePart} - ${value}`; 
+        const namePart = prev.content.split(" - ")[0];
+        updatedData.content = `${namePart} - ${value}`;
 
-        // 2. TỰ ĐỘNG ĐỒNG BỘ CHECKLIST TYPE
         const lowerValue = value.toLowerCase();
-        if (lowerValue.includes("lao động") || lowerValue.includes("tay nghề") || lowerValue.includes("việc làm")) {
+        if (
+          lowerValue.includes("lao động") ||
+          lowerValue.includes("tay nghề") ||
+          lowerValue.includes("việc làm")
+        ) {
           updatedData.checklistType = "labor";
-        } else if (lowerValue.includes("du học") || lowerValue.includes("student")) {
+        } else if (
+          lowerValue.includes("du học") ||
+          lowerValue.includes("student")
+        ) {
           updatedData.checklistType = "study";
         } else {
-          updatedData.checklistType = "tourism"; // Mặc định là Du lịch
+          updatedData.checklistType = "tourism";
         }
       }
 
@@ -70,6 +68,7 @@ const handleChange = (field: keyof Task, value: string) => {
     });
   };
 
+  // Xử lý chọn file
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
@@ -83,55 +82,94 @@ const handleChange = (field: keyof Task, value: string) => {
     }
   };
 
+  // Hủy chọn file
   const clearFile = () => {
     setSelectedFile(null);
     setPreviewUrl(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const handleSendActivity = () => {
+  // ==========================================
+  // HÀM GỬI GHI CHÚ / FILE LÊN BACKEND THẬT
+  // ==========================================
+  const handleSendUpdate = async () => {
     if (!newNote.trim() && !selectedFile) return;
 
-    const activity: Activity = {
-      id: `act-${Date.now()}`,
-      taskId: formData.id,
-      type: selectedFile ? "Tài liệu" : "Ghi chú",
-      summary:
-        newNote ||
-        (selectedFile ? `Đã tải lên tài liệu: ${selectedFile.name}` : ""),
-      assignee: formData.assignedTo || "System", // Nên thay bằng User hiện tại nếu có
-      status: "Hoàn thành",
-      completed: true,
-      dueText: "Vừa xong",
-      createdAt: new Date().toISOString(),
-      fileName: selectedFile?.name,
-      fileUrl:
-        previewUrl ||
-        (selectedFile && !previewUrl ? "document-icon" : undefined),
-    };
+    setIsSubmittingNote(true);
 
-    const updatedActivities = [activity, ...(formData.activities || [])];
-    const updatedData = { ...formData, activities: updatedActivities };
+    try {
+      // 1. Tạo biến chứa dữ liệu cần gửi
+      const activityData = {
+        taskId: formData.id,
+        type: selectedFile ? "Tài liệu" : "Ghi chú",
+        summary:
+          newNote ||
+          (selectedFile ? `Đã tải lên tài liệu: ${selectedFile.name}` : ""),
+        assignee: currentUser?.name || formData.assignedTo || "Hệ thống",
+        status: "Hoàn thành",
+        completed: true,
+        // (Nếu sau này bạn có API up file thật ở đây thì xử lý up file lấy link trước,
+        // ở code hiện tại ta tạm mô phỏng tên file)
+        fileName: selectedFile?.name || undefined,
+        fileUrl:
+          previewUrl ||
+          (selectedFile && !previewUrl ? "document-icon" : undefined),
+      };
 
-    setFormData(updatedData);
-    setNewNote("");
-    clearFile();
+      // 2. Bắn lên Backend để lưu vào DB
+      const response = await fetch("http://localhost:3001/api/activities", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(activityData),
+      });
 
-    // Tự động lưu ngay khi gửi Ghi chú cho an toàn
-    if (onUpdateCustomer) {
-      onUpdateCustomer(updatedData);
+      if (!response.ok) throw new Error("Lỗi lưu ghi chú");
+
+      const savedActivity = await response.json();
+
+      // 3. Cập nhật lại UI ngay lập tức
+      setFormData((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          activities: [savedActivity, ...(prev.activities || [])],
+        };
+      });
+
+      // 4. Xóa trắng form nhập
+      setNewNote("");
+      clearFile();
+
+      // 5. Báo cho Board ngoài kia biết để re-render
+      window.dispatchEvent(new Event("refreshBoard"));
+    } catch (error) {
+      console.error(error);
+      alert("Đã xảy ra lỗi khi gửi cập nhật!");
+    } finally {
+      setIsSubmittingNote(false);
     }
   };
 
   const handleSave = async () => {
     if (!onUpdateCustomer || !formData) return;
     setIsSaving(true);
-    // Giả lập thời gian lưu để hiện Spinner cho đẹp
-    await new Promise((resolve) => setTimeout(resolve, 400));
-    onUpdateCustomer(formData);
-    setIsSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 6000); // Tắt chữ "Đã lưu" sau 6 giây
+
+    try {
+      await fetch(`http://localhost:3001/api/tasks/${formData.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+
+      onUpdateCustomer(formData);
+      setSaved(true);
+      window.dispatchEvent(new Event("refreshBoard"));
+      setTimeout(() => setSaved(false), 6000);
+    } catch (err) {
+      alert("Lỗi lưu thông tin khách hàng" + err.message);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -195,7 +233,6 @@ const handleChange = (field: keyof Task, value: string) => {
         </div>
       </div>
 
-      {/* SỬA LỖI CSS TẠI ĐÂY: Dùng h-[70vh] thay cho h-162.5 */}
       <div className="p-0 flex flex-col md:flex-row h-[70vh]">
         <div className="w-full md:w-[60%] p-6 border-r border-gray-200 overflow-y-auto bg-white custom-scrollbar">
           <h4 className="font-semibold text-orange-600 mb-3 border-b pb-1 text-sm uppercase">
@@ -222,7 +259,6 @@ const handleChange = (field: keyof Task, value: string) => {
                 className="mt-1"
               />
             </div>
-
             <div>
               <Label className="text-xs uppercase text-gray-400">
                 Diện Visa Quan Tâm
@@ -241,7 +277,6 @@ const handleChange = (field: keyof Task, value: string) => {
                 ))}
               </Select>
             </div>
-
             <div>
               <Label className="text-xs uppercase text-gray-400">
                 Nguồn khách
@@ -266,7 +301,6 @@ const handleChange = (field: keyof Task, value: string) => {
             Hồ sơ Pháp lý & Di trú
           </h4>
           <div className="grid grid-cols-2 gap-4 mb-6">
-            
             <div>
               <Label className="text-xs uppercase text-gray-400">
                 Tình trạng hôn nhân
@@ -297,7 +331,7 @@ const handleChange = (field: keyof Task, value: string) => {
             </div>
             <div>
               <Label className="text-xs uppercase text-gray-400">
-                Ngày ưu tiên 
+                Ngày ưu tiên
               </Label>
               <TextInput
                 type="date"
@@ -310,7 +344,7 @@ const handleChange = (field: keyof Task, value: string) => {
           </div>
 
           <h4 className="font-semibold text-orange-600 mb-3 border-b pb-1 text-sm uppercase">
-            Đánh giá Năng lực 
+            Đánh giá Năng lực
           </h4>
           <div className="grid grid-cols-2 gap-4 mb-6">
             <div>
@@ -368,17 +402,17 @@ const handleChange = (field: keyof Task, value: string) => {
 
         {/* CỘT PHẢI - NHẬT KÝ TƯƠNG TÁC & UPLOAD */}
         <div className="w-full md:w-[40%] bg-gray-50 flex flex-col border-l border-gray-200">
-          <div className="p-4 border-b border-gray-200 bg-white">
+          <div className="p-4 border-b border-gray-200 bg-white shadow-sm z-10">
             <p className="text-xs font-bold text-gray-400 uppercase mb-2">
-              Ghi chú & Tải tài liệu
+              Ghi chú mới
             </p>
 
             <Textarea
-              placeholder="Nhập ghi chú hoặc tải lên biên lai, hồ sơ..."
+              placeholder="Nhập ghi chú nhanh hoặc báo cáo tiến độ..."
               rows={3}
               value={newNote}
               onChange={(e) => setNewNote(e.target.value)}
-              className="bg-gray-50 border-none focus:ring-1 focus:ring-orange-500 shadow-inner mb-2"
+              className="bg-gray-50 border-none focus:ring-1 focus:ring-orange-500 shadow-inner mb-3 text-sm"
             />
 
             {selectedFile && (
@@ -394,21 +428,21 @@ const handleChange = (field: keyof Task, value: string) => {
                 ) : (
                   <div className="flex items-center gap-2 p-2 bg-blue-50 text-blue-700 rounded text-sm border border-blue-200">
                     📄{" "}
-                    <span className="truncate max-w-37.5 font-medium">
+                    <span className="truncate max-w-[200px] font-medium">
                       {selectedFile.name}
                     </span>
                   </div>
                 )}
                 <button
                   onClick={clearFile}
-                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
+                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600 shadow-sm"
                 >
                   ✕
                 </button>
               </div>
             )}
 
-            <div className="flex justify-between items-center mt-2">
+            <div className="flex justify-between items-center">
               <div>
                 <input
                   type="file"
@@ -419,11 +453,11 @@ const handleChange = (field: keyof Task, value: string) => {
                 />
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex items-center gap-1 text-sm text-gray-500 hover:text-orange-600 transition-colors"
+                  className="flex items-center gap-1 text-sm font-semibold text-gray-500 hover:text-orange-600 transition-colors bg-gray-100 hover:bg-orange-50 px-3 py-1.5 rounded-lg"
                   title="Đính kèm tài liệu/hình ảnh"
                 >
                   <svg
-                    className="w-5 h-5"
+                    className="w-4 h-4"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -435,23 +469,29 @@ const handleChange = (field: keyof Task, value: string) => {
                       d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
                     />
                   </svg>
-                  <span className="font-medium">Đính kèm</span>
+                  Đính kèm
                 </button>
               </div>
 
               <Button
-                size="xs"
+                size="sm"
                 color="warning"
-                onClick={handleSendActivity}
-                disabled={!newNote.trim() && !selectedFile}
+                onClick={handleSendUpdate}
+                disabled={
+                  (!newNote.trim() && !selectedFile) || isSubmittingNote
+                }
+                className="font-bold shadow-sm"
               >
-                Gửi cập nhật
+                {isSubmittingNote ? (
+                  <Spinner size="sm" className="mr-2" />
+                ) : null}
+                {isSubmittingNote ? "Đang gửi..." : "Gửi ghi chú"}
               </Button>
             </div>
           </div>
 
           {/* LIST TIMELINE */}
-          <div className="flex-1 p-5 overflow-y-auto space-y-4 custom-scrollbar">
+          <div className="flex-1 p-5 overflow-y-auto space-y-4 custom-scrollbar bg-gray-50">
             {formData.activities && formData.activities.length > 0 ? (
               formData.activities.map((act) => (
                 <div
@@ -460,48 +500,64 @@ const handleChange = (field: keyof Task, value: string) => {
                 >
                   <div className="flex justify-between items-start mb-2">
                     <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-2xs text-white font-bold uppercase">
+                      <div className="w-7 h-7 bg-indigo-500 rounded-full flex items-center justify-center text-xs text-white font-bold uppercase shadow-sm">
                         {act.assignee?.charAt(0) || "S"}
                       </div>
-                      <span className="text-xs font-bold text-gray-700">
+                      <span className="text-sm font-bold text-gray-800">
                         {act.assignee}
                       </span>
                     </div>
-                    <span className="text-2xs text-gray-400">
-                      {new Date(act.createdAt).toLocaleString("vi-VN")}
+                    <span className="text-[11px] font-medium text-gray-400 bg-gray-100 px-2 py-0.5 rounded">
+                      {new Date(act.createdAt).toLocaleString("vi-VN", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        day: "2-digit",
+                        month: "2-digit",
+                      })}
                     </span>
                   </div>
 
-                  <p className="text-sm text-gray-600 whitespace-pre-wrap">
+                  <p className="text-sm text-gray-700 whitespace-pre-wrap ml-9">
                     {act.summary}
                   </p>
 
                   {act.fileUrl && act.fileUrl !== "document-icon" && (
-                    <div className="mt-3">
+                    <div className="mt-3 ml-9">
                       <img
                         src={act.fileUrl}
                         alt={act.fileName}
-                        className="rounded-lg border border-gray-200 max-h-48 object-contain cursor-pointer hover:opacity-90"
+                        className="rounded-lg border border-gray-200 max-h-48 object-contain cursor-pointer hover:opacity-90 shadow-sm"
                       />
                     </div>
                   )}
                   {act.fileName && act.fileUrl === "document-icon" && (
-                    <div className="mt-3 flex items-center gap-2 p-2 bg-gray-50 rounded-md border border-gray-200 text-sm">
-                      <span className="text-xl">📄</span>
-                      <a
-                        href="#"
-                        className="text-blue-600 hover:underline truncate max-w-full"
-                        onClick={(e) => e.preventDefault()}
-                      >
+                    <div className="mt-2 ml-9 flex items-center gap-2 p-2 bg-blue-50 rounded-lg border border-blue-100 text-sm w-fit">
+                      <span className="text-lg">📄</span>
+                      <span className="text-blue-700 font-medium truncate max-w-[200px]">
                         {act.fileName}
-                      </a>
+                      </span>
                     </div>
                   )}
                 </div>
               ))
             ) : (
-              <div className="text-center text-gray-400 text-sm mt-10 italic">
-                Chưa có lịch sử hoạt động mới
+              <div className="flex flex-col items-center justify-center h-full text-gray-400 space-y-3 opacity-60 mt-10">
+                <svg
+                  className="w-12 h-12"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1}
+                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                  />
+                </svg>
+                <p className="text-sm italic font-medium">
+                  Chưa có ghi chú nào
+                </p>
               </div>
             )}
           </div>

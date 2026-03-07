@@ -145,7 +145,7 @@ const Header: React.FC<HeaderProps> = ({ currentUser }) => {
                 THÔNG BÁO ({notifications.length}):
               </span>
               <span className="text-red-600 text-sm font-medium truncate text-left">
-                {notifications[0].sender} vừa gửi lệnh điều hành khẩn!
+                {notifications[0].sender} vừa gửi một thông báo mới!
               </span>
             </div>
             <div className="flex items-center shrink-0 ml-2">
@@ -281,7 +281,7 @@ const Header: React.FC<HeaderProps> = ({ currentUser }) => {
 
             <div className="flex-1">
               <h4 className="text-sm font-bold text-red-700 uppercase tracking-wide">
-                Lệnh mới từ {latestToast.sender}
+                Thông báo từ {latestToast.sender}
               </h4>
               <p className="text-sm text-gray-800 font-medium mt-1 leading-snug">
                 {latestToast.message}

@@ -8,13 +8,20 @@ import {
 import { Progress, Spinner } from "flowbite-react";
 import type { AuthUser, BoardData, Task } from "../../types";
 import { io } from "socket.io-client";
+
+// Import hàm lấy Checklist y hệt bên DocumentModal
+import {
+  getRequirementsList,
+  getLaborRequirements,
+  getStudyAbroadRequirements,
+} from "../../utils/constants";
+
 interface ProcessingBoardProps {
   onOpenDetail: (taskId: string) => void;
   onOpenAttachments: (taskId: string) => void;
   currentUser: AuthUser;
 }
 
-// Cấu trúc cột ĐỘC LẬP dành riêng cho phòng Xử lý hồ sơ (BO)
 const PROCESSING_COLUMNS = {
   "proc-col-1": {
     id: "proc-col-1",
@@ -46,6 +53,7 @@ const PROCESSING_COLUMN_ORDER = [
 
 const API_BASE_URL = "http://localhost:3001/api";
 const socket = io("http://localhost:3001");
+
 const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
   onOpenDetail,
   onOpenAttachments,
@@ -56,7 +64,28 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
   const [isLoading, setIsLoading] = useState(true);
 
   // ==========================================
-  // LẤY DỮ LIỆU VÀ PHÂN BỔ VÀO QUY TRÌNH BO
+  // HÀM TÍNH TỔNG SỐ HỒ SƠ YÊU CẦU ĐỘNG
+  // ==========================================
+  const getTotalRequiredDocs = (task: Task) => {
+    const checklistType = task.checklistType || "tourism";
+    const jobType = task.jobType || "Nhân viên";
+
+    let requirements: unknown[] = [];
+    if (checklistType === "tourism") {
+      requirements = getRequirementsList(jobType);
+    } else if (checklistType === "labor") {
+      requirements = getLaborRequirements();
+    } else if (checklistType === "study") {
+      requirements = getStudyAbroadRequirements();
+    }
+
+    // Đếm số lượng giấy tờ BẮT BUỘC (hoặc toàn bộ tùy bạn)
+    // Ở đây mình đếm toàn bộ list yêu cầu cho dễ hiểu
+    return requirements.length > 0 ? requirements.length : 1;
+  };
+
+  // ==========================================
+  // LẤY DỮ LIỆU
   // ==========================================
   const fetchBoardData = useCallback(async (showSpinner = true) => {
     try {
@@ -67,35 +96,29 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
 
       setBoardData(data);
 
-      // --- LOGIC ĐỒNG BỘ: Kéo khách từ Sale sang BO ---
-      // Giả sử col-4 của Sale là "Đang thu hồ sơ"
+      // CHỈ LẤY NHỮNG KHÁCH MÀ SALE ĐÃ KÉO SANG CỘT "BÀN GIAO HỒ SƠ" (col-4)
       const salesHandoverTaskIds = data.columns["col-4"]?.taskIds || [];
 
-      // Ở đây, lý tưởng nhất là trong DB bảng Task có thêm 1 trường `processingStatus`
-      // Nhưng để xài tạm với DB hiện tại, ta sẽ ném tất cả khách hàng ở col-4 của Sale
-      // vào proc-col-1 của BO (Nếu BO chưa kéo nó đi đâu khác).
-      // (Trong thực tế, bạn nên tạo API riêng lưu vị trí cột của BO)
+      const newCols = {
+        "proc-col-1": { ...PROCESSING_COLUMNS["proc-col-1"], taskIds: [] },
+        "proc-col-2": { ...PROCESSING_COLUMNS["proc-col-2"], taskIds: [] },
+        "proc-col-3": { ...PROCESSING_COLUMNS["proc-col-3"], taskIds: [] },
+        "proc-col-4": { ...PROCESSING_COLUMNS["proc-col-4"], taskIds: [] },
+      };
 
-      setProcColumns((prevCols) => {
-        const newCols = { ...prevCols };
-        // Lấy những task chưa được BO kéo đi đâu (chưa có trong proc-col-2,3,4)
-        const activeInBO = [
-          ...newCols["proc-col-2"].taskIds,
-          ...newCols["proc-col-3"].taskIds,
-          ...newCols["proc-col-4"].taskIds,
-        ];
-
-        // Những task mới từ Sale chuyển qua
-        const newTasksFromSale = salesHandoverTaskIds.filter(
-          (id) => !activeInBO.includes(id),
-        );
-
-        newCols["proc-col-1"] = {
-          ...newCols["proc-col-1"],
-          taskIds: newTasksFromSale,
-        };
-        return newCols;
+      // Phân bổ hồ sơ dựa vào trường processingColId lưu trong Database
+      salesHandoverTaskIds.forEach((taskId) => {
+        const task = data.tasks[taskId];
+        if (task) {
+          const targetCol = task.processingColId || "proc-col-1";
+          if (newCols[targetCol as keyof typeof newCols]) {
+            newCols[targetCol as keyof typeof newCols].taskIds.push(taskId);
+          }
+        }
       });
+
+      // Cập nhật State 1 lần duy nhất
+      setProcColumns(newCols);
     } catch (err) {
       console.error(err);
     } finally {
@@ -103,22 +126,18 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
     }
   }, []);
 
- useEffect(() => {
-   fetchBoardData(true);
+  useEffect(() => {
+    fetchBoardData(true);
 
-   // THAY INTERVAL BẰNG SOCKET LẮNG NGHE
-   socket.on("data_changed", () => {
-     fetchBoardData(false);
-   });
+    socket.on("data_changed", () => fetchBoardData(false));
+    const handleInstantRefresh = () => fetchBoardData(false);
+    window.addEventListener("refreshBoard", handleInstantRefresh);
 
-   const handleInstantRefresh = () => fetchBoardData(false);
-   window.addEventListener("refreshBoard", handleInstantRefresh);
-
-   return () => {
-     socket.off("data_changed");
-     window.removeEventListener("refreshBoard", handleInstantRefresh);
-   };
- }, [fetchBoardData]);
+    return () => {
+      socket.off("data_changed");
+      window.removeEventListener("refreshBoard", handleInstantRefresh);
+    };
+  }, [fetchBoardData]);
 
   // ==========================================
   // XỬ LÝ KÉO THẢ TRONG NỘI BỘ PHÒNG BO
@@ -163,33 +182,33 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
       await fetch(`${API_BASE_URL}/tasks/${draggableId}/processing-move`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ processingColId: destination.droppableId }), // Gửi cột đích lên
+        body: JSON.stringify({ processingColId: destination.droppableId }),
       });
     } catch (error) {
       console.error("Lỗi khi chuyển cột BO:", error);
-      fetchBoardData(true); // Nếu lỗi thì tải lại từ đầu để undo
+      fetchBoardData(false);
     }
   };
+
+  // ==========================================
+  // BÁO THIẾU HỒ SƠ CHO SALE
+  // ==========================================
   const handlePingSale = async (task: Task, e: React.MouseEvent) => {
     e.stopPropagation();
-
-    if (!task.assignedTo) {
-      alert("Hồ sơ này chưa có Sale phụ trách!");
-      return;
-    }
+    if (!task.assignedTo) return alert("Hồ sơ này chưa có Sale phụ trách!");
 
     const reason = window.prompt(
       `Nhập loại giấy tờ còn thiếu để báo cho [${task.assignedTo}] bổ sung ngay:`,
     );
-
     if (reason) {
       try {
         await fetch(`${API_BASE_URL}/notifications/send`, {
+          // GỌI ĐÚNG API VỪA TẠO
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             customerName: task.content.split(" - ")[0],
-            saleName: task.assignedTo,
+            saleName: task.assignedTo, // Tên Sale để Backend biết gửi cho ai
             sender: currentUser.name,
             customMessage: `⚠️ GẤP! Khách hàng ${task.content.split(" - ")[0]} đang thiếu: ${reason}. Vui lòng bổ sung ngay!`,
             taskId: task.id,
@@ -217,7 +236,9 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
           <h2 className="text-2xl font-bold text-gray-800">
             Tiến độ Xử lý Hồ sơ
           </h2>
-          
+          <p className="text-sm text-gray-500 mt-1">
+            Quản lý hồ sơ đã được Sale bàn giao
+          </p>
         </div>
       </div>
 
@@ -226,11 +247,10 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
           {PROCESSING_COLUMN_ORDER.map((columnId) => {
             const column =
               procColumns[columnId as keyof typeof PROCESSING_COLUMNS];
-
-            // Map mảng ID thành mảng Task Object (Lấy data gốc từ boardData chung)
             const tasks = column.taskIds
               .map((taskId) => boardData.tasks[taskId])
               .filter(Boolean);
+
             return (
               <div
                 key={column.id}
@@ -254,8 +274,8 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
                       style={{ minHeight: "150px" }}
                     >
                       {tasks.map((task, index) => {
-                        // Tính tiến độ dựa vào số tài liệu đã có trong DB
-                        const totalCount = 17; // Tạm fix cứng tổng số checklist là 17
+                        // TÍNH TOÁN TIẾN ĐỘ ĐỘNG THEO LOẠI VISA
+                        const totalCount = getTotalRequiredDocs(task);
                         const doneCount = task.documents
                           ? Object.keys(task.documents).length
                           : 0;
@@ -295,7 +315,7 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
                                   </span>
                                 )}
 
-                                <h4 className="font-bold text-gray-800 text-[15px] pr-5">
+                                <h4 className="font-bold text-gray-800 text-[15px] pr-5 truncate">
                                   {task.content.split(" - ")[0]}
                                 </h4>
                                 <p className="text-[11px] font-bold text-indigo-600 mb-3 bg-indigo-50 px-2 py-0.5 rounded w-fit mt-1 border border-indigo-100">
@@ -305,7 +325,7 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
 
                                 <div className="mb-3">
                                   <div className="flex justify-between text-[11px] font-bold text-gray-500 mb-1">
-                                    <span>Tiến độ thu giấy tờ:</span>
+                                    <span>Tiến độ giấy tờ:</span>
                                     <span
                                       className={
                                         percent === 100
@@ -313,7 +333,7 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
                                           : "text-red-500"
                                       }
                                     >
-                                      {doneCount}/{totalCount} mục
+                                      {doneCount}/{totalCount}
                                     </span>
                                   </div>
                                   <Progress
@@ -324,7 +344,7 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
                                 </div>
 
                                 <div className="flex justify-between items-center border-t border-gray-100 pt-3 mt-2">
-                                  <span className="text-[11px] text-gray-600 bg-gray-50 px-2 py-1 rounded font-medium border border-gray-200">
+                                  <span className="text-[11px] text-gray-600 bg-gray-50 px-2 py-1 rounded font-medium border border-gray-200 truncate max-w-[100px]">
                                     Sale:{" "}
                                     <span className="font-bold text-gray-800">
                                       {task.assignedTo?.split(" ")[0] ||
@@ -332,7 +352,7 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
                                     </span>
                                   </span>
 
-                                  <div className="flex gap-1">
+                                  <div className="flex gap-1 shrink-0">
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
@@ -364,7 +384,7 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
                                           : "text-orange-600 bg-orange-100 hover:bg-orange-200"
                                       }`}
                                     >
-                                      {isMissing ? "Đòi hồ sơ" : "Báo thiếu"}
+                                      {isMissing ? "Đòi hồ sơ" : "Báo sale"}
                                     </button>
                                   </div>
                                 </div>

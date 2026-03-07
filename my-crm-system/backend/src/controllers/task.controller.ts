@@ -119,23 +119,42 @@ export const moveTask = async (req: Request, res: Response) => {
   }
 };
 
-// --- Chuyển cột Kanban BO (Processing) ---
 export const moveProcessingTask = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { processingColId } = req.body; 
+    const { processingColId } = req.body;
 
     const updatedTask = await prisma.task.update({
       where: { id: id as string },
-      data: { processingColId }, 
+      data: { processingColId }, // Lưu lại cột của BO
     });
 
-    // PHÁT TÍN HIỆU REAL-TIME
-    getIO().emit("data_changed");
-
-    res.status(200).json(updatedTask);
+    getIO().emit("data_changed"); // Báo cho các máy khác load lại Board
+    res.json(updatedTask);
   } catch (error) {
-    console.error("Lỗi khi chuyển cột BO:", error);
-    res.status(500).json({ error: "Lỗi server khi chuyển cột BO" });
+    res.status(500).json({ error: "Lỗi khi chuyển cột xử lý" });
+  }
+};
+
+// 2. API "Đòi hồ sơ" từ BO gửi cho Sale
+export const sendNotification = async (req: Request, res: Response) => {
+  try {
+    const { customerName, saleName, sender, customMessage, taskId } = req.body;
+
+    // Tìm Employee dựa vào tên Sale (hoặc bạn có thể truyền ID từ frontend lên cho chắc chắn)
+    // Tạo thông báo vào DB
+    const notif = await prisma.notification.create({
+      data: {
+        sender: sender,
+        message: customMessage,
+        receiver: saleName, // Gửi đích danh cho bạn Sale phụ trách
+        taskId: taskId
+      }
+    });
+
+    getIO().emit("data_changed");
+    res.status(201).json(notif);
+  } catch (error) {
+    res.status(500).json({ error: "Lỗi khi gửi thông báo" });
   }
 };
