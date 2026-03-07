@@ -11,6 +11,7 @@ RUN npm ci
 COPY . .
 
 RUN npm run build
+RUN cp -r generated dist/generated
 
 EXPOSE 3000
 
