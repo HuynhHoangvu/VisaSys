@@ -1,0 +1,21 @@
+{
+  "$schema": "https://railway.com/railway.schema.json",
+  "build": {
+    "builder": "NIXPACKS",
+    "buildCommand": "npm install && npm run build"
+  },
+  "deploy": {
+    "startCommand": "node dist/server.js",
+    "restartPolicyType": "ON_FAILURE"
+  }
+}
+```
+
+---
+
+## Bước 2 — Kiểm tra `.gitignore` trong backend
+
+Mở file `.gitignore`, đảm bảo **KHÔNG có** các dòng này (xóa nếu có):
+```
+generated/
+dist/
