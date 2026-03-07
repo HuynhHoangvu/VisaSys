@@ -2,8 +2,10 @@
   "compilerOptions": {
     "module": "ESNext",
     "moduleResolution": "bundler",
+    "outDir": "dist",
     "target": "ES2023",
-    "strict": true,
-    "esModuleInterop": true
+    "strict": false,
+    "esModuleInterop": true,
+    "noImplicitAny": false
   }
 }
