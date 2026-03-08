@@ -44,7 +44,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
     const fetchAlerts = async () => {
       if (!currentUser?.name) return;
       try {
-        const res = await fetch(`${API_URL}/notifications/${currentUser.name}`);
+        const res = await fetch(`${API_URL}/api/notifications/${currentUser.name}`);
         if (!res.ok) return;
         const notifs: Notification[] = await res.json();
 
@@ -75,7 +75,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
   const fetchBoardData = useCallback(async (showSpinner = true) => {
     try {
       if (showSpinner) setIsLoading(true);
-      const response = await fetch(`${API_URL}/board`);
+      const response = await fetch(`${API_URL}/api/board`);
       if (!response.ok) throw new Error("Không thể tải dữ liệu");
       const data = await response.json();
       setBoardData(data);
@@ -149,7 +149,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
     }
 
     try {
-      const response = await fetch(`${API_URL}/tasks/${draggableId}/move`, {
+      const response = await fetch(`${API_URL}/api/tasks/${draggableId}/move`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ columnId: destination.droppableId }),
