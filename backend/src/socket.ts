@@ -6,12 +6,16 @@ let io: Server;
 
 export const initSocket = (server: HTTPServer) => {
   io = new Server(server, {
-  cors: {
-    origin: process.env.FRONTEND_URL || "http://localhost:5173",
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    credentials: true,
-  },
-});
+    cors: {
+      origin: [
+        "http://localhost:5173",
+        "https://dazzling-vitality-backend-fly.up.railway.app",
+        process.env.FRONTEND_URL,
+      ].filter(Boolean),
+      methods: ["GET", "POST", "PUT", "DELETE"],
+      credentials: true,
+    },
+  });
   return io;
 };
 
