@@ -8,7 +8,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon",
-    "build": "prisma generate && tsc && cp -r generated dist/generated",
+    "build": "prisma generate && tsc && cp -r generated/. dist/generated/",
     "start": "node dist/server.js",
     "postinstall": "prisma generate"
   },
