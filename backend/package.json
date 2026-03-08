@@ -7,10 +7,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon",
-    "build": "prisma generate && tsc && cp -R generated dist/",
-    "start": "node dist/server.js",
-    "postinstall": "prisma generate"
+  "dev": "nodemon",
+  "start": "npx prisma generate && npx tsx src/server.ts",
+  "build": "npx prisma generate"
   },
   "keywords": [],
   "author": "",
