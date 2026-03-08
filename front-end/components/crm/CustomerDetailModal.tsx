@@ -10,7 +10,7 @@ import {
 } from "flowbite-react";
 import type { Task, CustomerDetailModalProps } from "../../types";
 import { VISA_SERVICES, CUSTOMER_SOURCES } from "../../utils/constants";
-
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
   show,
   onClose,
@@ -117,7 +117,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
       };
 
       // 2. Bắn lên Backend để lưu vào DB
-      const response = await fetch("http://localhost:3001/api/activities", {
+      const response = await fetch(`${API_URL}/api/activities`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(activityData),
@@ -155,11 +155,11 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
     setIsSaving(true);
 
     try {
-      await fetch(`http://localhost:3001/api/tasks/${formData.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
+     await fetch(`${API_URL}/api/tasks/${formData.id}`, {
+       method: "PUT",
+       headers: { "Content-Type": "application/json" },
+       body: JSON.stringify(formData),
+     });
 
       onUpdateCustomer(formData);
       setSaved(true);

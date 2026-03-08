@@ -19,7 +19,7 @@ interface SavedFile {
   name: string;
   url: string;
 }
-
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const DocumentModal: React.FC<DocumentModalProps> = ({
   show,
   onClose,
@@ -42,7 +42,7 @@ const DocumentModal: React.FC<DocumentModalProps> = ({
     if (show && taskId) {
       const fetchLatestData = async () => {
         try {
-          const res = await fetch(`http://localhost:3001/api/board`);
+          const res = await fetch(`${API_URL}/api/board`);
           const data = await res.json();
           const currentTask = data.tasks[taskId];
           if (currentTask) {
@@ -81,7 +81,7 @@ const DocumentModal: React.FC<DocumentModalProps> = ({
       formData.append("file", file);
 
       try {
-        const res = await fetch("http://localhost:3001/api/tasks/upload", {
+        const res = await fetch(`${API_URL}/api/tasks/upload`, {
           method: "POST",
           body: formData,
         });
@@ -122,7 +122,7 @@ const DocumentModal: React.FC<DocumentModalProps> = ({
 
   const handleDownloadFile = async (fileUrl: string, fileName: string) => {
     try {
-      const response = await fetch(`http://localhost:3001${fileUrl}`);
+      const response = await fetch(`${API_URL}${fileUrl}`);
       if (!response.ok) throw new Error("Không thể tải file");
 
       const blob = await response.blob();
@@ -147,18 +147,15 @@ const DocumentModal: React.FC<DocumentModalProps> = ({
     if (!taskId) return;
     setIsSaving(true);
     try {
-      const response = await fetch(
-        `http://localhost:3001/api/tasks/${taskId}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            documents: uploadedFiles,
-            jobType: jobType,
-            checklistType: checklistType,
-          }),
-        },
-      );
+      const response = await fetch(`${API_URL}/api/tasks/${taskId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          documents: uploadedFiles,
+          jobType: jobType,
+          checklistType: checklistType,
+        }),
+      });
 
       if (!response.ok) throw new Error("Lỗi khi lưu tài liệu");
 
