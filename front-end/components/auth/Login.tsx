@@ -38,7 +38,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 
       onLoginSuccess(data);
     } catch (err) {
-      setError(err.message || "Không thể kết nối đến máy chủ.");
+      setError((err as Error).message || "Không thể kết nối đến máy chủ.");
     } finally {
       setIsLoading(false);
     }

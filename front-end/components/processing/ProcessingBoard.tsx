@@ -51,8 +51,9 @@ const PROCESSING_COLUMN_ORDER = [
   "proc-col-4",
 ];
 
-const API_BASE_URL = "http://localhost:3001/api";
-const socket = io("http://localhost:3001");
+const API_BASE_URL = `${import.meta.env.VITE_API_URL || "http://localhost:3001"}/api`;
+const SOCKET_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const socket = io(SOCKET_URL);
 
 const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
   onOpenDetail,

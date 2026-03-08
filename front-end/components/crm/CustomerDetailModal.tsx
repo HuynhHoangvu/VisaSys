@@ -166,7 +166,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
       window.dispatchEvent(new Event("refreshBoard"));
       setTimeout(() => setSaved(false), 6000);
     } catch (err) {
-      alert("Lỗi lưu thông tin khách hàng" + err.message);
+      alert("Lỗi lưu thông tin khách hàng" + (err as Error).message);
     } finally {
       setIsSaving(false);
     }
