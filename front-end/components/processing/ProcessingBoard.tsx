@@ -101,10 +101,22 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
       const salesHandoverTaskIds = data.columns["col-4"]?.taskIds || [];
 
       const newCols = {
-        "proc-col-1": { ...PROCESSING_COLUMNS["proc-col-1"], taskIds: [] },
-        "proc-col-2": { ...PROCESSING_COLUMNS["proc-col-2"], taskIds: [] },
-        "proc-col-3": { ...PROCESSING_COLUMNS["proc-col-3"], taskIds: [] },
-        "proc-col-4": { ...PROCESSING_COLUMNS["proc-col-4"], taskIds: [] },
+        "proc-col-1": {
+          ...PROCESSING_COLUMNS["proc-col-1"],
+          taskIds: [] as string[],
+        },
+        "proc-col-2": {
+          ...PROCESSING_COLUMNS["proc-col-2"],
+          taskIds: [] as string[],
+        },
+        "proc-col-3": {
+          ...PROCESSING_COLUMNS["proc-col-3"],
+          taskIds: [] as string[],
+        },
+        "proc-col-4": {
+          ...PROCESSING_COLUMNS["proc-col-4"],
+          taskIds: [] as string[],
+        },
       };
 
       // Phân bổ hồ sơ dựa vào trường processingColId lưu trong Database
