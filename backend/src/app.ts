@@ -16,8 +16,10 @@ const app = express();
 // CORS CONFIG - FIXED
 // ==========================================
 const allowedOrigins = [
-  process.env.FRONTEND_URL || "http://localhost:5173"
-];
+  "http://localhost:5173",
+  "https://dazzling-vitality-backend-fly.up.railway.app", // Thêm dòng này để cho phép Frontend gọi API
+  process.env.FRONTEND_URL
+].filter(Boolean) as string[]; // Dùng filter(Boolean) để loại bỏ các giá trị undefined
 
 const corsOptions = {
   origin: allowedOrigins,
@@ -26,7 +28,6 @@ const corsOptions = {
   allowedHeaders: ["Content-Type", "Authorization"],
   optionsSuccessStatus: 200
 };
-
 app.use(cors(corsOptions));
 
 // KHÔNG DÙNG app.options("*") - Đây là nguyên nhân gây lỗi
