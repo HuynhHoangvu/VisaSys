@@ -272,7 +272,7 @@ const DocumentModal: React.FC<DocumentModalProps> = ({
                                   download
                                   target="_blank"
                                   rel="noreferrer"
-                                  className="flex items-center gap-1 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-800 px-2 py-0.5 rounded text-[10px] font-bold border border-indigo-200 transition-colors shadow-sm"
+                                  className="flex items-center gap-1 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-800 px-2 py-0.5 rounded text-2xs font-bold border border-indigo-200 transition-colors shadow-sm"
                                   title="Tải form mẫu về máy"
                                 >
                                   <svg

@@ -15,9 +15,8 @@ interface NotificationItem {
   isRead: boolean;
   createdAt: string;
 }
-
-const socket = io("http://localhost:3001");
-
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const socket = io(API_URL); 
 const Header: React.FC<HeaderProps> = ({ currentUser }) => {
   const [showNotifs, setShowNotifs] = useState(false);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
@@ -36,7 +35,7 @@ const Header: React.FC<HeaderProps> = ({ currentUser }) => {
     if (!currentUser?.name) return;
     try {
       const res = await fetch(
-        `http://localhost:3001/api/notifications/${currentUser.name}`,
+        `${API_URL}/api/notifications/${currentUser.name}`,
       );
       if (res.ok) {
         const data: NotificationItem[] = await res.json();
@@ -102,7 +101,7 @@ const Header: React.FC<HeaderProps> = ({ currentUser }) => {
 
   const handleMarkAsRead = async (id: string) => {
     try {
-      await fetch(`http://localhost:3001/api/notifications/${id}/read`, {
+      await fetch(`${API_URL}/api/notifications/${id}/read`, {
         method: "PUT",
       });
       setNotifications((prev) => prev.filter((n) => n.id !== id));
@@ -114,7 +113,7 @@ const Header: React.FC<HeaderProps> = ({ currentUser }) => {
 
   const handleLogout = async () => {
     try {
-      await fetch("http://localhost:3001/api/auth/logout", { method: "POST" });
+      await fetch(`${API_URL}/api/auth/logout`, { method: "POST" });
     } catch (error) {
       console.log("Lỗi gọi API Đăng xuất:", error);
     }

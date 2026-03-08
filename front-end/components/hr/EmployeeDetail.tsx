@@ -13,7 +13,7 @@ interface EmployeeDetailProps {
   onBack: () => void;
   onCheckIn: (id: string) => void;
 }
-
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const formatVND = (amount: number): string => {
   return new Intl.NumberFormat("vi-VN", {
     style: "currency",
@@ -55,7 +55,7 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
   const handleSubmitLeaveRequest = async (data: LeaveRequestData) => {
     try {
       const response = await fetch(
-        `http://localhost:3001/api/hr/employees/${employee.id}/leave`,
+        `${API_URL}/api/hr/employees/${employee.id}/leave`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -116,7 +116,7 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
 
     try {
       await fetch(
-        `http://localhost:3001/api/hr/employees/${employee.id}/bonus`,
+        `${API_URL}/api/hr/employees/${employee.id}/bonus`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

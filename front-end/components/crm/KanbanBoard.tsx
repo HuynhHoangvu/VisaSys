@@ -19,13 +19,8 @@ interface KanbanBoardProps {
   currentUser: AuthUser | null; // CẦN THIẾT ĐỂ LẤY ĐÚNG THÔNG BÁO
 }
 
-const API_BASE_URL = "http://localhost:3001/api";
-
-// KHỞI TẠO SOCKET BÊN NGOÀI ĐỂ KHÔNG BỊ TẠO LẠI KHI RERENDER
-const socket = io("http://localhost:3001", {
-  withCredentials: true,
-});
-
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const socket = io(API_URL);
 const KanbanBoard: React.FC<KanbanBoardProps> = ({
   onOpenActivityList,
   onOpenDetail,
@@ -49,9 +44,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
     const fetchAlerts = async () => {
       if (!currentUser?.name) return;
       try {
-        const res = await fetch(
-          `${API_BASE_URL}/notifications/${currentUser.name}`,
-        );
+        const res = await fetch(`${API_URL}/notifications/${currentUser.name}`);
         if (!res.ok) return;
         const notifs: Notification[] = await res.json();
 
@@ -82,7 +75,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
   const fetchBoardData = useCallback(async (showSpinner = true) => {
     try {
       if (showSpinner) setIsLoading(true);
-      const response = await fetch(`${API_BASE_URL}/board`);
+      const response = await fetch(`${API_URL}/board`);
       if (!response.ok) throw new Error("Không thể tải dữ liệu");
       const data = await response.json();
       setBoardData(data);
@@ -156,14 +149,11 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
     }
 
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/tasks/${draggableId}/move`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ columnId: destination.droppableId }),
-        },
-      );
+      const response = await fetch(`${API_URL}/tasks/${draggableId}/move`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ columnId: destination.droppableId }),
+      });
       if (!response.ok) throw new Error("Không thể cập nhật vị trí");
     } catch (error) {
       console.error("Lỗi khi chuyển cột:", error);
@@ -318,7 +308,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
             return (
               <div
                 key={column.id}
-                className="flex flex-col bg-gray-100/50 rounded-xl w-[280px] min-w-[280px] max-h-full shrink-0"
+                className="flex flex-col bg-gray-100/50 rounded-xl w-70 min-w-70 max-h-full shrink-0"
               >
                 <div className="px-3 py-3 flex justify-between items-center rounded-t-xl">
                   <h3 className="font-bold text-gray-600 uppercase text-[11px] tracking-wider">

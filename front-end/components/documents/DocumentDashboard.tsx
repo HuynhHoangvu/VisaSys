@@ -4,8 +4,8 @@ import { formatFileSize } from "../../utils/helpers";
 import { io } from "socket.io-client";
 
 // Kết nối Socket
-const socket = io("http://localhost:3001");
-
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const socket = io(API_URL);
 interface DocumentDashboardProps {
   currentUser: AuthUser | null;
 }
@@ -27,8 +27,8 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
   const fetchData = useCallback(async () => {
     try {
       const [foldersRes, filesRes] = await Promise.all([
-        fetch("http://localhost:3001/api/docs/folders"),
-        fetch("http://localhost:3001/api/docs/files"),
+        fetch(`${API_URL}/api/docs/folders`),
+        fetch(`${API_URL}/api/docs/files`),
       ]);
 
       if (foldersRes.ok) setFolders(await foldersRes.json());
@@ -82,7 +82,7 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
     if (!newFolderName.trim()) return;
 
     try {
-      await fetch("http://localhost:3001/api/docs/folders", {
+      await fetch(`${API_URL}/api/docs/folders`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -110,7 +110,7 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
       )
     ) {
       try {
-        await fetch(`http://localhost:3001/api/docs/folders/${id}`, {
+        await fetch(`${API_URL}/api/docs/folders/${id}`, {
           method: "DELETE",
         });
       } catch (error) {
@@ -122,7 +122,7 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
   const handleDeleteFile = async (id: string) => {
     if (window.confirm("Bạn có chắc chắn muốn xóa file này?")) {
       try {
-        await fetch(`http://localhost:3001/api/docs/files/${id}`, {
+        await fetch(`${API_URL}/api/docs/files/${id}`, {
           method: "DELETE",
         });
       } catch (error) {
@@ -148,7 +148,7 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
       }
 
       try {
-        await fetch("http://localhost:3001/api/docs/files/upload", {
+        await fetch(`${API_URL}/api/docs/files/upload`, {
           method: "POST",
           body: formData, // LƯU Ý: Gửi file thì không dùng Content-Type json
         });
@@ -171,7 +171,7 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
 
     try {
       // Fetch dữ liệu file từ server
-      const response = await fetch(`http://localhost:3001${fileUrl}`);
+      const response = await fetch(`${API_URL}${fileUrl}`);
 
       if (!response.ok) throw new Error("Không thể tải file");
 

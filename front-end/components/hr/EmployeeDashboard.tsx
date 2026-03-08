@@ -15,7 +15,8 @@ import {
 import { calculateLateFine } from "../../utils/helpers";
 import { io } from "socket.io-client";
 
-const socket = io("http://localhost:3001");
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const socket = io(API_URL);
 
 const getStatusColor = (status: AttendanceStatus): string => {
   switch (status) {
@@ -80,8 +81,8 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
   const fetchData = useCallback(async () => {
     try {
       const [empRes, deptRes] = await Promise.all([
-        fetch("http://localhost:3001/api/hr/employees"),
-        fetch("http://localhost:3001/api/hr/departments"),
+        fetch(`${API_URL}/api/hr/employees`),
+        fetch(`${API_URL}/api/hr/departments`),
       ]);
       const empData = await empRes.json();
       const deptData = await deptRes.json();
@@ -109,7 +110,7 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
     if (!canAddPersonnel)
       return alert("Bạn không có quyền thực hiện thao tác này!");
     try {
-      const response = await fetch("http://localhost:3001/api/hr/employees", {
+      const response = await fetch(`${API_URL}/api/hr/employees`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(empData),
@@ -133,7 +134,7 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
       return alert("Chỉ Giám đốc/Admin mới có quyền xóa nhân sự!");
     if (window.confirm("Bạn có chắc chắn muốn xóa nhân viên này?")) {
       try {
-        await fetch(`http://localhost:3001/api/hr/employees/${id}`, {
+        await fetch(`${API_URL}/api/hr/employees/${id}`, {
           method: "DELETE",
         });
         fetchData();
@@ -206,7 +207,7 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
     );
 
     try {
-      await fetch(`http://localhost:3001/api/hr/employees/${empId}/checkin`, {
+      await fetch(`${API_URL}/api/hr/employees/${empId}/checkin`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newRecord),
@@ -221,7 +222,7 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
     if (!canAddPersonnel) return;
     if (!newDeptName.trim()) return;
     try {
-      await fetch("http://localhost:3001/api/hr/departments", {
+      await fetch(`${API_URL}/api/hr/departments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: newDeptName.trim() }),
@@ -237,7 +238,7 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
     if (!canAddPersonnel) return;
     if (!editDeptName.trim()) return;
     try {
-      await fetch(`http://localhost:3001/api/hr/departments/${id}`, {
+      await fetch(`${API_URL}/api/hr/departments/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: editDeptName.trim() }),
@@ -258,7 +259,7 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
       )
     ) {
       try {
-        await fetch(`http://localhost:3001/api/hr/departments/${id}`, {
+        await fetch(`${API_URL}/api/hr/departments/${id}`, {
           method: "DELETE",
         });
         fetchData();
@@ -275,7 +276,7 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
     setIsFinalizing(true);
     try {
       const response = await fetch(
-        "http://localhost:3001/api/hr/salary/finalize",
+        `${API_URL}/api/hr/salary/finalize`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -317,7 +318,7 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
   // Hàm gọi API lấy lịch sử
   const fetchSalaryHistory = async () => {
     try {
-      const res = await fetch("http://localhost:3001/api/hr/salary/history");
+      const res = await fetch(`${API_URL}/api/hr/salary/history`);
       if (res.ok) {
         setSalaryHistories(await res.json());
       }
@@ -337,7 +338,7 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
 
   const fetchLeaveRequests = async () => {
     try {
-      const res = await fetch("http://localhost:3001/api/hr/leave-requests");
+      const res = await fetch(`${API_URL}/api/hr/leave-requests`);
       if (res.ok) setLeaveRequests(await res.json());
     } catch (error) {
       console.error("Lỗi lấy danh sách phép:", error);
@@ -357,7 +358,7 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
 
     try {
       const res = await fetch(
-        `http://localhost:3001/api/hr/leave-requests/${id}/status`,
+        `${API_URL}/api/hr/leave-requests/${id}/status`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },

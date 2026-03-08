@@ -16,7 +16,7 @@ interface CustomerModalProps {
   // Dùng Partial<Task> vì khi tạo mới, ta không cần gửi lên 'id'
   onAddCustomer: (customer: Partial<Task>) => void;
 }
-
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const CustomerModal: React.FC<CustomerModalProps> = ({
   show,
   onClose,
@@ -50,9 +50,7 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
     if (show) {
       const fetchSalesStaff = async () => {
         try {
-          const response = await fetch(
-            "http://localhost:3001/api/hr/employees",
-          );
+          const response = await fetch(`${API_URL}/api/hr/employees`);
           const allEmployees: Employee[] = await response.json();
           const filteredSales = allEmployees.filter(
             (emp) =>
