@@ -30,13 +30,13 @@ const DocumentModal: React.FC<DocumentModalProps> = ({
   const [jobType, setJobType] = useState("Nhân viên");
   const [checklistType, setChecklistType] = useState("tourism");
 
-  // State mới lưu trữ cả tên và URL của file
+  // State lưu trữ tên và URL của file đã upload
   const [uploadedFiles, setUploadedFiles] = useState<{
     [key: string]: SavedFile[];
   }>({});
 
   const [isSaving, setIsSaving] = useState(false);
-  const [isUploading, setIsUploading] = useState(false); // State để xoay xoay khi đang tải file lên
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     if (show && taskId) {
@@ -76,7 +76,6 @@ const DocumentModal: React.FC<DocumentModalProps> = ({
     const files = Array.from(e.target.files);
     const successfullyUploaded: SavedFile[] = [];
 
-    // Duyệt qua từng file và đẩy lên server
     for (const file of files) {
       const formData = new FormData();
       formData.append("file", file);
@@ -88,7 +87,7 @@ const DocumentModal: React.FC<DocumentModalProps> = ({
         });
 
         if (res.ok) {
-          const data = await res.json(); // { name: "...", url: "..." }
+          const data = await res.json();
           successfullyUploaded.push(data);
         } else {
           console.error("Lỗi khi tải lên file:", file.name);
@@ -98,7 +97,6 @@ const DocumentModal: React.FC<DocumentModalProps> = ({
       }
     }
 
-    // Cập nhật state với file mới
     if (successfullyUploaded.length > 0) {
       setUploadedFiles((prev) => ({
         ...prev,
@@ -111,7 +109,7 @@ const DocumentModal: React.FC<DocumentModalProps> = ({
   };
 
   // ==========================================
-  // XÓA VÀ TẢI FILE
+  // XÓA VÀ TẢI FILE ĐÃ UPLOAD
   // ==========================================
   const handleRemoveFile = (reqId: string, indexToRemove: number) => {
     setUploadedFiles((prev) => {
@@ -143,7 +141,7 @@ const DocumentModal: React.FC<DocumentModalProps> = ({
   };
 
   // ==========================================
-  // LƯU JSON VÀO DATABASE
+  // LƯU DB
   // ==========================================
   const handleSaveToBackend = async () => {
     if (!taskId) return;
@@ -264,8 +262,40 @@ const DocumentModal: React.FC<DocumentModalProps> = ({
                         <td className="px-4 py-3 text-center font-medium text-gray-400">
                           {idx + 1}
                         </td>
-                        <td className="px-4 py-3 font-bold text-gray-700">
-                          {req.name}
+                        <td className="px-4 py-3">
+                          {/* NÂNG CẤP: GẮN NÚT TẢI FORM MẪU VÀO ĐÂY */}
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-gray-700">
+                                {req.name}
+                              </span>
+                              {req.templateUrl && (
+                                <a
+                                  href={req.templateUrl}
+                                  download
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="flex items-center gap-1 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-800 px-2 py-0.5 rounded text-[10px] font-bold border border-indigo-200 transition-colors shadow-sm"
+                                  title="Tải form mẫu về máy"
+                                >
+                                  <svg
+                                    className="w-3 h-3"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth="2"
+                                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                                    ></path>
+                                  </svg>
+                                  Tải Form
+                                </a>
+                              )}
+                            </div>
+                          </div>
                         </td>
                         <td className="px-4 py-3 text-xs text-gray-500 italic">
                           {req.note}

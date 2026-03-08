@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { io } from "socket.io-client"; // IMPORT SOCKET.IO
+import api from "../services/api";
+import socket from "../services/socket";
 
 import Sidebar from "../components/layout/Sidebar.tsx";
 import Header from "../components/layout/Header.tsx";
@@ -15,11 +16,6 @@ import Login from "../components/auth/Login.tsx";
 import DocumentModal from "../components/crm/DocumentModal.tsx";
 import DocumentDashboard from "../components/documents/DocumentDashboard.tsx";
 import type { Task, Activity, BoardData, AuthUser } from "../types";
-
-// KHỞI TẠO SOCKET BÊN NGOÀI ĐỂ KHÔNG BỊ RERENDER
-const socket = io("http://localhost:3001", {
-  withCredentials: true,
-});
 
 const App: React.FC = () => {
   const emptyBoard: BoardData = { tasks: {}, columns: {}, columnOrder: [] };
@@ -43,10 +39,7 @@ const App: React.FC = () => {
 
   const fetchBoardData = async () => {
     try {
-      const response = await fetch("http://localhost:3001/api/board");
-      if (!response.ok) throw new Error("Lỗi khi lấy dữ liệu từ Backend");
-
-      const data: BoardData = await response.json();
+      const { data } = await api.get<BoardData>("/api/board");
       setBoardData(data);
     } catch (error) {
       console.error("Lỗi:", error);
@@ -78,20 +71,12 @@ const App: React.FC = () => {
 
   const handleAddCustomer = async (newCustomerData: Partial<Task>) => {
     try {
-      const response = await fetch("http://localhost:3001/api/tasks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newCustomerData),
-      });
-
-      if (!response.ok) throw new Error("Lỗi khi lưu khách hàng vào Database");
+      const { data: createdTask } = await api.post("/api/tasks", newCustomerData);
 
       // Lạc quan cập nhật UI (Socket sẽ lo phần báo cho máy khác)
-      const createdTask = await response.json();
       setBoardData((prev) => {
         const startCol = prev.columns["col-1"];
         const newTaskIds = [createdTask.id, ...startCol.taskIds];
-
         return {
           ...prev,
           tasks: {
@@ -117,11 +102,7 @@ const App: React.FC = () => {
         tasks: { ...prev.tasks, [updatedTask.id]: updatedTask },
       }));
 
-      await fetch(`http://localhost:3001/api/tasks/${updatedTask.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updatedTask),
-      });
+      await api.put(`/api/tasks/${updatedTask.id}`, updatedTask);
     } catch (error) {
       console.error("Lỗi khi cập nhật:", error);
     }
@@ -144,9 +125,7 @@ const App: React.FC = () => {
         return { ...prev, tasks: newTasks, columns: newColumns };
       });
 
-      await fetch(`http://localhost:3001/api/tasks/${taskId}`, {
-        method: "DELETE",
-      });
+      await api.delete(`/api/tasks/${taskId}`);
     } catch (error) {
       console.error("Lỗi khi xóa:", error);
     }
@@ -164,15 +143,8 @@ const App: React.FC = () => {
     };
 
     try {
-      const response = await fetch("http://localhost:3001/api/activities", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(activityPayload),
-      });
+      const { data: savedActivity } = await api.post("/api/activities", activityPayload);
 
-      if (!response.ok) throw new Error("Lỗi khi tạo hoạt động");
-
-      const savedActivity = await response.json();
       setBoardData((prev) => {
         const task = prev.tasks[activeTaskId];
         return {
@@ -216,11 +188,7 @@ const App: React.FC = () => {
         };
       });
 
-      await fetch(`http://localhost:3001/api/activities/${activityId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ completed: newCompletedStatus }),
-      });
+      await api.put(`/api/activities/${activityId}`, { completed: newCompletedStatus });
     } catch (error) {
       console.error("Lỗi khi cập nhật:", error);
     }
@@ -245,9 +213,8 @@ const App: React.FC = () => {
           },
         };
       });
-      await fetch(`http://localhost:3001/api/activities/${activityId}`, {
-        method: "DELETE",
-      });
+
+      await api.delete(`/api/activities/${activityId}`);
     } catch (error) {
       console.error("Lỗi xóa hoạt động:", error);
     }
@@ -283,14 +250,7 @@ const App: React.FC = () => {
         };
       });
 
-      await fetch(
-        `http://localhost:3001/api/activities/${updatedActivity.id}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(updatedActivity),
-        },
-      );
+      await api.put(`/api/activities/${updatedActivity.id}`, updatedActivity);
 
       setIsScheduleFormOpen(false);
       setActivityToEdit(null);
