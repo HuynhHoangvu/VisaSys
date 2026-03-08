@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "nodemon",
     "build": "prisma generate && tsc && cp -r generated/. dist/generated/",
-    "start": "node dist/server.js",
+    "start": "npx prisma generate && node dist/server.js",
     "postinstall": "prisma generate"
   },
   "keywords": [],
