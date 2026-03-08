@@ -5,8 +5,7 @@
     "dockerfilePath": "Dockerfile"
   },
   "deploy": {
-    "preDeployCommand": "npx prisma generate && npx prisma db push --accept-data-loss && npx tsx prisma/seed.ts",
-    "startCommand": "npx tsx src/server.ts",
+    "startCommand": "npx prisma db push --accept-data-loss && npx tsx prisma/seed.ts && npx tsx src/server.ts",
     "restartPolicyType": "ON_FAILURE"
   }
 }
