@@ -16,6 +16,7 @@ RUN npx prisma generate
 COPY . .
 
 # BIÊN DỊCH CODE: Chạy lệnh build (tsc) để tạo ra thư mục dist/
+RUN npx prisma generate
 RUN npm run build
 
 EXPOSE 3001
