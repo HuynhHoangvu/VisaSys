@@ -9,7 +9,5 @@ RUN npm install
 RUN npx prisma generate
 
 COPY . .
-
 EXPOSE 3001
-
 CMD ["npx", "tsx", "src/server.ts"]
