@@ -7,7 +7,7 @@ const PORT = process.env.PORT || 3001;
 
 const server = http.createServer(app);
 initSocket(server);
-// SỬA LẠI ĐOẠN NÀY: Thêm "0.0.0.0"
+
 server.listen(Number(PORT), "0.0.0.0", () => {
   console.log(`🚀 Backend CRM Real-time đang chạy tại port: ${PORT}`);
 });
