@@ -97,8 +97,8 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
 
       setBoardData(data);
 
-      // CHỈ LẤY NHỮNG KHÁCH MÀ SALE ĐÃ KÉO SANG CỘT "BÀN GIAO HỒ SƠ" (col-4)
-      const salesHandoverTaskIds = data.columns["col-4"]?.taskIds || [];
+      // CHỈ LẤY NHỮNG KHÁCH MÀ SALE ĐÃ KÉO SANG CỘT "BÀN GIAO HỒ SƠ" (col-5)
+      const salesHandoverTaskIds = data.columns["col-5"]?.taskIds || [];
 
       const newCols = {
         "proc-col-1": {
