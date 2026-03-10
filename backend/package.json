@@ -7,8 +7,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-  "dev": "nodemon",
-  "start": "npx prisma generate && npx prisma db push --accept-data-loss && npx tsx prisma/seed.ts && npx tsx src/server.ts",
+  "dev": "npx prisma db push && nodemon",
+  "start": "npx prisma generate && npx prisma db push --accept-data-loss && npx tsx src/server.ts",
   "build": "npx prisma generate"
   },
   "keywords": [],

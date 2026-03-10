@@ -45,6 +45,7 @@ model Task {
   createdAt DateTime @default(now())
   documents      Json?      @default("{}")
   processingColId String    @default("proc-col-1")
+  commissionPaid Boolean @default(false)
   activities     Activity[] 
 }
 
@@ -110,7 +111,7 @@ model Notification {
   id        String   @id @default(uuid())
   sender    String   
   message   String  
-  receiver  String[] 
+  receiver  String[]
   isRead    Boolean  @default(false) 
   taskId    String?
   createdAt DateTime @default(now())

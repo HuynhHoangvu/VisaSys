@@ -7,9 +7,7 @@ export const getNotifications = async (req: Request, res: Response) => {
     const { saleName } = req.params; // Lấy tên Sale từ URL
     const notifs = await prisma.notification.findMany({
       where: { 
-        receiver: {
-          has: saleName as string
-        },
+        receiver:  { has: saleName as string }, 
         isRead: false // Chỉ lấy tin chưa đọc
       },
       orderBy: { createdAt: 'desc' }
@@ -24,23 +22,29 @@ export const getNotifications = async (req: Request, res: Response) => {
 export const sendReminder = async (req: Request, res: Response) => {
     try {
         const { customerName, saleName, sender, customMessage, taskId } = req.body;
+        
+        // THÊM DÒNG NÀY ĐỂ XEM DỮ LIỆU NHẬN VÀO
+        console.log("📩 Body nhận được:", req.body);
     
-        // Nếu Sếp có nhập tin nhắn riêng thì dùng, không thì dùng mẫu mặc định
         const text = customMessage
             ? `Hồ sơ [${customerName}]: ${customMessage}`
-            : `Hồ sơ khách hàng [${customerName}] đang cần xử lý gấp. Yêu cầu kiểm tra ngay!`;
+            : `Hồ sơ khách hàng [${customerName}] đang cần xử lý gấp.`;
 
         const newNotif = await prisma.notification.create({
             data: {
                 sender: sender || "Ban Giám Đốc",
                 message: text,
-                receiver: saleName,
+                receiver: [saleName],
                 taskId: taskId
             }
         });
-      getIO().emit("data_changed");
+
+        getIO().emit("data_changed");
         res.status(201).json(newNotif);
+
     } catch (error) {
+        // THÊM LOG CHI TIẾT LỖI
+        console.error("❌ Lỗi sendReminder:", error);
         res.status(500).json({ error: "Lỗi gửi thông báo nhắc nhở" });
     }
 };

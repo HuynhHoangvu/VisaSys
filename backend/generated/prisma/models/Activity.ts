@@ -513,10 +513,6 @@ export type ActivityUncheckedUpdateManyWithoutTaskNestedInput = {
   deleteMany?: Prisma.ActivityScalarWhereInput | Prisma.ActivityScalarWhereInput[]
 }
 
-export type BoolFieldUpdateOperationsInput = {
-  set?: boolean
-}
-
 export type ActivityCreateWithoutTaskInput = {
   id: string
   completed?: boolean

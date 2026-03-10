@@ -44,7 +44,7 @@ const BossDashboard: React.FC<BossDashboardProps> = ({ currentUser }) => {
   // ==========================================
   const fetchEmployees = useCallback(async () => {
     try {
-      const res = await fetch(`${API_URL}/hr/employees`);
+      const res = await fetch(`${API_URL}/api/hr/employees`);
       const data = await res.json();
       setEmployees(data);
     } catch (error) {
@@ -58,7 +58,7 @@ const BossDashboard: React.FC<BossDashboardProps> = ({ currentUser }) => {
   const fetchAllProfiles = useCallback(async (showSpinner = true) => {
     if (showSpinner) setIsLoading(true);
     try {
-      const res = await fetch(`${API_URL}/board`);
+      const res = await fetch(`${API_URL}/api/board`);
       const boardData = await res.json();
 
       const profilesList: ProfileData[] = [];
@@ -132,7 +132,7 @@ const BossDashboard: React.FC<BossDashboardProps> = ({ currentUser }) => {
     const finalMessage = reminderType === "Khác" ? customText : reminderType;
 
     try {
-      const response = await fetch(`${API_URL}/notifications/send`, {
+      const response = await fetch(`${API_URL}/api/notifications/send`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

@@ -167,7 +167,7 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
     });
     const currentHour = now.getHours();
     const currentMinute = now.getMinutes();
-    const isLate = currentHour * 60 + currentMinute > 510;
+    const isLate = currentHour * 60 + currentMinute > 520; // 8:40 AM = 8*60 + 40 = 520 phút
 
     const status: AttendanceStatus = isLate ? "Đi muộn" : "Đúng giờ";
     const fine = isLate

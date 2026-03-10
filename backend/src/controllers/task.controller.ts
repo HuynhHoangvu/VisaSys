@@ -89,7 +89,8 @@ export const moveTask = async (req: Request, res: Response) => {
     // Giả sử ID của cột "Đã ký" trong hệ thống của bạn là "col-4". 
     // (Nếu của bạn là col-3 hay col-5 thì sửa lại chỗ này nhé)
     // ==========================================
-    if (columnId === "col-3" && oldTask.columnId !== "col-3" && oldTask.assignedTo) {
+    if (columnId === "col-4" && oldTask.columnId !== "col-4" 
+    && oldTask.assignedTo && !oldTask.commissionPaid) {
       
       // Tìm nhân viên Sale đang phụ trách thẻ này (Tìm bằng tên)
       const employee = await prisma.employee.findFirst({
@@ -106,7 +107,12 @@ export const moveTask = async (req: Request, res: Response) => {
             profit: 1500000, // CỘNG CỨNG 1.5 TRIỆU
             note: "Hệ thống: Tự động ghi nhận khi chốt HĐ", 
           }
+          
         });
+         await prisma.task.update({
+    where: { id: id as string },
+    data: { commissionPaid: true }
+  });
       }
     }
 
@@ -147,7 +153,7 @@ export const sendNotification = async (req: Request, res: Response) => {
       data: {
         sender: sender,
         message: customMessage,
-        receiver: saleName, // Gửi đích danh cho bạn Sale phụ trách
+        receiver: [saleName], 
         taskId: taskId
       }
     });
@@ -155,6 +161,7 @@ export const sendNotification = async (req: Request, res: Response) => {
     getIO().emit("data_changed");
     res.status(201).json(notif);
   } catch (error) {
+    console.error("Lỗi khi gửi thông báo (từ BO đòi hồ sơ):", error);
     res.status(500).json({ error: "Lỗi khi gửi thông báo" });
   }
 };

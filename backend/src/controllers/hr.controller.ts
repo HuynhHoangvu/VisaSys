@@ -55,30 +55,30 @@ export const deleteDepartment = async (req: Request, res: Response) => {
 export const getEmployees = async (req: Request, res: Response) => {
   try {
     const employees = await prisma.employee.findMany({
-      include: { 
+      include: {
         department: true,
         attendanceRecords: { orderBy: { createdAt: 'desc' } },
         salesRecords: { orderBy: { createdAt: 'desc' } }
       }
     });
-    
+
     const todayStr = new Date().toLocaleDateString("vi-VN");
 
     const formattedEmployees = employees.map(emp => {
       const todayRecord = emp.attendanceRecords.find(r => r.date === todayStr);
-      
+
       return {
         id: emp.id,
         employeeCode: emp.employeeCode,
         name: emp.name,
-        email: emp.email, // THÊM DÒNG NÀY ĐỂ HIỂN THỊ EMAIL RA BẢNG
+        email: emp.email,
         role: emp.role,
         baseSalary: emp.baseSalary,
         commissionRate: emp.commissionRate,
         department: emp.department?.name || "Chưa phân bổ / Khác",
         todayStatus: todayRecord ? todayRecord.status : "Chưa Check-in",
         attendanceRecords: emp.attendanceRecords,
-        salesRecords:emp.salesRecords
+        salesRecords: emp.salesRecords
       };
     });
 
@@ -105,30 +105,23 @@ export const createEmployee = async (req: Request, res: Response) => {
 
     // ==========================================
     // 3. LOGIC TẠO MÃ NHÂN VIÊN MỚI (CHỐNG TRÙNG)
+    // Lấy TẤT CẢ mã NV rồi tìm số LỚN NHẤT để tránh trùng
     // ==========================================
-    let nextNumber = 1;
-    
-    // Tìm nhân viên có mã NV lớn nhất hiện tại
-    const lastEmployee = await prisma.employee.findFirst({
-      orderBy: { createdAt: 'desc' }, // Hoặc có thể order theo employeeCode
+    const allEmployees = await prisma.employee.findMany({
+      select: { employeeCode: true }
     });
 
-    if (lastEmployee && lastEmployee.employeeCode.startsWith('NV')) {
-      // Lấy phần số của mã NV cũ nhất (Ví dụ từ "NV003" -> lấy "003" -> chuyển thành số 3)
-      const lastNumberStr = lastEmployee.employeeCode.replace('NV', '');
-      const lastNumber = parseInt(lastNumberStr, 10);
-      
-      // Nếu parseInt thành công, ta cộng thêm 1
-      if (!isNaN(lastNumber)) {
-        nextNumber = lastNumber + 1;
-      } else {
-        // Fallback an toàn nếu có ông nào mã lạ (VD: NVA, NVB)
-        const count = await prisma.employee.count();
-        nextNumber = count + 1;
-      }
+    let nextNumber = 1;
+    if (allEmployees.length > 0) {
+      const maxNumber = allEmployees
+        .map(e => {
+          const num = parseInt(e.employeeCode.replace('NV', ''), 10);
+          return isNaN(num) ? 0 : num;
+        })
+        .reduce((max, n) => Math.max(max, n), 0);
+      nextNumber = maxNumber + 1;
     }
 
-    // Ghép chữ "NV" với số mới (có độ dài tối thiểu 3 số)
     const employeeCode = `NV${String(nextNumber).padStart(3, '0')}`;
     // ==========================================
 
@@ -138,14 +131,14 @@ export const createEmployee = async (req: Request, res: Response) => {
         employeeCode,
         name,
         email,
-        password: password || "123456", 
+        password: password || "123456",
         role,
-        departmentId: dept?.id || null, 
+        departmentId: dept?.id || null,
         baseSalary: baseSalary ? parseFloat(baseSalary) : 5000000,
         commissionRate: role === "Trưởng phòng" ? 0.15 : (role.includes("Sale") ? 0.1 : 0)
       },
       include: {
-        department: true 
+        department: true
       }
     });
 
@@ -172,7 +165,7 @@ export const deleteEmployee = async (req: Request, res: Response) => {
 
 export const checkInEmployee = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params; 
+    const { id } = req.params;
     const { date, inTime, outTime, status, fine } = req.body;
 
     const newRecord = await prisma.attendanceRecord.create({
@@ -191,9 +184,10 @@ export const checkInEmployee = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Lỗi lưu chấm công vào Database" });
   }
 };
+
 export const addManualBonus = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params; // id của employee
+    const { id } = req.params;
     const { customer, service, profit, note } = req.body;
 
     const newRecord = await prisma.salesRecord.create({
@@ -206,24 +200,24 @@ export const addManualBonus = async (req: Request, res: Response) => {
       }
     });
 
-    getIO().emit("data_changed"); // Phát tín hiệu real-time
+    getIO().emit("data_changed");
     res.status(201).json(newRecord);
   } catch (error) {
     res.status(500).json({ error: "Lỗi lưu thưởng phạt" });
   }
 };
+
 // ==========================================
 // 3. CHỐT LƯƠNG & RESET THÁNG MỚI (CHỈ GIÁM ĐỐC)
 // ==========================================
 export const finalizeMonthSalary = async (req: Request, res: Response) => {
   try {
-    const { monthYear } = req.body; // VD: Nhận vào "02/2026"
+    const { monthYear } = req.body;
 
     if (!monthYear) {
       return res.status(400).json({ error: "Vui lòng cung cấp tháng chốt lương!" });
     }
 
-    // Lấy toàn bộ nhân viên kèm dữ liệu chấm công và thưởng phạt hiện tại
     const employees = await prisma.employee.findMany({
       include: {
         salesRecords: true,
@@ -231,15 +225,12 @@ export const finalizeMonthSalary = async (req: Request, res: Response) => {
       }
     });
 
-    // Bắt đầu Transaction (Đảm bảo an toàn tuyệt đối cho dữ liệu)
     await prisma.$transaction(async (tx) => {
-      // 1. Duyệt qua từng nhân viên để tính toán
       for (const emp of employees) {
         let totalBonusAndCommission = 0;
         let manualFines = 0;
         let salaryAdvances = 0;
 
-        // Phân loại tiền từ bảng SalesRecord giống hệt logic Frontend
         emp.salesRecords.forEach((record) => {
           const amount = Number(record.profit) || 0;
           const type = record.service;
@@ -253,9 +244,8 @@ export const finalizeMonthSalary = async (req: Request, res: Response) => {
           }
         });
 
-        // Tính tiền phạt đi muộn
         const attendanceFines = emp.attendanceRecords.reduce(
-          (sum, r) => sum + (r.fine || 0), 
+          (sum, r) => sum + (r.fine || 0),
           0
         );
 
@@ -263,25 +253,22 @@ export const finalizeMonthSalary = async (req: Request, res: Response) => {
         const currentBaseSalary = (emp.baseSalary || 0) - salaryAdvances;
         const finalSalary = currentBaseSalary + totalBonusAndCommission - totalDeductions;
 
-        // 2. Lưu vào bảng Lịch Sử Lương (SalaryHistory)
         await tx.salaryHistory.create({
           data: {
             monthYear: monthYear,
             baseSalary: emp.baseSalary || 0,
             totalBonus: totalBonusAndCommission,
-            totalDeduction: totalDeductions + salaryAdvances, // Tổng trừ (phạt + đi muộn + tạm ứng)
+            totalDeduction: totalDeductions + salaryAdvances,
             finalSalary: finalSalary,
             employeeId: emp.id
           }
         });
       }
 
-      // 3. XÓA TRẮNG DỮ LIỆU CŨ ĐỂ SANG THÁNG MỚI
       await tx.salesRecord.deleteMany({});
       await tx.attendanceRecord.deleteMany({});
     });
 
-    // Báo cho Frontend biết để load lại màn hình
     getIO().emit("data_changed");
     res.status(200).json({ message: "Chốt lương và reset dữ liệu thành công!" });
 
@@ -290,6 +277,7 @@ export const finalizeMonthSalary = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Lỗi hệ thống khi chốt lương" });
   }
 };
+
 // ==========================================
 // 4. XEM LỊCH SỬ LƯƠNG ĐÃ CHỐT
 // ==========================================
@@ -297,13 +285,12 @@ export const getSalaryHistory = async (req: Request, res: Response) => {
   try {
     const history = await prisma.salaryHistory.findMany({
       include: {
-        // Lấy thêm tên và mã nhân viên để hiển thị cho đẹp
         employee: {
           select: { name: true, employeeCode: true, department: true }
         }
       },
       orderBy: {
-        createdAt: 'desc' // Sắp xếp cái mới chốt lên đầu
+        createdAt: 'desc'
       }
     });
     res.json(history);
@@ -312,27 +299,23 @@ export const getSalaryHistory = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Lỗi hệ thống khi lấy lịch sử lương" });
   }
 };
-// ==========================================
-// 5. XỬ LÝ ĐƠN XIN NGHỈ PHÉP
-// ==========================================
+
 // ==========================================
 // 5. XỬ LÝ ĐƠN XIN NGHỈ PHÉP & THÔNG BÁO
 // ==========================================
 export const createLeaveRequest = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params; // ID của nhân viên xin nghỉ
+    const { id } = req.params;
     const { type, startDate, endDate, reason } = req.body;
 
-    // 1. Lấy thông tin nhân viên để lấy tên người gửi
-    const emp = await prisma.employee.findUnique({ 
-      where: { id: id as string } 
+    const emp = await prisma.employee.findUnique({
+      where: { id: id as string }
     });
 
     if (!emp) {
       return res.status(404).json({ error: "Không tìm thấy nhân viên" });
     }
 
-    // 2. Tạo đơn xin nghỉ vào Database
     const newRequest = await prisma.leaveRequest.create({
       data: {
         type,
@@ -344,18 +327,16 @@ export const createLeaveRequest = async (req: Request, res: Response) => {
       }
     });
 
-    // 3. TẠO THÔNG BÁO GỬI CHO CẤP TRÊN (Giám đốc / Admin)
     await prisma.notification.create({
       data: {
-        sender: emp.name, // Tên người gửi đơn
+        sender: emp.name,
         message: `Nhân viên ${emp.name} vừa gửi đơn xin ${type.toLowerCase()}. Vui lòng kiểm tra và xét duyệt!`,
-        receiver:  ["Giám đốc","Admin"], // Bạn có thể đổi thành "Admin" tùy thuộc vào logic Frontend của bạn
+        receiver: ["Giám đốc", "Admin"],
       }
     });
 
-    // 4. Bắn Socket để rung chuông thông báo trên màn hình sếp ngay lập tức
-    getIO().emit("data_changed"); 
-    getIO().emit("new_notification"); // Kích hoạt chuông thông báo ở Header
+    getIO().emit("data_changed");
+    getIO().emit("new_notification");
 
     res.status(201).json(newRequest);
   } catch (error) {
@@ -363,7 +344,7 @@ export const createLeaveRequest = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Lỗi hệ thống khi gửi đơn" });
   }
 };
-// Lấy toàn bộ danh sách đơn xin nghỉ phép
+
 export const getLeaveRequests = async (req: Request, res: Response) => {
   try {
     const requests = await prisma.leaveRequest.findMany({
@@ -372,7 +353,7 @@ export const getLeaveRequests = async (req: Request, res: Response) => {
           select: { name: true, department: true }
         }
       },
-      orderBy: { createdAt: 'desc' } // Đơn mới nhất xếp lên đầu
+      orderBy: { createdAt: 'desc' }
     });
     res.json(requests);
   } catch (error) {
@@ -380,18 +361,17 @@ export const getLeaveRequests = async (req: Request, res: Response) => {
   }
 };
 
-// Cập nhật trạng thái (Duyệt / Từ chối)
 export const updateLeaveRequestStatus = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { status } = req.body; // "Đã duyệt" hoặc "Từ chối"
+    const { status } = req.body;
 
     const updatedRequest = await prisma.leaveRequest.update({
       where: { id: id as string },
       data: { status }
     });
 
-    getIO().emit("data_changed"); // Báo cho frontend load lại dữ liệu
+    getIO().emit("data_changed");
     res.json(updatedRequest);
   } catch (error) {
     res.status(500).json({ error: "Lỗi cập nhật trạng thái đơn" });
