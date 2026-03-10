@@ -41,7 +41,7 @@ services:
     ports:
       - "5173:5173"
     environment:
-      VITE_API_URL: "https://flyvisa.up.railway.app"
+      VITE_API_URL: "https://dazzling-vitality-backend-fly.up.railway.app"
     depends_on:
       - backend
 
