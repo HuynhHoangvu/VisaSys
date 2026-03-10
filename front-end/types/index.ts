@@ -200,3 +200,21 @@ export interface CustomerDetailModalProps {
   onUpdateCustomer?: (updatedTask: Task) => void;
   currentUser?: AuthUser | null;
 }
+export interface KPITask {
+  id: string;
+  name: string;
+  target: string;
+  actual: string;
+  unit?: string;
+  assignee?: string;
+}
+
+export interface DepartmentTemplate {
+  id: string;
+  name: string;
+  goal: string;
+  color: string;
+  accent: string;
+  tasks: KPITask[];
+  weeklyReport?: string[];
+}

@@ -395,7 +395,10 @@ export const ModelName = {
   DocFolder: 'DocFolder',
   DocFile: 'DocFile',
   SalaryHistory: 'SalaryHistory',
-  LeaveRequest: 'LeaveRequest'
+  LeaveRequest: 'LeaveRequest',
+  ProcessedFolder: 'ProcessedFolder',
+  ProcessedFile: 'ProcessedFile',
+  WeeklyKPI: 'WeeklyKPI'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -411,7 +414,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "column" | "task" | "activity" | "department" | "employee" | "attendanceRecord" | "notification" | "salesRecord" | "docFolder" | "docFile" | "salaryHistory" | "leaveRequest"
+    modelProps: "column" | "task" | "activity" | "department" | "employee" | "attendanceRecord" | "notification" | "salesRecord" | "docFolder" | "docFile" | "salaryHistory" | "leaveRequest" | "processedFolder" | "processedFile" | "weeklyKPI"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1303,6 +1306,228 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    ProcessedFolder: {
+      payload: Prisma.$ProcessedFolderPayload<ExtArgs>
+      fields: Prisma.ProcessedFolderFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ProcessedFolderFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessedFolderPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ProcessedFolderFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessedFolderPayload>
+        }
+        findFirst: {
+          args: Prisma.ProcessedFolderFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessedFolderPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ProcessedFolderFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessedFolderPayload>
+        }
+        findMany: {
+          args: Prisma.ProcessedFolderFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessedFolderPayload>[]
+        }
+        create: {
+          args: Prisma.ProcessedFolderCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessedFolderPayload>
+        }
+        createMany: {
+          args: Prisma.ProcessedFolderCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ProcessedFolderCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessedFolderPayload>[]
+        }
+        delete: {
+          args: Prisma.ProcessedFolderDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessedFolderPayload>
+        }
+        update: {
+          args: Prisma.ProcessedFolderUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessedFolderPayload>
+        }
+        deleteMany: {
+          args: Prisma.ProcessedFolderDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ProcessedFolderUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ProcessedFolderUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessedFolderPayload>[]
+        }
+        upsert: {
+          args: Prisma.ProcessedFolderUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessedFolderPayload>
+        }
+        aggregate: {
+          args: Prisma.ProcessedFolderAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateProcessedFolder>
+        }
+        groupBy: {
+          args: Prisma.ProcessedFolderGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ProcessedFolderGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ProcessedFolderCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ProcessedFolderCountAggregateOutputType> | number
+        }
+      }
+    }
+    ProcessedFile: {
+      payload: Prisma.$ProcessedFilePayload<ExtArgs>
+      fields: Prisma.ProcessedFileFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ProcessedFileFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessedFilePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ProcessedFileFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessedFilePayload>
+        }
+        findFirst: {
+          args: Prisma.ProcessedFileFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessedFilePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ProcessedFileFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessedFilePayload>
+        }
+        findMany: {
+          args: Prisma.ProcessedFileFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessedFilePayload>[]
+        }
+        create: {
+          args: Prisma.ProcessedFileCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessedFilePayload>
+        }
+        createMany: {
+          args: Prisma.ProcessedFileCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ProcessedFileCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessedFilePayload>[]
+        }
+        delete: {
+          args: Prisma.ProcessedFileDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessedFilePayload>
+        }
+        update: {
+          args: Prisma.ProcessedFileUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessedFilePayload>
+        }
+        deleteMany: {
+          args: Prisma.ProcessedFileDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ProcessedFileUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ProcessedFileUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessedFilePayload>[]
+        }
+        upsert: {
+          args: Prisma.ProcessedFileUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProcessedFilePayload>
+        }
+        aggregate: {
+          args: Prisma.ProcessedFileAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateProcessedFile>
+        }
+        groupBy: {
+          args: Prisma.ProcessedFileGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ProcessedFileGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ProcessedFileCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ProcessedFileCountAggregateOutputType> | number
+        }
+      }
+    }
+    WeeklyKPI: {
+      payload: Prisma.$WeeklyKPIPayload<ExtArgs>
+      fields: Prisma.WeeklyKPIFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.WeeklyKPIFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WeeklyKPIPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.WeeklyKPIFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WeeklyKPIPayload>
+        }
+        findFirst: {
+          args: Prisma.WeeklyKPIFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WeeklyKPIPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.WeeklyKPIFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WeeklyKPIPayload>
+        }
+        findMany: {
+          args: Prisma.WeeklyKPIFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WeeklyKPIPayload>[]
+        }
+        create: {
+          args: Prisma.WeeklyKPICreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WeeklyKPIPayload>
+        }
+        createMany: {
+          args: Prisma.WeeklyKPICreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.WeeklyKPICreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WeeklyKPIPayload>[]
+        }
+        delete: {
+          args: Prisma.WeeklyKPIDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WeeklyKPIPayload>
+        }
+        update: {
+          args: Prisma.WeeklyKPIUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WeeklyKPIPayload>
+        }
+        deleteMany: {
+          args: Prisma.WeeklyKPIDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.WeeklyKPIUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.WeeklyKPIUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WeeklyKPIPayload>[]
+        }
+        upsert: {
+          args: Prisma.WeeklyKPIUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WeeklyKPIPayload>
+        }
+        aggregate: {
+          args: Prisma.WeeklyKPIAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateWeeklyKPI>
+        }
+        groupBy: {
+          args: Prisma.WeeklyKPIGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.WeeklyKPIGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.WeeklyKPICountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.WeeklyKPICountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -1513,6 +1738,39 @@ export const LeaveRequestScalarFieldEnum = {
 export type LeaveRequestScalarFieldEnum = (typeof LeaveRequestScalarFieldEnum)[keyof typeof LeaveRequestScalarFieldEnum]
 
 
+export const ProcessedFolderScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  parentId: 'parentId',
+  createdAt: 'createdAt'
+} as const
+
+export type ProcessedFolderScalarFieldEnum = (typeof ProcessedFolderScalarFieldEnum)[keyof typeof ProcessedFolderScalarFieldEnum]
+
+
+export const ProcessedFileScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  size: 'size',
+  fileUrl: 'fileUrl',
+  uploadedBy: 'uploadedBy',
+  createdAt: 'createdAt',
+  folderId: 'folderId'
+} as const
+
+export type ProcessedFileScalarFieldEnum = (typeof ProcessedFileScalarFieldEnum)[keyof typeof ProcessedFileScalarFieldEnum]
+
+
+export const WeeklyKPIScalarFieldEnum = {
+  id: 'id',
+  weekLabel: 'weekLabel',
+  data: 'data',
+  updatedAt: 'updatedAt'
+} as const
+
+export type WeeklyKPIScalarFieldEnum = (typeof WeeklyKPIScalarFieldEnum)[keyof typeof WeeklyKPIScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -1527,6 +1785,13 @@ export const NullableJsonNullValueInput = {
 } as const
 
 export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
+
+
+export const JsonNullValueInput = {
+  JsonNull: JsonNull
+} as const
+
+export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
 
 
 export const QueryMode = {
@@ -1743,6 +2008,9 @@ export type GlobalOmitConfig = {
   docFile?: Prisma.DocFileOmit
   salaryHistory?: Prisma.SalaryHistoryOmit
   leaveRequest?: Prisma.LeaveRequestOmit
+  processedFolder?: Prisma.ProcessedFolderOmit
+  processedFile?: Prisma.ProcessedFileOmit
+  weeklyKPI?: Prisma.WeeklyKPIOmit
 }
 
 /* Types for Logging */

@@ -15,6 +15,8 @@ import BossDashboard from "../components/hr/BossDashboard.tsx";
 import Login from "../components/auth/Login.tsx";
 import DocumentModal from "../components/crm/DocumentModal.tsx";
 import DocumentDashboard from "../components/documents/DocumentDashboard.tsx";
+import ProcessedDocDashboard from "../components/documents/ProcessedDocDashboard.tsx";
+import WeeklyTaskAssignment from "../components/kpi/WeeklyTaskAssignment.tsx";
 import type { Task, Activity, BoardData, AuthUser } from "../types";
 
 const App: React.FC = () => {
@@ -327,12 +329,22 @@ const App: React.FC = () => {
               />
             </div>
           )}
+          {currentView === "processed_docs" && (
+            <ProcessedDocDashboard currentUser={currentUser} />
+          )}
           {currentView === "documents" && (
             <DocumentDashboard currentUser={currentUser} />
           )}
           {currentView === "hr" && (
             <div className="flex-1 overflow-hidden flex flex-col">
               <EmployeeDashboard currentUser={currentUser} />
+            </div>
+          )}
+          {currentView === "weekly_tasks" && (
+            <div className="flex-1 overflow-y-auto flex flex-col">
+              {" "}
+              {/* đổi overflow-hidden → overflow-y-auto */}
+              <WeeklyTaskAssignment currentUser={currentUser} />
             </div>
           )}
         </div>

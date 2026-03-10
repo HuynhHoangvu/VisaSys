@@ -165,6 +165,7 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
       hour: "2-digit",
       minute: "2-digit",
     });
+    //hàm chấm công
     const currentHour = now.getHours();
     const currentMinute = now.getMinutes();
     const isLate = currentHour * 60 + currentMinute > 520; // 8:40 AM = 8*60 + 40 = 520 phút

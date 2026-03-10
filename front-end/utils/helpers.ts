@@ -37,3 +37,10 @@ export const formatFileSize = (bytes: number): string => {
   // Format lấy 2 số thập phân
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
 };
+export const getProgress = (actual: string, target: string): number => {
+  const a = parseFloat(actual.replace(/[^\d.]/g, "")) || 0;
+  const tMatch = target.match(/(\d+)/);
+  const t = tMatch ? parseFloat(tMatch[1]) : 0;
+  if (t === 0) return actual ? 100 : 0;
+  return Math.min(Math.round((a / t) * 100), 100);
+};

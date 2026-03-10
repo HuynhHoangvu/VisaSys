@@ -1,3 +1,5 @@
+import type { DepartmentTemplate } from "../types";
+
 export const VISA_SERVICES = [
   { id: "v1", name: "Du lịch visa 600 (Úc)", flag: "🇦🇺" },
   { id: "v2", name: "Du học visa 500 (Úc)", flag: "🇦🇺" },
@@ -235,3 +237,73 @@ export const ALLOWED_FILE_TYPES = [
   "image/jpeg", // .jpg, .jpeg
   "image/png", // .png
 ];
+export const INITIAL_DEPARTMENTS: DepartmentTemplate[] = [
+  {
+    id: "marketing",
+    name: "Bộ phận Marketing",
+    goal: "Tạo khách hàng (lead)",
+    color: "#7c3aed",
+    accent: "#ede9fe",
+    tasks: [
+      { id: "m1", name: "Bài viết Facebook", target: "≥ 5 bài", actual: "", unit: "bài" },
+      { id: "m2", name: "Video TikTok / Reels", target: "≥ 4 video", actual: "", unit: "video" },
+      { id: "m3", name: "Poster tuyển dụng", target: "≥ 4 thiết kế", actual: "", unit: "thiết kế" },
+      { id: "m4", name: "Lead khách hàng", target: "25 – 40 khách", actual: "", unit: "khách" },
+      { id: "m5", name: "Tương tác inbox", target: "100%", actual: "", unit: "%" },
+    ],
+    weeklyReport: ["Tổng số lead", "Nguồn lead", "Bài nào hiệu quả"],
+  },
+  {
+    id: "sale",
+    name: "Trưởng phòng Sale",
+    goal: "Quản lý doanh thu",
+    color: "#0284c7",
+    accent: "#e0f2fe",
+    tasks: [
+      { id: "s1", name: "Họp sale", target: "2 buổi", actual: "", unit: "buổi" },
+      { id: "s2", name: "Kiểm tra CRM", target: "2 lần", actual: "", unit: "lần" },
+      { id: "s3", name: "Hỗ trợ chốt khách", target: "≥ 3 case", actual: "", unit: "case" },
+      { id: "s4", name: "Đào tạo sale", target: "1 buổi", actual: "", unit: "buổi" },
+      { id: "s5", name: "Tổng hợp doanh số", target: "1 báo cáo", actual: "", unit: "báo cáo" },
+    ],
+    weeklyReport: ["Doanh số đội: ≥ 2 – 4 hợp đồng"],
+  },
+  {
+    id: "hoso",
+    name: "Bộ phận Hồ sơ",
+    goal: "Xử lý hồ sơ",
+    color: "#0d9488",
+    accent: "#ccfbf1",
+    tasks: [
+      { id: "h1", name: "Nhận khách mới", target: "2 – 5", actual: "", unit: "khách" },
+      { id: "h2", name: "Kiểm tra hồ sơ", target: "5 – 10", actual: "", unit: "hồ sơ" },
+      { id: "h3", name: "Chuẩn bị hồ sơ", target: "3 – 5", actual: "", unit: "bộ" },
+      { id: "h4", name: "Nộp hồ sơ visa", target: "2 – 4", actual: "", unit: "bộ" },
+      { id: "h5", name: "Cập nhật CRM", target: "100%", actual: "", unit: "%" },
+    ],
+    weeklyReport: ["Hồ sơ mới", "Hồ sơ thiếu", "Hồ sơ đang nộp"],
+  },
+  {
+    id: "troly",
+    name: "Trợ lý Điều hành",
+    goal: "Hỗ trợ vận hành",
+    color: "#b45309",
+    accent: "#fef3c7",
+    tasks: [
+      { id: "t1", name: "Tìm đối tác mới", target: "8 – 10", actual: "", unit: "đối tác" },
+      { id: "t2", name: "Email hợp tác", target: "5 – 10", actual: "", unit: "email" },
+      { id: "t3", name: "Cuộc họp Zoom", target: "1 – 2", actual: "", unit: "buổi" },
+      { id: "t4", name: "Employer mới", target: "1", actual: "", unit: "employer" },
+      { id: "t5", name: "Báo cáo thị trường", target: "1", actual: "", unit: "báo cáo" },
+    ],
+    weeklyReport: [],
+  },
+];
+
+export const DEPT_TO_TEMPLATE_ID: Record<string, string> = {
+  Sale: "sale",
+  "Xử lý hồ sơ": "hoso",
+  "Ban Giám đốc": "sale",
+  "Kế toán": "troly",
+  Marketing: "marketing",
+};

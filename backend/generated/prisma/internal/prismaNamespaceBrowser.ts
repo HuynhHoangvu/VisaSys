@@ -62,7 +62,10 @@ export const ModelName = {
   DocFolder: 'DocFolder',
   DocFile: 'DocFile',
   SalaryHistory: 'SalaryHistory',
-  LeaveRequest: 'LeaveRequest'
+  LeaveRequest: 'LeaveRequest',
+  ProcessedFolder: 'ProcessedFolder',
+  ProcessedFile: 'ProcessedFile',
+  WeeklyKPI: 'WeeklyKPI'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -252,6 +255,39 @@ export const LeaveRequestScalarFieldEnum = {
 export type LeaveRequestScalarFieldEnum = (typeof LeaveRequestScalarFieldEnum)[keyof typeof LeaveRequestScalarFieldEnum]
 
 
+export const ProcessedFolderScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  parentId: 'parentId',
+  createdAt: 'createdAt'
+} as const
+
+export type ProcessedFolderScalarFieldEnum = (typeof ProcessedFolderScalarFieldEnum)[keyof typeof ProcessedFolderScalarFieldEnum]
+
+
+export const ProcessedFileScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  size: 'size',
+  fileUrl: 'fileUrl',
+  uploadedBy: 'uploadedBy',
+  createdAt: 'createdAt',
+  folderId: 'folderId'
+} as const
+
+export type ProcessedFileScalarFieldEnum = (typeof ProcessedFileScalarFieldEnum)[keyof typeof ProcessedFileScalarFieldEnum]
+
+
+export const WeeklyKPIScalarFieldEnum = {
+  id: 'id',
+  weekLabel: 'weekLabel',
+  data: 'data',
+  updatedAt: 'updatedAt'
+} as const
+
+export type WeeklyKPIScalarFieldEnum = (typeof WeeklyKPIScalarFieldEnum)[keyof typeof WeeklyKPIScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -266,6 +302,13 @@ export const NullableJsonNullValueInput = {
 } as const
 
 export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
+
+
+export const JsonNullValueInput = {
+  JsonNull: JsonNull
+} as const
+
+export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
 
 
 export const QueryMode = {

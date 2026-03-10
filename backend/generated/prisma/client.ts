@@ -101,3 +101,18 @@ export type SalaryHistory = Prisma.SalaryHistoryModel
  * 
  */
 export type LeaveRequest = Prisma.LeaveRequestModel
+/**
+ * Model ProcessedFolder
+ * 
+ */
+export type ProcessedFolder = Prisma.ProcessedFolderModel
+/**
+ * Model ProcessedFile
+ * 
+ */
+export type ProcessedFile = Prisma.ProcessedFileModel
+/**
+ * Model WeeklyKPI
+ * 
+ */
+export type WeeklyKPI = Prisma.WeeklyKPIModel

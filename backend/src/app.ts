@@ -10,6 +10,8 @@ import authRoutes from "./routes/auth.routes.js";
 import taskRoutes from "./routes/task.routes.js"; // Thêm dòng này cùng chỗ với các import routes khác
 import path from "path";
 import docsRoutes from "./routes/docs.routes.js";
+import processedDocsRoutes from "./routes/processedDocs.routes.js";
+import kpiRoutes from "./routes/kpi.routes.js";
 const app = express();
 
 // ==========================================
@@ -67,6 +69,8 @@ app.use("/api/hr", hrRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 app.use("/api/docs", docsRoutes);
+app.use("/api/processed-docs", processedDocsRoutes);
+app.use("/api/kpi", kpiRoutes);
 // ==========================================
 // DEFAULT ROUTE
 // ==========================================

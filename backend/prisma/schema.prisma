@@ -174,3 +174,29 @@ model LeaveRequest {
 
   createdAt   DateTime @default(now())
 }
+model ProcessedFolder {
+  id        String   @id @default(uuid())
+  name      String
+  parentId  String?  // Nếu null nghĩa là thư mục gốc
+  createdAt DateTime @default(now())
+
+  files     ProcessedFile[] // 1 thư mục có nhiều file
+}
+
+model ProcessedFile {
+  id         String   @id @default(uuid())
+  name       String
+  size       String
+  fileUrl    String
+  uploadedBy String
+  createdAt  DateTime @default(now())
+
+  folderId   String?
+  folder     ProcessedFolder? @relation(fields: [folderId], references: [id], onDelete: Cascade)
+}
+model WeeklyKPI {
+  id        String   @id @default(uuid())
+  weekLabel String   @unique // Chuỗi lưu tên tuần, ví dụ: "09/03/2026 – 15/03/2026"
+  data      Json     // Lưu toàn bộ mảng các phòng ban và task bên trong
+  updatedAt DateTime @updatedAt
+}
