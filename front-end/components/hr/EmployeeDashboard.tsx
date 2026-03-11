@@ -750,8 +750,8 @@ const handleSubmitEmployee = async (empData: NewEmployeeData) => {
                           {canAddPersonnel && (
                             <button
                               onClick={() => {
-                                setEmployeeToEdit(emp);
-                                setIsAddEmpModalOpen(true);
+                                setEditingDeptId(dept.id);
+                                setEditDeptName(dept.name);
                               }}
                               className="font-semibold text-orange-500 hover:text-orange-700 hover:underline transition-colors"
                             >
