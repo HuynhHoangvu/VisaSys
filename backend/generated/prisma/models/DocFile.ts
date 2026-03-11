@@ -31,6 +31,7 @@ export type DocFileMinAggregateOutputType = {
   fileUrl: string | null
   uploadedBy: string | null
   createdAt: Date | null
+  cloudinaryPublicId: string | null
   folderId: string | null
 }
 
@@ -41,6 +42,7 @@ export type DocFileMaxAggregateOutputType = {
   fileUrl: string | null
   uploadedBy: string | null
   createdAt: Date | null
+  cloudinaryPublicId: string | null
   folderId: string | null
 }
 
@@ -51,6 +53,7 @@ export type DocFileCountAggregateOutputType = {
   fileUrl: number
   uploadedBy: number
   createdAt: number
+  cloudinaryPublicId: number
   folderId: number
   _all: number
 }
@@ -63,6 +66,7 @@ export type DocFileMinAggregateInputType = {
   fileUrl?: true
   uploadedBy?: true
   createdAt?: true
+  cloudinaryPublicId?: true
   folderId?: true
 }
 
@@ -73,6 +77,7 @@ export type DocFileMaxAggregateInputType = {
   fileUrl?: true
   uploadedBy?: true
   createdAt?: true
+  cloudinaryPublicId?: true
   folderId?: true
 }
 
@@ -83,6 +88,7 @@ export type DocFileCountAggregateInputType = {
   fileUrl?: true
   uploadedBy?: true
   createdAt?: true
+  cloudinaryPublicId?: true
   folderId?: true
   _all?: true
 }
@@ -166,6 +172,7 @@ export type DocFileGroupByOutputType = {
   fileUrl: string
   uploadedBy: string
   createdAt: Date
+  cloudinaryPublicId: string | null
   folderId: string | null
   _count: DocFileCountAggregateOutputType | null
   _min: DocFileMinAggregateOutputType | null
@@ -197,6 +204,7 @@ export type DocFileWhereInput = {
   fileUrl?: Prisma.StringFilter<"DocFile"> | string
   uploadedBy?: Prisma.StringFilter<"DocFile"> | string
   createdAt?: Prisma.DateTimeFilter<"DocFile"> | Date | string
+  cloudinaryPublicId?: Prisma.StringNullableFilter<"DocFile"> | string | null
   folderId?: Prisma.StringNullableFilter<"DocFile"> | string | null
   folder?: Prisma.XOR<Prisma.DocFolderNullableScalarRelationFilter, Prisma.DocFolderWhereInput> | null
 }
@@ -208,6 +216,7 @@ export type DocFileOrderByWithRelationInput = {
   fileUrl?: Prisma.SortOrder
   uploadedBy?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  cloudinaryPublicId?: Prisma.SortOrderInput | Prisma.SortOrder
   folderId?: Prisma.SortOrderInput | Prisma.SortOrder
   folder?: Prisma.DocFolderOrderByWithRelationInput
 }
@@ -222,6 +231,7 @@ export type DocFileWhereUniqueInput = Prisma.AtLeast<{
   fileUrl?: Prisma.StringFilter<"DocFile"> | string
   uploadedBy?: Prisma.StringFilter<"DocFile"> | string
   createdAt?: Prisma.DateTimeFilter<"DocFile"> | Date | string
+  cloudinaryPublicId?: Prisma.StringNullableFilter<"DocFile"> | string | null
   folderId?: Prisma.StringNullableFilter<"DocFile"> | string | null
   folder?: Prisma.XOR<Prisma.DocFolderNullableScalarRelationFilter, Prisma.DocFolderWhereInput> | null
 }, "id">
@@ -233,6 +243,7 @@ export type DocFileOrderByWithAggregationInput = {
   fileUrl?: Prisma.SortOrder
   uploadedBy?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  cloudinaryPublicId?: Prisma.SortOrderInput | Prisma.SortOrder
   folderId?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.DocFileCountOrderByAggregateInput
   _max?: Prisma.DocFileMaxOrderByAggregateInput
@@ -249,6 +260,7 @@ export type DocFileScalarWhereWithAggregatesInput = {
   fileUrl?: Prisma.StringWithAggregatesFilter<"DocFile"> | string
   uploadedBy?: Prisma.StringWithAggregatesFilter<"DocFile"> | string
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"DocFile"> | Date | string
+  cloudinaryPublicId?: Prisma.StringNullableWithAggregatesFilter<"DocFile"> | string | null
   folderId?: Prisma.StringNullableWithAggregatesFilter<"DocFile"> | string | null
 }
 
@@ -259,6 +271,7 @@ export type DocFileCreateInput = {
   fileUrl: string
   uploadedBy: string
   createdAt?: Date | string
+  cloudinaryPublicId?: string | null
   folder?: Prisma.DocFolderCreateNestedOneWithoutFilesInput
 }
 
@@ -269,6 +282,7 @@ export type DocFileUncheckedCreateInput = {
   fileUrl: string
   uploadedBy: string
   createdAt?: Date | string
+  cloudinaryPublicId?: string | null
   folderId?: string | null
 }
 
@@ -279,6 +293,7 @@ export type DocFileUpdateInput = {
   fileUrl?: Prisma.StringFieldUpdateOperationsInput | string
   uploadedBy?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  cloudinaryPublicId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   folder?: Prisma.DocFolderUpdateOneWithoutFilesNestedInput
 }
 
@@ -289,6 +304,7 @@ export type DocFileUncheckedUpdateInput = {
   fileUrl?: Prisma.StringFieldUpdateOperationsInput | string
   uploadedBy?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  cloudinaryPublicId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   folderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
@@ -299,6 +315,7 @@ export type DocFileCreateManyInput = {
   fileUrl: string
   uploadedBy: string
   createdAt?: Date | string
+  cloudinaryPublicId?: string | null
   folderId?: string | null
 }
 
@@ -309,6 +326,7 @@ export type DocFileUpdateManyMutationInput = {
   fileUrl?: Prisma.StringFieldUpdateOperationsInput | string
   uploadedBy?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  cloudinaryPublicId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type DocFileUncheckedUpdateManyInput = {
@@ -318,6 +336,7 @@ export type DocFileUncheckedUpdateManyInput = {
   fileUrl?: Prisma.StringFieldUpdateOperationsInput | string
   uploadedBy?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  cloudinaryPublicId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   folderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
@@ -338,6 +357,7 @@ export type DocFileCountOrderByAggregateInput = {
   fileUrl?: Prisma.SortOrder
   uploadedBy?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  cloudinaryPublicId?: Prisma.SortOrder
   folderId?: Prisma.SortOrder
 }
 
@@ -348,6 +368,7 @@ export type DocFileMaxOrderByAggregateInput = {
   fileUrl?: Prisma.SortOrder
   uploadedBy?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  cloudinaryPublicId?: Prisma.SortOrder
   folderId?: Prisma.SortOrder
 }
 
@@ -358,6 +379,7 @@ export type DocFileMinOrderByAggregateInput = {
   fileUrl?: Prisma.SortOrder
   uploadedBy?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  cloudinaryPublicId?: Prisma.SortOrder
   folderId?: Prisma.SortOrder
 }
 
@@ -410,6 +432,7 @@ export type DocFileCreateWithoutFolderInput = {
   fileUrl: string
   uploadedBy: string
   createdAt?: Date | string
+  cloudinaryPublicId?: string | null
 }
 
 export type DocFileUncheckedCreateWithoutFolderInput = {
@@ -419,6 +442,7 @@ export type DocFileUncheckedCreateWithoutFolderInput = {
   fileUrl: string
   uploadedBy: string
   createdAt?: Date | string
+  cloudinaryPublicId?: string | null
 }
 
 export type DocFileCreateOrConnectWithoutFolderInput = {
@@ -457,6 +481,7 @@ export type DocFileScalarWhereInput = {
   fileUrl?: Prisma.StringFilter<"DocFile"> | string
   uploadedBy?: Prisma.StringFilter<"DocFile"> | string
   createdAt?: Prisma.DateTimeFilter<"DocFile"> | Date | string
+  cloudinaryPublicId?: Prisma.StringNullableFilter<"DocFile"> | string | null
   folderId?: Prisma.StringNullableFilter<"DocFile"> | string | null
 }
 
@@ -467,6 +492,7 @@ export type DocFileCreateManyFolderInput = {
   fileUrl: string
   uploadedBy: string
   createdAt?: Date | string
+  cloudinaryPublicId?: string | null
 }
 
 export type DocFileUpdateWithoutFolderInput = {
@@ -476,6 +502,7 @@ export type DocFileUpdateWithoutFolderInput = {
   fileUrl?: Prisma.StringFieldUpdateOperationsInput | string
   uploadedBy?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  cloudinaryPublicId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type DocFileUncheckedUpdateWithoutFolderInput = {
@@ -485,6 +512,7 @@ export type DocFileUncheckedUpdateWithoutFolderInput = {
   fileUrl?: Prisma.StringFieldUpdateOperationsInput | string
   uploadedBy?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  cloudinaryPublicId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type DocFileUncheckedUpdateManyWithoutFolderInput = {
@@ -494,6 +522,7 @@ export type DocFileUncheckedUpdateManyWithoutFolderInput = {
   fileUrl?: Prisma.StringFieldUpdateOperationsInput | string
   uploadedBy?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  cloudinaryPublicId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 
@@ -505,6 +534,7 @@ export type DocFileSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   fileUrl?: boolean
   uploadedBy?: boolean
   createdAt?: boolean
+  cloudinaryPublicId?: boolean
   folderId?: boolean
   folder?: boolean | Prisma.DocFile$folderArgs<ExtArgs>
 }, ExtArgs["result"]["docFile"]>
@@ -516,6 +546,7 @@ export type DocFileSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exten
   fileUrl?: boolean
   uploadedBy?: boolean
   createdAt?: boolean
+  cloudinaryPublicId?: boolean
   folderId?: boolean
   folder?: boolean | Prisma.DocFile$folderArgs<ExtArgs>
 }, ExtArgs["result"]["docFile"]>
@@ -527,6 +558,7 @@ export type DocFileSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exten
   fileUrl?: boolean
   uploadedBy?: boolean
   createdAt?: boolean
+  cloudinaryPublicId?: boolean
   folderId?: boolean
   folder?: boolean | Prisma.DocFile$folderArgs<ExtArgs>
 }, ExtArgs["result"]["docFile"]>
@@ -538,10 +570,11 @@ export type DocFileSelectScalar = {
   fileUrl?: boolean
   uploadedBy?: boolean
   createdAt?: boolean
+  cloudinaryPublicId?: boolean
   folderId?: boolean
 }
 
-export type DocFileOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "size" | "fileUrl" | "uploadedBy" | "createdAt" | "folderId", ExtArgs["result"]["docFile"]>
+export type DocFileOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "size" | "fileUrl" | "uploadedBy" | "createdAt" | "cloudinaryPublicId" | "folderId", ExtArgs["result"]["docFile"]>
 export type DocFileInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   folder?: boolean | Prisma.DocFile$folderArgs<ExtArgs>
 }
@@ -564,6 +597,7 @@ export type $DocFilePayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     fileUrl: string
     uploadedBy: string
     createdAt: Date
+    cloudinaryPublicId: string | null
     folderId: string | null
   }, ExtArgs["result"]["docFile"]>
   composites: {}
@@ -995,6 +1029,7 @@ export interface DocFileFieldRefs {
   readonly fileUrl: Prisma.FieldRef<"DocFile", 'String'>
   readonly uploadedBy: Prisma.FieldRef<"DocFile", 'String'>
   readonly createdAt: Prisma.FieldRef<"DocFile", 'DateTime'>
+  readonly cloudinaryPublicId: Prisma.FieldRef<"DocFile", 'String'>
   readonly folderId: Prisma.FieldRef<"DocFile", 'String'>
 }
     

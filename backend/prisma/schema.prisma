@@ -46,6 +46,7 @@ model Task {
   documents      Json?      @default("{}")
   processingColId String    @default("proc-col-1")
   commissionPaid Boolean @default(false)
+  recruitmentStep String?
   activities     Activity[] 
 }
 
@@ -144,7 +145,7 @@ model DocFile {
   fileUrl    String
   uploadedBy String
   createdAt  DateTime  @default(now())
-
+  cloudinaryPublicId String?
   folderId   String?
   folder     DocFolder? @relation(fields: [folderId], references: [id], onDelete: Cascade)
 }

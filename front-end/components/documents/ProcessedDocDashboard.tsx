@@ -1,9 +1,14 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+  useMemo,
+} from "react";
 import { type AuthUser, type DocFolder, type DocFile } from "../../types";
 import { formatFileSize } from "../../utils/helpers";
 import { io } from "socket.io-client";
 
-// Kết nối Socket
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const socket = io(API_URL);
 
@@ -16,14 +21,18 @@ const ProcessedDocDashboard: React.FC<ProcessedDocDashboardProps> = ({
 }) => {
   const [folders, setFolders] = useState<DocFolder[]>([]);
   const [files, setFiles] = useState<DocFile[]>([]);
-
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [isAddFolderModalOpen, setIsAddFolderModalOpen] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // ==========================================
-  // LẤY DỮ LIỆU TỪ BACKEND
+  // SEARCH STATE
+  // ==========================================
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // ==========================================
+  // FETCH
   // ==========================================
   const fetchData = useCallback(async () => {
     try {
@@ -31,7 +40,6 @@ const ProcessedDocDashboard: React.FC<ProcessedDocDashboardProps> = ({
         fetch(`${API_URL}/api/processed-docs/folders`),
         fetch(`${API_URL}/api/processed-docs/files`),
       ]);
-
       if (foldersRes.ok) setFolders(await foldersRes.json());
       if (filesRes.ok) setFiles(await filesRes.json());
     } catch (error) {
@@ -39,28 +47,47 @@ const ProcessedDocDashboard: React.FC<ProcessedDocDashboardProps> = ({
     }
   }, []);
 
-  // Lắng nghe Socket
   useEffect(() => {
+    // Khai báo một hàm bọc để React biết đây là luồng async
     const loadInitialData = async () => {
       await fetchData();
     };
 
+    // Gọi hàm bọc
     loadInitialData();
 
-    const handleDataChange = () => {
-      loadInitialData();
-    };
-
-    socket.on("processed_docs_changed", handleDataChange);
+    // Vẫn lắng nghe socket bình thường
+    socket.on("docs_changed", fetchData);
 
     return () => {
-      socket.off("processed_docs_changed", handleDataChange);
+      socket.off("docs_changed", fetchData);
     };
   }, [fetchData]);
 
-  // Lọc dữ liệu hiển thị theo thư mục hiện tại
-  const displayFolders = folders.filter((f) => f.parentId === currentFolderId);
-  const displayFiles = files.filter((f) => f.folderId === currentFolderId);
+  // ==========================================
+  // FILTER THEO SEARCH
+  // ==========================================
+  const displayFolders = useMemo(() => {
+    const base = folders.filter((f) => f.parentId === currentFolderId);
+    if (!searchQuery) return base;
+    return base.filter((f) =>
+      f.name.toLowerCase().includes(searchQuery.toLowerCase()),
+    );
+  }, [folders, currentFolderId, searchQuery]);
+
+  const displayFiles = useMemo(() => {
+    const base = files.filter((f) => f.folderId === currentFolderId);
+    if (!searchQuery) return base;
+    return base.filter(
+      (f) =>
+        f.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        f.uploadedBy?.toLowerCase().includes(searchQuery.toLowerCase()),
+    );
+  }, [files, currentFolderId, searchQuery]);
+
+  const totalDisplay =
+    folders.filter((f) => f.parentId === currentFolderId).length +
+    files.filter((f) => f.folderId === currentFolderId).length;
 
   const getCurrentFolderName = () => {
     if (!currentFolderId) return "Thư mục gốc";
@@ -73,6 +100,12 @@ const ProcessedDocDashboard: React.FC<ProcessedDocDashboardProps> = ({
     if (!currentFolderId) return;
     const currentFolder = folders.find((f) => f.id === currentFolderId);
     setCurrentFolderId(currentFolder?.parentId || null);
+    setSearchQuery(""); // Reset search khi quay lại
+  };
+
+  const handleEnterFolder = (folderId: string) => {
+    setCurrentFolderId(folderId);
+    setSearchQuery(""); // Reset search khi vào thư mục
   };
 
   // ==========================================
@@ -81,7 +114,6 @@ const ProcessedDocDashboard: React.FC<ProcessedDocDashboardProps> = ({
   const handleCreateFolder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newFolderName.trim()) return;
-
     try {
       await fetch(`${API_URL}/api/processed-docs/folders`, {
         method: "POST",
@@ -91,7 +123,6 @@ const ProcessedDocDashboard: React.FC<ProcessedDocDashboardProps> = ({
           parentId: currentFolderId,
         }),
       });
-
       setNewFolderName("");
       setIsAddFolderModalOpen(false);
       fetchData();
@@ -101,7 +132,7 @@ const ProcessedDocDashboard: React.FC<ProcessedDocDashboardProps> = ({
   };
 
   // ==========================================
-  // XÓA THƯ MỤC VÀ FILE
+  // XÓA
   // ==========================================
   const handleDeleteFolder = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
@@ -138,21 +169,16 @@ const ProcessedDocDashboard: React.FC<ProcessedDocDashboardProps> = ({
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
-
       const formData = new FormData();
       formData.append("file", file);
       formData.append("uploadedBy", currentUser?.name || "Admin");
       formData.append("size", formatFileSize(file.size));
-      if (currentFolderId) {
-        formData.append("folderId", currentFolderId);
-      }
-
+      if (currentFolderId) formData.append("folderId", currentFolderId);
       try {
         await fetch(`${API_URL}/api/processed-docs/files/upload`, {
           method: "POST",
           body: formData,
         });
-
         if (fileInputRef.current) fileInputRef.current.value = "";
       } catch (error) {
         alert("Lỗi upload file! " + error);
@@ -161,38 +187,42 @@ const ProcessedDocDashboard: React.FC<ProcessedDocDashboardProps> = ({
   };
 
   // ==========================================
-  // HÀM ÉP TRÌNH DUYỆT TẢI FILE (DOWNLOAD)
+  // DOWNLOAD
   // ==========================================
   const handleDownload = async (
     fileUrl: string | undefined,
     fileName: string,
   ) => {
-    if (!fileUrl) return alert("File này không có đường dẫn hợp lệ!");
+    if (!fileUrl) return alert("File không có đường dẫn!");
 
-    try {
-      const response = await fetch(`${API_URL}${fileUrl}`);
-
-      if (!response.ok) throw new Error("Không thể tải file");
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-
+    // Nếu là URL Cloudinary thì mở thẳng, không cần fetch qua backend
+    if (fileUrl.startsWith("https://")) {
       const link = document.createElement("a");
-      link.href = url;
+      link.href = fileUrl;
       link.setAttribute("download", fileName);
+      link.target = "_blank";
       document.body.appendChild(link);
       link.click();
-
-      link.parentNode?.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error("Lỗi tải file:", error);
-      alert("Đã xảy ra lỗi khi tải file xuống!");
+      document.body.removeChild(link);
+      return;
     }
+
+    // Fallback cho file local cũ
+    const response = await fetch(`${API_URL}${fileUrl}`);
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", fileName);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
   };
 
   return (
     <div className="flex-1 p-6 overflow-y-auto bg-gray-50 h-full relative">
+      {/* HEADER */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 border-b border-gray-200 pb-4">
         <div>
           <h2 className="text-2xl font-bold text-gray-800">Hồ sơ Đã xử lý</h2>
@@ -200,7 +230,6 @@ const ProcessedDocDashboard: React.FC<ProcessedDocDashboardProps> = ({
             Không gian lưu trữ tài liệu riêng biệt của Phòng Xử lý hồ sơ
           </p>
         </div>
-
         <div className="flex gap-3">
           <button
             onClick={() => setIsAddFolderModalOpen(true)}
@@ -221,7 +250,6 @@ const ProcessedDocDashboard: React.FC<ProcessedDocDashboardProps> = ({
             </svg>
             Tạo thư mục
           </button>
-
           <button
             onClick={() => fileInputRef.current?.click()}
             className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm"
@@ -241,7 +269,6 @@ const ProcessedDocDashboard: React.FC<ProcessedDocDashboardProps> = ({
             </svg>
             Tải file lên
           </button>
-
           <input
             type="file"
             ref={fileInputRef}
@@ -251,21 +278,23 @@ const ProcessedDocDashboard: React.FC<ProcessedDocDashboardProps> = ({
         </div>
       </div>
 
-      <div className="flex items-center gap-2 mb-6 text-sm">
+      {/* BREADCRUMB */}
+      <div className="flex items-center gap-2 mb-4 text-sm">
         <button
-          onClick={() => setCurrentFolderId(null)}
+          onClick={() => {
+            setCurrentFolderId(null);
+            setSearchQuery("");
+          }}
           className={`font-semibold hover:underline ${!currentFolderId ? "text-gray-800" : "text-blue-600"}`}
         >
           Hồ sơ Đã xử lý
         </button>
-
         {currentFolderId && (
           <>
             <span className="text-gray-400">/</span>
             <span className="text-gray-800 font-semibold">
               {getCurrentFolderName()}
             </span>
-
             <button
               onClick={handleGoBack}
               className="ml-auto flex items-center gap-1 text-gray-500 hover:text-gray-800 font-medium bg-gray-200 px-3 py-1 rounded-full transition-colors"
@@ -289,10 +318,11 @@ const ProcessedDocDashboard: React.FC<ProcessedDocDashboardProps> = ({
         )}
       </div>
 
-      {displayFolders.length === 0 && displayFiles.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 bg-white rounded-xl border border-dashed border-gray-300">
+      {/* SEARCH BAR */}
+      <div className="flex items-center gap-3 mb-5">
+        <div className="relative flex-1 max-w-sm">
           <svg
-            className="w-16 h-16 text-gray-300 mb-4"
+            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -300,22 +330,119 @@ const ProcessedDocDashboard: React.FC<ProcessedDocDashboardProps> = ({
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
-              strokeWidth="1"
-              d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z"
+              strokeWidth={2}
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
             />
           </svg>
-          <p className="text-gray-500 font-medium">Thư mục này đang trống</p>
-          <p className="text-gray-400 text-sm mt-1">
-            Tạo thư mục mới hoặc tải tài liệu lên.
-          </p>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Tìm tên file, thư mục, người tải lên..."
+            className="w-full pl-9 pr-8 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent shadow-sm"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              <svg
+                className="w-3.5 h-3.5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          )}
+        </div>
+
+        {/* Kết quả */}
+        <span className="text-xs text-gray-400 font-medium">
+          {searchQuery ? (
+            <>
+              <span className="text-blue-600 font-bold">
+                {displayFolders.length + displayFiles.length}
+              </span>{" "}
+              / {totalDisplay} mục
+            </>
+          ) : (
+            <>
+              <span className="font-bold text-gray-600">{totalDisplay}</span>{" "}
+              mục
+            </>
+          )}
+        </span>
+      </div>
+
+      {/* CONTENT */}
+      {displayFolders.length === 0 && displayFiles.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 bg-white rounded-xl border border-dashed border-gray-300">
+          {searchQuery ? (
+            <>
+              <svg
+                className="w-12 h-12 text-gray-300 mb-3"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="1.5"
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+              <p className="text-gray-500 font-medium">
+                Không tìm thấy kết quả
+              </p>
+              <p className="text-gray-400 text-sm mt-1">
+                Thử từ khóa khác hoặc{" "}
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="text-blue-500 underline"
+                >
+                  xóa bộ lọc
+                </button>
+              </p>
+            </>
+          ) : (
+            <>
+              <svg
+                className="w-16 h-16 text-gray-300 mb-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="1"
+                  d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z"
+                />
+              </svg>
+              <p className="text-gray-500 font-medium">
+                Thư mục này đang trống
+              </p>
+              <p className="text-gray-400 text-sm mt-1">
+                Tạo thư mục mới hoặc tải tài liệu lên.
+              </p>
+            </>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {/* Render Folders */}
+          {/* FOLDERS */}
           {displayFolders.map((folder) => (
             <div
               key={folder.id}
-              onClick={() => setCurrentFolderId(folder.id)}
+              onClick={() => handleEnterFolder(folder.id)}
               className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm hover:shadow-md hover:border-blue-300 cursor-pointer transition-all group flex items-center justify-between gap-2"
             >
               <div className="flex items-center gap-3 overflow-hidden">
@@ -328,16 +455,30 @@ const ProcessedDocDashboard: React.FC<ProcessedDocDashboardProps> = ({
                 </svg>
                 <div className="overflow-hidden">
                   <h4 className="font-bold text-gray-800 truncate group-hover:text-blue-600 transition-colors">
-                    {folder.name}
+                    {/* Highlight search */}
+                    {searchQuery
+                      ? folder.name
+                          .split(new RegExp(`(${searchQuery})`, "gi"))
+                          .map((part, i) =>
+                            part.toLowerCase() === searchQuery.toLowerCase() ? (
+                              <mark
+                                key={i}
+                                className="bg-yellow-200 rounded px-0.5"
+                              >
+                                {part}
+                              </mark>
+                            ) : (
+                              part
+                            ),
+                          )
+                      : folder.name}
                   </h4>
                   <p className="text-xs text-gray-400 mt-0.5">Thư mục</p>
                 </div>
               </div>
-
               <button
                 onClick={(e) => handleDeleteFolder(e, folder.id)}
                 className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-all shrink-0"
-                title="Xóa thư mục"
               >
                 <svg
                   className="w-5 h-5"
@@ -356,7 +497,7 @@ const ProcessedDocDashboard: React.FC<ProcessedDocDashboardProps> = ({
             </div>
           ))}
 
-          {/* Render Files */}
+          {/* FILES */}
           {displayFiles.map((file) => (
             <div
               key={file.id}
@@ -365,7 +506,6 @@ const ProcessedDocDashboard: React.FC<ProcessedDocDashboardProps> = ({
               <button
                 onClick={() => handleDeleteFile(file.id)}
                 className="absolute top-2 right-2 text-gray-400 hover:text-red-500 bg-white hover:bg-red-50 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-all border border-transparent hover:border-red-200"
-                title="Xóa file"
               >
                 <svg
                   className="w-4 h-4"
@@ -401,7 +541,22 @@ const ProcessedDocDashboard: React.FC<ProcessedDocDashboardProps> = ({
                     className="font-bold text-gray-800 truncate text-sm"
                     title={file.name}
                   >
-                    {file.name}
+                    {searchQuery
+                      ? file.name
+                          .split(new RegExp(`(${searchQuery})`, "gi"))
+                          .map((part, i) =>
+                            part.toLowerCase() === searchQuery.toLowerCase() ? (
+                              <mark
+                                key={i}
+                                className="bg-yellow-200 rounded px-0.5"
+                              >
+                                {part}
+                              </mark>
+                            ) : (
+                              part
+                            ),
+                          )
+                      : file.name}
                   </h4>
                   <p className="text-xs text-gray-500 mt-1">
                     {file.size} • {file.uploadedBy}
@@ -413,7 +568,6 @@ const ProcessedDocDashboard: React.FC<ProcessedDocDashboardProps> = ({
                 <span className="text-xs text-gray-400">
                   {new Date(file.createdAt).toLocaleDateString("vi-VN")}
                 </span>
-
                 <button
                   onClick={() => handleDownload(file.fileUrl, file.name)}
                   className="text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 p-1.5 rounded-md transition-colors cursor-pointer"
@@ -439,7 +593,7 @@ const ProcessedDocDashboard: React.FC<ProcessedDocDashboardProps> = ({
         </div>
       )}
 
-      {/* MODAL THÊM THƯ MỤC */}
+      {/* MODAL TẠO THƯ MỤC */}
       {isAddFolderModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-50 p-4 animate-fade-in">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-scale-in">
@@ -473,7 +627,6 @@ const ProcessedDocDashboard: React.FC<ProcessedDocDashboardProps> = ({
                 </svg>
               </button>
             </div>
-
             <form onSubmit={handleCreateFolder} className="p-5">
               <label className="block text-sm font-bold text-gray-700 mb-2">
                 Tên thư mục
@@ -486,7 +639,6 @@ const ProcessedDocDashboard: React.FC<ProcessedDocDashboardProps> = ({
                 onChange={(e) => setNewFolderName(e.target.value)}
                 className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
               />
-
               <div className="mt-6 flex justify-end gap-3">
                 <button
                   type="button"

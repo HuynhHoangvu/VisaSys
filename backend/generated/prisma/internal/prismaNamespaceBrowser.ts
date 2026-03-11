@@ -116,7 +116,8 @@ export const TaskScalarFieldEnum = {
   createdAt: 'createdAt',
   documents: 'documents',
   processingColId: 'processingColId',
-  commissionPaid: 'commissionPaid'
+  commissionPaid: 'commissionPaid',
+  recruitmentStep: 'recruitmentStep'
 } as const
 
 export type TaskScalarFieldEnum = (typeof TaskScalarFieldEnum)[keyof typeof TaskScalarFieldEnum]
@@ -221,6 +222,7 @@ export const DocFileScalarFieldEnum = {
   fileUrl: 'fileUrl',
   uploadedBy: 'uploadedBy',
   createdAt: 'createdAt',
+  cloudinaryPublicId: 'cloudinaryPublicId',
   folderId: 'folderId'
 } as const
 

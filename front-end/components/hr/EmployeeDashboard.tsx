@@ -44,7 +44,7 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
 
   const [isAddEmpModalOpen, setIsAddEmpModalOpen] = useState(false);
   const [isDeptModalOpen, setIsDeptModalOpen] = useState(false);
-
+  const [employeeToEdit, setEmployeeToEdit] = useState<Employee | null>(null);
   const [newDeptName, setNewDeptName] = useState("");
   const [editingDeptId, setEditingDeptId] = useState<string | null>(null);
   const [editDeptName, setEditDeptName] = useState("");
@@ -105,29 +105,39 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
     };
   }, [fetchData]);
 
-  // HÀM XỬ LÝ NHÂN VIÊN
-  const handleAddEmployee = async (empData: NewEmployeeData) => {
-    if (!canAddPersonnel)
-      return alert("Bạn không có quyền thực hiện thao tác này!");
-    try {
-      const response = await fetch(`${API_URL}/api/hr/employees`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(empData),
-      });
+const handleSubmitEmployee = async (empData: NewEmployeeData) => {
+  if (!canAddPersonnel)
+    return alert("Bạn không có quyền thực hiện thao tác này!");
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Email có thể đã bị trùng!");
-      }
+  try {
+    const url = employeeToEdit
+      ? `${API_URL}/api/hr/employees/${employeeToEdit.id}`
+      : `${API_URL}/api/hr/employees`;
+    const method = employeeToEdit ? "PUT" : "POST";
 
-      fetchData();
-      setIsAddEmpModalOpen(false);
-      alert("Thêm nhân sự thành công!");
-    } catch (error) {
-      alert("Lỗi khi thêm nhân viên!" + error);
+    const response = await fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(empData),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Email có thể đã bị trùng!");
     }
-  };
+
+    fetchData();
+    setIsAddEmpModalOpen(false);
+    setEmployeeToEdit(null);
+    alert(
+      employeeToEdit
+        ? "Cập nhật nhân sự thành công!"
+        : "Thêm nhân sự thành công!",
+    );
+  } catch (error) {
+    alert("Lỗi! " + error);
+  }
+};
 
   const handleDeleteEmployee = async (id: string) => {
     if (!canDeletePersonnel)
@@ -544,6 +554,7 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
               ) : (
                 groupedEmployees.map((group) => (
                   <React.Fragment key={group.departmentName}>
+                    {/* Hàng Tiêu đề Bộ phận */}
                     <tr className="bg-gray-50 border-b border-gray-200">
                       <td
                         colSpan={7}
@@ -559,6 +570,8 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
                         </span>
                       </td>
                     </tr>
+
+                    {/* Vòng lặp hiển thị từng nhân viên (biến emp được định nghĩa ở đây) */}
                     {group.employees.map((emp) => (
                       <tr
                         key={emp.id}
@@ -595,6 +608,8 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
                             {emp.todayStatus}
                           </Badge>
                         </td>
+
+                        {/* CỘT HÀNH ĐỘNG NẰM TRONG VÒNG LẶP NÊN ĐÃ NHẬN DIỆN ĐƯỢC emp */}
                         <td className="px-4 py-4 text-right">
                           <div className="flex justify-end gap-3">
                             <button
@@ -603,6 +618,19 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
                             >
                               Chi tiết
                             </button>
+
+                            {canAddPersonnel && (
+                              <button
+                                onClick={() => {
+                                  setEmployeeToEdit(emp);
+                                  setIsAddEmpModalOpen(true);
+                                }}
+                                className="font-semibold text-orange-500 hover:text-orange-700 hover:underline transition-colors"
+                              >
+                                Sửa
+                              </button>
+                            )}
+
                             {canDeletePersonnel && (
                               <button
                                 onClick={() => handleDeleteEmployee(emp.id)}
@@ -625,11 +653,14 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
 
       <EmployeeModal
         show={isAddEmpModalOpen}
-        onClose={() => setIsAddEmpModalOpen(false)}
+        onClose={() => {
+          setIsAddEmpModalOpen(false);
+          setEmployeeToEdit(null); // Clear state khi đóng
+        }}
         departments={departments}
-        onAddEmployee={handleAddEmployee}
+        onSubmitEmployee={handleSubmitEmployee}
+        employeeToEdit={employeeToEdit}
       />
-
       <Modal
         show={isDeptModalOpen}
         onClose={() => setIsDeptModalOpen(false)}
@@ -716,15 +747,17 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
                         </div>
                       ) : (
                         <div className="flex justify-end gap-4">
-                          <button
-                            className="text-blue-600 hover:underline font-semibold"
-                            onClick={() => {
-                              setEditingDeptId(dept.id);
-                              setEditDeptName(dept.name);
-                            }}
-                          >
-                            Sửa
-                          </button>
+                          {canAddPersonnel && (
+                            <button
+                              onClick={() => {
+                                setEmployeeToEdit(emp);
+                                setIsAddEmpModalOpen(true);
+                              }}
+                              className="font-semibold text-orange-500 hover:text-orange-700 hover:underline transition-colors"
+                            >
+                              Sửa
+                            </button>
+                          )}
                           {canDeletePersonnel && (
                             <button
                               className="text-red-500 hover:underline font-semibold"
@@ -865,7 +898,11 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
                               </td>
                               <td className="px-6 py-4 font-medium text-gray-500">
                                 {typeof record.employee?.department === "object"
-                                  ? (record.employee?.department as { name: string }).name
+                                  ? (
+                                      record.employee?.department as {
+                                        name: string;
+                                      }
+                                    ).name
                                   : record.employee?.department}
                               </td>
                               <td className="px-6 py-4 text-right font-medium">

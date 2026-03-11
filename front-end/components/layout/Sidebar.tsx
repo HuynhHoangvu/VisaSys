@@ -110,7 +110,7 @@ const canAccessProcessing =
       {/* MENU ĐIỀU HƯỚNG CHÍNH */}
       <nav className="flex-1 p-4 space-y-2 mt-2">
         {/* CHỈ HIỆN MENU NÀY NẾU LÀ SẾP */}
-        {isBoss && (
+        {canAccessProcessing && (
           <button
             onClick={() => setCurrentView("boss")}
             className={`w-full flex items-center px-4 py-3 font-medium rounded-lg transition-colors ${
@@ -259,6 +259,14 @@ const canAccessProcessing =
           </svg>
           Tài liệu công ty
         </button>
+        {canAccessProcessing && (
+          <button
+            onClick={() => setCurrentView("recruitment")}
+            className={`w-full flex items-center px-4 py-3 ...`}
+          >
+            👷 Tiến độ Tuyển dụng
+          </button>
+        )}
         {/* Menu HR */}
         <button
           onClick={() => setCurrentView("hr")}

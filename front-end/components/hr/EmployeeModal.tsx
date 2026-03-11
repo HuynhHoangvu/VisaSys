@@ -1,32 +1,56 @@
 // frontend/components/hr/EmployeeModal.tsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Modal, Button, Label, TextInput, Select } from "flowbite-react";
-import type { Department, NewEmployeeData } from "../../types"; // Import đúng type
+import type { Department, NewEmployeeData, Employee } from "../../types";
 
 interface EmployeeModalProps {
   show: boolean;
   onClose: () => void;
   departments: Department[];
-  onAddEmployee: (employeeData: NewEmployeeData) => void; // Dùng NewEmployeeData thay vì any
+  onSubmitEmployee: (employeeData: NewEmployeeData) => void;
+  employeeToEdit?: Employee | null;
 }
 
 const EmployeeModal: React.FC<EmployeeModalProps> = ({
   show,
   onClose,
   departments,
-  onAddEmployee,
+  onSubmitEmployee,
+  employeeToEdit,
 }) => {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  const isEditMode = !!employeeToEdit;
+
+  // Lấy giá trị trực tiếp từ employeeToEdit (nếu có), nếu không thì để rỗng
+  const [name, setName] = useState(employeeToEdit?.name || "");
+  const [email, setEmail] = useState(employeeToEdit?.email || "");
   const [password, setPassword] = useState("");
-  const [department, setDepartment] = useState("");
-  const [role, setRole] = useState("");
-  const [baseSalary, setBaseSalary] = useState<number>(6000000);
+  const [department, setDepartment] = useState(
+    employeeToEdit?.department || "",
+  );
+  const [role, setRole] = useState(employeeToEdit?.role || "");
+  const [baseSalary, setBaseSalary] = useState<number>(
+    employeeToEdit?.baseSalary || 6000000,
+  );
+
+  // VẪN CẦN GIỮ LẠI ĐOẠN USEEFFECT NÀY
+  // Để đồng bộ state nội bộ khi props `employeeToEdit` thay đổi từ bên ngoài
+  useEffect(() => {
+    if (show) {
+      setName(employeeToEdit?.name || "");
+      setEmail(employeeToEdit?.email || "");
+      setPassword("");
+      setDepartment(employeeToEdit?.department || "");
+      setRole(employeeToEdit?.role || "");
+      setBaseSalary(employeeToEdit?.baseSalary || 6000000);
+    }
+  }, [employeeToEdit, show]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !email || !password || !department || !role) return;
+    if (!name || !email || (!password && !isEditMode) || !department || !role)
+      return;
 
-    onAddEmployee({
+    onSubmitEmployee({
       name,
       email,
       password,
@@ -34,31 +58,17 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({
       role,
       baseSalary,
     });
-
-    handleClose();
   };
-
-  const handleClose = () => {
-    setName("");
-    setEmail("");
-    setPassword("");
-    setDepartment("");
-    setRole("");
-    onClose();
-  };
-
   return (
-    <Modal show={show} onClose={handleClose} size="lg">
+    <Modal show={show} onClose={onClose} size="lg">
       <div className="p-6 border-b border-gray-200">
-        <h3 className="text-xl font-bold text-gray-800">Thêm Nhân Sự Mới</h3>
+        <h3 className="text-xl font-bold text-gray-800">
+          {isEditMode ? "Cập Nhật Nhân Sự" : "Thêm Nhân Sự Mới"}
+        </h3>
       </div>
 
       <div className="p-6">
-        <form
-          id="add-employee-form"
-          onSubmit={handleSubmit}
-          className="space-y-4"
-        >
+        <form id="employee-form" onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label>Họ và Tên (*)</Label>
@@ -84,11 +94,13 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label>Mật khẩu (*)</Label>
+              <Label>
+                Mật khẩu {isEditMode ? "(Để trống nếu không đổi)" : "(*)"}
+              </Label>
               <TextInput
                 id="empPassword"
                 type="password"
-                required
+                required={!isEditMode}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
@@ -140,15 +152,15 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({
       </div>
 
       <div className="p-6 border-t border-gray-200 flex justify-end gap-2">
-        <Button color="gray" onClick={handleClose}>
+        <Button color="gray" onClick={onClose}>
           Hủy
         </Button>
         <Button
           type="submit"
-          form="add-employee-form"
+          form="employee-form"
           style={{ backgroundColor: "#1d4ed8" }}
         >
-          Lưu Nhân Viên
+          {isEditMode ? "Cập Nhật" : "Lưu Nhân Viên"}
         </Button>
       </div>
     </Modal>

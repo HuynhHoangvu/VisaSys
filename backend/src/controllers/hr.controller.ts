@@ -377,3 +377,52 @@ export const updateLeaveRequestStatus = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Lỗi cập nhật trạng thái đơn" });
   }
 };
+export const updateEmployee = async (req: Request, res: Response) => {
+  try {
+    // Ép kiểu sang string ngay tại đây để dùng an toàn cho toàn bộ hàm
+    const id = req.params.id as string; 
+    const { name, email, password, department, role, baseSalary } = req.body;
+
+    // 1. Kiểm tra email có bị trùng với người khác không
+    const existingEmployee = await prisma.employee.findFirst({
+      where: { 
+        email, 
+        id: { not: id } // Bây giờ id đã chuẩn là string, TypeScript sẽ không kêu ca nữa
+      },
+    });
+    
+    if (existingEmployee) {
+      return res.status(400).json({ error: "Email này đã được sử dụng bởi nhân viên khác!" });
+    }
+
+    // 2. Tìm phòng ban
+    const dept = await prisma.department.findFirst({ where: { name: department } });
+
+    // 3. Chuẩn bị dữ liệu cập nhật
+    const updateData: any = {
+      name,
+      email,
+      role,
+      departmentId: dept?.id || null,
+      baseSalary: baseSalary ? parseFloat(baseSalary) : 5000000,
+      commissionRate: role === "Trưởng phòng" ? 0.15 : (role.includes("Sale") ? 0.1 : 0)
+    };
+
+    // Nếu có truyền password mới thì mới cập nhật password
+    if (password && password.trim() !== "") {
+      updateData.password = password;
+    }
+
+    // 4. Update
+    const updatedEmployee = await prisma.employee.update({
+      where: { id }, // Không cần "id as string" ở đây nữa vì đã ép kiểu ở trên
+      data: updateData,
+    });
+
+    getIO().emit("data_changed");
+    res.json(updatedEmployee);
+  } catch (error) {
+    console.error("Lỗi cập nhật nhân viên:", error);
+    res.status(500).json({ error: "Lỗi Server khi cập nhật nhân viên" });
+  }
+};

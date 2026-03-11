@@ -17,6 +17,7 @@ import DocumentModal from "../components/crm/DocumentModal.tsx";
 import DocumentDashboard from "../components/documents/DocumentDashboard.tsx";
 import ProcessedDocDashboard from "../components/documents/ProcessedDocDashboard.tsx";
 import WeeklyTaskAssignment from "../components/kpi/WeeklyTaskAssignment.tsx";
+import RecruitmentBoard from "../components/processing/Recruitmentboard.tsx";
 import type { Task, Activity, BoardData, AuthUser } from "../types";
 
 const App: React.FC = () => {
@@ -345,6 +346,13 @@ const App: React.FC = () => {
               {" "}
               {/* đổi overflow-hidden → overflow-y-auto */}
               <WeeklyTaskAssignment currentUser={currentUser} />
+            </div>
+          )}
+          {currentView === "recruitment" && (
+            <div className="flex-1 overflow-x-hidden overflow-y-auto flex flex-col">
+              <RecruitmentBoard
+                onOpenDetail={handleOpenDetail}
+              />
             </div>
           )}
         </div>

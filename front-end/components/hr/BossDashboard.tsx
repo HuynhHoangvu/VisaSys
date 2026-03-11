@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Card,
   Button,
@@ -12,6 +12,8 @@ import {
 } from "flowbite-react";
 import type { AuthUser, Task } from "../../types";
 import { io } from "socket.io-client";
+import SearchFilterBar from "../Filter/SearchFilterBar";
+
 interface BossDashboardProps {
   currentUser: AuthUser;
 }
@@ -22,13 +24,22 @@ interface ProfileData extends Task {
 }
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
-const socket = io(API_URL); 
+const socket = io(API_URL);
+
 const BossDashboard: React.FC<BossDashboardProps> = ({ currentUser }) => {
   const [allProfiles, setAllProfiles] = useState<ProfileData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [employees, setEmployees] = useState<AuthUser[]>([]);
 
-  // State cho Modal Gửi Nhắc Nhở
+  // ==========================================
+  // SEARCH & FILTER STATE
+  // ==========================================
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterSale, setFilterSale] = useState("all");
+  const [filterColumn, setFilterColumn] = useState("all");
+  const [filterVisa, setFilterVisa] = useState("all");
+
+  // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState<ProfileData | null>(
     null,
@@ -40,7 +51,7 @@ const BossDashboard: React.FC<BossDashboardProps> = ({ currentUser }) => {
   const [isSending, setIsSending] = useState(false);
 
   // ==========================================
-  // HÀM LẤY DANH SÁCH NHÂN VIÊN
+  // FETCH
   // ==========================================
   const fetchEmployees = useCallback(async () => {
     try {
@@ -52,18 +63,13 @@ const BossDashboard: React.FC<BossDashboardProps> = ({ currentUser }) => {
     }
   }, []);
 
-  // ==========================================
-  // HÀM LẤY DỮ LIỆU BÁO CÁO (CÓ POLLING)
-  // ==========================================
   const fetchAllProfiles = useCallback(async (showSpinner = true) => {
     if (showSpinner) setIsLoading(true);
     try {
       const res = await fetch(`${API_URL}/api/board`);
       const boardData = await res.json();
-
       const profilesList: ProfileData[] = [];
 
-      // Gom tất cả khách hàng từ các cột lại thành 1 danh sách
       Object.keys(boardData.columns).forEach((colId) => {
         const col = boardData.columns[colId];
         col.taskIds.forEach((taskId: string) => {
@@ -76,7 +82,6 @@ const BossDashboard: React.FC<BossDashboardProps> = ({ currentUser }) => {
         });
       });
 
-      // Sắp xếp: Khách hàng mới tạo xếp lên đầu
       profilesList.sort((a, b) => {
         const dateA = new Date(a.createdAt || 0).getTime();
         const dateB = new Date(b.createdAt || 0).getTime();
@@ -91,27 +96,78 @@ const BossDashboard: React.FC<BossDashboardProps> = ({ currentUser }) => {
     }
   }, []);
 
-  // ==========================================
-  // TỰ ĐỘNG TẢI DỮ LIỆU & LẮNG NGHE SỰ KIỆN REFRESH
-  // ==========================================
   useEffect(() => {
     fetchEmployees();
     fetchAllProfiles(true);
-
-    // THAY INTERVAL BẰNG SOCKET LẮNG NGHE
-    socket.on("data_changed", () => {
-      fetchAllProfiles(false);
-    });
-
+    socket.on("data_changed", () => fetchAllProfiles(false));
     const handleInstantRefresh = () => fetchAllProfiles(false);
     window.addEventListener("refreshBoard", handleInstantRefresh);
-
     return () => {
       socket.off("data_changed");
       window.removeEventListener("refreshBoard", handleInstantRefresh);
     };
   }, [fetchEmployees, fetchAllProfiles]);
 
+  // ==========================================
+  // BUILD FILTER OPTIONS TỪ DỮ LIỆU THỰC TẾ
+  // ==========================================
+  const filterOptions = useMemo(() => {
+    const sales = [
+      ...new Set(allProfiles.map((p) => p.assignedTo).filter(Boolean)),
+    ]
+      .sort()
+      .map((name) => ({ value: name, label: name }));
+
+    const columns = [
+      ...new Map(allProfiles.map((p) => [p.columnId, p.columnName])).entries(),
+    ].map(([value, label]) => ({ value, label }));
+
+    const visaTypes = [
+      ...new Set(allProfiles.map((p) => p.visaType).filter(Boolean)),
+    ]
+      .sort()
+      .map((v) => ({ value: v!, label: v! }));
+
+    return { sales, columns, visaTypes };
+  }, [allProfiles]);
+
+  // ==========================================
+  // LỌC PROFILES
+  // ==========================================
+  const filteredProfiles = useMemo(() => {
+    return allProfiles.filter((profile) => {
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase().trim();
+        const matchName = profile.content?.toLowerCase().includes(q);
+        const matchPhone = profile.phone?.toLowerCase().includes(q);
+        const matchSale = profile.assignedTo?.toLowerCase().includes(q);
+        if (!matchName && !matchPhone && !matchSale) return false;
+      }
+      if (filterSale !== "all" && profile.assignedTo !== filterSale)
+        return false;
+      if (filterColumn !== "all" && profile.columnId !== filterColumn)
+        return false;
+      if (filterVisa !== "all" && profile.visaType !== filterVisa) return false;
+      return true;
+    });
+  }, [allProfiles, searchQuery, filterSale, filterColumn, filterVisa]);
+
+  const hasActiveFilter =
+    searchQuery !== "" ||
+    filterSale !== "all" ||
+    filterColumn !== "all" ||
+    filterVisa !== "all";
+
+  const handleResetFilter = () => {
+    setSearchQuery("");
+    setFilterSale("all");
+    setFilterColumn("all");
+    setFilterVisa("all");
+  };
+
+  // ==========================================
+  // ACTIONS
+  // ==========================================
   const openReminderModal = (profile: ProfileData) => {
     if (!profile.assignedTo) {
       alert(
@@ -128,9 +184,7 @@ const BossDashboard: React.FC<BossDashboardProps> = ({ currentUser }) => {
   const handleSendReminder = async () => {
     if (!selectedProfile) return;
     setIsSending(true);
-
     const finalMessage = reminderType === "Khác" ? customText : reminderType;
-
     try {
       const response = await fetch(`${API_URL}/api/notifications/send`, {
         method: "POST",
@@ -143,9 +197,7 @@ const BossDashboard: React.FC<BossDashboardProps> = ({ currentUser }) => {
           taskId: selectedProfile.id,
         }),
       });
-
       if (!response.ok) throw new Error("Không thể gửi thông báo");
-
       setIsModalOpen(false);
       alert(`Đã gửi nhắc nhở đến Sale: ${selectedProfile.assignedTo}`);
       fetchAllProfiles(false);
@@ -173,8 +225,7 @@ const BossDashboard: React.FC<BossDashboardProps> = ({ currentUser }) => {
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return "N/A";
-    const date = new Date(dateString);
-    return date.toLocaleDateString("vi-VN", {
+    return new Date(dateString).toLocaleDateString("vi-VN", {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
@@ -196,7 +247,8 @@ const BossDashboard: React.FC<BossDashboardProps> = ({ currentUser }) => {
 
   return (
     <div className="flex-1 p-6 bg-gray-50 overflow-y-auto h-full">
-      <div className="flex justify-between items-end mb-6">
+      {/* HEADER */}
+      <div className="flex justify-between items-end mb-4">
         <div>
           <h2 className="text-2xl font-bold text-gray-800">
             Báo cáo Tổng hợp Khách hàng
@@ -207,6 +259,41 @@ const BossDashboard: React.FC<BossDashboardProps> = ({ currentUser }) => {
         </div>
       </div>
 
+      {/* SEARCH + FILTER */}
+      <SearchFilterBar
+        searchPlaceholder="Tìm tên khách, số điện thoại, sale..."
+        searchValue={searchQuery}
+        onSearchChange={setSearchQuery}
+        filters={[
+          {
+            key: "sale",
+            placeholder: "👤 Tất cả Sale",
+            value: filterSale,
+            options: filterOptions.sales,
+            onChange: setFilterSale,
+          },
+          {
+            key: "column",
+            placeholder: "📋 Tất cả trạng thái",
+            value: filterColumn,
+            options: filterOptions.columns,
+            onChange: setFilterColumn,
+          },
+          {
+            key: "visa",
+            placeholder: "🛂 Loại visa",
+            value: filterVisa,
+            options: filterOptions.visaTypes,
+            onChange: setFilterVisa,
+          },
+        ]}
+        resultCount={filteredProfiles.length}
+        totalCount={allProfiles.length}
+        onReset={handleResetFilter}
+        hasActiveFilter={hasActiveFilter}
+      />
+
+      {/* TABLE */}
       <Card className="border-none shadow-sm rounded-xl overflow-hidden p-0">
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left text-gray-500">
@@ -224,21 +311,20 @@ const BossDashboard: React.FC<BossDashboardProps> = ({ currentUser }) => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {allProfiles.length === 0 ? (
+              {filteredProfiles.length === 0 ? (
                 <tr>
                   <td
                     colSpan={5}
                     className="px-6 py-10 text-center text-gray-400 italic"
                   >
-                    Chưa có dữ liệu khách hàng.
+                    {hasActiveFilter
+                      ? "Không tìm thấy khách hàng phù hợp."
+                      : "Chưa có dữ liệu khách hàng."}
                   </td>
                 </tr>
               ) : (
-                allProfiles.map((profile) => {
-                  // ==========================================
-                  // LOGIC TÍNH TIẾN ĐỘ HỒ SƠ ĐÃ ĐỒNG BỘ
-                  // ==========================================
-                  const totalCount = 17; // Tạm fix cứng tổng số checklist theo DocumentModal là 17
+                filteredProfiles.map((profile) => {
+                  const totalCount = 17;
                   const doneCount = profile.documents
                     ? Object.keys(profile.documents).length
                     : 0;
@@ -260,7 +346,25 @@ const BossDashboard: React.FC<BossDashboardProps> = ({ currentUser }) => {
 
                       <td className="px-5 py-4">
                         <p className="font-bold text-gray-900 text-base">
-                          {profile.content.split(" - ")[0]}
+                          {/* Highlight search term */}
+                          {searchQuery
+                            ? profile.content
+                                .split(" - ")[0]
+                                .split(new RegExp(`(${searchQuery})`, "gi"))
+                                .map((part, i) =>
+                                  part.toLowerCase() ===
+                                  searchQuery.toLowerCase() ? (
+                                    <mark
+                                      key={i}
+                                      className="bg-yellow-200 rounded px-0.5"
+                                    >
+                                      {part}
+                                    </mark>
+                                  ) : (
+                                    part
+                                  ),
+                                )
+                            : profile.content.split(" - ")[0]}
                         </p>
                         <p className="text-xs font-medium text-gray-500">
                           {profile.content.split(" - ")[1]}
@@ -300,8 +404,6 @@ const BossDashboard: React.FC<BossDashboardProps> = ({ currentUser }) => {
                           >
                             {profile.columnName}
                           </Badge>
-
-                          {/* HIỂN THỊ TIẾN ĐỘ */}
                           <div className="mt-1">
                             <div className="flex justify-between text-xs font-bold mb-1">
                               <span
@@ -365,7 +467,6 @@ const BossDashboard: React.FC<BossDashboardProps> = ({ currentUser }) => {
             </strong>
           </p>
         </div>
-
         <div className="p-5 space-y-4">
           <div>
             <label className="block mb-2 text-sm font-bold text-gray-900">
@@ -387,7 +488,6 @@ const BossDashboard: React.FC<BossDashboardProps> = ({ currentUser }) => {
               <option value="Khác">✏️ Khác (Tự gõ nội dung)...</option>
             </Select>
           </div>
-
           {reminderType === "Khác" && (
             <div>
               <label className="block mb-2 text-sm font-bold text-gray-900">
@@ -402,7 +502,6 @@ const BossDashboard: React.FC<BossDashboardProps> = ({ currentUser }) => {
             </div>
           )}
         </div>
-
         <div className="p-5 border-t border-gray-200 flex justify-end gap-2 bg-gray-50 rounded-b-lg">
           <Button color="gray" onClick={() => setIsModalOpen(false)}>
             Hủy

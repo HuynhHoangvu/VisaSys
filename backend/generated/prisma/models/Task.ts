@@ -57,6 +57,7 @@ export type TaskMinAggregateOutputType = {
   createdAt: Date | null
   processingColId: string | null
   commissionPaid: boolean | null
+  recruitmentStep: string | null
 }
 
 export type TaskMaxAggregateOutputType = {
@@ -82,6 +83,7 @@ export type TaskMaxAggregateOutputType = {
   createdAt: Date | null
   processingColId: string | null
   commissionPaid: boolean | null
+  recruitmentStep: string | null
 }
 
 export type TaskCountAggregateOutputType = {
@@ -108,6 +110,7 @@ export type TaskCountAggregateOutputType = {
   documents: number
   processingColId: number
   commissionPaid: number
+  recruitmentStep: number
   _all: number
 }
 
@@ -143,6 +146,7 @@ export type TaskMinAggregateInputType = {
   createdAt?: true
   processingColId?: true
   commissionPaid?: true
+  recruitmentStep?: true
 }
 
 export type TaskMaxAggregateInputType = {
@@ -168,6 +172,7 @@ export type TaskMaxAggregateInputType = {
   createdAt?: true
   processingColId?: true
   commissionPaid?: true
+  recruitmentStep?: true
 }
 
 export type TaskCountAggregateInputType = {
@@ -194,6 +199,7 @@ export type TaskCountAggregateInputType = {
   documents?: true
   processingColId?: true
   commissionPaid?: true
+  recruitmentStep?: true
   _all?: true
 }
 
@@ -307,6 +313,7 @@ export type TaskGroupByOutputType = {
   documents: runtime.JsonValue | null
   processingColId: string
   commissionPaid: boolean
+  recruitmentStep: string | null
   _count: TaskCountAggregateOutputType | null
   _avg: TaskAvgAggregateOutputType | null
   _sum: TaskSumAggregateOutputType | null
@@ -356,6 +363,7 @@ export type TaskWhereInput = {
   documents?: Prisma.JsonNullableFilter<"Task">
   processingColId?: Prisma.StringFilter<"Task"> | string
   commissionPaid?: Prisma.BoolFilter<"Task"> | boolean
+  recruitmentStep?: Prisma.StringNullableFilter<"Task"> | string | null
   column?: Prisma.XOR<Prisma.ColumnNullableScalarRelationFilter, Prisma.ColumnWhereInput> | null
   activities?: Prisma.ActivityListRelationFilter
 }
@@ -384,6 +392,7 @@ export type TaskOrderByWithRelationInput = {
   documents?: Prisma.SortOrderInput | Prisma.SortOrder
   processingColId?: Prisma.SortOrder
   commissionPaid?: Prisma.SortOrder
+  recruitmentStep?: Prisma.SortOrderInput | Prisma.SortOrder
   column?: Prisma.ColumnOrderByWithRelationInput
   activities?: Prisma.ActivityOrderByRelationAggregateInput
 }
@@ -415,6 +424,7 @@ export type TaskWhereUniqueInput = Prisma.AtLeast<{
   documents?: Prisma.JsonNullableFilter<"Task">
   processingColId?: Prisma.StringFilter<"Task"> | string
   commissionPaid?: Prisma.BoolFilter<"Task"> | boolean
+  recruitmentStep?: Prisma.StringNullableFilter<"Task"> | string | null
   column?: Prisma.XOR<Prisma.ColumnNullableScalarRelationFilter, Prisma.ColumnWhereInput> | null
   activities?: Prisma.ActivityListRelationFilter
 }, "id">
@@ -443,6 +453,7 @@ export type TaskOrderByWithAggregationInput = {
   documents?: Prisma.SortOrderInput | Prisma.SortOrder
   processingColId?: Prisma.SortOrder
   commissionPaid?: Prisma.SortOrder
+  recruitmentStep?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.TaskCountOrderByAggregateInput
   _avg?: Prisma.TaskAvgOrderByAggregateInput
   _max?: Prisma.TaskMaxOrderByAggregateInput
@@ -477,6 +488,7 @@ export type TaskScalarWhereWithAggregatesInput = {
   documents?: Prisma.JsonNullableWithAggregatesFilter<"Task">
   processingColId?: Prisma.StringWithAggregatesFilter<"Task"> | string
   commissionPaid?: Prisma.BoolWithAggregatesFilter<"Task"> | boolean
+  recruitmentStep?: Prisma.StringNullableWithAggregatesFilter<"Task"> | string | null
 }
 
 export type TaskCreateInput = {
@@ -502,6 +514,7 @@ export type TaskCreateInput = {
   documents?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   processingColId?: string
   commissionPaid?: boolean
+  recruitmentStep?: string | null
   column?: Prisma.ColumnCreateNestedOneWithoutTasksInput
   activities?: Prisma.ActivityCreateNestedManyWithoutTaskInput
 }
@@ -530,6 +543,7 @@ export type TaskUncheckedCreateInput = {
   documents?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   processingColId?: string
   commissionPaid?: boolean
+  recruitmentStep?: string | null
   activities?: Prisma.ActivityUncheckedCreateNestedManyWithoutTaskInput
 }
 
@@ -556,6 +570,7 @@ export type TaskUpdateInput = {
   documents?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   processingColId?: Prisma.StringFieldUpdateOperationsInput | string
   commissionPaid?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  recruitmentStep?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   column?: Prisma.ColumnUpdateOneWithoutTasksNestedInput
   activities?: Prisma.ActivityUpdateManyWithoutTaskNestedInput
 }
@@ -584,6 +599,7 @@ export type TaskUncheckedUpdateInput = {
   documents?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   processingColId?: Prisma.StringFieldUpdateOperationsInput | string
   commissionPaid?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  recruitmentStep?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   activities?: Prisma.ActivityUncheckedUpdateManyWithoutTaskNestedInput
 }
 
@@ -611,6 +627,7 @@ export type TaskCreateManyInput = {
   documents?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   processingColId?: string
   commissionPaid?: boolean
+  recruitmentStep?: string | null
 }
 
 export type TaskUpdateManyMutationInput = {
@@ -636,6 +653,7 @@ export type TaskUpdateManyMutationInput = {
   documents?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   processingColId?: Prisma.StringFieldUpdateOperationsInput | string
   commissionPaid?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  recruitmentStep?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type TaskUncheckedUpdateManyInput = {
@@ -662,6 +680,7 @@ export type TaskUncheckedUpdateManyInput = {
   documents?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   processingColId?: Prisma.StringFieldUpdateOperationsInput | string
   commissionPaid?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  recruitmentStep?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type TaskListRelationFilter = {
@@ -698,6 +717,7 @@ export type TaskCountOrderByAggregateInput = {
   documents?: Prisma.SortOrder
   processingColId?: Prisma.SortOrder
   commissionPaid?: Prisma.SortOrder
+  recruitmentStep?: Prisma.SortOrder
 }
 
 export type TaskAvgOrderByAggregateInput = {
@@ -727,6 +747,7 @@ export type TaskMaxOrderByAggregateInput = {
   createdAt?: Prisma.SortOrder
   processingColId?: Prisma.SortOrder
   commissionPaid?: Prisma.SortOrder
+  recruitmentStep?: Prisma.SortOrder
 }
 
 export type TaskMinOrderByAggregateInput = {
@@ -752,6 +773,7 @@ export type TaskMinOrderByAggregateInput = {
   createdAt?: Prisma.SortOrder
   processingColId?: Prisma.SortOrder
   commissionPaid?: Prisma.SortOrder
+  recruitmentStep?: Prisma.SortOrder
 }
 
 export type TaskSumOrderByAggregateInput = {
@@ -862,6 +884,7 @@ export type TaskCreateWithoutColumnInput = {
   documents?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   processingColId?: string
   commissionPaid?: boolean
+  recruitmentStep?: string | null
   activities?: Prisma.ActivityCreateNestedManyWithoutTaskInput
 }
 
@@ -888,6 +911,7 @@ export type TaskUncheckedCreateWithoutColumnInput = {
   documents?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   processingColId?: string
   commissionPaid?: boolean
+  recruitmentStep?: string | null
   activities?: Prisma.ActivityUncheckedCreateNestedManyWithoutTaskInput
 }
 
@@ -944,6 +968,7 @@ export type TaskScalarWhereInput = {
   documents?: Prisma.JsonNullableFilter<"Task">
   processingColId?: Prisma.StringFilter<"Task"> | string
   commissionPaid?: Prisma.BoolFilter<"Task"> | boolean
+  recruitmentStep?: Prisma.StringNullableFilter<"Task"> | string | null
 }
 
 export type TaskCreateWithoutActivitiesInput = {
@@ -969,6 +994,7 @@ export type TaskCreateWithoutActivitiesInput = {
   documents?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   processingColId?: string
   commissionPaid?: boolean
+  recruitmentStep?: string | null
   column?: Prisma.ColumnCreateNestedOneWithoutTasksInput
 }
 
@@ -996,6 +1022,7 @@ export type TaskUncheckedCreateWithoutActivitiesInput = {
   documents?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   processingColId?: string
   commissionPaid?: boolean
+  recruitmentStep?: string | null
 }
 
 export type TaskCreateOrConnectWithoutActivitiesInput = {
@@ -1037,6 +1064,7 @@ export type TaskUpdateWithoutActivitiesInput = {
   documents?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   processingColId?: Prisma.StringFieldUpdateOperationsInput | string
   commissionPaid?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  recruitmentStep?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   column?: Prisma.ColumnUpdateOneWithoutTasksNestedInput
 }
 
@@ -1064,6 +1092,7 @@ export type TaskUncheckedUpdateWithoutActivitiesInput = {
   documents?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   processingColId?: Prisma.StringFieldUpdateOperationsInput | string
   commissionPaid?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  recruitmentStep?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type TaskCreateManyColumnInput = {
@@ -1089,6 +1118,7 @@ export type TaskCreateManyColumnInput = {
   documents?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   processingColId?: string
   commissionPaid?: boolean
+  recruitmentStep?: string | null
 }
 
 export type TaskUpdateWithoutColumnInput = {
@@ -1114,6 +1144,7 @@ export type TaskUpdateWithoutColumnInput = {
   documents?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   processingColId?: Prisma.StringFieldUpdateOperationsInput | string
   commissionPaid?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  recruitmentStep?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   activities?: Prisma.ActivityUpdateManyWithoutTaskNestedInput
 }
 
@@ -1140,6 +1171,7 @@ export type TaskUncheckedUpdateWithoutColumnInput = {
   documents?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   processingColId?: Prisma.StringFieldUpdateOperationsInput | string
   commissionPaid?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  recruitmentStep?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   activities?: Prisma.ActivityUncheckedUpdateManyWithoutTaskNestedInput
 }
 
@@ -1166,6 +1198,7 @@ export type TaskUncheckedUpdateManyWithoutColumnInput = {
   documents?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   processingColId?: Prisma.StringFieldUpdateOperationsInput | string
   commissionPaid?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  recruitmentStep?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 
@@ -1223,6 +1256,7 @@ export type TaskSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   documents?: boolean
   processingColId?: boolean
   commissionPaid?: boolean
+  recruitmentStep?: boolean
   column?: boolean | Prisma.Task$columnArgs<ExtArgs>
   activities?: boolean | Prisma.Task$activitiesArgs<ExtArgs>
   _count?: boolean | Prisma.TaskCountOutputTypeDefaultArgs<ExtArgs>
@@ -1252,6 +1286,7 @@ export type TaskSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   documents?: boolean
   processingColId?: boolean
   commissionPaid?: boolean
+  recruitmentStep?: boolean
   column?: boolean | Prisma.Task$columnArgs<ExtArgs>
 }, ExtArgs["result"]["task"]>
 
@@ -1279,6 +1314,7 @@ export type TaskSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   documents?: boolean
   processingColId?: boolean
   commissionPaid?: boolean
+  recruitmentStep?: boolean
   column?: boolean | Prisma.Task$columnArgs<ExtArgs>
 }, ExtArgs["result"]["task"]>
 
@@ -1306,9 +1342,10 @@ export type TaskSelectScalar = {
   documents?: boolean
   processingColId?: boolean
   commissionPaid?: boolean
+  recruitmentStep?: boolean
 }
 
-export type TaskOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "content" | "price" | "phone" | "email" | "description" | "source" | "assignedTo" | "visaType" | "passportNumber" | "maritalStatus" | "dependents" | "priorityDate" | "educationLevel" | "englishScore" | "workExperience" | "jobType" | "checklistType" | "columnId" | "createdAt" | "documents" | "processingColId" | "commissionPaid", ExtArgs["result"]["task"]>
+export type TaskOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "content" | "price" | "phone" | "email" | "description" | "source" | "assignedTo" | "visaType" | "passportNumber" | "maritalStatus" | "dependents" | "priorityDate" | "educationLevel" | "englishScore" | "workExperience" | "jobType" | "checklistType" | "columnId" | "createdAt" | "documents" | "processingColId" | "commissionPaid" | "recruitmentStep", ExtArgs["result"]["task"]>
 export type TaskInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   column?: boolean | Prisma.Task$columnArgs<ExtArgs>
   activities?: boolean | Prisma.Task$activitiesArgs<ExtArgs>
@@ -1351,6 +1388,7 @@ export type $TaskPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     documents: runtime.JsonValue | null
     processingColId: string
     commissionPaid: boolean
+    recruitmentStep: string | null
   }, ExtArgs["result"]["task"]>
   composites: {}
 }
@@ -1799,6 +1837,7 @@ export interface TaskFieldRefs {
   readonly documents: Prisma.FieldRef<"Task", 'Json'>
   readonly processingColId: Prisma.FieldRef<"Task", 'String'>
   readonly commissionPaid: Prisma.FieldRef<"Task", 'Boolean'>
+  readonly recruitmentStep: Prisma.FieldRef<"Task", 'String'>
 }
     
 

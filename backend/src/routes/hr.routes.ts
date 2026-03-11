@@ -1,6 +1,6 @@
 // src/routes/hr.routes.ts
 import { Router } from "express";
-import { getDepartments, createDepartment, getEmployees, createEmployee, deleteDepartment, updateDepartment, deleteEmployee, checkInEmployee, addManualBonus, finalizeMonthSalary, getSalaryHistory, createLeaveRequest, getLeaveRequests, updateLeaveRequestStatus } from "../controllers/hr.controller.js";
+import { getDepartments, createDepartment, getEmployees, createEmployee, deleteDepartment, updateDepartment, deleteEmployee, checkInEmployee, addManualBonus, finalizeMonthSalary, getSalaryHistory, createLeaveRequest, getLeaveRequests, updateLeaveRequestStatus, updateEmployee } from "../controllers/hr.controller.js";
 
 const router = Router();
 
@@ -16,6 +16,7 @@ router.delete("/departments/:id", deleteDepartment);
 
 router.get("/employees", getEmployees);
 router.post("/employees", createEmployee);
+router.put("/employees/:id", updateEmployee);
 router.delete("/employees/:id", deleteEmployee);
 // Thêm Route này dành riêng cho Check-in
 router.post("/employees/:id/checkin", checkInEmployee);

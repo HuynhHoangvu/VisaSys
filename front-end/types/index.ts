@@ -218,3 +218,11 @@ export interface DepartmentTemplate {
   tasks: KPITask[];
   weeklyReport?: string[];
 }
+export interface Requirement {
+  id: string;
+  section: string;
+  name: string;
+  note: string;
+  required: boolean;
+  templateUrl?: string; // <--- THÊM DÒNG NÀY (Dấu ? nghĩa là có thể có hoặc không)
+}
