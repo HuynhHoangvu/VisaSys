@@ -63,6 +63,7 @@ const canAccessProcessing =
   (isBoss ||
     isManager ||
     currentUser.department.toLowerCase().includes("xử lý hồ sơ") ||
+    currentUser.department.toLowerCase().includes("trợ lý giám đốc") ||
     currentUser.department.toLowerCase().includes("hồ sơ")) &&
   !isSaleOnly; 
   return (
