@@ -945,7 +945,7 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
                                 <button
                                   onClick={() =>
                                     handleDownloadSlip(
-                                      record.employee.id,
+                                      record.employee?.id ?? "",
                                       record.monthYear,
                                       record.employee.name ?? "NhanVien",
                                     )
