@@ -275,6 +275,7 @@ export const ProcessedFileScalarFieldEnum = {
   fileUrl: 'fileUrl',
   uploadedBy: 'uploadedBy',
   createdAt: 'createdAt',
+  cloudinaryPublicId: 'cloudinaryPublicId',
   folderId: 'folderId'
 } as const
 

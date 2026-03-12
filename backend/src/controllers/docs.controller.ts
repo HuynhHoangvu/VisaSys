@@ -84,7 +84,7 @@ export const uploadFile = async (req: Request, res: Response) => {
   try {
     if (!req.file) return res.status(400).json({ error: "Chưa chọn file" });
 
-    const uploadedBy = (req.body.uploadedBy as string) || "Ẩn danh";
+    const uploadedBy = (req.body.uploadedBy as string) || "An danh";
     const size = (req.body.size as string) || "0 KB";
 
     let folderId: string | null = null;
@@ -94,42 +94,44 @@ export const uploadFile = async (req: Request, res: Response) => {
       folderId = req.body.folderId[0] !== "null" ? req.body.folderId[0] : null;
     }
 
-    // Decode tên tiếng Việt
     const decodedName = Buffer.from(req.file.originalname, "latin1").toString("utf8");
 
-    // ==========================================
-    // UPLOAD LÊN CLOUDINARY
-    // ==========================================
-    const cloudinaryResult = await cloudinary.uploader.upload(req.file.path, {
-      folder: "flyvisa-documents",      // Lưu vào thư mục flyvisa-documents trên Cloudinary
-      public_id: `${Date.now()}_${req.file.filename}`,
-      resource_type: "raw",             // "raw" để hỗ trợ PDF, Word, Excel...
-      use_filename: true,
-      unique_filename: false,
+    // Upload từ buffer thay vì file.path
+    const cloudinaryResult = await new Promise<any>((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        {
+          folder: "flyvisa-documents",
+          resource_type: "raw",
+          public_id: `${Date.now()}_${decodedName.replace(/\s+/g, "_")}`,
+        },
+        (error, result) => {
+          if (error) return reject(error);
+          resolve(result);
+        }
+      );
+      const { Readable } = require("stream");
+      const readable = new Readable();
+      readable.push(req.file!.buffer);
+      readable.push(null);
+      readable.pipe(stream);
     });
 
-    // Xóa file tạm trên server sau khi upload lên Cloudinary xong
-    if (fs.existsSync(req.file.path)) {
-      fs.unlinkSync(req.file.path);
-    }
-
-    // Lưu vào DB với URL từ Cloudinary
     const newFile = await prisma.docFile.create({
       data: {
         name: decodedName,
-        size: size,
-        uploadedBy: uploadedBy,
-        fileUrl: cloudinaryResult.secure_url,         // URL Cloudinary
-        cloudinaryPublicId: cloudinaryResult.public_id, // Lưu để xóa sau này
-        folderId: folderId,
+        size,
+        uploadedBy,
+        fileUrl: cloudinaryResult.secure_url,
+        cloudinaryPublicId: cloudinaryResult.public_id,
+        folderId,
       },
     });
 
     getIO().emit("docs_changed");
     res.status(201).json(newFile);
   } catch (error) {
-    console.error("Lỗi upload Cloudinary:", error);
-    res.status(500).json({ error: "Lỗi upload file lên Cloudinary" });
+    console.error("Loi upload Cloudinary:", error);
+    res.status(500).json({ error: "Loi upload file len Cloudinary" });
   }
 };
 
