@@ -32,6 +32,16 @@ services:
     depends_on:
       postgres:
         condition: service_healthy       # chờ DB sẵn sàng mới start
+    develop:
+      watch:
+        - action: sync
+          path: ./backend
+          target: /app
+          ignore:
+            - node_modules/
+            - uploads/
+        - action: rebuild
+          path: ./backend/package.json
 
   frontend:
     build:
@@ -44,6 +54,14 @@ services:
       VITE_API_URL: "http://localhost:3001"
     depends_on:
       - backend
-
+    develop:
+      watch:
+        - action: sync
+          path: ./front-end
+          target: /app
+          ignore:
+            - node_modules/
+        - action: rebuild
+          path: ./front-end/package.json
 volumes:
   pgdata:

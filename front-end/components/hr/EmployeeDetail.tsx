@@ -12,8 +12,11 @@ interface EmployeeDetailProps {
   currentUser: AuthUser | null;
   onBack: () => void;
   onCheckIn: (id: string) => void;
+  onCheckOut: (id: string) => void; // ← thêm
 }
+
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+
 const formatVND = (amount: number): string => {
   return new Intl.NumberFormat("vi-VN", {
     style: "currency",
@@ -25,6 +28,7 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
   employee,
   onBack,
   onCheckIn,
+  onCheckOut, // ← thêm
   currentUser,
 }) => {
   const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
@@ -41,9 +45,11 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
   const safeAttendanceRecords = employee.attendanceRecords || [];
   const safeSalesRecords = employee.salesRecords || [];
 
-  const hasCheckedInToday = safeAttendanceRecords.some(
-    (r) => r.date === todayStr,
-  );
+  // ← fix: khai báo trong component
+  const todayRecord = safeAttendanceRecords.find((r) => r.date === todayStr);
+  const hasCheckedInToday = !!todayRecord;
+  const hasCheckedOutToday =
+    !!todayRecord?.outTime && todayRecord.outTime !== "-";
 
   // ==========================================
   // THUẬT TOÁN TÍNH LƯƠNG
@@ -52,6 +58,40 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
   let manualFines = 0;
   let salaryAdvances = 0;
 
+  safeSalesRecords.forEach((record) => {
+    const amount = Number(record.profit) || 0;
+    const type = record.service;
+
+    if (type === "Phạt") {
+      manualFines += Math.abs(amount);
+    } else if (type === "Tạm ứng") {
+      salaryAdvances += Math.abs(amount);
+    } else {
+      totalBonusAndCommission += amount;
+    }
+  });
+
+  // Phạt đi trễ
+  const attendanceFines = safeAttendanceRecords.reduce(
+    (sum, r) => sum + (r.fine || 0),
+    0,
+  );
+
+  // Phạt về sớm / quên checkout (lưu trong halfDayDeduction)
+  const halfDayDeductions = safeAttendanceRecords.reduce(
+    (sum, r) => sum + (r.halfDayDeduction || 0),
+    0,
+  );
+
+  const totalFines = manualFines + attendanceFines + halfDayDeductions;
+
+  const originalBaseSalary = employee.baseSalary || 0;
+  const currentBaseSalary = originalBaseSalary - salaryAdvances;
+  const finalSalary = currentBaseSalary + totalBonusAndCommission - totalFines;
+
+  // ==========================================
+  // HANDLERS
+  // ==========================================
   const handleSubmitLeaveRequest = async (data: LeaveRequestData) => {
     try {
       const response = await fetch(
@@ -62,72 +102,32 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
           body: JSON.stringify(data),
         },
       );
-
       if (!response.ok) throw new Error("Lỗi gửi đơn");
-
       alert("Đã gửi đơn xin nghỉ phép thành công! Vui lòng chờ Quản lý duyệt.");
-      // Chỗ này gọi lại fetchData() để cập nhật lại giao diện nếu cần
     } catch (error) {
       alert("Có lỗi xảy ra khi gửi đơn!" + error);
     }
   };
-  // Chạy qua từng dòng giao dịch để phân loại chính xác
-  safeSalesRecords.forEach((record) => {
-    const amount = Number(record.profit) || 0; // Lấy số tiền
-    const type = record.service; // "Thưởng", "Phạt", "Tạm ứng" hoặc "Tên visa..."
 
-    if (type === "Phạt") {
-      // Phạt thì nhét vào quỹ Phạt (Lấy trị tuyệt đối để luôn là số dương để dễ tính)
-      manualFines += Math.abs(amount);
-    } else if (type === "Tạm ứng") {
-      // Tạm ứng thì nhét vào quỹ Tạm ứng
-      salaryAdvances += Math.abs(amount);
-    } else {
-      // Còn lại (Hoa hồng, Thưởng) thì cộng dồn vào quỹ Thưởng
-      // (Nếu vô tình data cũ lưu số âm thì nó sẽ tự kéo tiền xuống)
-      totalBonusAndCommission += amount;
-    }
-  });
-
-  // Tính phạt chấm công
-  const attendanceFines = safeAttendanceRecords.reduce(
-    (sum, r) => sum + (r.fine || 0),
-    0,
-  );
-
-  // GỘP CÁC QUỸ LẠI ĐỂ RA SỐ CUỐI CÙNG
-  const totalFines = manualFines + attendanceFines;
-
-  const originalBaseSalary = employee.baseSalary || 0;
-  const currentBaseSalary = originalBaseSalary - salaryAdvances; // Lương cơ bản sau khi trừ tạm ứng
-
-  const finalSalary = currentBaseSalary + totalBonusAndCommission - totalFines;
-
-  // ==========================================
-  // XỬ LÝ SẾP THÊM KHOẢN THỦ CÔNG (API)
-  // ==========================================
   const handleAddManualBonus = async () => {
     if (!bonusAmount || !bonusNote) return alert("Vui lòng nhập đủ thông tin!");
 
     let amount = Number(bonusAmount.replace(/\D/g, ""));
     if (bonusType === "Phạt" || bonusType === "Tạm ứng") {
-      amount = -amount; // Phạt / Tạm ứng thì lưu xuống DB với số Âm
+      amount = -amount;
     }
 
     try {
-      await fetch(
-        `${API_URL}/api/hr/employees/${employee.id}/bonus`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            customer: "Điều chỉnh thủ công",
-            service: bonusType,
-            profit: amount,
-            note: bonusNote,
-          }),
-        },
-      );
+      await fetch(`${API_URL}/api/hr/employees/${employee.id}/bonus`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customer: "Điều chỉnh thủ công",
+          service: bonusType,
+          profit: amount,
+          note: bonusNote,
+        }),
+      });
 
       setIsBonusModalOpen(false);
       setBonusAmount("");
@@ -139,6 +139,9 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
     }
   };
 
+  // ==========================================
+  // RENDER
+  // ==========================================
   return (
     <div className="flex-1 p-6 overflow-y-auto space-y-6 bg-gray-50 h-full relative">
       <div
@@ -174,7 +177,7 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
             <h2 className="text-2xl font-bold text-gray-800">
               {employee.name}
             </h2>
-            <div className="text-gray-500 font-medium mt-1 flex items-center gap-2">
+            <div className="text-gray-500 font-medium mt-1 flex items-center gap-2 flex-wrap">
               <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs uppercase tracking-wide font-bold">
                 {employee.role}
               </span>
@@ -192,7 +195,8 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
             </div>
           </div>
         </div>
-        <div className="flex gap-3">
+
+        <div className="flex gap-3 flex-wrap">
           {isDirector && (
             <Button
               color="light"
@@ -209,20 +213,29 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
           >
             Nghỉ phép
           </Button>
-          {hasCheckedInToday ? (
-            <Button
-              color="success"
-              disabled
-              className="focus:ring-0 cursor-not-allowed opacity-80"
-            >
-              ✅ Đã Check-in
-            </Button>
-          ) : (
+
+          {/* NÚT CHECK-IN / CHECK-OUT */}
+          {!hasCheckedInToday ? (
             <Button
               className="bg-orange-400 hover:bg-orange-500 focus:ring-0 text-white shadow-md border-none"
               onClick={() => onCheckIn(employee.id)}
             >
               Check-in Hôm Nay
+            </Button>
+          ) : !hasCheckedOutToday ? (
+            <Button
+              className="bg-blue-500 hover:bg-blue-600 focus:ring-0 text-white shadow-md border-none"
+              onClick={() => onCheckOut(employee.id)}
+            >
+              🕔 Check-out
+            </Button>
+          ) : (
+            <Button
+              color="success"
+              disabled
+              className="focus:ring-0 cursor-not-allowed opacity-80"
+            >
+              ✅ Đã Check-out {todayRecord?.outTime}
             </Button>
           )}
         </div>
@@ -238,7 +251,7 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
             {formatVND(finalSalary)}
           </h4>
           <p className="text-xs font-medium text-gray-400 mt-1">
-            (Đã trừ tiền tạm ứng)
+            (Đã trừ tạm ứng + phạt)
           </p>
         </Card>
 
@@ -260,6 +273,7 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
           </h4>
           <div className="absolute bottom-2 right-4 flex flex-col items-end text-[11px] font-medium text-gray-400">
             <span>Đi muộn: -{formatVND(attendanceFines)}</span>
+            <span>Về sớm/Quên CO: -{formatVND(halfDayDeductions)}</span>
             <span>Phạt khác: -{formatVND(manualFines)}</span>
           </div>
         </Card>
@@ -280,46 +294,73 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
                 <tr>
                   <th className="px-4 py-3 font-bold">Ngày</th>
                   <th className="px-4 py-3 font-bold">Giờ vào</th>
+                  <th className="px-4 py-3 font-bold">Giờ ra</th>
                   <th className="px-4 py-3 font-bold">Trạng thái</th>
-                  <th className="px-4 py-3 text-right font-bold">Phạt</th>
+                  <th className="px-4 py-3 text-right font-bold">Phạt CI</th>
+                  <th className="px-4 py-3 text-right font-bold">Trừ CO</th>
                 </tr>
               </thead>
               <tbody>
                 {safeAttendanceRecords.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={4}
+                      colSpan={6}
                       className="px-4 py-8 text-center text-gray-400 italic"
                     >
                       Chưa có dữ liệu chấm công.
                     </td>
                   </tr>
                 ) : (
-                  safeAttendanceRecords.map((record, index) => (
-                    <tr
-                      key={index}
-                      className="border-b border-gray-100 last:border-0 hover:bg-blue-50/30 transition-colors"
-                    >
-                      <td className="px-4 py-4 font-bold text-gray-800">
-                        {record.date}
-                      </td>
-                      <td className="px-4 py-4 font-medium text-gray-600">
-                        {record.inTime}
-                      </td>
-                      <td className="px-4 py-4">
-                        <span
-                          className={`px-2.5 py-1 rounded-full text-2xs font-bold uppercase tracking-wider ${record.status === "Đúng giờ" ? "bg-green-100 text-green-700" : record.status === "Đi muộn" ? "bg-yellow-100 text-yellow-700" : "bg-red-100 text-red-700"}`}
-                        >
-                          {record.status}
-                        </span>
-                      </td>
-                      <td
-                        className={`px-4 py-4 text-right font-bold ${record.fine > 0 ? "text-red-500" : "text-gray-400"}`}
+                  safeAttendanceRecords.map((record, index) => {
+                    const statusColor =
+                      record.status === "Đúng giờ"
+                        ? "bg-green-100 text-green-700"
+                        : record.status === "Đi muộn"
+                          ? "bg-yellow-100 text-yellow-700"
+                          : record.status?.includes("Về sớm")
+                            ? "bg-orange-100 text-orange-700"
+                            : record.status === "Quên checkout"
+                              ? "bg-red-100 text-red-700"
+                              : "bg-gray-100 text-gray-600";
+
+                    return (
+                      <tr
+                        key={index}
+                        className="border-b border-gray-100 last:border-0 hover:bg-blue-50/30 transition-colors"
                       >
-                        {record.fine > 0 ? `-${formatVND(record.fine)}` : "-"}
-                      </td>
-                    </tr>
-                  ))
+                        <td className="px-4 py-4 font-bold text-gray-800">
+                          {record.date}
+                        </td>
+                        <td className="px-4 py-4 font-medium text-gray-600">
+                          {record.inTime}
+                        </td>
+                        <td className="px-4 py-4 font-medium text-gray-600">
+                          {record.outTime && record.outTime !== "-"
+                            ? record.outTime
+                            : "—"}
+                        </td>
+                        <td className="px-4 py-4">
+                          <span
+                            className={`px-2.5 py-1 rounded-full text-2xs font-bold uppercase tracking-wider ${statusColor}`}
+                          >
+                            {record.status}
+                          </span>
+                        </td>
+                        <td
+                          className={`px-4 py-4 text-right font-bold ${record.fine > 0 ? "text-red-500" : "text-gray-300"}`}
+                        >
+                          {record.fine > 0 ? `-${formatVND(record.fine)}` : "—"}
+                        </td>
+                        <td
+                          className={`px-4 py-4 text-right font-bold ${(record.halfDayDeduction || 0) > 0 ? "text-orange-500" : "text-gray-300"}`}
+                        >
+                          {(record.halfDayDeduction || 0) > 0
+                            ? `-${formatVND(record.halfDayDeduction!)}`
+                            : "—"}
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -390,7 +431,7 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
         </Card>
       </div>
 
-      {/* MODAL */}
+      {/* MODAL THƯỞNG/PHẠT */}
       <Modal
         show={isBonusModalOpen}
         onClose={() => setIsBonusModalOpen(false)}

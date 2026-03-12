@@ -103,6 +103,7 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({
               <option value="Việc cá nhân">Việc cá nhân</option>
               <option value="Nghỉ thai sản">Nghỉ thai sản</option>
               <option value="Nghỉ không lương">Nghỉ không lương</option>
+              <option value="Về sớm">Về Sớm</option>
             </Select>
           </div>
 

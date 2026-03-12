@@ -102,7 +102,7 @@ model AttendanceRecord {
   outTime    String   // "-"
   status     String   // "Đúng giờ" | "Đi muộn" | "Vắng không phép"
   fine       Float    @default(0)
-
+  halfDayDeduction  Float   @default(0)
   employeeId String
   employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
 

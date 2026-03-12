@@ -67,7 +67,7 @@ export interface Department {
   name: string;
 }
 
-export type AttendanceStatus = "Đúng giờ" | "Đi muộn" | "Vắng không phép" | "Chưa Check-in";
+export type AttendanceStatus = "Đúng giờ" | "Đi muộn" | "Vắng không phép" | "Chưa Check-in" | "Về sớm" | "Đi muộn + Về Sớm" | "Quên checkout";
 
 export interface AttendanceRecord {
   id?: string;
@@ -187,6 +187,7 @@ export interface SalaryHistory {
   totalDeduction: number;
   finalSalary: number;
   employee?: {
+    id: string;
     name: string;
     employeeCode: string;
     department: string;
@@ -225,4 +226,12 @@ export interface Requirement {
   note: string;
   required: boolean;
   templateUrl?: string; // <--- THÊM DÒNG NÀY (Dấu ? nghĩa là có thể có hoặc không)
+}
+export interface AttendanceRecord {
+  date: string;
+  inTime: string;
+  outTime: string;
+  status: AttendanceStatus;
+  fine: number;
+  halfDayDeduction?: number;  // ← thêm
 }

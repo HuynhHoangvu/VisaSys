@@ -172,6 +172,7 @@ export const AttendanceRecordScalarFieldEnum = {
   outTime: 'outTime',
   status: 'status',
   fine: 'fine',
+  halfDayDeduction: 'halfDayDeduction',
   employeeId: 'employeeId',
   createdAt: 'createdAt'
 } as const

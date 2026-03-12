@@ -28,10 +28,12 @@ export type AggregateAttendanceRecord = {
 
 export type AttendanceRecordAvgAggregateOutputType = {
   fine: number | null
+  halfDayDeduction: number | null
 }
 
 export type AttendanceRecordSumAggregateOutputType = {
   fine: number | null
+  halfDayDeduction: number | null
 }
 
 export type AttendanceRecordMinAggregateOutputType = {
@@ -41,6 +43,7 @@ export type AttendanceRecordMinAggregateOutputType = {
   outTime: string | null
   status: string | null
   fine: number | null
+  halfDayDeduction: number | null
   employeeId: string | null
   createdAt: Date | null
 }
@@ -52,6 +55,7 @@ export type AttendanceRecordMaxAggregateOutputType = {
   outTime: string | null
   status: string | null
   fine: number | null
+  halfDayDeduction: number | null
   employeeId: string | null
   createdAt: Date | null
 }
@@ -63,6 +67,7 @@ export type AttendanceRecordCountAggregateOutputType = {
   outTime: number
   status: number
   fine: number
+  halfDayDeduction: number
   employeeId: number
   createdAt: number
   _all: number
@@ -71,10 +76,12 @@ export type AttendanceRecordCountAggregateOutputType = {
 
 export type AttendanceRecordAvgAggregateInputType = {
   fine?: true
+  halfDayDeduction?: true
 }
 
 export type AttendanceRecordSumAggregateInputType = {
   fine?: true
+  halfDayDeduction?: true
 }
 
 export type AttendanceRecordMinAggregateInputType = {
@@ -84,6 +91,7 @@ export type AttendanceRecordMinAggregateInputType = {
   outTime?: true
   status?: true
   fine?: true
+  halfDayDeduction?: true
   employeeId?: true
   createdAt?: true
 }
@@ -95,6 +103,7 @@ export type AttendanceRecordMaxAggregateInputType = {
   outTime?: true
   status?: true
   fine?: true
+  halfDayDeduction?: true
   employeeId?: true
   createdAt?: true
 }
@@ -106,6 +115,7 @@ export type AttendanceRecordCountAggregateInputType = {
   outTime?: true
   status?: true
   fine?: true
+  halfDayDeduction?: true
   employeeId?: true
   createdAt?: true
   _all?: true
@@ -204,6 +214,7 @@ export type AttendanceRecordGroupByOutputType = {
   outTime: string
   status: string
   fine: number
+  halfDayDeduction: number
   employeeId: string
   createdAt: Date
   _count: AttendanceRecordCountAggregateOutputType | null
@@ -238,6 +249,7 @@ export type AttendanceRecordWhereInput = {
   outTime?: Prisma.StringFilter<"AttendanceRecord"> | string
   status?: Prisma.StringFilter<"AttendanceRecord"> | string
   fine?: Prisma.FloatFilter<"AttendanceRecord"> | number
+  halfDayDeduction?: Prisma.FloatFilter<"AttendanceRecord"> | number
   employeeId?: Prisma.StringFilter<"AttendanceRecord"> | string
   createdAt?: Prisma.DateTimeFilter<"AttendanceRecord"> | Date | string
   employee?: Prisma.XOR<Prisma.EmployeeScalarRelationFilter, Prisma.EmployeeWhereInput>
@@ -250,6 +262,7 @@ export type AttendanceRecordOrderByWithRelationInput = {
   outTime?: Prisma.SortOrder
   status?: Prisma.SortOrder
   fine?: Prisma.SortOrder
+  halfDayDeduction?: Prisma.SortOrder
   employeeId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   employee?: Prisma.EmployeeOrderByWithRelationInput
@@ -265,6 +278,7 @@ export type AttendanceRecordWhereUniqueInput = Prisma.AtLeast<{
   outTime?: Prisma.StringFilter<"AttendanceRecord"> | string
   status?: Prisma.StringFilter<"AttendanceRecord"> | string
   fine?: Prisma.FloatFilter<"AttendanceRecord"> | number
+  halfDayDeduction?: Prisma.FloatFilter<"AttendanceRecord"> | number
   employeeId?: Prisma.StringFilter<"AttendanceRecord"> | string
   createdAt?: Prisma.DateTimeFilter<"AttendanceRecord"> | Date | string
   employee?: Prisma.XOR<Prisma.EmployeeScalarRelationFilter, Prisma.EmployeeWhereInput>
@@ -277,6 +291,7 @@ export type AttendanceRecordOrderByWithAggregationInput = {
   outTime?: Prisma.SortOrder
   status?: Prisma.SortOrder
   fine?: Prisma.SortOrder
+  halfDayDeduction?: Prisma.SortOrder
   employeeId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   _count?: Prisma.AttendanceRecordCountOrderByAggregateInput
@@ -296,6 +311,7 @@ export type AttendanceRecordScalarWhereWithAggregatesInput = {
   outTime?: Prisma.StringWithAggregatesFilter<"AttendanceRecord"> | string
   status?: Prisma.StringWithAggregatesFilter<"AttendanceRecord"> | string
   fine?: Prisma.FloatWithAggregatesFilter<"AttendanceRecord"> | number
+  halfDayDeduction?: Prisma.FloatWithAggregatesFilter<"AttendanceRecord"> | number
   employeeId?: Prisma.StringWithAggregatesFilter<"AttendanceRecord"> | string
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"AttendanceRecord"> | Date | string
 }
@@ -307,6 +323,7 @@ export type AttendanceRecordCreateInput = {
   outTime: string
   status: string
   fine?: number
+  halfDayDeduction?: number
   createdAt?: Date | string
   employee: Prisma.EmployeeCreateNestedOneWithoutAttendanceRecordsInput
 }
@@ -318,6 +335,7 @@ export type AttendanceRecordUncheckedCreateInput = {
   outTime: string
   status: string
   fine?: number
+  halfDayDeduction?: number
   employeeId: string
   createdAt?: Date | string
 }
@@ -329,6 +347,7 @@ export type AttendanceRecordUpdateInput = {
   outTime?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   fine?: Prisma.FloatFieldUpdateOperationsInput | number
+  halfDayDeduction?: Prisma.FloatFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   employee?: Prisma.EmployeeUpdateOneRequiredWithoutAttendanceRecordsNestedInput
 }
@@ -340,6 +359,7 @@ export type AttendanceRecordUncheckedUpdateInput = {
   outTime?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   fine?: Prisma.FloatFieldUpdateOperationsInput | number
+  halfDayDeduction?: Prisma.FloatFieldUpdateOperationsInput | number
   employeeId?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -351,6 +371,7 @@ export type AttendanceRecordCreateManyInput = {
   outTime: string
   status: string
   fine?: number
+  halfDayDeduction?: number
   employeeId: string
   createdAt?: Date | string
 }
@@ -362,6 +383,7 @@ export type AttendanceRecordUpdateManyMutationInput = {
   outTime?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   fine?: Prisma.FloatFieldUpdateOperationsInput | number
+  halfDayDeduction?: Prisma.FloatFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -372,6 +394,7 @@ export type AttendanceRecordUncheckedUpdateManyInput = {
   outTime?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   fine?: Prisma.FloatFieldUpdateOperationsInput | number
+  halfDayDeduction?: Prisma.FloatFieldUpdateOperationsInput | number
   employeeId?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -393,12 +416,14 @@ export type AttendanceRecordCountOrderByAggregateInput = {
   outTime?: Prisma.SortOrder
   status?: Prisma.SortOrder
   fine?: Prisma.SortOrder
+  halfDayDeduction?: Prisma.SortOrder
   employeeId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
 export type AttendanceRecordAvgOrderByAggregateInput = {
   fine?: Prisma.SortOrder
+  halfDayDeduction?: Prisma.SortOrder
 }
 
 export type AttendanceRecordMaxOrderByAggregateInput = {
@@ -408,6 +433,7 @@ export type AttendanceRecordMaxOrderByAggregateInput = {
   outTime?: Prisma.SortOrder
   status?: Prisma.SortOrder
   fine?: Prisma.SortOrder
+  halfDayDeduction?: Prisma.SortOrder
   employeeId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
@@ -419,12 +445,14 @@ export type AttendanceRecordMinOrderByAggregateInput = {
   outTime?: Prisma.SortOrder
   status?: Prisma.SortOrder
   fine?: Prisma.SortOrder
+  halfDayDeduction?: Prisma.SortOrder
   employeeId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
 export type AttendanceRecordSumOrderByAggregateInput = {
   fine?: Prisma.SortOrder
+  halfDayDeduction?: Prisma.SortOrder
 }
 
 export type AttendanceRecordCreateNestedManyWithoutEmployeeInput = {
@@ -476,6 +504,7 @@ export type AttendanceRecordCreateWithoutEmployeeInput = {
   outTime: string
   status: string
   fine?: number
+  halfDayDeduction?: number
   createdAt?: Date | string
 }
 
@@ -486,6 +515,7 @@ export type AttendanceRecordUncheckedCreateWithoutEmployeeInput = {
   outTime: string
   status: string
   fine?: number
+  halfDayDeduction?: number
   createdAt?: Date | string
 }
 
@@ -525,6 +555,7 @@ export type AttendanceRecordScalarWhereInput = {
   outTime?: Prisma.StringFilter<"AttendanceRecord"> | string
   status?: Prisma.StringFilter<"AttendanceRecord"> | string
   fine?: Prisma.FloatFilter<"AttendanceRecord"> | number
+  halfDayDeduction?: Prisma.FloatFilter<"AttendanceRecord"> | number
   employeeId?: Prisma.StringFilter<"AttendanceRecord"> | string
   createdAt?: Prisma.DateTimeFilter<"AttendanceRecord"> | Date | string
 }
@@ -536,6 +567,7 @@ export type AttendanceRecordCreateManyEmployeeInput = {
   outTime: string
   status: string
   fine?: number
+  halfDayDeduction?: number
   createdAt?: Date | string
 }
 
@@ -546,6 +578,7 @@ export type AttendanceRecordUpdateWithoutEmployeeInput = {
   outTime?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   fine?: Prisma.FloatFieldUpdateOperationsInput | number
+  halfDayDeduction?: Prisma.FloatFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -556,6 +589,7 @@ export type AttendanceRecordUncheckedUpdateWithoutEmployeeInput = {
   outTime?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   fine?: Prisma.FloatFieldUpdateOperationsInput | number
+  halfDayDeduction?: Prisma.FloatFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -566,6 +600,7 @@ export type AttendanceRecordUncheckedUpdateManyWithoutEmployeeInput = {
   outTime?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   fine?: Prisma.FloatFieldUpdateOperationsInput | number
+  halfDayDeduction?: Prisma.FloatFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -578,6 +613,7 @@ export type AttendanceRecordSelect<ExtArgs extends runtime.Types.Extensions.Inte
   outTime?: boolean
   status?: boolean
   fine?: boolean
+  halfDayDeduction?: boolean
   employeeId?: boolean
   createdAt?: boolean
   employee?: boolean | Prisma.EmployeeDefaultArgs<ExtArgs>
@@ -590,6 +626,7 @@ export type AttendanceRecordSelectCreateManyAndReturn<ExtArgs extends runtime.Ty
   outTime?: boolean
   status?: boolean
   fine?: boolean
+  halfDayDeduction?: boolean
   employeeId?: boolean
   createdAt?: boolean
   employee?: boolean | Prisma.EmployeeDefaultArgs<ExtArgs>
@@ -602,6 +639,7 @@ export type AttendanceRecordSelectUpdateManyAndReturn<ExtArgs extends runtime.Ty
   outTime?: boolean
   status?: boolean
   fine?: boolean
+  halfDayDeduction?: boolean
   employeeId?: boolean
   createdAt?: boolean
   employee?: boolean | Prisma.EmployeeDefaultArgs<ExtArgs>
@@ -614,11 +652,12 @@ export type AttendanceRecordSelectScalar = {
   outTime?: boolean
   status?: boolean
   fine?: boolean
+  halfDayDeduction?: boolean
   employeeId?: boolean
   createdAt?: boolean
 }
 
-export type AttendanceRecordOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "date" | "inTime" | "outTime" | "status" | "fine" | "employeeId" | "createdAt", ExtArgs["result"]["attendanceRecord"]>
+export type AttendanceRecordOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "date" | "inTime" | "outTime" | "status" | "fine" | "halfDayDeduction" | "employeeId" | "createdAt", ExtArgs["result"]["attendanceRecord"]>
 export type AttendanceRecordInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   employee?: boolean | Prisma.EmployeeDefaultArgs<ExtArgs>
 }
@@ -641,6 +680,7 @@ export type $AttendanceRecordPayload<ExtArgs extends runtime.Types.Extensions.In
     outTime: string
     status: string
     fine: number
+    halfDayDeduction: number
     employeeId: string
     createdAt: Date
   }, ExtArgs["result"]["attendanceRecord"]>
@@ -1073,6 +1113,7 @@ export interface AttendanceRecordFieldRefs {
   readonly outTime: Prisma.FieldRef<"AttendanceRecord", 'String'>
   readonly status: Prisma.FieldRef<"AttendanceRecord", 'String'>
   readonly fine: Prisma.FieldRef<"AttendanceRecord", 'Float'>
+  readonly halfDayDeduction: Prisma.FieldRef<"AttendanceRecord", 'Float'>
   readonly employeeId: Prisma.FieldRef<"AttendanceRecord", 'String'>
   readonly createdAt: Prisma.FieldRef<"AttendanceRecord", 'DateTime'>
 }

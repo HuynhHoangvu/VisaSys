@@ -2,9 +2,133 @@ import { Request, Response } from "express";
 import { prisma } from "../../lib/prisma.js";
 import { getIO } from "../socket.js";
 
-// ==========================================
-// 1. QUẢN LÝ BỘ PHẬN (DEPARTMENT)
-// ==========================================
+import { execSync } from "child_process";
+import fs from "fs";
+import path from "path";
+import os from "os"; // Thêm import os để xử lý thư mục tạm an toàn trên mọi HĐH
+
+export const downloadSalarySlip = async (req: Request, res: Response) => {
+  let tmpJson: string | null = null;
+  let tmpPdf: string | null = null;
+
+  try {
+    const { employeeId, monthYear } = req.params as { employeeId: string; monthYear: string };
+
+    // Tìm script Python
+    let scriptPath = path.join(process.cwd(), "src/scripts/gen_salary.py");
+    if (!fs.existsSync(scriptPath)) {
+      scriptPath = path.join(process.cwd(), "scripts/gen_salary.py");
+    }
+    if (!fs.existsSync(scriptPath)) {
+      console.error("❌ Không tìm thấy script tại:", scriptPath);
+      return res.status(500).json({ error: "Không tìm thấy file PDF generator" });
+    }
+
+    // Lấy thông tin nhân viên
+    const employee = await prisma.employee.findUnique({
+      where: { id: employeeId },
+      include: { salesRecords: true, attendanceRecords: true },
+    });
+    if (!employee) return res.status(404).json({ error: "Không tìm thấy nhân viên" });
+
+    // Tính lương (giữ nguyên logic cũ)
+    let totalBonus = 0, manualFines = 0, salaryAdvances = 0, halfDayDeduction = 0;
+    employee.salesRecords.forEach((r) => {
+      const amount = Number(r.profit) || 0;
+      if (r.service === "Phạt") manualFines += Math.abs(amount);
+      else if (r.service === "Tạm ứng") salaryAdvances += Math.abs(amount);
+      else totalBonus += amount;
+    });
+
+    const attendanceFines = employee.attendanceRecords.reduce((s, r) => s + (r.fine || 0), 0);
+    halfDayDeduction = employee.attendanceRecords.reduce((s, r) => s + (r.halfDayDeduction || 0), 0);
+    const workDays = employee.attendanceRecords.filter(
+      (r) => r.outTime && r.outTime !== "-" && r.outTime !== "Quên checkout"
+    ).length;
+
+    const baseSalary = employee.baseSalary || 0;
+    const bhxh = Math.round(baseSalary * 0.08);
+    const bhyt = Math.round(baseSalary * 0.015);
+    const bhtn = Math.round(baseSalary * 0.01);
+    const thueTNCN = Math.round((baseSalary - bhxh - bhyt - bhtn) * 0.05);
+    const finalSalary = baseSalary - salaryAdvances + totalBonus - (manualFines + attendanceFines + halfDayDeduction + bhxh + bhyt + bhtn + thueTNCN);
+
+    const data = {
+      employeeCode: employee.employeeCode,
+      name: employee.name,
+      role: employee.role,
+      monthYear,
+      baseSalary,
+      totalBonus,
+      workDays,
+      thueTNCN,
+      halfDayDeduction,
+      otherDeduction: manualFines + attendanceFines,
+      finalSalary,
+    };
+
+    // Tạo file JSON tạm
+    const tmpDir = os.tmpdir();
+    tmpJson = path.join(tmpDir, `salary_${employeeId}.json`);
+    tmpPdf = path.join(tmpDir, `salary_${employeeId}.pdf`);
+    fs.writeFileSync(tmpJson, JSON.stringify(data));
+
+    // Chạy script Python
+    const pythonCmd = process.platform === 'win32' ? 'python' : 'python3';
+    try {
+      const result = execSync(`${pythonCmd} "${scriptPath}" "${tmpJson}" "${tmpPdf}"`, {
+        encoding: "utf8",
+        timeout: 30000,
+      });
+      console.log("✅ Python OK:", result);
+    } catch (pyError: any) {
+      console.error("=== PYTHON ERROR ===");
+      console.error("stderr:", pyError.stderr);
+      console.error("stdout:", pyError.stdout);
+      console.error("scriptPath:", scriptPath);
+      throw new Error("Python failed: " + (pyError.stderr || pyError.message));
+    }
+
+    // --- Tạo tên file an toàn (chỉ ASCII, không dấu, không ký tự đặc biệt) ---
+    const removeAccents = (str: string) =>
+      str
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/đ/g, "d")
+        .replace(/Đ/g, "D")
+        .replace(/[^\w\-\.]/g, '_'); // \w = [a-zA-Z0-9_]
+
+    const safeName = removeAccents(employee.name.toLowerCase()).replace(/\s+/g, '_');
+    const safeMonth = monthYear.replace("/", "_");
+    const filename = `PhieuLuong_${safeName}_${safeMonth}.pdf`;
+
+    // Mã hóa filename để đảm bảo không còn ký tự không hợp lệ trong header
+    const encodedFilename = encodeURIComponent(filename);
+
+    // Set header theo chuẩn RFC 5987 (hỗ trợ UTF-8)
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${encodedFilename}"; filename*=UTF-8''${encodedFilename}`
+    );
+
+    // Gửi file PDF
+    const pdfContent = fs.readFileSync(tmpPdf);
+    res.send(pdfContent);
+
+    // Dọn dẹp file tạm
+    if (tmpJson && fs.existsSync(tmpJson)) fs.unlinkSync(tmpJson);
+    if (tmpPdf && fs.existsSync(tmpPdf)) fs.unlinkSync(tmpPdf);
+  } catch (error) {
+    // Dọn dẹp nếu có lỗi
+    if (tmpJson && fs.existsSync(tmpJson)) fs.unlinkSync(tmpJson);
+    if (tmpPdf && fs.existsSync(tmpPdf)) fs.unlinkSync(tmpPdf);
+
+    console.error("Lỗi tạo phiếu lương:", error);
+    res.status(500).json({ error: "Lỗi tạo phiếu lương PDF" });
+  }
+};
+
 export const getDepartments = async (req: Request, res: Response) => {
   try {
     const departments = await prisma.department.findMany();
@@ -286,7 +410,7 @@ export const getSalaryHistory = async (req: Request, res: Response) => {
     const history = await prisma.salaryHistory.findMany({
       include: {
         employee: {
-          select: { name: true, employeeCode: true, department: true }
+          select: {id: true, name: true, employeeCode: true, department: true }
         }
       },
       orderBy: {
@@ -424,5 +548,155 @@ export const updateEmployee = async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Lỗi cập nhật nhân viên:", error);
     res.status(500).json({ error: "Lỗi Server khi cập nhật nhân viên" });
+  }
+};
+// ==========================================
+// 6. CHECK-OUT & TÍNH NGÀY CÔNG
+// ==========================================
+
+// Helper: tính số ngày làm việc T2-T6 trong tháng
+const getWorkDaysInMonth = (year: number, month: number): number => {
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  let count = 0;
+  for (let d = 1; d <= daysInMonth; d++) {
+    const day = new Date(year, month, d).getDay();
+    if (day !== 0 && day !== 6) count++;
+  }
+  return count;
+};
+
+export const checkOutEmployee = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id as string;
+    const now = new Date();
+    const todayStr = now.toLocaleDateString("vi-VN");
+    const outTime = now.toLocaleTimeString("vi-VN", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+    // 1. Tìm record check-in hôm nay
+    const todayRecord = await prisma.attendanceRecord.findFirst({
+      where: { employeeId: id, date: todayStr },
+    });
+
+    if (!todayRecord) {
+      return res.status(400).json({ error: "Chưa check-in hôm nay!" });
+    }
+    if (todayRecord.outTime && todayRecord.outTime !== "-") {
+      return res.status(400).json({ error: "Đã check-out rồi!" });
+    }
+
+    // 2. Kiểm tra về sớm (trước 17:00)
+    const outMinutes = now.getHours() * 60 + now.getMinutes();
+    const isEarlyLeave = outMinutes < 17 * 60;
+
+    // 3. Nếu về sớm → kiểm tra có đơn nghỉ phép được duyệt hôm nay không
+    let halfDayDeduction = 0;
+    let newStatus = todayRecord.status;
+
+    if (isEarlyLeave) {
+      const todayISO = now.toISOString().split("T")[0];
+      const approvedLeave = await prisma.leaveRequest.findFirst({
+      where: {
+    employeeId: id,
+    status: "Đã duyệt",
+    startDate: { lte: todayISO },
+    endDate: { gte: todayISO },
+  },
+});
+
+      if (!approvedLeave) {
+        // Tính nửa ngày lương
+        const employee = await prisma.employee.findUnique({ where: { id:id as string } });
+        const workDays = getWorkDaysInMonth(now.getFullYear(), now.getMonth());
+        halfDayDeduction = Math.round((employee!.baseSalary || 0) / workDays / 2);
+        newStatus = todayRecord.status === "Đúng giờ"
+          ? "Về sớm"
+          : `${todayRecord.status} + Về sớm`;
+      }
+    }
+
+    // 4. Update record checkout trong transaction
+    await prisma.$transaction(async (tx) => {
+      await tx.attendanceRecord.update({
+        where: { id: todayRecord.id },
+        data: {
+          outTime,
+          status: newStatus,
+          halfDayDeduction,
+        },
+      });
+
+      // Lưu khoản trừ vào salesRecord nếu về sớm không phép
+      if (halfDayDeduction > 0) {
+        await tx.salesRecord.create({
+          data: {
+            employeeId: id,
+            customer: "Hệ thống tự động",
+            service: "Phạt",
+            profit: -halfDayDeduction,
+            note: `Về sớm ngày ${todayStr} (chưa được duyệt phép)`,
+          },
+        });
+      }
+    });
+
+    getIO().emit("data_changed");
+    res.json({ success: true, isEarlyLeave, halfDayDeduction, outTime });
+  } catch (error) {
+    console.error("Lỗi check-out:", error);
+    res.status(500).json({ error: "Lỗi hệ thống khi check-out" });
+  }
+};
+
+// ==========================================
+// 7. CRON JOB: PHẠT QUÊN CHECK-OUT (gọi mỗi đêm lúc 23:59)
+// ==========================================
+export const penalizeForgotCheckout = async (req: Request, res: Response) => {
+  try {
+    const now = new Date();
+    const todayStr = now.toLocaleDateString("vi-VN");
+
+    // Tìm tất cả record hôm nay chưa checkout
+    const forgotRecords = await prisma.attendanceRecord.findMany({
+      where: {
+        date: todayStr,
+        outTime: "-",
+      },
+      include: { employee: true },
+    });
+
+    for (const record of forgotRecords) {
+      const workDays = getWorkDaysInMonth(now.getFullYear(), now.getMonth());
+      const fullDayDeduction = Math.round(
+        (record.employee.baseSalary || 0) / workDays
+      );
+
+      await prisma.$transaction(async (tx) => {
+        await tx.attendanceRecord.update({
+          where: { id: record.id },
+          data: {
+            outTime: "Quên checkout",
+            status: "Quên checkout",
+            halfDayDeduction: fullDayDeduction,
+          },
+        });
+
+        await tx.salesRecord.create({
+          data: {
+            employeeId: record.employeeId,
+            customer: "Hệ thống tự động",
+            service: "Phạt",
+            profit: -fullDayDeduction,
+            note: `Quên check-out ngày ${todayStr} — mất 1 ngày công`,
+          },
+        });
+      });
+    }
+
+    res.json({ success: true, penalized: forgotRecords.length });
+  } catch (error) {
+    res.status(500).json({ error: "Lỗi xử lý quên checkout" });
   }
 };

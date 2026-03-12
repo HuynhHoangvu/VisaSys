@@ -21,3 +21,6 @@ soạn hợp đồng riêng cho phòng xử lý
 soạn hợp đồng riêng cho sale 
 filter để tìm kiếm
 mở khóa cột báo cáo giám đốc cho trưởng phòng xem
+phân quyền lại cho trợ lý giám đốc
+
+thêm chức năng checkout sau 5h mới về đúng giờ còn quên checkout thì bị mất ngày công nếu muốn về sớm phải gửi đơn xin phép cho sếp nào sếp bấm duyệt thì mới không bị trừ tiền còn không duyệt thì bị trừ tiền nửa ngày công mà bài toán là nhiều người trong công ty thì lương khác nhau với lại nhân viên mà vô nửa buổi cũng sẽ trừ nửa ngày mà nếu mà nhân viên vô nửa buổi trưa mà trừ có tiền đi trễ thì sao 

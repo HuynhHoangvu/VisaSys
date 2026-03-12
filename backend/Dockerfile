@@ -1,18 +1,27 @@
 FROM node:22-alpine
+
 WORKDIR /app
 
-# Cài đặt công cụ build
-RUN apk add --no-cache build-base
+# Cài đặt build tools, Python, pip và các thư viện cần cho reportlab (xử lý ảnh, font)
+RUN apk add --no-cache build-base python3 py3-pip jpeg-dev zlib-dev freetype-dev
 
+# Cài reportlab (--break-system-packages cần thiết trên Alpine mới)
+RUN pip3 install reportlab --break-system-packages
+
+# Copy package.json và package-lock.json trước để tận dụng cache Docker
 COPY package*.json ./
 COPY prisma ./prisma/
 
+# Cài dependencies Node
 RUN npm install
 
+# Copy toàn bộ mã nguồn (bao gồm src/scripts/gen_salary.py)
 COPY . .
 
-# Mở cổng 3001
+# Build ứng dụng TypeScript (nếu cần) và generate Prisma client
+RUN npm run build && npx prisma generate
+
 EXPOSE 3001
 
-# Lệnh chạy chính thức bằng tsx cho đúng chuẩn Prisma v7
+# Dùng CMD để Railway có thể ghi đè nếu cần
 CMD ["npm", "start"]

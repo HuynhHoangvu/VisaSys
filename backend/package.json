@@ -7,7 +7,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon",
+    "dev": "nodemon ",
     "start": "npx prisma generate && npx prisma db push --accept-data-loss && npx tsx src/server.ts",
     "build": "npx prisma generate"
   },
@@ -32,12 +32,14 @@
   "dependencies": {
     "@prisma/adapter-pg": "^7.4.2",
     "@prisma/client": "^7.4.2",
+    "@types/node-cron": "^3.0.11",
     "cloudinary": "^2.9.0",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
     "express-session": "^1.19.0",
     "multer": "^2.1.1",
+    "node-cron": "^4.2.1",
     "pg": "^8.19.0",
     "socket.io": "^4.8.3"
   }

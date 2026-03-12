@@ -53,13 +53,12 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
   const [showFinalizeModal, setShowFinalizeModal] = useState(false);
   const [isFinalizing, setIsFinalizing] = useState(false);
 
-  // Tự động lấy tháng trước làm mặc định
   const [finalizeMonth, setFinalizeMonth] = useState(() => {
     const lastMonth = new Date();
     lastMonth.setMonth(lastMonth.getMonth() - 1);
     const m = String(lastMonth.getMonth() + 1).padStart(2, "0");
     const y = lastMonth.getFullYear();
-    return `${m}/${y}`; // VD: "02/2026"
+    return `${m}/${y}`;
   });
 
   // QUYỀN TRUY CẬP
@@ -69,10 +68,10 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
   const isManager =
     currentUser?.role.toLowerCase().includes("quản lý") ||
     currentUser?.role.toLowerCase().includes("trưởng phòng");
-
   const isBoss =
     currentUser?.role.toLowerCase().includes("giám đốc") ||
-    currentUser?.id === "admin" || currentUser?.role.toLowerCase().includes("phó giám đốc");
+    currentUser?.id === "admin" ||
+    currentUser?.role.toLowerCase().includes("phó giám đốc");
 
   const canAddPersonnel = isAdmin || isManager || isBoss;
   const canDeletePersonnel = isAdmin || isBoss;
@@ -95,58 +94,50 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
 
   useEffect(() => {
     fetchData();
-
     socket.on("data_changed", fetchData);
     window.addEventListener("refreshBoard", fetchData);
-
     return () => {
       socket.off("data_changed", fetchData);
       window.removeEventListener("refreshBoard", fetchData);
     };
   }, [fetchData]);
 
-const handleSubmitEmployee = async (empData: NewEmployeeData) => {
-  if (!canAddPersonnel)
-    return alert("Bạn không có quyền thực hiện thao tác này!");
-
-  try {
-    const url = employeeToEdit
-      ? `${API_URL}/api/hr/employees/${employeeToEdit.id}`
-      : `${API_URL}/api/hr/employees`;
-    const method = employeeToEdit ? "PUT" : "POST";
-
-    const response = await fetch(url, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(empData),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || "Email có thể đã bị trùng!");
+  const handleSubmitEmployee = async (empData: NewEmployeeData) => {
+    if (!canAddPersonnel)
+      return alert("Bạn không có quyền thực hiện thao tác này!");
+    try {
+      const url = employeeToEdit
+        ? `${API_URL}/api/hr/employees/${employeeToEdit.id}`
+        : `${API_URL}/api/hr/employees`;
+      const method = employeeToEdit ? "PUT" : "POST";
+      const response = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(empData),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Email có thể đã bị trùng!");
+      }
+      fetchData();
+      setIsAddEmpModalOpen(false);
+      setEmployeeToEdit(null);
+      alert(
+        employeeToEdit
+          ? "Cập nhật nhân sự thành công!"
+          : "Thêm nhân sự thành công!",
+      );
+    } catch (error) {
+      alert("Lỗi! " + error);
     }
-
-    fetchData();
-    setIsAddEmpModalOpen(false);
-    setEmployeeToEdit(null);
-    alert(
-      employeeToEdit
-        ? "Cập nhật nhân sự thành công!"
-        : "Thêm nhân sự thành công!",
-    );
-  } catch (error) {
-    alert("Lỗi! " + error);
-  }
-};
+  };
 
   const handleDeleteEmployee = async (id: string) => {
     if (!canDeletePersonnel)
       return alert("Chỉ Giám đốc/Admin mới có quyền xóa nhân sự!");
     if (window.confirm("Bạn có chắc chắn muốn xóa nhân viên này?")) {
       try {
-        await fetch(`${API_URL}/api/hr/employees/${id}`, {
-          method: "DELETE",
-        });
+        await fetch(`${API_URL}/api/hr/employees/${id}`, { method: "DELETE" });
         fetchData();
       } catch (error) {
         alert("Lỗi khi xóa nhân viên!" + error);
@@ -159,50 +150,37 @@ const handleSubmitEmployee = async (empData: NewEmployeeData) => {
     if (!isAdmin && !isManager && currentUser?.id !== empId) {
       return alert("Bạn chỉ có thể tự chấm công cho chính mình!");
     }
-
     const targetEmployee = employees.find((e) => e.id === empId);
     if (!targetEmployee) return;
-
     const now = new Date();
     const todayStr = now.toLocaleDateString("vi-VN");
-
     if (targetEmployee.attendanceRecords.some((r) => r.date === todayStr)) {
       alert("Hôm nay nhân viên này đã check-in rồi!");
       return;
     }
-
     const currentTimeStr = now.toLocaleTimeString("vi-VN", {
       hour: "2-digit",
       minute: "2-digit",
     });
-    //hàm chấm công
-    const currentHour = now.getHours();
-    const currentMinute = now.getMinutes();
-    const isLate = currentHour * 60 + currentMinute > 520; // 8:40 AM = 8*60 + 40 = 520 phút
-
+    const isLate = now.getHours() * 60 + now.getMinutes() > 520;
     const status: AttendanceStatus = isLate ? "Đi muộn" : "Đúng giờ";
     const fine = isLate
       ? calculateLateFine(targetEmployee.attendanceRecords, now)
       : 0;
-
     if (isLate) {
       alert(
-        `Đã đi muộn!\nGiờ Check-in: ${currentTimeStr}\nBị phạt: ${new Intl.NumberFormat(
-          "vi-VN",
-        ).format(fine)}đ`,
+        `Đã đi muộn!\nGiờ Check-in: ${currentTimeStr}\nBị phạt: ${new Intl.NumberFormat("vi-VN").format(fine)}đ`,
       );
     } else {
       alert(`Check-in thành công!\nGiờ Check-in: ${currentTimeStr}`);
     }
-
     const newRecord = {
       date: todayStr,
       inTime: currentTimeStr,
       outTime: "-",
-      status: status,
-      fine: fine,
+      status,
+      fine,
     };
-
     setEmployees((prevEmps) =>
       prevEmps.map((emp) => {
         if (emp.id !== empId) return emp;
@@ -216,7 +194,6 @@ const handleSubmitEmployee = async (empData: NewEmployeeData) => {
         };
       }),
     );
-
     try {
       await fetch(`${API_URL}/api/hr/employees/${empId}/checkin`, {
         method: "POST",
@@ -225,6 +202,41 @@ const handleSubmitEmployee = async (empData: NewEmployeeData) => {
       });
     } catch (error) {
       console.error("Lỗi lưu chấm công:", error);
+    }
+  };
+
+  const handleCheckOut = async (empId: string) => {
+    if (!isAdmin && !isManager && currentUser?.id !== empId) {
+      return alert("Bạn chỉ có thể tự check-out cho chính mình!");
+    }
+    const targetEmployee = employees.find((e) => e.id === empId);
+    if (!targetEmployee) return;
+    const todayStr = new Date().toLocaleDateString("vi-VN");
+    const todayRecord = targetEmployee.attendanceRecords.find(
+      (r) => r.date === todayStr,
+    );
+    if (!todayRecord) return alert("Chưa check-in hôm nay!");
+    if (todayRecord.outTime && todayRecord.outTime !== "-") {
+      return alert("Đã check-out rồi!");
+    }
+    try {
+      const res = await fetch(`${API_URL}/api/hr/employees/${empId}/checkout`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok) return alert(data.error);
+      if (data.isEarlyLeave) {
+        alert(
+          `Check-out lúc ${data.outTime} — VỀ SỚM!\n` +
+            `Bị trừ nửa ngày công: -${new Intl.NumberFormat("vi-VN").format(data.halfDayDeduction)}đ\n` +
+            `(Nếu có đơn xin phép được duyệt sẽ không bị trừ)`,
+        );
+      } else {
+        alert(`Check-out thành công lúc ${data.outTime} ✅`);
+      }
+      fetchData();
+    } catch (error) {
+      alert("Lỗi check-out: " + error);
     }
   };
 
@@ -280,69 +292,78 @@ const handleSubmitEmployee = async (empData: NewEmployeeData) => {
     }
   };
 
-  // --- HÀM GỌI API CHỐT LƯƠNG ---
-  const handleFinalizeSalary = async () => {
-    if (!finalizeMonth.trim()) return alert("Vui lòng nhập tháng chốt lương!");
-
-    setIsFinalizing(true);
-    try {
-      const response = await fetch(
-        `${API_URL}/api/hr/salary/finalize`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ monthYear: finalizeMonth }),
-        },
-      );
-
-      if (!response.ok) {
-        throw new Error("Lỗi khi chốt lương");
-      }
-
-      alert(
-        `Đã chốt lương tháng ${finalizeMonth} và làm sạch bảng chấm công thành công!`,
-      );
-      setShowFinalizeModal(false);
-      fetchData();
-    } catch (error) {
-      console.error(error);
-      alert("Đã xảy ra lỗi hệ thống khi chốt lương!");
-    } finally {
-      setIsFinalizing(false);
-    }
-  };
   // --- STATE LỊCH SỬ LƯƠNG ---
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [salaryHistories, setSalaryHistories] = useState<SalaryHistory[]>([]);
-  // THÊM MỚI: State lưu các tháng đang được mở ra (Mở)
   const [expandedMonths, setExpandedMonths] = useState<string[]>([]);
 
-  // THÊM MỚI: Hàm thu/phóng khi click vào tháng
   const toggleMonth = (monthYear: string) => {
-    setExpandedMonths(
-      (prev) =>
-        prev.includes(monthYear)
-          ? prev.filter((m) => m !== monthYear) // Nếu đang mở thì đóng
-          : [...prev, monthYear], // Nếu đang đóng thì mở
+    setExpandedMonths((prev) =>
+      prev.includes(monthYear)
+        ? prev.filter((m) => m !== monthYear)
+        : [...prev, monthYear],
     );
   };
-  // Hàm gọi API lấy lịch sử
+
   const fetchSalaryHistory = async () => {
     try {
       const res = await fetch(`${API_URL}/api/hr/salary/history`);
-      if (res.ok) {
-        setSalaryHistories(await res.json());
-      }
+      if (res.ok) setSalaryHistories(await res.json());
     } catch (error) {
       console.error("Lỗi lấy lịch sử lương", error);
     }
   };
 
-  // Mở modal thì gọi dữ liệu luôn
   const handleOpenHistory = () => {
     fetchSalaryHistory();
     setShowHistoryModal(true);
   };
+
+  // --- HÀM GỌI API CHỐT LƯƠNG ---
+  const handleFinalizeSalary = async () => {
+    if (!finalizeMonth.trim()) return alert("Vui lòng nhập tháng chốt lương!");
+    setIsFinalizing(true);
+    try {
+      const response = await fetch(`${API_URL}/api/hr/salary/finalize`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ monthYear: finalizeMonth }),
+      });
+      if (!response.ok) throw new Error("Lỗi khi chốt lương");
+      alert(`Đã chốt lương tháng ${finalizeMonth} thành công!`);
+      setShowFinalizeModal(false);
+      fetchData();
+      // Tự động mở lịch sử lương sau khi chốt
+      await fetchSalaryHistory();
+      setShowHistoryModal(true);
+    } catch (error) {
+      alert("Đã xảy ra lỗi hệ thống khi chốt lương!" + error);
+    } finally {
+      setIsFinalizing(false);
+    }
+  };
+
+  // --- TẢI PHIẾU LƯƠNG PDF ---
+  const handleDownloadSlip = async (
+    employeeId: string,
+    monthYear: string,
+    employeeName: string,
+  ) => {
+    try {
+      const url = `${API_URL}/api/hr/salary/slip/${employeeId}/${encodeURIComponent(monthYear)}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Lỗi tải phiếu lương");
+      const blob = await res.blob();
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `PhieuLuong_${employeeName}_${monthYear.replace("/", "_")}.pdf`;
+      link.click();
+      URL.revokeObjectURL(link.href);
+    } catch (error) {
+      alert("Lỗi tải phiếu lương: " + error);
+    }
+  };
+
   // --- STATE QUẢN LÝ NGHỈ PHÉP ---
   const [showLeaveManagerModal, setShowLeaveManagerModal] = useState(false);
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
@@ -366,34 +387,31 @@ const handleSubmitEmployee = async (empData: NewEmployeeData) => {
       !window.confirm(`Bạn chắc chắn muốn ${newStatus.toUpperCase()} đơn này?`)
     )
       return;
-
     try {
-      const res = await fetch(
-        `${API_URL}/api/hr/leave-requests/${id}/status`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status: newStatus }),
-        },
-      );
+      const res = await fetch(`${API_URL}/api/hr/leave-requests/${id}/status`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
       if (res.ok) {
-        fetchLeaveRequests(); // Load lại danh sách đơn
-        fetchData(); // Load lại cả Dashboard
+        fetchLeaveRequests();
+        fetchData();
       }
     } catch (error) {
       alert("Lỗi cập nhật trạng thái!" + error);
     }
   };
+
   // CHI TIẾT NHÂN VIÊN
   if (selectedEmpId) {
     const employee = employees.find((e) => e.id === selectedEmpId);
     if (!employee) return null;
-
     return (
       <EmployeeDetail
         employee={employee}
         onBack={() => setSelectedEmpId(null)}
         onCheckIn={handleCheckIn}
+        onCheckOut={handleCheckOut}
         currentUser={currentUser}
       />
     );
@@ -410,20 +428,17 @@ const handleSubmitEmployee = async (empData: NewEmployeeData) => {
   }
 
   const groupedEmployees = filteredDepartments
-    .map((dept) => {
-      return {
-        departmentName: dept.name,
-        employees: filteredEmployees.filter(
-          (emp) => emp.department === dept.name,
-        ),
-      };
-    })
+    .map((dept) => ({
+      departmentName: dept.name,
+      employees: filteredEmployees.filter(
+        (emp) => emp.department === dept.name,
+      ),
+    }))
     .filter((group) => group.employees.length > 0);
 
   const unassignedEmployees = filteredEmployees.filter(
     (emp) => !departments.some((d) => d.name === emp.department),
   );
-
   if (
     unassignedEmployees.length > 0 &&
     (isAdmin ||
@@ -450,7 +465,6 @@ const handleSubmitEmployee = async (empData: NewEmployeeData) => {
           </div>
 
           <div className="flex flex-wrap gap-2">
-            {/* NÚT CHỐT LƯƠNG CHỈ DÀNH CHO GIÁM ĐỐC */}
             {isBoss && (
               <button
                 onClick={() => setShowFinalizeModal(true)}
@@ -514,7 +528,6 @@ const handleSubmitEmployee = async (empData: NewEmployeeData) => {
                   className="flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm"
                 >
                   📋 Duyệt Nghỉ Phép
-                  {/* Hiển thị số lượng đơn đang chờ duyệt */}
                   <Badge
                     color="failure"
                     className="ml-1 px-1.5 py-0.5 rounded-full text-xs"
@@ -554,7 +567,6 @@ const handleSubmitEmployee = async (empData: NewEmployeeData) => {
               ) : (
                 groupedEmployees.map((group) => (
                   <React.Fragment key={group.departmentName}>
-                    {/* Hàng Tiêu đề Bộ phận */}
                     <tr className="bg-gray-50 border-b border-gray-200">
                       <td
                         colSpan={7}
@@ -570,8 +582,6 @@ const handleSubmitEmployee = async (empData: NewEmployeeData) => {
                         </span>
                       </td>
                     </tr>
-
-                    {/* Vòng lặp hiển thị từng nhân viên (biến emp được định nghĩa ở đây) */}
                     {group.employees.map((emp) => (
                       <tr
                         key={emp.id}
@@ -608,8 +618,6 @@ const handleSubmitEmployee = async (empData: NewEmployeeData) => {
                             {emp.todayStatus}
                           </Badge>
                         </td>
-
-                        {/* CỘT HÀNH ĐỘNG NẰM TRONG VÒNG LẶP NÊN ĐÃ NHẬN DIỆN ĐƯỢC emp */}
                         <td className="px-4 py-4 text-right">
                           <div className="flex justify-end gap-3">
                             <button
@@ -618,7 +626,6 @@ const handleSubmitEmployee = async (empData: NewEmployeeData) => {
                             >
                               Chi tiết
                             </button>
-
                             {canAddPersonnel && (
                               <button
                                 onClick={() => {
@@ -630,7 +637,6 @@ const handleSubmitEmployee = async (empData: NewEmployeeData) => {
                                 Sửa
                               </button>
                             )}
-
                             {canDeletePersonnel && (
                               <button
                                 onClick={() => handleDeleteEmployee(emp.id)}
@@ -651,16 +657,19 @@ const handleSubmitEmployee = async (empData: NewEmployeeData) => {
         </div>
       </Card>
 
+      {/* ── EMPLOYEE MODAL ── */}
       <EmployeeModal
         show={isAddEmpModalOpen}
         onClose={() => {
           setIsAddEmpModalOpen(false);
-          setEmployeeToEdit(null); // Clear state khi đóng
+          setEmployeeToEdit(null);
         }}
         departments={departments}
         onSubmitEmployee={handleSubmitEmployee}
         employeeToEdit={employeeToEdit}
       />
+
+      {/* ── MODAL QUẢN LÝ BỘ PHẬN ── */}
       <Modal
         show={isDeptModalOpen}
         onClose={() => setIsDeptModalOpen(false)}
@@ -683,7 +692,7 @@ const handleSubmitEmployee = async (empData: NewEmployeeData) => {
                 strokeLinejoin="round"
                 strokeWidth="2"
                 d="M6 18L18 6M6 6l12 12"
-              ></path>
+              />
             </svg>
           </button>
         </div>
@@ -703,7 +712,6 @@ const handleSubmitEmployee = async (empData: NewEmployeeData) => {
               Thêm
             </Button>
           </div>
-
           <div className="max-h-80 overflow-y-auto border border-gray-200 rounded-lg shadow-sm">
             <table className="w-full text-sm text-left text-gray-500">
               <thead className="text-xs text-gray-700 uppercase bg-gray-50 border-b">
@@ -776,7 +784,8 @@ const handleSubmitEmployee = async (empData: NewEmployeeData) => {
           </div>
         </div>
       </Modal>
-      {/* MODAL LỊCH SỬ LƯƠNG ĐÃ ĐƯỢC NÂNG CẤP (THU PHÓNG BẰNG ACCORDION) */}
+
+      {/* ── MODAL LỊCH SỬ LƯƠNG ── */}
       <Modal
         show={showHistoryModal}
         onClose={() => setShowHistoryModal(false)}
@@ -812,7 +821,6 @@ const handleSubmitEmployee = async (empData: NewEmployeeData) => {
               Chưa có dữ liệu chốt lương nào.
             </p>
           ) : (
-            /* BƯỚC NHÓM DỮ LIỆU THEO THÁNG BẰNG JAVASCRIPT */
             Object.entries(
               salaryHistories.reduce(
                 (acc, record) => {
@@ -824,13 +832,11 @@ const handleSubmitEmployee = async (empData: NewEmployeeData) => {
               ),
             ).map(([monthYear, records]) => {
               const isExpanded = expandedMonths.includes(monthYear);
-
               return (
                 <div
                   key={monthYear}
-                  className="mb-4 bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden transition-all duration-200"
+                  className="mb-4 bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden"
                 >
-                  {/* THANH TIÊU ĐỀ CỦA THÁNG (Bấm vào để thu/phóng) */}
                   <button
                     onClick={() => toggleMonth(monthYear)}
                     className="w-full flex justify-between items-center p-5 bg-blue-50 hover:bg-blue-100 transition-colors focus:outline-none"
@@ -861,7 +867,6 @@ const handleSubmitEmployee = async (empData: NewEmployeeData) => {
                     </div>
                   </button>
 
-                  {/* NỘI DUNG BẢNG LƯƠNG SẼ HIỆN RA KHI isExpanded LÀ TRUE */}
                   {isExpanded && (
                     <div className="overflow-x-auto border-t border-blue-100">
                       <table className="w-full text-sm text-left text-gray-600">
@@ -871,7 +876,7 @@ const handleSubmitEmployee = async (empData: NewEmployeeData) => {
                             <th className="px-6 py-4 font-bold">Nhân viên</th>
                             <th className="px-6 py-4 font-bold">Phòng ban</th>
                             <th className="px-6 py-4 font-bold text-right">
-                              Lương CB (sau TƯ)
+                              Lương CB
                             </th>
                             <th className="px-6 py-4 font-bold text-right text-green-600">
                               Thưởng / HH
@@ -879,8 +884,12 @@ const handleSubmitEmployee = async (empData: NewEmployeeData) => {
                             <th className="px-6 py-4 font-bold text-right text-red-600">
                               Phạt / Trừ
                             </th>
-                            <th className="px-6 py-4 font-bold text-right text-blue-700 text-base">
+                            <th className="px-6 py-4 font-bold text-right text-blue-700">
                               Thực nhận
+                            </th>
+                            {/* ← CỘT MỚI */}
+                            <th className="px-6 py-4 font-bold text-center">
+                              Phiếu lương
                             </th>
                           </tr>
                         </thead>
@@ -931,15 +940,41 @@ const handleSubmitEmployee = async (empData: NewEmployeeData) => {
                                 )}
                                 đ
                               </td>
+                              {/* ← NÚT TẢI PDF */}
+                              <td className="px-6 py-4 text-center">
+                                <button
+                                  onClick={() =>
+                                    handleDownloadSlip(
+                                      record.employee.id,
+                                      record.monthYear,
+                                      record.employee.name ?? "NhanVien",
+                                    )
+                                  }
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-xs font-bold transition-colors border border-blue-200"
+                                >
+                                  <svg
+                                    className="w-3.5 h-3.5"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                    />
+                                  </svg>
+                                  PDF
+                                </button>
+                              </td>
                             </tr>
                           ))}
                         </tbody>
-
-                        {/* HÀNG TỔNG KẾT TÀI CHÍNH CỦA CẢ THÁNG */}
                         <tfoot className="bg-blue-50 border-t-2 border-blue-200">
                           <tr>
                             <td
-                              colSpan={6}
+                              colSpan={7}
                               className="px-6 py-4 text-right font-bold text-gray-700 uppercase tracking-widest"
                             >
                               TỔNG LƯƠNG TRẢ CHO NHÂN VIÊN TRONG THÁNG:
@@ -964,7 +999,8 @@ const handleSubmitEmployee = async (empData: NewEmployeeData) => {
           )}
         </div>
       </Modal>
-      {/* MODAL XÁC NHẬN CHỐT LƯƠNG */}
+
+      {/* ── MODAL CHỐT LƯƠNG ── */}
       {showFinalizeModal && (
         <div className="fixed inset-0 z-100 flex items-center justify-center bg-black bg-opacity-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
@@ -973,15 +1009,13 @@ const handleSubmitEmployee = async (empData: NewEmployeeData) => {
                 ⚠️ Cảnh báo: Chốt Lương Cuối Tháng
               </h3>
             </div>
-
             <div className="p-5">
               <p className="text-sm text-gray-600 mb-4">
                 Hành động này sẽ tính toán tổng lương hiện tại, lưu vào{" "}
                 <strong>Lịch sử lương</strong>, và{" "}
                 <span className="text-red-600 font-bold">XÓA TOÀN BỘ</span> dữ
-                liệu Chấm công & Thưởng/Phạt của tháng cũ để bắt đầu tháng mới.
+                liệu Chấm công, Thưởng/Phạt và Đơn nghỉ phép của tháng cũ.
               </p>
-
               <label className="block text-sm font-bold text-gray-700 mb-2">
                 Nhập tháng chốt (VD: 02/2026)
               </label>
@@ -993,7 +1027,6 @@ const handleSubmitEmployee = async (empData: NewEmployeeData) => {
                 className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all font-bold text-center text-lg tracking-widest"
               />
             </div>
-
             <div className="p-4 border-t border-gray-200 flex justify-end gap-3 bg-gray-50">
               <button
                 onClick={() => setShowFinalizeModal(false)}
@@ -1013,6 +1046,8 @@ const handleSubmitEmployee = async (empData: NewEmployeeData) => {
           </div>
         </div>
       )}
+
+      {/* ── MODAL DUYỆT NGHỈ PHÉP ── */}
       <Modal
         show={showLeaveManagerModal}
         onClose={() => setShowLeaveManagerModal(false)}
@@ -1041,7 +1076,6 @@ const handleSubmitEmployee = async (empData: NewEmployeeData) => {
             </svg>
           </button>
         </div>
-
         <div className="p-0 overflow-y-auto max-h-[70vh]">
           <table className="w-full text-sm text-left text-gray-600">
             <thead className="text-xs text-gray-700 uppercase bg-gray-100 sticky top-0 shadow-sm">

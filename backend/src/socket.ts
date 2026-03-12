@@ -9,7 +9,8 @@ export const initSocket = (server: HTTPServer) => {
     cors: {
       origin: [
         "http://localhost:5173",
-        "https://dazzling-vitality-backend-fly.up.railway.app",
+        'http://localhost:5174',
+        'https://flyvisa.up.railway.app',
         process.env.FRONTEND_URL,
       ].filter(Boolean),
       methods: ["GET", "POST", "PUT", "DELETE"],
