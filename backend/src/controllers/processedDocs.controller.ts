@@ -109,9 +109,9 @@ export const uploadFile = async (req: Request, res: Response) => {
         name: decodedName,
         size,
         uploadedBy,
-        fileUrl: result.secure_url,        // URL Cloudinary
+        fileUrl: result.secure_url,    
         folderId,
-        // cloudinaryPublicId: result.public_id  // thêm vào schema nếu muốn xóa được
+        cloudinaryPublicId: result.public_id  
       },
     });
 

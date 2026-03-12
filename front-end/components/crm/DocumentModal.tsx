@@ -18,6 +18,7 @@ interface DocumentModalProps {
 interface SavedFile {
   name: string;
   url: string;
+  publicId?: string;
 }
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
@@ -129,13 +130,33 @@ const DocumentModal: React.FC<DocumentModalProps> = ({
     e.target.value = "";
   };
 
-  const handleRemoveFile = (reqId: string, indexToRemove: number) => {
+  const handleRemoveFile = async (reqId: string, indexToRemove: number) => {
+    // Lấy ra thông tin file chuẩn bị xoá
+    const fileToRemove = uploadedFiles[reqId][indexToRemove];
+
+    // Cập nhật giao diện (UI) ngay lập tức để người dùng thấy file đã biến mất
     setUploadedFiles((prev) => {
       const updatedFiles = prev[reqId].filter(
         (_, index) => index !== indexToRemove,
       );
       return { ...prev, [reqId]: updatedFiles };
     });
+
+    // Gọi API để xoá file thật sự trên Cloudinary
+    if (fileToRemove.publicId) {
+      try {
+        await fetch(`${API_URL}/api/tasks/remove-cloud-file`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ publicId: fileToRemove.publicId }),
+        });
+        console.log("Đã dọn dẹp file trên Cloudinary thành công!");
+      } catch (error) {
+        console.error("Lỗi khi xoá file trên Cloudinary:", error);
+      }
+    }
   };
 
   const handleDownloadFile = async (fileUrl: string, fileName: string) => {

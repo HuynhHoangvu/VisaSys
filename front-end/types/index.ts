@@ -168,6 +168,7 @@ export interface DocFile {
   name: string;
   size: string; // VD: "2.4 MB" hoặc "800 KB"
   fileUrl?: string; // Đường dẫn thực tế để download file từ Server
+  cloudinaryPublicId?: string;
   uploadedBy: string; // Lưu tên người tải lên
   createdAt: string;
   folderId: string | null; // Thuộc thư mục nào (null = gốc)
