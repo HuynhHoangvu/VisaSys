@@ -487,9 +487,10 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
               return null;
 
             return (
+              
               <div
                 key={column.id}
-                className="flex flex-col bg-gray-100/50 rounded-xl w-70 min-w-70 max-h-full shrink-0"
+                className="flex flex-col bg-gray-100/50 rounded-xl w-52 min-w-52 max-h-full shrink-0"
               >
                 <div className="px-3 py-3 flex justify-between items-center">
                   <h3 className="font-bold text-gray-600 uppercase text-[11px] tracking-wider">
