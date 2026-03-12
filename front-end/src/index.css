@@ -15,3 +15,23 @@
   --color-flygold-hover: #D98C12;
   /* Màu đậm hơn khi hover chuột */
 }
+
+/* Tùy chỉnh thanh cuộn cho Column */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  /* Màu xám nhạt (Tailwind slate-300) */
+  border-radius: 20px;
+}
+
+.custom-scrollbar:hover::-webkit-scrollbar-thumb {
+  background-color: #94a3b8;
+  /* Tối hơn khi hover */
+}

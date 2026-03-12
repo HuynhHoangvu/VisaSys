@@ -44,6 +44,15 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
   const [activeAlerts, setActiveAlerts] = useState<string[]>([]);
 
   // ==========================================
+  // VIEW MODE & LAZY LOADING STATE (MỚI THÊM)
+  // ==========================================
+  const [viewMode, setViewMode] = useState<"board" | "table">("board");
+  const [visibleLimits, setVisibleLimits] = useState<Record<string, number>>(
+    {},
+  );
+  const DEFAULT_LIMIT = 20;
+
+  // ==========================================
   // SEARCH & FILTER STATE
   // ==========================================
   const [searchQuery, setSearchQuery] = useState("");
@@ -191,14 +200,12 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
       const column = boardData.columns[columnId];
       if (!column) return [];
 
-      // Nếu filter theo cột cụ thể và không phải cột này → ẩn hết
       if (filterColumn !== "all" && filterColumn !== columnId) return [];
 
       return column.taskIds.filter((taskId) => {
         const task = boardData.tasks[taskId];
         if (!task) return false;
 
-        // Search: tìm theo tên, SĐT, sale
         if (searchQuery) {
           const q = searchQuery.toLowerCase().trim();
           const matchName = task.content?.toLowerCase().includes(q);
@@ -207,11 +214,9 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
           if (!matchName && !matchPhone && !matchSale) return false;
         }
 
-        // Filter theo sale
         if (filterSale !== "all" && task.assignedTo !== filterSale)
           return false;
 
-        // Filter theo loại visa
         if (filterVisa !== "all" && task.visaType !== filterVisa) return false;
 
         return true;
@@ -220,7 +225,6 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
     [boardData, searchQuery, filterSale, filterVisa, filterColumn],
   );
 
-  // Tổng số kết quả sau filter
   const filteredTotal = useMemo(() => {
     if (!boardData) return 0;
     return boardData.columnOrder.reduce(
@@ -246,6 +250,29 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
     setFilterVisa("all");
     setFilterColumn("all");
   };
+
+  // Logic Tải thêm (Load More)
+  const handleLoadMore = (columnId: string) => {
+    setVisibleLimits((prev) => ({
+      ...prev,
+      [columnId]: (prev[columnId] || DEFAULT_LIMIT) + 20,
+    }));
+  };
+
+  // Lấy dữ liệu dạng phẳng cho chế độ Bảng (Table View)
+  const flatTableData = useMemo(() => {
+    if (!boardData) return [];
+    let flatList: (Task & { columnTitle: string })[] = [];
+    boardData.columnOrder.forEach((colId) => {
+      const colTitle = boardData.columns[colId].title;
+      const tasksInCol = getFilteredTaskIds(colId).map((taskId) => ({
+        ...boardData.tasks[taskId],
+        columnTitle: colTitle,
+      }));
+      flatList = [...flatList, ...tasksInCol];
+    });
+    return flatList;
+  }, [boardData, getFilteredTaskIds]);
 
   // ==========================================
   // KÉO THẢ
@@ -299,8 +326,6 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
       console.error("Lỗi khi cập nhật vị trí thẻ:", error);
     }
   };
-
-
 
   const handleDeleteClick = (e: React.MouseEvent, taskId: string) => {
     e.stopPropagation();
@@ -390,9 +415,9 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
     );
 
   return (
-    <div className="flex flex-col h-full w-full bg-[#f8f9fa] p-4 sm:p-6">
+    <div className="flex flex-col h-full w-full bg-[#f8f9fa] p-4 sm:p-6 overflow-hidden">
       {/* HEADER */}
-      <div className="flex justify-between items-center mb-4 shrink-0">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 shrink-0 gap-4">
         <div>
           <h2 className="text-2xl font-bold text-gray-800">
             Quản lý Khách hàng
@@ -403,243 +428,222 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
               : `Danh sách khách hàng của ${currentUser?.name}`}
           </p>
         </div>
-        <button
-          onClick={onOpenAddCustomer}
-          className="bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors shadow-sm flex items-center gap-2"
-        >
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+        <div className="flex items-center gap-3">
+          {/* NÚT CHUYỂN ĐỔI VIEW */}
+          <button
+            onClick={() =>
+              setViewMode(viewMode === "board" ? "table" : "board")
+            }
+            className="bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 text-sm font-semibold px-4 py-2 rounded-lg transition-colors shadow-sm flex items-center gap-2"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M12 4v16m8-8H4"
-            />
-          </svg>
-          Thêm Khách Hàng
-        </button>
+            {viewMode === "board" ? (
+              <>
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M4 6h16M4 10h16M4 14h16M4 18h16"
+                  />
+                </svg>
+                Xem dạng Bảng (Table)
+              </>
+            ) : (
+              <>
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"
+                  />
+                </svg>
+                Xem dạng Cột (Kanban)
+              </>
+            )}
+          </button>
+
+          <button
+            onClick={onOpenAddCustomer}
+            className="bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors shadow-sm flex items-center gap-2"
+          >
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M12 4v16m8-8H4"
+              />
+            </svg>
+            Thêm Khách Hàng
+          </button>
+        </div>
       </div>
 
-      {/* SEARCH + FILTER — chỉ hiện cho canSeeAll (sếp/trưởng phòng) */}
+      {/* SEARCH + FILTER */}
       {canSeeAll && (
-        <SearchFilterBar
-          searchPlaceholder="Tìm tên khách, số điện thoại, sale..."
-          searchValue={searchQuery}
-          onSearchChange={setSearchQuery}
-          filters={[
-            {
-              key: "sale",
-              placeholder: "👤 Tất cả Sale",
-              value: filterSale,
-              options: filterOptions.sales,
-              onChange: setFilterSale,
-            },
-            {
-              key: "visa",
-              placeholder: "🛂 Loại visa",
-              value: filterVisa,
-              options: filterOptions.visaTypes,
-              onChange: setFilterVisa,
-            },
-            {
-              key: "column",
-              placeholder: "📋 Tất cả trạng thái",
-              value: filterColumn,
-              options: filterOptions.columns,
-              onChange: setFilterColumn,
-            },
-          ]}
-          resultCount={filteredTotal}
-          totalCount={totalTasks}
-          onReset={handleResetFilter}
-          hasActiveFilter={hasActiveFilter}
-        />
+        <div className="shrink-0">
+          <SearchFilterBar
+            searchPlaceholder="Tìm tên khách, số điện thoại, sale..."
+            searchValue={searchQuery}
+            onSearchChange={setSearchQuery}
+            filters={[
+              {
+                key: "sale",
+                placeholder: "👤 Tất cả Sale",
+                value: filterSale,
+                options: filterOptions.sales,
+                onChange: setFilterSale,
+              },
+              {
+                key: "visa",
+                placeholder: "🛂 Loại visa",
+                value: filterVisa,
+                options: filterOptions.visaTypes,
+                onChange: setFilterVisa,
+              },
+              {
+                key: "column",
+                placeholder: "📋 Tất cả trạng thái",
+                value: filterColumn,
+                options: filterOptions.columns,
+                onChange: setFilterColumn,
+              },
+            ]}
+            resultCount={filteredTotal}
+            totalCount={totalTasks}
+            onReset={handleResetFilter}
+            hasActiveFilter={hasActiveFilter}
+          />
+        </div>
       )}
 
-      {/* KANBAN BOARD */}
-      <DragDropContext onDragEnd={onDragEnd}>
-        <div className="flex h-full w-full space-x-4 overflow-x-auto pb-6 items-start">
-          {boardData.columnOrder.map((columnId) => {
-            const column = boardData.columns[columnId];
-            const filteredTaskIds = getFilteredTaskIds(columnId);
-            const allTasksInCol = column.taskIds
-              .map((id) => boardData.tasks[id])
-              .filter(Boolean);
+      {/* CHẾ ĐỘ HIỂN THỊ KANBAN BOARD */}
+      {viewMode === "board" && (
+        <DragDropContext onDragEnd={onDragEnd}>
+          {/* Cố định chiều cao vùng cuộn ngang */}
+          <div className="flex h-[calc(100vh-210px)] w-full space-x-4 overflow-x-auto pb-4 items-start">
+            {boardData.columnOrder.map((columnId) => {
+              const column = boardData.columns[columnId];
+              const filteredTaskIds = getFilteredTaskIds(columnId);
+              const allTasksInCol = column.taskIds
+                .map((id) => boardData.tasks[id])
+                .filter(Boolean);
 
-            // Ẩn cột nếu filter theo cột khác
-            if (filterColumn !== "all" && filterColumn !== columnId)
-              return null;
+              if (filterColumn !== "all" && filterColumn !== columnId)
+                return null;
 
-            return (
-              
-              <div
-                key={column.id}
-                className="flex flex-col bg-gray-100/50 rounded-xl w-52 min-w-52 max-h-full shrink-0"
-              >
-                <div className="px-3 py-3 flex justify-between items-center">
-                  <h3 className="font-bold text-gray-600 uppercase text-[11px] tracking-wider">
-                    {column.title}
-                  </h3>
-                  <div className="flex items-center gap-1">
-                    {hasActiveFilter &&
-                      filteredTaskIds.length !== allTasksInCol.length && (
-                        <span className="text-orange-500 text-2xs font-bold">
-                          {filteredTaskIds.length}/
-                        </span>
-                      )}
-                    <span className="bg-gray-200 text-gray-600 text-2xs font-bold px-2 py-0.5 rounded-full">
-                      {allTasksInCol.length}
-                    </span>
+              // Logic Lazy Loading (Giới hạn hiển thị)
+              const limit = visibleLimits[columnId] || DEFAULT_LIMIT;
+              const hasMore = column.taskIds.length > limit;
+              // Cắt mảng để render vừa đủ, chống lag
+              const tasksToRender = column.taskIds.slice(0, limit);
+
+              return (
+                <div
+                  key={column.id}
+                  // Khóa chiều cao cột, cho phép cột tự giãn xuống tối đa 100% của cha
+                  className="flex flex-col bg-gray-100/50 rounded-xl w-64 min-w-[16rem] max-h-full shrink-0"
+                >
+                  <div className="px-3 py-3 flex justify-between items-center shrink-0 border-b border-gray-200/50">
+                    <h3 className="font-bold text-gray-600 uppercase text-[11px] tracking-wider">
+                      {column.title}
+                    </h3>
+                    <div className="flex items-center gap-1">
+                      {hasActiveFilter &&
+                        filteredTaskIds.length !== allTasksInCol.length && (
+                          <span className="text-orange-500 text-2xs font-bold">
+                            {filteredTaskIds.length}/
+                          </span>
+                        )}
+                      <span className="bg-gray-200 text-gray-600 text-2xs font-bold px-2 py-0.5 rounded-full">
+                        {allTasksInCol.length}
+                      </span>
+                    </div>
                   </div>
-                </div>
 
-                <Droppable droppableId={column.id}>
-                  {(provided, snapshot) => (
-                    <div
-                      ref={provided.innerRef}
-                      {...provided.droppableProps}
-                      className={`flex-1 px-2 pb-2 space-y-2 min-h-37.5 transition-colors duration-200 rounded-b-xl ${snapshot.isDraggingOver ? "bg-gray-200/50" : ""}`}
-                    >
-                      {/* Hiện tasks đã lọc */}
-                      {column.taskIds
-                        .map((taskId) => boardData.tasks[taskId])
-                        .filter(Boolean)
-                        .map((task, index) => {
-                          const isFiltered = !filteredTaskIds.includes(task.id);
-                          const isAlerted = activeAlerts.includes(task.id);
+                  <Droppable droppableId={column.id}>
+                    {(provided, snapshot) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
+                        // Vùng chứa thẻ: thêm overflow-y-auto và custom-scrollbar
+                        className={`flex-1 overflow-y-auto custom-scrollbar px-2 pt-2 pb-4 space-y-2 transition-colors duration-200 rounded-b-xl ${
+                          snapshot.isDraggingOver ? "bg-gray-200/50" : ""
+                        }`}
+                      >
+                        {/* MAP THEO DANH SÁCH ĐÃ BỊ CẮT NGẮN (LAZY LOAD) */}
+                        {tasksToRender
+                          .map((taskId) => boardData.tasks[taskId])
+                          .filter(Boolean)
+                          .map((task, index) => {
+                            const isFiltered = !filteredTaskIds.includes(
+                              task.id,
+                            );
+                            const isAlerted = activeAlerts.includes(task.id);
 
-                          return (
-                            <Draggable
-                              key={task.id}
-                              draggableId={task.id}
-                              index={index}
-                            >
-                              {(provided, snapshot) => (
-                                <div
-                                  ref={provided.innerRef}
-                                  {...provided.draggableProps}
-                                  {...provided.dragHandleProps}
-                                  onClick={() =>
-                                    !isFiltered && onOpenDetail(task.id)
-                                  }
-                                  className={`p-3 relative group select-none transition-all ${getCardStyle(column.id, snapshot.isDragging, isAlerted)} ${
-                                    isFiltered
-                                      ? "opacity-20 pointer-events-none scale-95"
-                                      : ""
-                                  }`}
-                                  style={{ ...provided.draggableProps.style }}
-                                >
-                                  {isAlerted && !isFiltered && (
-                                    <div className="absolute -top-2 -left-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-lg border-2 border-white z-10 animate-bounce">
-                                      <svg
-                                        className="w-4 h-4"
-                                        fill="currentColor"
-                                        viewBox="0 0 20 20"
-                                      >
-                                        <path
-                                          fillRule="evenodd"
-                                          d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                                          clipRule="evenodd"
-                                        />
-                                      </svg>
-                                    </div>
-                                  )}
+                            return (
+                              <Draggable
+                                key={task.id}
+                                draggableId={task.id}
+                                index={index} // Vẫn giữ index chuẩn của mảng slice
+                              >
+                                {(provided, snapshot) => (
+                                  <div
+                                    ref={provided.innerRef}
+                                    {...provided.draggableProps}
+                                    {...provided.dragHandleProps}
+                                    onClick={() =>
+                                      !isFiltered && onOpenDetail(task.id)
+                                    }
+                                    className={`p-3 relative group select-none transition-all ${getCardStyle(
+                                      column.id,
+                                      snapshot.isDragging,
+                                      isAlerted,
+                                    )} ${
+                                      isFiltered
+                                        ? "opacity-20 pointer-events-none scale-95 hidden"
+                                        : ""
+                                    }`}
+                                    style={{ ...provided.draggableProps.style }}
+                                  >
+                                    {isAlerted && !isFiltered && (
+                                      <div className="absolute -top-2 -left-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-lg border-2 border-white z-10 animate-bounce">
+                                        <svg
+                                          className="w-4 h-4"
+                                          fill="currentColor"
+                                          viewBox="0 0 20 20"
+                                        >
+                                          <path
+                                            fillRule="evenodd"
+                                            d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                                            clipRule="evenodd"
+                                          />
+                                        </svg>
+                                      </div>
+                                    )}
 
-                                  {canSeeAll && (
-                                    <button
-                                      onClick={(e) =>
-                                        handleDeleteClick(e, task.id)
-                                      }
-                                      className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-all"
-                                    >
-                                      <svg
-                                        className="w-3.5 h-3.5"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                      >
-                                        <path
-                                          strokeLinecap="round"
-                                          strokeLinejoin="round"
-                                          strokeWidth={2}
-                                          d="M6 18L18 6M6 6l12 12"
-                                        />
-                                      </svg>
-                                    </button>
-                                  )}
-
-                                  <h4 className="font-bold text-gray-800 text-sm leading-tight pr-5 mb-2">
-                                    {task.content}
-                                  </h4>
-                                  <div className="flex justify-between items-end mb-3">
-                                    <div className="flex flex-col gap-0.5">
-                                      <span className="text-sm font-bold text-gray-700">
-                                        {task.phone}
-                                      </span>
-                                      {task.assignedTo && (
-                                        <div className="flex items-center gap-1 mt-0.5">
-                                          <div className="w-4 h-4 rounded-full bg-indigo-50 flex items-center justify-center text-[8px] font-bold text-indigo-600 border border-indigo-100">
-                                            {task.assignedTo.charAt(0)}
-                                          </div>
-                                          <span className="text-2xs text-gray-500 font-medium">
-                                            Sale:{" "}
-                                            {task.assignedTo.split(" ")[0]}
-                                          </span>
-                                        </div>
-                                      )}
-                                    </div>
-                                    <span className="text-[9px] font-bold text-blue-600 bg-blue-50/50 border border-blue-100/50 px-1.5 py-0.5 rounded uppercase">
-                                      {task.price}
-                                    </span>
-                                  </div>
-
-                                  <div className="pt-2 border-t border-gray-100 flex justify-between items-center">
-                                    <div className="flex flex-wrap gap-1">
-                                      {task.activities &&
-                                      task.activities.length > 0 ? (
-                                        task.activities.map((act) => {
-                                          const config = getActivityConfig(
-                                            act.type,
-                                            act.completed,
-                                          );
-                                          return (
-                                            <Tooltip
-                                              key={act.id}
-                                              content={act.summary}
-                                              placement="top"
-                                            >
-                                              <div
-                                                onClick={(e) =>
-                                                  handleActivityClick(
-                                                    e,
-                                                    task.id,
-                                                    act.id,
-                                                  )
-                                                }
-                                                className={`w-6 h-6 rounded-full border ${config.border} ${config.color} flex items-center justify-center text-2xs shadow-sm cursor-pointer hover:scale-110 transition-all`}
-                                              >
-                                                {config.icon}
-                                              </div>
-                                            </Tooltip>
-                                          );
-                                        })
-                                      ) : (
-                                        <span className="text-2xs text-gray-300 italic">
-                                          Trống
-                                        </span>
-                                      )}
-                                    </div>
-                                    <div className="flex gap-1">
+                                    {canSeeAll && (
                                       <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          onOpenAttachments(task.id);
-                                        }}
-                                        className="w-6 h-6 flex items-center justify-center rounded text-gray-400 hover:text-green-600 hover:bg-green-50 transition-all"
+                                        onClick={(e) =>
+                                          handleDeleteClick(e, task.id)
+                                        }
+                                        className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-all"
                                       >
                                         <svg
                                           className="w-3.5 h-3.5"
@@ -651,56 +655,245 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                                             strokeLinecap="round"
                                             strokeLinejoin="round"
                                             strokeWidth={2}
-                                            d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
+                                            d="M6 18L18 6M6 6l12 12"
                                           />
                                         </svg>
                                       </button>
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          onOpenActivityList(task.id);
-                                        }}
-                                        className="w-6 h-6 flex items-center justify-center rounded text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all"
-                                      >
-                                        <svg
-                                          className="w-4 h-4"
-                                          fill="none"
-                                          stroke="currentColor"
-                                          viewBox="0 0 24 24"
+                                    )}
+
+                                    <h4 className="font-bold text-gray-800 text-sm leading-tight pr-5 mb-2">
+                                      {task.content}
+                                    </h4>
+                                    <div className="flex justify-between items-end mb-3">
+                                      <div className="flex flex-col gap-0.5">
+                                        <span className="text-sm font-bold text-gray-700">
+                                          {task.phone}
+                                        </span>
+                                        {task.assignedTo && (
+                                          <div className="flex items-center gap-1 mt-0.5">
+                                            <div className="w-4 h-4 rounded-full bg-indigo-50 flex items-center justify-center text-[8px] font-bold text-indigo-600 border border-indigo-100">
+                                              {task.assignedTo.charAt(0)}
+                                            </div>
+                                            <span className="text-2xs text-gray-500 font-medium">
+                                              Sale:{" "}
+                                              {task.assignedTo.split(" ")[0]}
+                                            </span>
+                                          </div>
+                                        )}
+                                      </div>
+                                      <span className="text-[9px] font-bold text-blue-600 bg-blue-50/50 border border-blue-100/50 px-1.5 py-0.5 rounded uppercase">
+                                        {task.price}
+                                      </span>
+                                    </div>
+
+                                    <div className="pt-2 border-t border-gray-100 flex justify-between items-center">
+                                      <div className="flex flex-wrap gap-1">
+                                        {task.activities &&
+                                        task.activities.length > 0 ? (
+                                          task.activities.map((act) => {
+                                            const config = getActivityConfig(
+                                              act.type,
+                                              act.completed,
+                                            );
+                                            return (
+                                              <Tooltip
+                                                key={act.id}
+                                                content={act.summary}
+                                                placement="top"
+                                              >
+                                                <div
+                                                  onClick={(e) =>
+                                                    handleActivityClick(
+                                                      e,
+                                                      task.id,
+                                                      act.id,
+                                                    )
+                                                  }
+                                                  className={`w-6 h-6 rounded-full border ${config.border} ${config.color} flex items-center justify-center text-2xs shadow-sm cursor-pointer hover:scale-110 transition-all`}
+                                                >
+                                                  {config.icon}
+                                                </div>
+                                              </Tooltip>
+                                            );
+                                          })
+                                        ) : (
+                                          <span className="text-2xs text-gray-300 italic">
+                                            Trống
+                                          </span>
+                                        )}
+                                      </div>
+                                      <div className="flex gap-1">
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            onOpenAttachments(task.id);
+                                          }}
+                                          className="w-6 h-6 flex items-center justify-center rounded text-gray-400 hover:text-green-600 hover:bg-green-50 transition-all"
                                         >
-                                          <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                                          />
-                                        </svg>
-                                      </button>
+                                          <svg
+                                            className="w-3.5 h-3.5"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                          >
+                                            <path
+                                              strokeLinecap="round"
+                                              strokeLinejoin="round"
+                                              strokeWidth={2}
+                                              d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
+                                            />
+                                          </svg>
+                                        </button>
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            onOpenActivityList(task.id);
+                                          }}
+                                          className="w-6 h-6 flex items-center justify-center rounded text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all"
+                                        >
+                                          <svg
+                                            className="w-4 h-4"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                          >
+                                            <path
+                                              strokeLinecap="round"
+                                              strokeLinejoin="round"
+                                              strokeWidth={2}
+                                              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                                            />
+                                          </svg>
+                                        </button>
+                                      </div>
                                     </div>
                                   </div>
-                                </div>
-                              )}
-                            </Draggable>
-                          );
-                        })}
-                      {provided.placeholder}
+                                )}
+                              </Draggable>
+                            );
+                          })}
 
-                      {/* Empty state khi filter không có kết quả */}
-                      {hasActiveFilter &&
-                        filteredTaskIds.length === 0 &&
-                        allTasksInCol.length > 0 && (
-                          <div className="text-center py-4 text-gray-300 text-xs italic">
-                            Không khớp bộ lọc
-                          </div>
+                        {provided.placeholder}
+
+                        {/* NÚT TẢI THÊM NẾU CÒN DỮ LIỆU CHƯA RENDER */}
+                        {hasMore && !hasActiveFilter && (
+                          <button
+                            onClick={() => handleLoadMore(column.id)}
+                            className="w-full mt-2 py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 font-semibold text-xs rounded-lg transition-colors border border-blue-200 border-dashed"
+                          >
+                            Tải thêm ({column.taskIds.length - limit} khách) ↓
+                          </button>
                         )}
-                    </div>
-                  )}
-                </Droppable>
-              </div>
-            );
-          })}
+
+                        {hasActiveFilter &&
+                          filteredTaskIds.length === 0 &&
+                          allTasksInCol.length > 0 && (
+                            <div className="text-center py-4 text-gray-400 text-xs italic">
+                              Không khớp bộ lọc
+                            </div>
+                          )}
+                      </div>
+                    )}
+                  </Droppable>
+                </div>
+              );
+            })}
+          </div>
+        </DragDropContext>
+      )}
+
+      {/* CHẾ ĐỘ HIỂN THỊ TABLE VIEW */}
+      {viewMode === "table" && (
+        <div className="flex-1 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col h-[calc(100vh-210px)]">
+          <div className="overflow-y-auto custom-scrollbar flex-1">
+            <table className="w-full text-sm text-left text-gray-600">
+              <thead className="text-xs text-gray-700 uppercase bg-gray-50 sticky top-0 z-10 shadow-sm">
+                <tr>
+                  <th className="px-4 py-3 w-12 text-center">STT</th>
+                  <th className="px-4 py-3">Khách hàng</th>
+                  <th className="px-4 py-3">Số Điện Thoại</th>
+                  <th className="px-4 py-3">Visa Quan Tâm</th>
+                  <th className="px-4 py-3">Trạng thái</th>
+                  <th className="px-4 py-3">Phụ trách</th>
+                  <th className="px-4 py-3 text-right">Chi phí</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {flatTableData.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={7}
+                      className="text-center py-10 text-gray-400 italic"
+                    >
+                      Không có khách hàng nào khớp với tìm kiếm.
+                    </td>
+                  </tr>
+                ) : (
+                  flatTableData.map((task, index) => (
+                    <tr
+                      key={task.id}
+                      onClick={() => onOpenDetail(task.id)}
+                      className="hover:bg-blue-50/50 cursor-pointer transition-colors"
+                    >
+                      <td className="px-4 py-3 text-center text-gray-400 font-medium">
+                        {index + 1}
+                      </td>
+                      <td className="px-4 py-3 font-bold text-gray-800">
+                        <div className="flex items-center gap-2">
+                          {activeAlerts.includes(task.id) && (
+                            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                          )}
+                          {task.content}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 font-semibold text-gray-600">
+                        {task.phone}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="bg-blue-50 text-blue-600 px-2 py-1 rounded text-xs font-semibold">
+                          {task.visaType || "Chưa rõ"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="bg-gray-100 text-gray-700 border border-gray-200 px-2 py-1 rounded-full text-xs font-bold">
+                          {task.columnTitle}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        {task.assignedTo ? (
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-5 h-5 rounded-full bg-indigo-100 flex items-center justify-center text-[10px] font-bold text-indigo-700">
+                              {task.assignedTo.charAt(0)}
+                            </div>
+                            <span className="text-sm">
+                              {task.assignedTo.split(" ")[0]}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-gray-400 italic text-xs">
+                            Chưa giao
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-right font-bold text-blue-600">
+                        {task.price}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+          <div className="p-3 border-t border-gray-200 bg-gray-50 text-xs text-gray-500 flex justify-between items-center">
+            <span>
+              Tổng số:{" "}
+              <strong className="text-gray-800">{flatTableData.length}</strong>{" "}
+              khách hàng
+            </span>
+            <span>Bấm vào dòng để xem chi tiết</span>
+          </div>
         </div>
-      </DragDropContext>
+      )}
     </div>
   );
 };
