@@ -140,7 +140,10 @@ const DocumentModal: React.FC<DocumentModalProps> = ({
 
   const handleDownloadFile = async (fileUrl: string, fileName: string) => {
     try {
-      const response = await fetch(`${API_URL}${fileUrl}`);
+      const fullUrl = fileUrl.startsWith("http")
+        ? fileUrl
+        : `${API_URL}${fileUrl}`;
+      const response = await fetch(fullUrl);
       if (!response.ok) throw new Error("Không thể tải file");
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
