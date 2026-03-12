@@ -301,18 +301,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
     }
   };
 
-  const onDragUpdate = (update: DragUpdate) => {
-    const { destination } = update;
-    if (!destination) return;
-    const droppable = document.querySelector(
-      `[data-rbd-droppable-id="${destination.droppableId}"]`,
-    );
-    droppable?.scrollIntoView({
-      behavior: "smooth",
-      block: "nearest",
-      inline: "center",
-    });
-  };
+
 
   const handleDeleteClick = (e: React.MouseEvent, taskId: string) => {
     e.stopPropagation();
@@ -473,7 +462,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
       )}
 
       {/* KANBAN BOARD */}
-      <DragDropContext onDragEnd={onDragEnd} onDragUpdate={onDragUpdate}>
+      <DragDropContext onDragEnd={onDragEnd}>
         <div className="flex h-full w-full space-x-4 overflow-x-auto pb-6 items-start">
           {boardData.columnOrder.map((columnId) => {
             const column = boardData.columns[columnId];

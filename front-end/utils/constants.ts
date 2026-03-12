@@ -306,4 +306,5 @@ export const DEPT_TO_TEMPLATE_ID: Record<string, string> = {
   "Ban Giám đốc": "sale",
   "Kế toán": "troly",
   Marketing: "marketing",
+  "Trợ lý giám đốc": "troly",
 };
