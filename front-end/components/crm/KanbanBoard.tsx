@@ -4,7 +4,6 @@ import {
   Droppable,
   Draggable,
   type DropResult,
-  type DragUpdate,
 } from "@hello-pangea/dnd";
 import { Tooltip, Spinner } from "flowbite-react";
 import type {
