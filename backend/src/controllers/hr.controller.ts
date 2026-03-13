@@ -569,13 +569,41 @@ export const checkOutEmployee = async (req: Request, res: Response) => {
   try {
     const id = req.params.id as string;
     const now = new Date();
-    const todayStr = now.toLocaleDateString("vi-VN");
+    
+    // 1. Cố định múi giờ Việt Nam (GMT+7)
+    const timeZone = "Asia/Ho_Chi_Minh";
+
+    // Format ngày giờ hiển thị theo chuẩn VN
+    const todayStr = now.toLocaleDateString("vi-VN", { timeZone });
     const outTime = now.toLocaleTimeString("vi-VN", {
+      timeZone,
       hour: "2-digit",
       minute: "2-digit",
     });
 
-    // 1. Tìm record check-in hôm nay
+    // Tách các thành phần thời gian (Giờ, Phút, Năm, Tháng, Ngày) chuẩn theo giờ VN
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      hour: "numeric",
+      minute: "numeric",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour12: false, // Sử dụng định dạng 24h
+    });
+
+    const parts = formatter.formatToParts(now);
+    let vnHour = 0, vnMinute = 0, vnYear = "", vnMonth = "", vnDay = "";
+
+    parts.forEach(part => {
+      if (part.type === "hour") vnHour = parseInt(part.value, 10) % 24; 
+      if (part.type === "minute") vnMinute = parseInt(part.value, 10);
+      if (part.type === "year") vnYear = part.value;
+      if (part.type === "month") vnMonth = part.value;
+      if (part.type === "day") vnDay = part.value;
+    });
+
+    // 2. Tìm record check-in hôm nay
     const todayRecord = await prisma.attendanceRecord.findFirst({
       where: { employeeId: id, date: todayStr },
     });
@@ -587,37 +615,41 @@ export const checkOutEmployee = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Đã check-out rồi!" });
     }
 
-    // 2. Kiểm tra về sớm (trước 17:00)
-    const outMinutes = now.getHours() * 60 + now.getMinutes();
+    // 3. Kiểm tra về sớm (trước 17:00 giờ Việt Nam)
+    const outMinutes = vnHour * 60 + vnMinute;
     const isEarlyLeave = outMinutes < 17 * 60;
 
-    // 3. Nếu về sớm → kiểm tra có đơn nghỉ phép được duyệt hôm nay không
+    // 4. Nếu về sớm → kiểm tra có đơn nghỉ phép được duyệt hôm nay không
     let halfDayDeduction = 0;
     let newStatus = todayRecord.status;
 
     if (isEarlyLeave) {
-      const todayISO = now.toISOString().split("T")[0];
+      // Ép ngày ISO theo múi giờ VN (YYYY-MM-DD) thay vì .toISOString() mặc định của UTC
+      const todayISO = `${vnYear}-${vnMonth}-${vnDay}`; 
+
       const approvedLeave = await prisma.leaveRequest.findFirst({
-      where: {
-    employeeId: id,
-    status: "Đã duyệt",
-    startDate: { lte: todayISO },
-    endDate: { gte: todayISO },
-  },
-});
+        where: {
+          employeeId: id,
+          status: "Đã duyệt",
+          startDate: { lte: todayISO },
+          endDate: { gte: todayISO },
+        },
+      });
 
       if (!approvedLeave) {
         // Tính nửa ngày lương
-        const employee = await prisma.employee.findUnique({ where: { id:id as string } });
-        const workDays = getWorkDaysInMonth(now.getFullYear(), now.getMonth());
+        const employee = await prisma.employee.findUnique({ where: { id: id } });
+        // Truyền đúng tháng, năm đã được ép kiểu (tháng của JS bắt đầu từ 0 nên cần trừ 1)
+        const workDays = getWorkDaysInMonth(parseInt(vnYear), parseInt(vnMonth) - 1); 
         halfDayDeduction = Math.round((employee!.baseSalary || 0) / workDays / 2);
+        
         newStatus = todayRecord.status === "Đúng giờ"
           ? "Về sớm"
           : `${todayRecord.status} + Về sớm`;
       }
     }
 
-    // 4. Update record checkout trong transaction
+    // 5. Update record checkout trong transaction
     await prisma.$transaction(async (tx) => {
       await tx.attendanceRecord.update({
         where: { id: todayRecord.id },
