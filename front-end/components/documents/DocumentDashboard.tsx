@@ -278,7 +278,19 @@ useEffect(() => {
       alert("Đã xảy ra lỗi khi tải file xuống! Vui lòng thử lại sau.");
     }
   };
+const handlePreview = (fileUrl: string | undefined) => {
+  if (!fileUrl) return alert("File không có đường dẫn!");
 
+  let fullUrl = fileUrl.startsWith("http") ? fileUrl : `${API_URL}${fileUrl}`;
+
+  // Đảm bảo URL KHÔNG chứa thẻ ép tải xuống (fl_attachment) nếu bạn có dùng nó
+  if (fullUrl.includes("/fl_attachment/")) {
+    fullUrl = fullUrl.replace("/fl_attachment/", "/");
+  }
+
+  // Mở file ở một tab mới. Trình duyệt sẽ tự động đọc PDF hoặc Hình ảnh.
+  window.open(fullUrl, "_blank", "noopener,noreferrer");
+};
   // ==========================================
   // HIGHLIGHT helper
   // ==========================================
@@ -697,25 +709,63 @@ useEffect(() => {
                 <span className="text-xs text-gray-400">
                   {new Date(file.createdAt).toLocaleDateString("vi-VN")}
                 </span>
-                <button
-                  onClick={() => handleDownload(file.fileUrl, file.name)}
-                  className="text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 p-1.5 rounded-md transition-colors cursor-pointer"
-                  title="Tải xuống"
-                >
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+
+                {/* CỤM NÚT ACTION (XEM & TẢI) */}
+                <div className="flex gap-1.5">
+                  {/* Nút Xem Trước */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation(); // Ngăn sự kiện click lan ra ngoài
+                      handlePreview(file.fileUrl);
+                    }}
+                    className="text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 p-1.5 rounded-md transition-colors cursor-pointer"
+                    title="Xem trước file"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                    />
-                  </svg>
-                </button>
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                      />
+                    </svg>
+                  </button>
+
+                  {/* Nút Tải Xuống (Giữ nguyên của bạn) */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDownload(file.fileUrl, file.name);
+                    }}
+                    className="text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 p-1.5 rounded-md transition-colors cursor-pointer"
+                    title="Tải xuống"
+                  >
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                      />
+                    </svg>
+                  </button>
+                </div>
               </div>
             </div>
           ))}

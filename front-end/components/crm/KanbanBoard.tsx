@@ -499,7 +499,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                     d="M4 6h16M4 10h16M4 14h16M4 18h16"
                   />
                 </svg>
-                Xem dạng Bảng (Table)
+                Xem dạng Bảng
               </>
             ) : (
               <>
@@ -516,7 +516,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                     d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"
                   />
                 </svg>
-                Xem dạng Cột (Kanban)
+                Xem dạng Cột 
               </>
             )}
           </button>
@@ -584,6 +584,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
       </div>
 
       {/* CHẾ ĐỘ HIỂN THỊ KANBAN BOARD */}
+      {/* CHẾ ĐỘ HIỂN THỊ KANBAN BOARD */}
       {viewMode === "board" && (
         <DragDropContext onDragEnd={onDragEnd}>
           <div className="flex h-[calc(100vh-210px)] w-full space-x-4 overflow-x-auto pb-4 items-start relative">
@@ -606,6 +607,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                   key={column.id}
                   className="flex flex-col bg-gray-100/50 rounded-xl w-64 min-w-[16rem] max-h-full shrink-0"
                 >
+                  {/* HEADER CỦA CỘT */}
                   <div className="px-3 py-3 flex justify-between items-center shrink-0 border-b border-gray-200/50">
                     <h3 className="font-bold text-gray-600 uppercase text-[11px] tracking-wider">
                       {column.title}
@@ -623,6 +625,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                     </div>
                   </div>
 
+                  {/* VÙNG THẢ THẺ CỦA CỘT (CÓ THANH CUỘN DỌC) */}
                   <Droppable droppableId={column.id}>
                     {(provided, snapshot) => (
                       <div
@@ -656,18 +659,19 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                                     {...provided.draggableProps}
                                     {...provided.dragHandleProps}
                                     onClick={() => onOpenDetail(task.id)}
-                                    // ĐÃ XÓA MỌI ĐUÔI CLASS ẨN VÀ TRANSITION-ALL TẠI ĐÂY
-                                    className={`p-3 relative group select-none ${getCardStyle(
+                                    // ĐÃ TỐI ƯU: Đổi p-3 thành p-2.5 để thẻ gọn hơn, bỏ transition-all
+                                    className={`p-2.5 relative group select-none transition-colors duration-200 rounded-lg ${getCardStyle(
                                       column.id,
                                       snapshot.isDragging,
                                       isAlerted,
                                     )}`}
                                     style={{ ...provided.draggableProps.style }}
                                   >
+                                    {/* ICON CẢNH BÁO ĐỎ (NẾU CÓ) */}
                                     {isAlerted && (
-                                      <div className="absolute -top-2 -left-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-lg border-2 border-white z-10 animate-bounce">
+                                      <div className="absolute -top-2 -left-2 bg-red-500 text-white w-5 h-5 rounded-full flex items-center justify-center shadow-lg border-2 border-white z-10 animate-bounce">
                                         <svg
-                                          className="w-4 h-4"
+                                          className="w-3 h-3"
                                           fill="currentColor"
                                           viewBox="0 0 20 20"
                                         >
@@ -679,57 +683,56 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                                         </svg>
                                       </div>
                                     )}
-
-                                    {canSeeAll && (
-                                      <button
-                                        onClick={(e) =>
-                                          handleDeleteClick(e, task.id)
-                                        }
-                                        className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
+                                    {/* NÚT XÓA THẺ Ở GÓC PHẢI TRÊN (Chỉ Manager/Boss mới thấy) */}
+                                    
+                                    <button
+                                      onClick={(e) =>
+                                        handleDeleteClick(e, task.id)
+                                      }
+                                      className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                                    >
+                                      <svg
+                                        className="w-3.5 h-3.5"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
                                       >
-                                        <svg
-                                          className="w-3.5 h-3.5"
-                                          fill="none"
-                                          stroke="currentColor"
-                                          viewBox="0 0 24 24"
-                                        >
-                                          <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M6 18L18 6M6 6l12 12"
-                                          />
-                                        </svg>
-                                      </button>
-                                    )}
-
-                                    <h4 className="font-bold text-gray-800 text-sm leading-tight pr-5 mb-2">
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          strokeWidth={2}
+                                          d="M6 18L18 6M6 6l12 12"
+                                        />
+                                      </svg>
+                                    </button>
+                                    {/* NỘI DUNG CHÍNH CỦA THẺ */}
+                                    <h4 className="font-bold text-gray-800 text-xs leading-tight pr-5 mb-1.5 line-clamp-2">
                                       {task.content}
                                     </h4>
-                                    <div className="flex justify-between items-end mb-3">
+                                    <div className="flex justify-between items-end mb-2">
                                       <div className="flex flex-col gap-0.5">
-                                        <span className="text-sm font-bold text-gray-700">
+                                        <span className="text-[11px] font-bold text-gray-700">
                                           {task.phone}
                                         </span>
                                         {task.assignedTo && (
                                           <div className="flex items-center gap-1 mt-0.5">
-                                            <div className="w-4 h-4 rounded-full bg-indigo-50 flex items-center justify-center text-[8px] font-bold text-indigo-600 border border-indigo-100">
+                                            <div className="w-3.5 h-3.5 rounded-full bg-indigo-50 flex items-center justify-center text-[7px] font-bold text-indigo-600 border border-indigo-100">
                                               {task.assignedTo.charAt(0)}
                                             </div>
-                                            <span className="text-2xs text-gray-500 font-medium">
+                                            <span className="text-[9px] text-gray-500 font-medium">
                                               Sale:{" "}
                                               {task.assignedTo.split(" ")[0]}
                                             </span>
                                           </div>
                                         )}
                                       </div>
-                                      <span className="text-[9px] font-bold text-blue-600 bg-blue-50/50 border border-blue-100/50 px-1.5 py-0.5 rounded uppercase">
+                                      <span className="text-[8px] font-bold text-blue-600 bg-blue-50 border border-blue-100 px-1.5 py-0.5 rounded uppercase">
                                         {task.price}
                                       </span>
                                     </div>
-
-                                    {/* ICON CÔNG VIỆC */}
-                                    <div className="pt-2 border-t border-gray-100 flex justify-between items-center">
+                                    {/* FOOTER CỦA THẺ: GỘP CHUNG HOẠT ĐỘNG, NÚT VÀ DROPDOWN VÀO 1 HÀNG */}
+                                    <div className="pt-1.5 border-t border-gray-100 flex justify-between items-center min-h-[24px]">
+                                      {/* Cụm Trái: Biểu tượng hoạt động (Activities) */}
                                       <div className="flex flex-wrap gap-1">
                                         {task.activities &&
                                         task.activities.length > 0 ? (
@@ -752,7 +755,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                                                       act.id,
                                                     )
                                                   }
-                                                  className={`w-6 h-6 rounded-full border ${config.border} ${config.color} flex items-center justify-center text-2xs shadow-sm cursor-pointer hover:scale-110 transition-transform`}
+                                                  className={`w-5 h-5 rounded-full border ${config.border} ${config.color} flex items-center justify-center text-[8px] shadow-sm cursor-pointer hover:scale-110 transition-transform`}
                                                 >
                                                   {config.icon}
                                                 </div>
@@ -760,18 +763,52 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                                             );
                                           })
                                         ) : (
-                                          <span className="text-2xs text-gray-300 italic">
+                                          <span className="text-[9px] text-gray-300 italic">
                                             Trống
                                           </span>
                                         )}
                                       </div>
-                                      <div className="flex gap-1">
+
+                                      {/* Cụm Phải: Dropdown Trạng Thái & Các nút bấm */}
+                                      <div className="flex items-center gap-1">
+                                        {/* DROPDOWN CHUYỂN TRẠNG THÁI GỌN GÀNG (Chỉ hiện khi hover) */}
+                                        <select
+                                          value={column.id}
+                                          onMouseDown={(e) =>
+                                            e.stopPropagation()
+                                          }
+                                          onClick={(e) => e.stopPropagation()}
+                                          onChange={(e) =>
+                                            handleStatusChange(
+                                              task.id,
+                                              column.id,
+                                              e.target.value,
+                                            )
+                                          }
+                                          // ĐÃ THÊM: bg-none để xóa mũi tên, text-center để chữ đẹp hơn, tăng width lên w-24
+                                          className="opacity-0 group-hover:opacity-100 w-24 appearance-none bg-none bg-gray-50 border border-gray-200 text-gray-600 hover:text-blue-600 hover:border-blue-300 text-[10px] font-medium py-0.5 px-1.5 text-center rounded cursor-pointer outline-none transition-opacity shadow-sm truncate"
+                                        >
+                                          {boardData.columnOrder.map(
+                                            (colId) => (
+                                              <option
+                                                key={colId}
+                                                value={colId}
+                                                className="text-left"
+                                              >
+                                                {boardData.columns[colId].title}
+                                              </option>
+                                            ),
+                                          )}
+                                        </select>
+
+                                        {/* Nút Đính kèm Hồ Sơ */}
                                         <button
                                           onClick={(e) => {
                                             e.stopPropagation();
                                             onOpenAttachments(task.id);
                                           }}
-                                          className="w-6 h-6 flex items-center justify-center rounded text-gray-400 hover:text-green-600 hover:bg-green-50 transition-colors"
+                                          className="w-5 h-5 flex items-center justify-center rounded text-gray-400 hover:text-green-600 hover:bg-green-50 transition-colors"
+                                          title="Đính kèm tài liệu"
                                         >
                                           <svg
                                             className="w-3.5 h-3.5"
@@ -787,15 +824,18 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                                             />
                                           </svg>
                                         </button>
+
+                                        {/* Nút Lịch sử / Action */}
                                         <button
                                           onClick={(e) => {
                                             e.stopPropagation();
                                             onOpenActivityList(task.id);
                                           }}
-                                          className="w-6 h-6 flex items-center justify-center rounded text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                                          className="w-5 h-5 flex items-center justify-center rounded text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                                          title="Nhật ký tư vấn"
                                         >
                                           <svg
-                                            className="w-4 h-4"
+                                            className="w-3.5 h-3.5"
                                             fill="none"
                                             stroke="currentColor"
                                             viewBox="0 0 24 24"
@@ -810,37 +850,6 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                                         </button>
                                       </div>
                                     </div>
-
-                                    {/* MỚI: DROPDOWN ĐỔI TRẠNG THÁI Ở KANBAN */}
-                                    <div className="mt-2 pt-2 border-t border-gray-100 opacity-0 group-hover:opacity-100 transition-opacity flex justify-end">
-                                      <div className="relative">
-                                        <select
-                                          value={column.id}
-                                          onMouseDown={(e) =>
-                                            e.stopPropagation()
-                                          }
-                                          onClick={(e) => e.stopPropagation()}
-                                          onChange={(e) =>
-                                            handleStatusChange(
-                                              task.id,
-                                              column.id,
-                                              e.target.value,
-                                            )
-                                          }
-                                          // appearance-none để ẩn mũi tên mặc định, focus:ring-0 để bỏ viền xanh xấu xí
-                                          className="appearance-none bg-white hover:bg-gray-50 border border-gray-200 text-gray-500 hover:text-blue-600 text-[10px] font-medium py-1 pl-2 pr-5 rounded cursor-pointer outline-none focus:ring-0 focus:border-blue-300 transition-colors shadow-sm"
-                                        >
-                                          {boardData.columnOrder.map(
-                                            (colId) => (
-                                              <option key={colId} value={colId}>
-                                                {boardData.columns[colId].title}
-                                              </option>
-                                            ),
-                                          )}
-                                        </select>
-                                        
-                                      </div>
-                                    </div>
                                   </div>
                                 )}
                               </Draggable>
@@ -849,6 +858,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
 
                         {provided.placeholder}
 
+                        {/* NÚT TẢI THÊM NẾU CỘT CÒN DATA (LAZY LOAD) */}
                         {hasMore && !hasActiveFilter && (
                           <button
                             onClick={() => handleLoadMore(column.id)}
@@ -858,6 +868,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                           </button>
                         )}
 
+                        {/* THÔNG BÁO LỌC KHÔNG CÓ KẾT QUẢ */}
                         {hasActiveFilter &&
                           filteredTaskIds.length === 0 &&
                           allTasksInCol.length > 0 && (
@@ -886,16 +897,18 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                   <th className="px-4 py-3">Khách hàng</th>
                   <th className="px-4 py-3">Số Điện Thoại</th>
                   <th className="px-4 py-3">Visa Quan Tâm</th>
-                  <th className="px-4 py-3">Trạng thái (Đổi nhanh)</th>
+                  <th className="px-4 py-3">Trạng thái</th>
                   <th className="px-4 py-3">Phụ trách</th>
                   <th className="px-4 py-3 text-right">Chi phí</th>
+                  {/* THÊM CỘT HEADER CHO NÚT ĐÍNH KÈM */}
+                  <th className="px-4 py-3 text-center w-16">Hồ sơ</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {flatTableData.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={7}
+                      colSpan={8} // Sửa colSpan từ 7 thành 8 vì mới thêm 1 cột
                       className="text-center py-10 text-gray-400 italic"
                     >
                       Không có khách hàng nào khớp với tìm kiếm.
@@ -928,7 +941,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                         </span>
                       </td>
 
-                      {/* MỚI: DROPDOWN ĐỔI TRẠNG THÁI Ở TABLE */}
+                      {/* DROPDOWN ĐỔI TRẠNG THÁI Ở TABLE */}
                       <td
                         className="px-4 py-3"
                         onClick={(e) => e.stopPropagation()} // Ngăn click nhầm vào xem chi tiết
@@ -970,6 +983,34 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                       </td>
                       <td className="px-4 py-3 text-right font-bold text-blue-600">
                         {task.price}
+                      </td>
+
+                      {/* THÊM NÚT ĐÍNH KÈM VÀO ĐÂY */}
+                      <td className="px-4 py-3 text-center">
+                        <div className="flex justify-center">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation(); // Rất quan trọng để không click nhầm mở chi tiết thẻ
+                              onOpenAttachments(task.id);
+                            }}
+                            className="w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:text-green-600 hover:bg-green-50 transition-colors"
+                            title="Mở hồ sơ / Đính kèm"
+                          >
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
+                              />
+                            </svg>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
