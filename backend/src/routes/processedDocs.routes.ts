@@ -1,13 +1,14 @@
 import { Router } from "express";
-import { 
-  getFolders, 
-  createFolder, 
-  deleteFolder, 
-  getFiles, 
-  uploadFile, 
-  deleteFile 
+import {
+  getFolders,
+  createFolder,
+  deleteFolder,
+  getFiles,
+  uploadFile,
+  deleteFile,
+  renameFile,
 } from "../controllers/processedDocs.controller.js";
-import { uploadDoc, uploadProcessedDoc } from "../middlewares/upload.js"; // Dùng chung middleware upload hiện tại
+import { uploadProcessedDoc } from "../middlewares/upload.js";
 
 const router = Router();
 
@@ -20,5 +21,6 @@ router.delete("/folders/:id", deleteFolder);
 router.get("/files", getFiles);
 router.post("/files/upload", uploadProcessedDoc.single("file"), uploadFile);
 router.delete("/files/:id", deleteFile);
+router.put("/files/:id/rename", renameFile);
 
 export default router;

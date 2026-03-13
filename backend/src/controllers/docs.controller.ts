@@ -3,16 +3,20 @@ import { prisma } from "../../lib/prisma.js";
 import { getIO } from "../socket.js";
 import fs from "fs";
 import path from "path";
+import { Readable } from "stream";
 import { v2 as cloudinary } from "cloudinary";
 
 // ==========================================
-// CLOUDINARY CONFIG
+// CLOUDINARY CONFIG - lazy init
 // ==========================================
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+const getCloudinary = () => {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+  });
+  return cloudinary;
+};
 
 // ==========================================
 // XỬ LÝ THƯ MỤC
@@ -44,15 +48,13 @@ export const createFolder = async (req: Request, res: Response) => {
 export const deleteFolder = async (req: Request, res: Response) => {
   try {
     const id = req.params.id as string;
+    const cld = getCloudinary();
 
-    // Xóa file trên Cloudinary + DB trước khi xóa thư mục
     const files = await prisma.docFile.findMany({ where: { folderId: id } });
     for (const file of files) {
       if (file.cloudinaryPublicId) {
-        // Xóa trên Cloudinary
-        await cloudinary.uploader.destroy(file.cloudinaryPublicId, { resource_type: "raw" });
+        await cld.uploader.destroy(file.cloudinaryPublicId, { resource_type: "raw" });
       } else if (file.fileUrl) {
-        // Fallback: xóa file local nếu có
         const filePath = path.join(process.cwd(), file.fileUrl);
         if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
       }
@@ -84,6 +86,7 @@ export const uploadFile = async (req: Request, res: Response) => {
   try {
     if (!req.file) return res.status(400).json({ error: "Chưa chọn file" });
 
+    const cld = getCloudinary();
     const uploadedBy = (req.body.uploadedBy as string) || "An danh";
     const size = (req.body.size as string) || "0 KB";
 
@@ -96,9 +99,8 @@ export const uploadFile = async (req: Request, res: Response) => {
 
     const decodedName = Buffer.from(req.file.originalname, "latin1").toString("utf8");
 
-    // Upload từ buffer thay vì file.path
     const cloudinaryResult = await new Promise<any>((resolve, reject) => {
-      const stream = cloudinary.uploader.upload_stream(
+      const stream = cld.uploader.upload_stream(
         {
           folder: "flyvisa-documents",
           resource_type: "raw",
@@ -109,11 +111,8 @@ export const uploadFile = async (req: Request, res: Response) => {
           resolve(result);
         }
       );
-      const { Readable } = require("stream");
-      const readable = new Readable();
-      readable.push(req.file!.buffer);
-      readable.push(null);
-      readable.pipe(stream);
+
+      Readable.from(req.file!.buffer).pipe(stream);
     });
 
     const newFile = await prisma.docFile.create({
@@ -138,14 +137,13 @@ export const uploadFile = async (req: Request, res: Response) => {
 export const deleteFile = async (req: Request, res: Response) => {
   try {
     const id = req.params.id as string;
+    const cld = getCloudinary();
 
     const file = await prisma.docFile.findUnique({ where: { id } });
     if (file) {
       if (file.cloudinaryPublicId) {
-        // Xóa trên Cloudinary
-        await cloudinary.uploader.destroy(file.cloudinaryPublicId, { resource_type: "raw" });
+        await cld.uploader.destroy(file.cloudinaryPublicId, { resource_type: "raw" });
       } else if (file.fileUrl && file.fileUrl.startsWith("/uploads")) {
-        // Fallback: xóa file local cũ nếu có
         const filePath = path.join(process.cwd(), file.fileUrl);
         if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
       }
@@ -156,5 +154,24 @@ export const deleteFile = async (req: Request, res: Response) => {
     res.json({ message: "Xóa file thành công" });
   } catch (error) {
     res.status(500).json({ error: "Lỗi xóa file" });
+  }
+};
+
+export const renameFile = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id as string;
+    const { name } = req.body;
+
+    if (!name) return res.status(400).json({ error: "Tên file không được để trống" });
+
+    const updatedFile = await prisma.docFile.update({
+      where: { id },
+      data: { name },
+    });
+
+    getIO().emit("docs_changed");
+    res.json(updatedFile);
+  } catch (error) {
+    res.status(500).json({ error: "Lỗi khi đổi tên file" });
   }
 };

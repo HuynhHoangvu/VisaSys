@@ -161,6 +161,8 @@ export const CUSTOMER_SOURCES = [
       { id: "lb6", section: "1. Giấy tờ cá nhân", name: "Giấy khai sinh con", note: "Nếu có con (Scan)", required: false },
       { id: "lb7", section: "1. Giấy tờ cá nhân", name: "Ảnh thẻ nền trắng", note: "4x6 hoặc 3.5x4.5 (File JPG + bản in)", required: true },
       { id: "lb27", section: "1. Giấy tờ cá nhân", name: "Lý lịch tư pháp", note: "Xác nhận không tiền án (Bản scan)", required: true },
+      { id: "lb31", section: "1. Giấy tờ cá nhân", name: "Tờ khai nhân thân", note: "Tờ khai nhân thân úc", required: true ,templateUrl: "/templates/to-khai-visa-uc.pdf" },
+
       
       { id: "lb8", section: "2. Học vấn & Kỹ năng", name: "Bằng tốt nghiệp THPT", note: "Bằng cấp tối thiểu (Scan)", required: true },
       { id: "lb9", section: "2. Học vấn & Kỹ năng", name: "Bằng trung cấp/cao đẳng/đại học", note: "Nếu có (Scan)", required: false },
