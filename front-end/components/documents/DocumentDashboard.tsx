@@ -243,29 +243,40 @@ useEffect(() => {
   ) => {
     if (!fileUrl) return alert("File không có đường dẫn!");
 
-    // Nếu là URL Cloudinary thì mở thẳng, không cần fetch qua backend
-    if (fileUrl.startsWith("https://")) {
+    try {
+      // 1. Xác định URL đầy đủ (Cloudinary hoặc Local cũ)
+      const fullUrl = fileUrl.startsWith("http")
+        ? fileUrl
+        : `${API_URL}${fileUrl}`;
+
+      // 2. Fetch dữ liệu file về trình duyệt (Hoạt động tốt với Cloudinary)
+      // Lưu ý: Cloudinary thường đã bật sẵn CORS cho các file public
+      const response = await fetch(fullUrl);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      // 3. Chuyển đổi dữ liệu thành dạng Blob
+      const blob = await response.blob();
+
+      // 4. Tạo một đường dẫn ảo (chỉ tồn tại trên trình duyệt hiện tại)
+      const localUrl = window.URL.createObjectURL(blob);
+
+      // 5. Dùng đường dẫn ảo để ép tải xuống
       const link = document.createElement("a");
-      link.href = fileUrl;
-      link.setAttribute("download", fileName);
-      link.target = "_blank";
+      link.href = localUrl;
+      link.setAttribute("download", fileName); // Thuộc tính download lúc này sẽ hoạt động 100%
       document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
-      return;
-    }
 
-    // Fallback cho file local cũ
-    const response = await fetch(`${API_URL}${fileUrl}`);
-    const blob = await response.blob();
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", fileName);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
+      // 6. Dọn dẹp thẻ a và đường dẫn ảo để giải phóng bộ nhớ
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(localUrl);
+    } catch (error) {
+      console.error("Lỗi khi tải file:", error);
+      alert("Đã xảy ra lỗi khi tải file xuống! Vui lòng thử lại sau.");
+    }
   };
 
   // ==========================================

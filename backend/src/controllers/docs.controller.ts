@@ -81,7 +81,14 @@ export const getFiles = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Lỗi lấy danh sách file" });
   }
 };
-
+const removeVietnameseTones = (str: string) => {
+  return str
+    .normalize('NFD') // Tách dấu ra khỏi ký tự
+    .replace(/[\u0300-\u036f]/g, '') // Xóa các dấu
+    .replace(/đ/g, 'd').replace(/Đ/g, 'D') // Đổi chữ đ
+    .replace(/\s+/g, '_') // Thay khoảng trắng bằng dấu gạch dưới
+    .replace(/[^a-zA-Z0-9._-]/g, ''); // Xóa toàn bộ các ký tự đặc biệt khác
+};
 export const uploadFile = async (req: Request, res: Response) => {
   try {
     if (!req.file) return res.status(400).json({ error: "Chưa chọn file" });
@@ -97,14 +104,19 @@ export const uploadFile = async (req: Request, res: Response) => {
       folderId = req.body.folderId[0] !== "null" ? req.body.folderId[0] : null;
     }
 
+    // 1. Tên gốc (có dấu) để lưu vào Database (hiển thị cho người dùng xem)
     const decodedName = Buffer.from(req.file.originalname, "latin1").toString("utf8");
+    
+    // 2. Tên an toàn (không dấu) để làm URL trên Cloudinary
+    const safeName = removeVietnameseTones(decodedName);
 
     const cloudinaryResult = await new Promise<any>((resolve, reject) => {
       const stream = cld.uploader.upload_stream(
         {
           folder: "flyvisa-documents",
           resource_type: "raw",
-          public_id: `${Date.now()}_${decodedName.replace(/\s+/g, "_")}`,
+          // DÙNG safeName Ở ĐÂY THAY VÌ decodedName
+          public_id: `${Date.now()}_${safeName}`, 
         },
         (error, result) => {
           if (error) return reject(error);
@@ -117,7 +129,7 @@ export const uploadFile = async (req: Request, res: Response) => {
 
     const newFile = await prisma.docFile.create({
       data: {
-        name: decodedName,
+        name: decodedName, // Vẫn lưu tên gốc có dấu vào DB để giao diện hiện đẹp
         size,
         uploadedBy,
         fileUrl: cloudinaryResult.secure_url,
