@@ -496,7 +496,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
       </div>
 
       {/* SEARCH + FILTER */}
-      {canSeeAll && (
+      
         <div className="shrink-0">
           <SearchFilterBar
             searchPlaceholder="Tìm tên khách, số điện thoại, sale..."
@@ -531,7 +531,6 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
             hasActiveFilter={hasActiveFilter}
           />
         </div>
-      )}
 
       {/* CHẾ ĐỘ HIỂN THỊ KANBAN BOARD */}
       {viewMode === "board" && (
