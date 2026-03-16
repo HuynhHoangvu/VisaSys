@@ -1,16 +1,5 @@
 import React, { useState } from "react";
-import { type AuthUser } from "../../types";
-
-interface SidebarProps {
-  currentView: string;
-  setCurrentView: (view: string) => void;
-  currentUser: AuthUser; 
-}
-
-interface Workspace {
-  id: string;
-  name: string;
-}
+import type { SidebarProps, Workspace } from "../../types";
 
 const Sidebar: React.FC<SidebarProps> = ({
   currentView,
@@ -38,34 +27,30 @@ const Sidebar: React.FC<SidebarProps> = ({
     }
   };
 
-  // Kiểm tra xem User có phải là Sếp không (Giám đốc hoặc Trưởng phòng)
+  // --- LOGIC PHÂN QUYỀN TỐI ƯU ---
+
+  // 1. Nhóm Quyền Cao Nhất (Giám đốc/Admin)
   const isBoss =
-    currentUser.role.toLowerCase().includes("giám đốc") ||
-    currentUser?.role.toLowerCase().includes("phó giám đốc") ||
-    currentUser.id === "admin";
+    currentUser.id === "admin" ||
+    ["giám đốc", "phó giám đốc"].some((r) =>
+      currentUser.role?.toLowerCase().includes(r),
+    );
 
-  // 2. Quyền Quản lý (Trưởng phòng/Quản lý)
-  const isManager =
-    currentUser?.role.toLowerCase().includes("quản lý") ||
-    currentUser?.role.toLowerCase().includes("trưởng phòng");
+  // 2. Nhóm Quản lý (Trưởng phòng/Quản lý) - Nhóm bị chặn vào Xử lý hồ sơ
+  const isManager = ["quản lý", "trưởng phòng"].some((r) =>
+    currentUser.role?.toLowerCase().includes(r),
+  );
 
-  // 3. Quyền vào phòng Xử lý hồ sơ (Sếp + Nhân viên phòng BO/Xử lý)
-  // Sale sẽ không có các chữ này trong Role nên sẽ bị ẩn
-  // Kiểm tra xem có phải Sale thuần không (để chặn)
-  const isSaleOnly =
-    !isBoss &&
-    !isManager &&
-    !currentUser.department.toLowerCase().includes("xử lý hồ sơ") &&
-    !currentUser.department.toLowerCase().includes("hồ sơ") &&
-    (currentUser.role.toLowerCase().includes("sale") ||
-      currentUser.role.toLowerCase().includes("kinh doanh"));
-const canAccessProcessing =
-  (isBoss ||
-    isManager ||
-    currentUser.department.toLowerCase().includes("xử lý hồ sơ") ||
-    currentUser.department.toLowerCase().includes("trợ lý giám đốc") ||
-    currentUser.department.toLowerCase().includes("hồ sơ")) &&
-  !isSaleOnly; 
+  // 3. Nhóm Nhân viên thuộc bộ phận xử lý
+  const isProcessingDept = ["xử lý hồ sơ", "hồ sơ", "trợ lý giám đốc"].some(
+    (d) => currentUser.department?.toLowerCase().includes(d),
+  );
+  // QUYỀN 1: Xem Báo cáo Giám đốc (Sếp VÀ Quản lý đều xem được)
+  const canViewBossReport = isBoss || isManager;
+  // 4. Quyền vào phòng Xử lý hồ sơ:
+  // Phải là Sếp HOẶC thuộc phòng ban liên quan, NHƯNG tuyệt đối không phải là Quản lý/Trưởng phòng đơn thuần
+  const canAccessProcessing = (isBoss || isProcessingDept) && !isManager;
+
   return (
     <aside className="w-64 bg-gray-800 text-white flex flex-col shadow-lg z-10 shrink-0">
       {/* KHU VỰC ĐỔI DOANH NGHIỆP */}
@@ -109,9 +94,9 @@ const canAccessProcessing =
       </div>
 
       {/* MENU ĐIỀU HƯỚNG CHÍNH */}
-      <nav className="flex-1 p-4 space-y-2 mt-2">
-        {/* CHỈ HIỆN MENU NÀY NẾU LÀ SẾP */}
-        {canAccessProcessing && (
+      <nav className="flex-1 p-4 space-y-2 mt-2 overflow-y-auto">
+        {/* CHỈ HIỆN BÁO CÁO GIÁM ĐỐC NẾU LÀ SẾP TỔNG */}
+        {canViewBossReport && (
           <button
             onClick={() => setCurrentView("boss")}
             className={`w-full flex items-center px-4 py-3 font-medium rounded-lg transition-colors ${
@@ -137,7 +122,7 @@ const canAccessProcessing =
           </button>
         )}
 
-        {/* Menu CRM Sale */}
+        {/* Menu CRM Sale - Ai cũng thấy hoặc có thể thêm logic chặn riêng nếu cần */}
         <button
           onClick={() => setCurrentView("crm")}
           className={`w-full flex items-center px-4 py-3 font-medium rounded-lg transition-colors ${
@@ -156,11 +141,12 @@ const canAccessProcessing =
               strokeLinecap="round"
               strokeLinejoin="round"
               strokeWidth={2}
-              d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"
+              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
             />
           </svg>
           Quản lý Khách hàng
         </button>
+
         {/* Menu Giao việc tuần — tất cả đều thấy */}
         <button
           onClick={() => setCurrentView("weekly_tasks")}
@@ -185,9 +171,13 @@ const canAccessProcessing =
           </svg>
           Giao việc tuần
         </button>
-        {/* Menu Xử lý hồ sơ (BO) */}
+
+        {/* CỤM MENU XỬ LÝ HỒ SƠ (BỊ CHẶN VỚI QUẢN LÝ/TRƯỞNG PHÒNG) */}
         {canAccessProcessing && (
           <>
+            <div className="pt-4 pb-1 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              Bộ phận Nghiệp vụ
+            </div>
             <button
               onClick={() => setCurrentView("processing")}
               className={`w-full flex items-center px-4 py-3 font-medium rounded-lg transition-colors ${
@@ -234,8 +224,22 @@ const canAccessProcessing =
               </svg>
               Hồ sơ Đã xử lý
             </button>
+            <button
+              onClick={() => setCurrentView("recruitment")}
+              className={`w-full flex items-center px-4 py-3 font-medium rounded-lg transition-colors ${
+                currentView === "recruitment"
+                  ? "bg-gray-700 text-flygold border-l-4 border-flygold"
+                  : "hover:bg-gray-700 text-gray-300"
+              }`}
+            >
+              <span className="mr-3 text-lg">👷</span>
+              Tiến độ Tuyển dụng
+            </button>
           </>
         )}
+
+        <div className="pt-4 border-t border-gray-700"></div>
+
         {/* Menu Tài liệu công ty */}
         <button
           onClick={() => setCurrentView("documents")}
@@ -260,15 +264,8 @@ const canAccessProcessing =
           </svg>
           Tài liệu công ty
         </button>
-        {canAccessProcessing && (
-          <button
-            onClick={() => setCurrentView("recruitment")}
-            className={`w-full flex items-center px-4 py-3 ...`}
-          >
-            👷 Tiến độ Tuyển dụng
-          </button>
-        )}
-        {/* Menu HR */}
+
+        {/* Menu Chấm công */}
         <button
           onClick={() => setCurrentView("hr")}
           className={`w-full flex items-center px-4 py-3 font-medium rounded-lg transition-colors ${
@@ -287,7 +284,7 @@ const canAccessProcessing =
               strokeLinecap="round"
               strokeLinejoin="round"
               strokeWidth={2}
-              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
             />
           </svg>
           Chấm công

@@ -236,3 +236,13 @@ export interface AttendanceRecord {
   fine: number;
   halfDayDeduction?: number;  // ← thêm
 }
+export interface SidebarProps {
+  currentView: string;
+  setCurrentView: (view: string) => void;
+  currentUser: AuthUser; 
+}
+
+export interface Workspace {
+  id: string;
+  name: string;
+}

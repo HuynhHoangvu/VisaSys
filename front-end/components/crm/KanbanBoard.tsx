@@ -5,7 +5,7 @@ import {
   Draggable,
   type DropResult,
 } from "@hello-pangea/dnd";
-import { Tooltip, Spinner } from "flowbite-react";
+import { Spinner } from "flowbite-react";
 import type {
   BoardData,
   AuthUser,
@@ -584,7 +584,6 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
       </div>
 
       {/* CHẾ ĐỘ HIỂN THỊ KANBAN BOARD */}
-      {/* CHẾ ĐỘ HIỂN THỊ KANBAN BOARD */}
       {viewMode === "board" && (
         <DragDropContext onDragEnd={onDragEnd}>
           <div className="flex h-[calc(100vh-210px)] w-full space-x-4 overflow-x-auto pb-4 items-start relative">
@@ -616,7 +615,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                       {hasActiveFilter &&
                         filteredTaskIds.length !== allTasksInCol.length && (
                           <span className="text-orange-500 text-2xs font-bold">
-                            {filteredTaskIds.length}/
+                            {filteredTaskIds.length}
                           </span>
                         )}
                       <span className="bg-gray-200 text-gray-600 text-2xs font-bold px-2 py-0.5 rounded-full">
@@ -742,24 +741,14 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                                               act.completed,
                                             );
                                             return (
-                                              <Tooltip
+                                              <div
                                                 key={act.id}
-                                                content={act.summary}
-                                                placement="top"
-                                              >
-                                                <div
-                                                  onClick={(e) =>
-                                                    handleActivityClick(
-                                                      e,
-                                                      task.id,
-                                                      act.id,
-                                                    )
-                                                  }
-                                                  className={`w-5 h-5 rounded-full border ${config.border} ${config.color} flex items-center justify-center text-[8px] shadow-sm cursor-pointer hover:scale-110 transition-transform`}
-                                                >
-                                                  {config.icon}
-                                                </div>
-                                              </Tooltip>
+                                                title={act.summary} // Thay thế Tooltip bằng title native của HTML
+                                                onClick={(e) =>
+                                                  handleActivityClick(e,task.id,act.id,)}
+                                                className={`w-5 h-5 rounded-full border ${config.border} ${config.color} flex items-center justify-center text-[8px] shadow-sm cursor-pointer hover:scale-110 transition-transform`}>
+                                                {config.icon}
+                                              </div>
                                             );
                                           })
                                         ) : (
