@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getFolders, createFolder,renameFile, deleteFolder, getFiles, uploadFile, deleteFile, moveFolder } from "../controllers/docs.controller.js";
+import { getFolders, createFolder,renameFile, deleteFolder, getFiles, uploadFile, deleteFile, moveFolder, moveFile } from "../controllers/docs.controller.js";
 import { uploadDoc } from "../middlewares/upload.js";
 
 const router = Router();
@@ -15,4 +15,5 @@ router.get("/files", getFiles);
 router.post("/files/upload", uploadDoc.single("file"), uploadFile);
 router.delete("/files/:id", deleteFile);
 router.put("/files/:id/rename", renameFile);
+router.put("/files/:id/move", moveFile);
 export default router;
