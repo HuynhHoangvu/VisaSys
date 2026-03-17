@@ -300,7 +300,9 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
       const fullUrl = fileUrl.startsWith("http")
         ? fileUrl
         : `${API_URL}${fileUrl}`;
-      const response = await fetch(fullUrl);
+      const response = await fetch(`${fullUrl}?t=${new Date().getTime()}`, {
+        mode: "cors",
+      });
       if (!response.ok)
         throw new Error(`HTTP lỗi: ${response.status} ${response.statusText}`);
       const blob = await response.blob();

@@ -4,3 +4,4 @@ node_modules
 rm -rf backend/dist
 dist/
 generated/
+backend/config/google-key.json
