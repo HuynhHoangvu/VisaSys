@@ -104,7 +104,7 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
   };
 
   // Helper function để lấy message lỗi an toàn
-  const getErrorMessage = (error: { message: unknown; }) => {
+  const getErrorMessage = (error: any) => {
     if (error instanceof Error) return error.message;
     if (typeof error === "string") return error;
     try {
