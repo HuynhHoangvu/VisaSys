@@ -7,7 +7,7 @@ services:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: admin123
     ports:
-      - "5435:5432"       # giữ nguyên port 5434 như .env của bạn
+      - "5435:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -23,20 +23,21 @@ services:
     container_name: fly-visa-backend
     ports:
       - "3001:3001"
+    # Nạp biến từ file .env (Để GCS_BUCKET_NAME, GCS_PROJECT_ID...)
     env_file:
       - ./backend/.env
     environment:
+      # Kết nối nội bộ giữa các container
       DATABASE_URL: "postgresql://admin:admin123@postgres:5432/crm_db?schema=public"
-      GCS_PROJECT_ID: "fly-data-490503"
-      GCS_CLIENT_EMAIL: "flyvisa-storage-admin@fly-data-490503.iam.gserviceaccount.com"
-      GCS_BUCKET_NAME: "flyvisa-documents"
-      GCS_PRIVATE_KEY: "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCqBGckmtSPk0/0\n...rLj0+I0GUAD3sptqWWPEhuo=\n-----END PRIVATE KEY-----\n"
+      NODE_ENV: production
       PORT: 3001
     volumes:
-      - ./backend/uploads:/app/uploads   # giữ file upload không mất khi restart
+      - ./backend/uploads:/app/uploads
+      # [QUAN TRỌNG] Mount thư mục config để code đọc file google-key.json ở local
+      - ./backend/config:/app/config
     depends_on:
       postgres:
-        condition: service_healthy       # chờ DB sẵn sàng mới start
+        condition: service_healthy
     develop:
       watch:
         - action: sync
@@ -45,6 +46,7 @@ services:
           ignore:
             - node_modules/
             - uploads/
+            - config/
         - action: rebuild
           path: ./backend/package.json
 
@@ -68,5 +70,6 @@ services:
             - node_modules/
         - action: rebuild
           path: ./front-end/package.json
+
 volumes:
   pgdata:
