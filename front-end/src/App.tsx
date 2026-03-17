@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import api from "../services/api";
 import socket from "../services/socket";
-
 import Sidebar from "../components/layout/Sidebar.tsx";
 import Header from "../components/layout/Header.tsx";
 import CustomerModal from "../components/crm/CustomerModal.tsx";
@@ -18,6 +17,7 @@ import DocumentDashboard from "../components/documents/DocumentDashboard.tsx";
 import ProcessedDocDashboard from "../components/documents/ProcessedDocDashboard.tsx";
 import WeeklyTaskAssignment from "../components/kpi/WeeklyTaskAssignment.tsx";
 import RecruitmentBoard from "../components/processing/Recruitmentboard.tsx";
+import FlyServicesDashboard from "../components/services/FlyServicesDashboard.tsx";
 import type { Task, Activity, BoardData, AuthUser } from "../types";
 
 const App: React.FC = () => {
@@ -360,7 +360,9 @@ const App: React.FC = () => {
           {currentView === "processed_docs" && (
             <ProcessedDocDashboard currentUser={currentUser} />
           )}
-
+          {currentView === "services" && (
+            <FlyServicesDashboard />
+          )}
           {currentView === "documents" && (
             <DocumentDashboard currentUser={currentUser} />
           )}
@@ -415,6 +417,7 @@ const App: React.FC = () => {
         onEditActivity={handleEditScheduleForm}
         onDeleteActivity={handleDeleteActivity}
       />
+
       <ScheduleActivityModal
         show={isScheduleFormOpen}
         onClose={() => setIsScheduleFormOpen(false)}
