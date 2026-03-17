@@ -187,3 +187,24 @@ export const renameFile = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Lỗi khi đổi tên file" });
   }
 };
+export const moveFolder = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id as string; // ID của thư mục bị kéo đi (VD: Úc 407)
+    const { parentId } = req.body; // ID của thư mục đích (VD: Úc)
+
+    if (id === parentId) {
+      return res.status(400).json({ error: "Không thể di chuyển thư mục vào chính nó" });
+    }
+
+    const updatedFolder = await prisma.docFolder.update({
+      where: { id },
+      data: { parentId },
+    });
+
+    getIO().emit("docs_changed");
+    res.json(updatedFolder);
+  } catch (error) {
+    console.error("Lỗi move folder:", error);
+    res.status(500).json({ error: "Lỗi khi di chuyển thư mục" });
+  }
+};

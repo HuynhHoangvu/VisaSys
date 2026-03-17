@@ -25,11 +25,17 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
   const [isAddFolderModalOpen, setIsAddFolderModalOpen] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
-const [isDragging, setIsDragging] = useState(false);
 
-// Đổi tên file
-const [editingFileId, setEditingFileId] = useState<string | null>(null);
-const [editFileName, setEditFileName] = useState("");
+  // State kéo thả file từ ngoài vào
+  const [isDraggingFile, setIsDraggingFile] = useState(false);
+
+  // State kéo thả thư mục bên trong ứng dụng
+  const [draggedFolderId, setDraggedFolderId] = useState<string | null>(null);
+
+  // Đổi tên file
+  const [editingFileId, setEditingFileId] = useState<string | null>(null);
+  const [editFileName, setEditFileName] = useState("");
+
   // ==========================================
   // SEARCH STATE
   // ==========================================
@@ -50,43 +56,40 @@ const [editFileName, setEditFileName] = useState("");
       console.error("Lỗi lấy dữ liệu tài liệu:", error);
     }
   }, []);
-useEffect(() => {
-  // Khai báo một hàm bọc để React biết đây là luồng async
-  const loadInitialData = async () => {
-    await fetchData();
-  };
 
-  // Gọi hàm bọc
-  loadInitialData();
+  useEffect(() => {
+    const loadInitialData = async () => {
+      await fetchData();
+    };
 
-  // Vẫn lắng nghe socket bình thường
-  socket.on("docs_changed", fetchData);
+    loadInitialData();
+    socket.on("docs_changed", fetchData);
 
-  return () => {
-    socket.off("docs_changed", fetchData);
-  };
-}, [fetchData]);
+    return () => {
+      socket.off("docs_changed", fetchData);
+    };
+  }, [fetchData]);
+
   // ==========================================
   // FILTER THEO SEARCH
   // ==========================================
- const displayFolders = useMemo(() => {
-   if (!searchQuery)
-     return folders.filter((f) => f.parentId === currentFolderId);
-   // Tìm trên tất cả thư mục nếu có từ khóa
-   return folders.filter((f) =>
-     f.name.toLowerCase().includes(searchQuery.toLowerCase()),
-   );
- }, [folders, currentFolderId, searchQuery]);
+  const displayFolders = useMemo(() => {
+    if (!searchQuery)
+      return folders.filter((f) => f.parentId === currentFolderId);
+    return folders.filter((f) =>
+      f.name.toLowerCase().includes(searchQuery.toLowerCase()),
+    );
+  }, [folders, currentFolderId, searchQuery]);
 
- const displayFiles = useMemo(() => {
-   if (!searchQuery) return files.filter((f) => f.folderId === currentFolderId);
-   // Tìm trên tất cả các file nếu có từ khóa
-   return files.filter(
-     (f) =>
-       f.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-       f.uploadedBy?.toLowerCase().includes(searchQuery.toLowerCase()),
-   );
- }, [files, currentFolderId, searchQuery]);
+  const displayFiles = useMemo(() => {
+    if (!searchQuery)
+      return files.filter((f) => f.folderId === currentFolderId);
+    return files.filter(
+      (f) =>
+        f.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        f.uploadedBy?.toLowerCase().includes(searchQuery.toLowerCase()),
+    );
+  }, [files, currentFolderId, searchQuery]);
 
   const totalDisplay =
     folders.filter((f) => f.parentId === currentFolderId).length +
@@ -135,6 +138,32 @@ useEffect(() => {
   };
 
   // ==========================================
+  // DI CHUYỂN THƯ MỤC (KÉO THẢ)
+  // ==========================================
+  const handleMoveFolder = async (targetFolderId: string) => {
+    if (!draggedFolderId || draggedFolderId === targetFolderId) return;
+
+    try {
+      const response = await fetch(
+        `${API_URL}/api/docs/folders/${draggedFolderId}/move`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ parentId: targetFolderId }),
+        },
+      );
+
+      if (!response.ok) throw new Error("Không thể di chuyển thư mục");
+
+      setDraggedFolderId(null);
+      fetchData();
+    } catch (error) {
+      console.error("Lỗi kéo thả thư mục", error);
+      alert("Lỗi khi di chuyển thư mục!");
+    }
+  };
+
+  // ==========================================
   // XÓA
   // ==========================================
   const handleDeleteFolder = async (e: React.MouseEvent, id: string) => {
@@ -163,27 +192,20 @@ useEffect(() => {
   };
 
   // ==========================================
-  // UPLOAD
+  // UPLOAD NHIỀU FILE
   // ==========================================
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      const file = e.target.files[0];
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("uploadedBy", currentUser?.name || "Admin");
-      formData.append("size", formatFileSize(file.size));
-      if (currentFolderId) formData.append("folderId", currentFolderId);
-      try {
-        await fetch(`${API_URL}/api/docs/files/upload`, {
-          method: "POST",
-          body: formData,
-        });
-        if (fileInputRef.current) fileInputRef.current.value = "";
-      } catch (error) {
-        alert("Lỗi upload file!" + error);
+      const filesToUpload = Array.from(e.target.files);
+
+      for (const file of filesToUpload) {
+        await processUploadFile(file);
       }
+
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
+
   const processUploadFile = async (file: File) => {
     const formData = new FormData();
     formData.append("file", file);
@@ -195,31 +217,34 @@ useEffect(() => {
         method: "POST",
         body: formData,
       });
-      if (fileInputRef.current) fileInputRef.current.value = "";
     } catch (error) {
-      alert("Lỗi upload file!" + error);
+      alert("Lỗi upload file " + file.name + " - " + error);
     }
   };
 
-
-  // Logic Kéo thả
-  const handleDragOver = (e: React.DragEvent) => {
+  // Logic Kéo thả FILE TỪ MÁY TÍNH
+  const handleDragOverFile = (e: React.DragEvent) => {
     e.preventDefault();
-    setIsDragging(true);
+    setIsDraggingFile(true);
   };
-  const handleDragLeave = (e: React.DragEvent) => {
+  const handleDragLeaveFile = (e: React.DragEvent) => {
     e.preventDefault();
-    setIsDragging(false);
+    setIsDraggingFile(false);
   };
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDropFile = async (e: React.DragEvent) => {
     e.preventDefault();
-    setIsDragging(false);
+    setIsDraggingFile(false);
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      processUploadFile(e.dataTransfer.files[0]);
+      const filesToDrop = Array.from(e.dataTransfer.files);
+      for (const file of filesToDrop) {
+        await processUploadFile(file);
+      }
     }
   };
 
-  // Logic Đổi tên
+  // ==========================================
+  // DOWNLOAD & RENAME (Giữ nguyên)
+  // ==========================================
   const handleRenameSubmit = async (e: React.FormEvent, id: string) => {
     e.preventDefault();
     if (!editFileName.trim()) return;
@@ -234,43 +259,26 @@ useEffect(() => {
       alert("Lỗi đổi tên file!" + error);
     }
   };
-  // ==========================================
-  // DOWNLOAD
-  // ==========================================
+
   const handleDownload = async (
     fileUrl: string | undefined,
     fileName: string,
   ) => {
     if (!fileUrl) return alert("File không có đường dẫn!");
-
     try {
-      // 1. Xác định URL đầy đủ (Cloudinary hoặc Local cũ)
       const fullUrl = fileUrl.startsWith("http")
         ? fileUrl
         : `${API_URL}${fileUrl}`;
-
-      // 2. Fetch dữ liệu file về trình duyệt (Hoạt động tốt với Cloudinary)
-      // Lưu ý: Cloudinary thường đã bật sẵn CORS cho các file public
       const response = await fetch(fullUrl);
-
-      if (!response.ok) {
+      if (!response.ok)
         throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      // 3. Chuyển đổi dữ liệu thành dạng Blob
       const blob = await response.blob();
-
-      // 4. Tạo một đường dẫn ảo (chỉ tồn tại trên trình duyệt hiện tại)
       const localUrl = window.URL.createObjectURL(blob);
-
-      // 5. Dùng đường dẫn ảo để ép tải xuống
       const link = document.createElement("a");
       link.href = localUrl;
-      link.setAttribute("download", fileName); // Thuộc tính download lúc này sẽ hoạt động 100%
+      link.setAttribute("download", fileName);
       document.body.appendChild(link);
       link.click();
-
-      // 6. Dọn dẹp thẻ a và đường dẫn ảo để giải phóng bộ nhớ
       document.body.removeChild(link);
       window.URL.revokeObjectURL(localUrl);
     } catch (error) {
@@ -278,22 +286,15 @@ useEffect(() => {
       alert("Đã xảy ra lỗi khi tải file xuống! Vui lòng thử lại sau.");
     }
   };
-const handlePreview = (fileUrl: string | undefined) => {
-  if (!fileUrl) return alert("File không có đường dẫn!");
 
-  let fullUrl = fileUrl.startsWith("http") ? fileUrl : `${API_URL}${fileUrl}`;
+  const handlePreview = (fileUrl: string | undefined) => {
+    if (!fileUrl) return alert("File không có đường dẫn!");
+    let fullUrl = fileUrl.startsWith("http") ? fileUrl : `${API_URL}${fileUrl}`;
+    if (fullUrl.includes("/fl_attachment/"))
+      fullUrl = fullUrl.replace("/fl_attachment/", "/");
+    window.open(fullUrl, "_blank", "noopener,noreferrer");
+  };
 
-  // Đảm bảo URL KHÔNG chứa thẻ ép tải xuống (fl_attachment) nếu bạn có dùng nó
-  if (fullUrl.includes("/fl_attachment/")) {
-    fullUrl = fullUrl.replace("/fl_attachment/", "/");
-  }
-
-  // Mở file ở một tab mới. Trình duyệt sẽ tự động đọc PDF hoặc Hình ảnh.
-  window.open(fullUrl, "_blank", "noopener,noreferrer");
-};
-  // ==========================================
-  // HIGHLIGHT helper
-  // ==========================================
   const highlight = (text: string) => {
     if (!searchQuery) return text;
     return text.split(new RegExp(`(${searchQuery})`, "gi")).map((part, i) =>
@@ -309,13 +310,17 @@ const handlePreview = (fileUrl: string | undefined) => {
 
   return (
     <div
-      className={`flex-1 p-6 overflow-y-auto bg-gray-50 h-full relative transition-colors ${isDragging ? "bg-blue-50 border-2 border-dashed border-blue-400" : ""}`}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
+      className={`flex-1 p-6 overflow-y-auto bg-gray-50 h-full relative transition-colors ${
+        isDraggingFile
+          ? "bg-blue-50 border-2 border-dashed border-blue-400"
+          : ""
+      }`}
+      onDragOver={handleDragOverFile}
+      onDragLeave={handleDragLeaveFile}
+      onDrop={handleDropFile}
     >
       {/* OVERLAY KÉO THẢ FILE */}
-      {isDragging && (
+      {isDraggingFile && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-blue-50 bg-opacity-90 pointer-events-none rounded-xl">
           <div className="text-center text-blue-600">
             <svg
@@ -364,6 +369,7 @@ const handlePreview = (fileUrl: string | undefined) => {
             </svg>
             Tạo thư mục
           </button>
+
           <button
             onClick={() => fileInputRef.current?.click()}
             className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm"
@@ -383,8 +389,11 @@ const handlePreview = (fileUrl: string | undefined) => {
             </svg>
             Tải file lên
           </button>
+
+          {/* ĐÃ THÊM THUỘC TÍNH MULTIPLE ĐỂ CHO PHÉP TẢI LÊN NHIỀU FILE */}
           <input
             type="file"
+            multiple
             ref={fileInputRef}
             onChange={handleFileUpload}
             className="hidden"
@@ -400,6 +409,11 @@ const handlePreview = (fileUrl: string | undefined) => {
             setSearchQuery("");
           }}
           className={`font-semibold hover:underline ${!currentFolderId ? "text-gray-800" : "text-blue-600"}`}
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={() => {
+            // Nếu thả thư mục vào "Công ty" (thư mục gốc), set parentId là null
+            if (draggedFolderId) handleMoveFolder("null");
+          }}
         >
           Công ty
         </button>
@@ -496,68 +510,38 @@ const handlePreview = (fileUrl: string | undefined) => {
       {/* CONTENT */}
       {displayFolders.length === 0 && displayFiles.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 bg-white rounded-xl border border-dashed border-gray-300">
-          {searchQuery ? (
-            <>
-              <svg
-                className="w-12 h-12 text-gray-300 mb-3"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="1.5"
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
-              <p className="text-gray-500 font-medium">
-                Không tìm thấy kết quả
-              </p>
-              <p className="text-gray-400 text-sm mt-1">
-                Thử từ khóa khác hoặc{" "}
-                <button
-                  onClick={() => setSearchQuery("")}
-                  className="text-blue-500 underline"
-                >
-                  xóa bộ lọc
-                </button>
-              </p>
-            </>
-          ) : (
-            <>
-              <svg
-                className="w-16 h-16 text-gray-300 mb-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="1"
-                  d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z"
-                />
-              </svg>
-              <p className="text-gray-500 font-medium">
-                Thư mục này đang trống
-              </p>
-              <p className="text-gray-400 text-sm mt-1">
-                Tạo thư mục mới hoặc tải tài liệu lên.
-              </p>
-            </>
-          )}
+          <p className="text-gray-500 font-medium">Thư mục này đang trống</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {/* FOLDERS */}
+          {/* FOLDERS VỚI DRAG & DROP */}
           {displayFolders.map((folder) => (
             <div
               key={folder.id}
               onClick={() => handleEnterFolder(folder.id)}
-              className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm hover:shadow-md hover:border-blue-300 cursor-pointer transition-all group flex items-center justify-between gap-2"
+              // --- SỰ KIỆN KÉO THẢ THƯ MỤC ---
+              draggable
+              onDragStart={(e) => {
+                setDraggedFolderId(folder.id);
+                e.dataTransfer.effectAllowed = "move";
+              }}
+              onDragEnd={() => setDraggedFolderId(null)}
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = "move";
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                e.stopPropagation(); // Ngăn sự kiện DropFile chạy
+                handleMoveFolder(folder.id);
+              }}
+              // -------------------------------
+
+              className={`bg-white p-4 rounded-xl border border-gray-200 shadow-sm hover:shadow-md hover:border-blue-300 cursor-pointer transition-all group flex items-center justify-between gap-2 
+                ${draggedFolderId === folder.id ? "opacity-50 grayscale" : ""}
+              `}
             >
-              <div className="flex items-center gap-3 overflow-hidden">
+              <div className="flex items-center gap-3 overflow-hidden pointer-events-none">
                 <svg
                   className="w-10 h-10 text-yellow-400 shrink-0"
                   fill="currentColor"
@@ -572,6 +556,7 @@ const handlePreview = (fileUrl: string | undefined) => {
                   <p className="text-xs text-gray-400 mt-0.5">Thư mục</p>
                 </div>
               </div>
+
               <button
                 onClick={(e) => handleDeleteFolder(e, folder.id)}
                 className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-all shrink-0"
@@ -593,13 +578,12 @@ const handlePreview = (fileUrl: string | undefined) => {
             </div>
           ))}
 
-          {/* FILES */}
+          {/* FILES (Giữ nguyên) */}
           {displayFiles.map((file) => (
             <div
               key={file.id}
               className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow relative group flex flex-col"
             >
-              {/* CÁC NÚT ACTION (ĐỔI TÊN & XÓA) */}
               <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
                 <button
                   onClick={() => {
@@ -659,7 +643,6 @@ const handlePreview = (fileUrl: string | undefined) => {
                   />
                 </svg>
                 <div className="overflow-hidden w-full">
-                  {/* FORM ĐỔI TÊN */}
                   {editingFileId === file.id ? (
                     <form
                       onSubmit={(e) => handleRenameSubmit(e, file.id)}
@@ -709,13 +692,10 @@ const handlePreview = (fileUrl: string | undefined) => {
                 <span className="text-xs text-gray-400">
                   {new Date(file.createdAt).toLocaleDateString("vi-VN")}
                 </span>
-
-                {/* CỤM NÚT ACTION (XEM & TẢI) */}
                 <div className="flex gap-1.5">
-                  {/* Nút Xem Trước */}
                   <button
                     onClick={(e) => {
-                      e.stopPropagation(); // Ngăn sự kiện click lan ra ngoài
+                      e.stopPropagation();
                       handlePreview(file.fileUrl);
                     }}
                     className="text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 p-1.5 rounded-md transition-colors cursor-pointer"
@@ -741,8 +721,6 @@ const handlePreview = (fileUrl: string | undefined) => {
                       />
                     </svg>
                   </button>
-
-                  {/* Nút Tải Xuống (Giữ nguyên của bạn) */}
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -772,19 +750,12 @@ const handlePreview = (fileUrl: string | undefined) => {
         </div>
       )}
 
-      {/* MODAL TẠO THƯ MỤC */}
+      {/* MODAL TẠO THƯ MỤC (Giữ nguyên) */}
       {isAddFolderModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-50 p-4 animate-fade-in">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-scale-in">
             <div className="p-5 border-b border-gray-200 flex justify-between items-center bg-gray-50">
               <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                <svg
-                  className="w-5 h-5 text-gray-500"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
-                </svg>
                 Tạo Thư Mục Mới
               </h3>
               <button
@@ -837,7 +808,6 @@ const handlePreview = (fileUrl: string | undefined) => {
           </div>
         </div>
       )}
-
       <style>{`
         .animate-fade-in { animation: fadeIn 0.2s ease-out; }
         .animate-scale-in { animation: scaleIn 0.2s ease-out; }
