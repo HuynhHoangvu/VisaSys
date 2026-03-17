@@ -43,26 +43,17 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [activeAlerts, setActiveAlerts] = useState<string[]>([]);
 
-  // ==========================================
-  // VIEW MODE & LAZY LOADING STATE
-  // ==========================================
   const [viewMode, setViewMode] = useState<"board" | "table">("board");
   const [visibleLimits, setVisibleLimits] = useState<Record<string, number>>(
     {},
   );
   const DEFAULT_LIMIT = 20;
 
-  // ==========================================
-  // SEARCH & FILTER STATE
-  // ==========================================
   const [searchQuery, setSearchQuery] = useState("");
   const [filterSale, setFilterSale] = useState("all");
   const [filterVisa, setFilterVisa] = useState("all");
   const [filterColumn, setFilterColumn] = useState("all");
 
-  // ==========================================
-  // PHÂN QUYỀN
-  // ==========================================
   const userRole = currentUser?.role?.trim().toLowerCase() || "";
   const isBoss = userRole.includes("giám đốc") || currentUser?.id === "admin";
   const isManager =
@@ -71,9 +62,6 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
     userRole === "admin";
   const canSeeAll = isBoss || isManager;
 
-  // ==========================================
-  // FETCH THÔNG BÁO KHẨN
-  // ==========================================
   useEffect(() => {
     const fetchAlerts = async () => {
       if (!currentUser?.name) return;
@@ -99,9 +87,6 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
     };
   }, [currentUser]);
 
-  // ==========================================
-  // FETCH DỮ LIỆU
-  // ==========================================
   const fetchBoardData = useCallback(
     async (showSpinner = true) => {
       try {
@@ -162,14 +147,9 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
     };
   }, [fetchBoardData]);
 
-  // ==========================================
-  // BUILD FILTER OPTIONS TỪ DỮ LIỆU THỰC TẾ
-  // ==========================================
   const filterOptions = useMemo(() => {
     if (!boardData) return { sales: [], visaTypes: [], columns: [] };
-
     const allTasks = Object.values(boardData.tasks);
-
     const sales = [
       ...new Set(allTasks.map((t) => t.assignedTo).filter(Boolean)),
     ]
@@ -190,16 +170,11 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
     return { sales, visaTypes, columns };
   }, [boardData]);
 
-  // ==========================================
-  // LỌC TASKS THEO SEARCH + FILTER
-  // ==========================================
   const getFilteredTaskIds = useCallback(
     (columnId: string): string[] => {
       if (!boardData) return [];
-
       const column = boardData.columns[columnId];
       if (!column) return [];
-
       if (filterColumn !== "all" && filterColumn !== columnId) return [];
 
       return column.taskIds.filter((taskId) => {
@@ -213,12 +188,9 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
           const matchSale = task.assignedTo?.toLowerCase().includes(q);
           if (!matchName && !matchPhone && !matchSale) return false;
         }
-
         if (filterSale !== "all" && task.assignedTo !== filterSale)
           return false;
-
         if (filterVisa !== "all" && task.visaType !== filterVisa) return false;
-
         return true;
       });
     },
@@ -258,9 +230,6 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
     }));
   };
 
-  // ==========================================
-  // DỮ LIỆU DẠNG BẢNG (TABLE VIEW)
-  // ==========================================
   const flatTableData = useMemo(() => {
     if (!boardData) return [];
     let flatList: (Task & { columnTitle: string; columnId: string })[] = [];
@@ -276,9 +245,6 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
     return flatList;
   }, [boardData, getFilteredTaskIds]);
 
-  // ==========================================
-  // HÀM ĐỔI TRẠNG THÁI TRỰC TIẾP (TỪ DROPDOWN)
-  // ==========================================
   const handleStatusChange = async (
     taskId: string,
     currentColumnId: string,
@@ -286,7 +252,6 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
   ) => {
     if (!boardData || currentColumnId === newColumnId) return;
 
-    // 1. Cập nhật giao diện ngay lập tức (Optimistic UI)
     setBoardData((prev) => {
       if (!prev) return prev;
       const sourceCol = prev.columns[currentColumnId];
@@ -296,7 +261,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
       sourceTaskIds.splice(sourceTaskIds.indexOf(taskId), 1);
 
       const destTaskIds = Array.from(destCol.taskIds);
-      destTaskIds.push(taskId); // Đưa xuống cuối cột mới
+      destTaskIds.push(taskId);
 
       return {
         ...prev,
@@ -308,7 +273,6 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
       };
     });
 
-    // 2. Gọi API để lưu vào Database
     try {
       await fetch(`${API_URL}/api/tasks/${taskId}/move`, {
         method: "PUT",
@@ -317,13 +281,10 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
       });
     } catch (error) {
       console.error("Lỗi khi chuyển cột:", error);
-      fetchBoardData(false); // Rollback nếu lỗi
+      fetchBoardData(false);
     }
   };
 
-  // ==========================================
-  // KÉO THẢ (DRAG & DROP)
-  // ==========================================
   const onDragEnd = async (result: DropResult) => {
     const { destination, source, draggableId } = result;
     if (!destination || !boardData) return;
@@ -416,7 +377,6 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
     isDragging: boolean,
     isAlerted: boolean,
   ) => {
-    // ĐÃ FIX: Chỉ dùng transition-colors, xóa bỏ transition-all để tránh lỗi Delay Tọa Độ
     let baseClass =
       "bg-white border shadow-sm hover:shadow transition-colors duration-200 rounded-lg";
     if (isAlerted)
@@ -463,26 +423,26 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
     );
 
   return (
-    <div className="flex flex-col h-full w-full bg-[#f8f9fa] p-4 sm:p-6 overflow-hidden">
+    // FIX TỐI ƯU CHIỀU CAO: Dùng flex-col h-full để tránh scroll bar thừa
+    <div className="flex flex-col h-full w-full bg-[#f8f9fa] p-3 sm:p-6 overflow-hidden">
       {/* HEADER */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 shrink-0 gap-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 shrink-0 gap-3">
         <div>
-          <h2 className="text-2xl font-bold text-gray-800">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-800">
             Quản lý Khách hàng
           </h2>
-          <p className="text-gray-500 text-sm mt-1">
+          <p className="text-gray-500 text-xs sm:text-sm mt-1">
             {canSeeAll
               ? "Đang xem toàn bộ hệ thống"
               : `Danh sách khách hàng của ${currentUser?.name}`}
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          {/* NÚT CHUYỂN ĐỔI VIEW */}
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full md:w-auto">
           <button
             onClick={() =>
               setViewMode(viewMode === "board" ? "table" : "board")
             }
-            className="bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 text-sm font-semibold px-4 py-2 rounded-lg transition-colors shadow-sm flex items-center gap-2"
+            className="flex-1 md:flex-none justify-center bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 text-sm font-semibold px-3 py-2 sm:px-4 rounded-lg transition-colors shadow-sm flex items-center gap-2"
           >
             {viewMode === "board" ? (
               <>
@@ -499,7 +459,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                     d="M4 6h16M4 10h16M4 14h16M4 18h16"
                   />
                 </svg>
-                Xem dạng Bảng
+                <span className="hidden sm:inline">Xem dạng Bảng</span>
               </>
             ) : (
               <>
@@ -516,14 +476,14 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                     d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"
                   />
                 </svg>
-                Xem dạng Cột 
+                <span className="hidden sm:inline">Xem dạng Cột</span>
               </>
             )}
           </button>
 
           <button
             onClick={onOpenAddCustomer}
-            className="bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors shadow-sm flex items-center gap-2"
+            className="flex-1 md:flex-none justify-center bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium px-3 py-2 sm:px-4 rounded-lg transition-colors shadow-sm flex items-center gap-2"
           >
             <svg
               className="w-4 h-4"
@@ -538,15 +498,16 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                 d="M12 4v16m8-8H4"
               />
             </svg>
-            Thêm Khách Hàng
+            <span className="hidden sm:inline">Thêm Khách Hàng</span>
+            <span className="sm:hidden">Thêm Mới</span>
           </button>
         </div>
       </div>
 
       {/* SEARCH + FILTER */}
-      <div className="shrink-0">
+      <div className="shrink-0 mb-2">
         <SearchFilterBar
-          searchPlaceholder="Tìm tên khách, số điện thoại, sale..."
+          searchPlaceholder="Tìm tên, SĐT, sale..."
           searchValue={searchQuery}
           onSearchChange={setSearchQuery}
           filters={[
@@ -554,7 +515,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
               ? [
                   {
                     key: "sale",
-                    placeholder: "👤 Tất cả Sale",
+                    placeholder: "👤 Sale",
                     value: filterSale,
                     options: filterOptions.sales,
                     onChange: setFilterSale,
@@ -570,7 +531,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
             },
             {
               key: "column",
-              placeholder: "📋 Tất cả trạng thái",
+              placeholder: "📋 Trạng thái",
               value: filterColumn,
               options: filterOptions.columns,
               onChange: setFilterColumn,
@@ -586,7 +547,8 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
       {/* CHẾ ĐỘ HIỂN THỊ KANBAN BOARD */}
       {viewMode === "board" && (
         <DragDropContext onDragEnd={onDragEnd}>
-          <div className="flex h-[calc(100vh-210px)] w-full space-x-4 overflow-x-auto pb-4 items-start relative">
+          {/* FIX LỖI HEIGHT: Dùng flex-1 min-h-0 thay vì h-[calc...] */}
+          <div className="flex-1 min-h-0 w-full flex space-x-4 overflow-x-auto pb-2 items-start custom-scrollbar">
             {boardData.columnOrder.map((columnId) => {
               const column = boardData.columns[columnId];
               const filteredTaskIds = getFilteredTaskIds(columnId);
@@ -604,9 +566,8 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
               return (
                 <div
                   key={column.id}
-                  className="flex flex-col bg-gray-100/50 rounded-xl w-64 min-w-[16rem] max-h-full shrink-0"
+                  className="flex flex-col bg-gray-100/50 rounded-xl w-[85vw] sm:w-64 min-w-[16rem] h-full shrink-0"
                 >
-                  {/* HEADER CỦA CỘT */}
                   <div className="px-3 py-3 flex justify-between items-center shrink-0 border-b border-gray-200/50">
                     <h3 className="font-bold text-gray-600 uppercase text-[11px] tracking-wider">
                       {column.title}
@@ -624,7 +585,6 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                     </div>
                   </div>
 
-                  {/* VÙNG THẢ THẺ CỦA CỘT (CÓ THANH CUỘN DỌC) */}
                   <Droppable droppableId={column.id}>
                     {(provided, snapshot) => (
                       <div
@@ -658,15 +618,13 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                                     {...provided.draggableProps}
                                     {...provided.dragHandleProps}
                                     onClick={() => onOpenDetail(task.id)}
-                                    // ĐÃ TỐI ƯU: Đổi p-3 thành p-2.5 để thẻ gọn hơn, bỏ transition-all
-                                    className={`p-2.5 relative group select-none transition-colors duration-200 rounded-lg ${getCardStyle(
+                                    className={`p-3 sm:p-2.5 relative group select-none transition-colors duration-200 rounded-lg ${getCardStyle(
                                       column.id,
                                       snapshot.isDragging,
                                       isAlerted,
                                     )}`}
                                     style={{ ...provided.draggableProps.style }}
                                   >
-                                    {/* ICON CẢNH BÁO ĐỎ (NẾU CÓ) */}
                                     {isAlerted && (
                                       <div className="absolute -top-2 -left-2 bg-red-500 text-white w-5 h-5 rounded-full flex items-center justify-center shadow-lg border-2 border-white z-10 animate-bounce">
                                         <svg
@@ -682,16 +640,16 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                                         </svg>
                                       </div>
                                     )}
-                                    {/* NÚT XÓA THẺ Ở GÓC PHẢI TRÊN (Chỉ Manager/Boss mới thấy) */}
-                                    
+
+                                    {/* FIX MOBILE HOVER: opacity-100 trên mobile, ẩn mờ trên desktop khi không hover */}
                                     <button
                                       onClick={(e) =>
                                         handleDeleteClick(e, task.id)
                                       }
-                                      className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                                      className="absolute top-1 right-1 lg:opacity-0 lg:group-hover:opacity-100 opacity-100 p-2 lg:p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
                                     >
                                       <svg
-                                        className="w-3.5 h-3.5"
+                                        className="w-4 h-4 lg:w-3.5 lg:h-3.5"
                                         fill="none"
                                         stroke="currentColor"
                                         viewBox="0 0 24 24"
@@ -704,34 +662,34 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                                         />
                                       </svg>
                                     </button>
-                                    {/* NỘI DUNG CHÍNH CỦA THẺ */}
-                                    <h4 className="font-bold text-gray-800 text-xs leading-tight pr-5 mb-1.5 line-clamp-2">
+
+                                    <h4 className="font-bold text-gray-800 text-sm sm:text-xs leading-tight pr-8 mb-1.5 line-clamp-2">
                                       {task.content}
                                     </h4>
-                                    <div className="flex justify-between items-end mb-2">
+                                    <div className="flex justify-between items-end mb-3 sm:mb-2">
                                       <div className="flex flex-col gap-0.5">
-                                        <span className="text-[11px] font-bold text-gray-700">
+                                        <span className="text-xs sm:text-[11px] font-bold text-gray-700">
                                           {task.phone}
                                         </span>
                                         {task.assignedTo && (
-                                          <div className="flex items-center gap-1 mt-0.5">
-                                            <div className="w-3.5 h-3.5 rounded-full bg-indigo-50 flex items-center justify-center text-[7px] font-bold text-indigo-600 border border-indigo-100">
+                                          <div className="flex items-center gap-1 mt-1 sm:mt-0.5">
+                                            <div className="w-4 h-4 sm:w-3.5 sm:h-3.5 rounded-full bg-indigo-50 flex items-center justify-center text-[9px] sm:text-[7px] font-bold text-indigo-600 border border-indigo-100">
                                               {task.assignedTo.charAt(0)}
                                             </div>
-                                            <span className="text-[9px] text-gray-500 font-medium">
+                                            <span className="text-[10px] sm:text-[9px] text-gray-500 font-medium">
                                               Sale:{" "}
                                               {task.assignedTo.split(" ")[0]}
                                             </span>
                                           </div>
                                         )}
                                       </div>
-                                      <span className="text-[8px] font-bold text-blue-600 bg-blue-50 border border-blue-100 px-1.5 py-0.5 rounded uppercase">
+                                      <span className="text-[10px] sm:text-[8px] font-bold text-blue-600 bg-blue-50 border border-blue-100 px-1.5 py-0.5 rounded uppercase">
                                         {task.price}
                                       </span>
                                     </div>
-                                    {/* FOOTER CỦA THẺ: GỘP CHUNG HOẠT ĐỘNG, NÚT VÀ DROPDOWN VÀO 1 HÀNG */}
-                                    <div className="pt-1.5 border-t border-gray-100 flex justify-between items-center min-h-[24px]">
-                                      {/* Cụm Trái: Biểu tượng hoạt động (Activities) */}
+
+                                    {/* FOOTER */}
+                                    <div className="pt-2 sm:pt-1.5 border-t border-gray-100 flex justify-between items-center min-h-[28px] sm:min-h-[24px]">
                                       <div className="flex flex-wrap gap-1">
                                         {task.activities &&
                                         task.activities.length > 0 ? (
@@ -743,24 +701,29 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                                             return (
                                               <div
                                                 key={act.id}
-                                                title={act.summary} // Thay thế Tooltip bằng title native của HTML
+                                                title={act.summary}
                                                 onClick={(e) =>
-                                                  handleActivityClick(e,task.id,act.id,)}
-                                                className={`w-5 h-5 rounded-full border ${config.border} ${config.color} flex items-center justify-center text-[8px] shadow-sm cursor-pointer hover:scale-110 transition-transform`}>
+                                                  handleActivityClick(
+                                                    e,
+                                                    task.id,
+                                                    act.id,
+                                                  )
+                                                }
+                                                className={`w-6 h-6 sm:w-5 sm:h-5 rounded-full border ${config.border} ${config.color} flex items-center justify-center text-[10px] sm:text-[8px] shadow-sm cursor-pointer hover:scale-110 transition-transform`}
+                                              >
                                                 {config.icon}
                                               </div>
                                             );
                                           })
                                         ) : (
-                                          <span className="text-[9px] text-gray-300 italic">
+                                          <span className="text-[10px] sm:text-[9px] text-gray-300 italic">
                                             Trống
                                           </span>
                                         )}
                                       </div>
 
-                                      {/* Cụm Phải: Dropdown Trạng Thái & Các nút bấm */}
-                                      <div className="flex items-center gap-1">
-                                        {/* DROPDOWN CHUYỂN TRẠNG THÁI GỌN GÀNG (Chỉ hiện khi hover) */}
+                                      <div className="flex items-center gap-1 sm:gap-1">
+                                        {/* FIX HOVER DROPDOWN: Luôn hiển thị trạng thái hiện tại rõ ràng trên mobile */}
                                         <select
                                           value={column.id}
                                           onMouseDown={(e) =>
@@ -774,8 +737,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                                               e.target.value,
                                             )
                                           }
-                                          // ĐÃ THÊM: bg-none để xóa mũi tên, text-center để chữ đẹp hơn, tăng width lên w-24
-                                          className="opacity-0 group-hover:opacity-100 w-24 appearance-none bg-none bg-gray-50 border border-gray-200 text-gray-600 hover:text-blue-600 hover:border-blue-300 text-[10px] font-medium py-0.5 px-1.5 text-center rounded cursor-pointer outline-none transition-opacity shadow-sm truncate"
+                                          className="lg:opacity-0 lg:group-hover:opacity-100 opacity-100 w-24 sm:w-24 appearance-none bg-gray-100 sm:bg-none sm:bg-gray-50 border border-gray-200 text-gray-700 sm:text-gray-600 hover:text-blue-600 hover:border-blue-300 text-[11px] sm:text-[10px] font-medium py-1 sm:py-0.5 px-1.5 text-center rounded cursor-pointer outline-none transition-opacity shadow-sm truncate"
                                         >
                                           {boardData.columnOrder.map(
                                             (colId) => (
@@ -790,17 +752,16 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                                           )}
                                         </select>
 
-                                        {/* Nút Đính kèm Hồ Sơ */}
+                                        {/* TĂNG TOUCH TARGET CHO MOBILE */}
                                         <button
                                           onClick={(e) => {
                                             e.stopPropagation();
                                             onOpenAttachments(task.id);
                                           }}
-                                          className="w-5 h-5 flex items-center justify-center rounded text-gray-400 hover:text-green-600 hover:bg-green-50 transition-colors"
-                                          title="Đính kèm tài liệu"
+                                          className="w-7 h-7 sm:w-5 sm:h-5 flex items-center justify-center rounded text-gray-500 sm:text-gray-400 hover:text-green-600 bg-gray-50 sm:bg-transparent hover:bg-green-50 transition-colors"
                                         >
                                           <svg
-                                            className="w-3.5 h-3.5"
+                                            className="w-4 h-4 sm:w-3.5 sm:h-3.5"
                                             fill="none"
                                             stroke="currentColor"
                                             viewBox="0 0 24 24"
@@ -814,17 +775,15 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                                           </svg>
                                         </button>
 
-                                        {/* Nút Lịch sử / Action */}
                                         <button
                                           onClick={(e) => {
                                             e.stopPropagation();
                                             onOpenActivityList(task.id);
                                           }}
-                                          className="w-5 h-5 flex items-center justify-center rounded text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
-                                          title="Nhật ký tư vấn"
+                                          className="w-7 h-7 sm:w-5 sm:h-5 flex items-center justify-center rounded text-gray-500 sm:text-gray-400 hover:text-blue-600 bg-gray-50 sm:bg-transparent hover:bg-blue-50 transition-colors"
                                         >
                                           <svg
-                                            className="w-3.5 h-3.5"
+                                            className="w-4 h-4 sm:w-3.5 sm:h-3.5"
                                             fill="none"
                                             stroke="currentColor"
                                             viewBox="0 0 24 24"
@@ -844,20 +803,16 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                               </Draggable>
                             );
                           })}
-
                         {provided.placeholder}
 
-                        {/* NÚT TẢI THÊM NẾU CỘT CÒN DATA (LAZY LOAD) */}
                         {hasMore && !hasActiveFilter && (
                           <button
                             onClick={() => handleLoadMore(column.id)}
-                            className="w-full mt-2 py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 font-semibold text-xs rounded-lg transition-colors border border-blue-200 border-dashed"
+                            className="w-full mt-2 py-3 sm:py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 font-semibold text-sm sm:text-xs rounded-lg transition-colors border border-blue-200 border-dashed"
                           >
-                            Tải thêm ({column.taskIds.length - limit} khách) ↓
+                            Tải thêm ({column.taskIds.length - limit}) ↓
                           </button>
                         )}
-
-                        {/* THÔNG BÁO LỌC KHÔNG CÓ KẾT QUẢ */}
                         {hasActiveFilter &&
                           filteredTaskIds.length === 0 &&
                           allTasksInCol.length > 0 && (
@@ -877,9 +832,10 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
 
       {/* CHẾ ĐỘ HIỂN THỊ TABLE VIEW */}
       {viewMode === "table" && (
-        <div className="flex-1 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col h-[calc(100vh-210px)]">
-          <div className="overflow-y-auto custom-scrollbar flex-1">
-            <table className="w-full text-sm text-left text-gray-600">
+        <div className="flex-1 min-h-0 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
+          {/* FIX MOBILE TABLE: Thêm overflow-x-auto để table có thể lướt ngang */}
+          <div className="overflow-auto custom-scrollbar flex-1 w-full">
+            <table className="w-full min-w-[800px] text-sm text-left text-gray-600">
               <thead className="text-xs text-gray-700 uppercase bg-gray-50 sticky top-0 z-10 shadow-sm">
                 <tr>
                   <th className="px-4 py-3 w-12 text-center">STT</th>
@@ -889,7 +845,6 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                   <th className="px-4 py-3">Trạng thái</th>
                   <th className="px-4 py-3">Phụ trách</th>
                   <th className="px-4 py-3 text-right">Chi phí</th>
-                  {/* THÊM CỘT HEADER CHO NÚT ĐÍNH KÈM */}
                   <th className="px-4 py-3 text-center w-16">Hồ sơ</th>
                 </tr>
               </thead>
@@ -897,7 +852,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                 {flatTableData.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={8} // Sửa colSpan từ 7 thành 8 vì mới thêm 1 cột
+                      colSpan={8}
                       className="text-center py-10 text-gray-400 italic"
                     >
                       Không có khách hàng nào khớp với tìm kiếm.
@@ -929,11 +884,9 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                           {task.visaType || "Chưa rõ"}
                         </span>
                       </td>
-
-                      {/* DROPDOWN ĐỔI TRẠNG THÁI Ở TABLE */}
                       <td
                         className="px-4 py-3"
-                        onClick={(e) => e.stopPropagation()} // Ngăn click nhầm vào xem chi tiết
+                        onClick={(e) => e.stopPropagation()}
                       >
                         <select
                           value={task.columnId}
@@ -953,7 +906,6 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                           ))}
                         </select>
                       </td>
-
                       <td className="px-4 py-3">
                         {task.assignedTo ? (
                           <div className="flex items-center gap-1.5">
@@ -973,17 +925,14 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                       <td className="px-4 py-3 text-right font-bold text-blue-600">
                         {task.price}
                       </td>
-
-                      {/* THÊM NÚT ĐÍNH KÈM VÀO ĐÂY */}
                       <td className="px-4 py-3 text-center">
                         <div className="flex justify-center">
                           <button
                             onClick={(e) => {
-                              e.stopPropagation(); // Rất quan trọng để không click nhầm mở chi tiết thẻ
+                              e.stopPropagation();
                               onOpenAttachments(task.id);
                             }}
                             className="w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:text-green-600 hover:bg-green-50 transition-colors"
-                            title="Mở hồ sơ / Đính kèm"
                           >
                             <svg
                               className="w-4 h-4"
@@ -1013,7 +962,9 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
               <strong className="text-gray-800">{flatTableData.length}</strong>{" "}
               khách hàng
             </span>
-            <span>Bấm vào dòng để xem chi tiết</span>
+            <span className="hidden sm:inline">
+              Bấm vào dòng để xem chi tiết
+            </span>
           </div>
         </div>
       )}

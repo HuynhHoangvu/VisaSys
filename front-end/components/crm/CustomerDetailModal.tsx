@@ -11,6 +11,7 @@ import {
 import type { Task, CustomerDetailModalProps } from "../../types";
 import { VISA_SERVICES, CUSTOMER_SOURCES } from "../../utils/constants";
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+
 const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
   show,
   onClose,
@@ -22,7 +23,6 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  // State cho phần Ghi chú & Upload
   const [newNote, setNewNote] = useState("");
   const [isSubmittingNote, setIsSubmittingNote] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -35,18 +35,14 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
 
   if (!task || !formData) return null;
 
-  // LÀM MƯỢT LOGIC: Khi đổi Visa Type, tự động đổi luôn Tiêu đề hiển thị
   const handleChange = (field: keyof Task, value: string) => {
     setSaved(false);
     setFormData((prev) => {
       if (!prev) return null;
-
       const updatedData = { ...prev, [field]: value };
-
       if (field === "visaType") {
         const namePart = prev.content.split(" - ")[0];
         updatedData.content = `${namePart} - ${value}`;
-
         const lowerValue = value.toLowerCase();
         if (
           lowerValue.includes("lao động") ||
@@ -63,17 +59,14 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
           updatedData.checklistType = "tourism";
         }
       }
-
       return updatedData;
     });
   };
 
-  // Xử lý chọn file
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setSelectedFile(file);
-
       if (file.type.startsWith("image/")) {
         setPreviewUrl(URL.createObjectURL(file));
       } else {
@@ -82,23 +75,17 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
     }
   };
 
-  // Hủy chọn file
   const clearFile = () => {
     setSelectedFile(null);
     setPreviewUrl(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  // ==========================================
-  // HÀM GỬI GHI CHÚ / FILE LÊN BACKEND THẬT
-  // ==========================================
   const handleSendUpdate = async () => {
     if (!newNote.trim() && !selectedFile) return;
-
     setIsSubmittingNote(true);
 
     try {
-      // 1. Tạo biến chứa dữ liệu cần gửi
       const activityData = {
         taskId: formData.id,
         type: selectedFile ? "Tài liệu" : "Ghi chú",
@@ -108,15 +95,12 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
         assignee: currentUser?.name || formData.assignedTo || "Hệ thống",
         status: "Hoàn thành",
         completed: true,
-        // (Nếu sau này bạn có API up file thật ở đây thì xử lý up file lấy link trước,
-        // ở code hiện tại ta tạm mô phỏng tên file)
         fileName: selectedFile?.name || undefined,
         fileUrl:
           previewUrl ||
           (selectedFile && !previewUrl ? "document-icon" : undefined),
       };
 
-      // 2. Bắn lên Backend để lưu vào DB
       const response = await fetch(`${API_URL}/api/activities`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -127,7 +111,6 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
 
       const savedActivity = await response.json();
 
-      // 3. Cập nhật lại UI ngay lập tức
       setFormData((prev) => {
         if (!prev) return prev;
         return {
@@ -136,11 +119,8 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
         };
       });
 
-      // 4. Xóa trắng form nhập
       setNewNote("");
       clearFile();
-
-      // 5. Báo cho Board ngoài kia biết để re-render
       window.dispatchEvent(new Event("refreshBoard"));
     } catch (error) {
       console.error(error);
@@ -155,11 +135,11 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
     setIsSaving(true);
 
     try {
-     await fetch(`${API_URL}/api/tasks/${formData.id}`, {
-       method: "PUT",
-       headers: { "Content-Type": "application/json" },
-       body: JSON.stringify(formData),
-     });
+      await fetch(`${API_URL}/api/tasks/${formData.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
 
       onUpdateCustomer(formData);
       setSaved(true);
@@ -173,39 +153,43 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
   };
 
   return (
-    <Modal show={show} onClose={onClose} size="6xl">
-      <div className="flex items-start justify-between rounded-t border-b border-gray-200 p-5 bg-gray-50">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 bg-orange-400 text-white rounded-lg flex items-center justify-center text-2xl font-bold shadow-sm">
+    // FIX MOBILE SIZE: Để tự động size, tránh vỡ trên đt
+    <Modal show={show} onClose={onClose} size="6xl" className="md:p-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between rounded-t border-b border-gray-200 p-4 sm:p-5 bg-gray-50 gap-3">
+        <div className="flex items-center gap-3 w-full">
+          <div className="w-12 h-12 sm:w-14 sm:h-14 shrink-0 bg-orange-400 text-white rounded-lg flex items-center justify-center text-xl sm:text-2xl font-bold shadow-sm">
             {formData.content?.charAt(0) || "K"}
           </div>
-          <div>
-            <h3 className="text-2xl font-bold text-gray-800">
+          <div className="flex-1 min-w-0">
+            <h3 className="text-lg sm:text-2xl font-bold text-gray-800 truncate">
               {formData.content}
             </h3>
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-1 mt-1">
-              <div className="flex items-center gap-2 text-sm text-gray-500 font-medium">
-                <span>Doanh thu/Phí:</span>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-x-6 gap-y-1 mt-1">
+              <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500 font-medium">
+                <span className="shrink-0">Phí:</span>
                 <input
                   type="text"
                   value={formData.price || ""}
                   onChange={(e) => handleChange("price", e.target.value)}
-                  className="border-b border-dashed border-gray-300 bg-transparent p-0 font-bold text-gray-800 focus:ring-0 focus:border-orange-500 w-32"
+                  className="border-b border-dashed border-gray-300 bg-transparent p-0 font-bold text-gray-800 focus:ring-0 focus:border-orange-500 w-full sm:w-32 max-w-[150px]"
                   placeholder="Ví dụ: 50.000.000 đ"
                 />
               </div>
 
-              <div className="flex items-center gap-2 text-sm text-gray-600 font-medium">
+              <div className="flex items-center gap-1.5 text-xs sm:text-sm text-gray-600 font-medium mt-1 sm:mt-0">
                 <span className="text-orange-600 font-bold">👤 Sale:</span>
-                <span>{formData.assignedTo || "Chưa phân công"}</span>
+                <span className="truncate max-w-[120px] sm:max-w-none">
+                  {formData.assignedTo || "Chưa phân công"}
+                </span>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        {/* CỤM NÚT LƯU & ĐÓNG TRÊN MOBILE SẼ CHẠY XUỐNG DƯỚI */}
+        <div className="flex items-center justify-end w-full sm:w-auto gap-2 mt-2 sm:mt-0">
           {saved && (
-            <span className="text-green-600 text-sm font-medium animate-pulse">
+            <span className="text-green-600 text-xs sm:text-sm font-medium animate-pulse hidden sm:inline">
               ✓ Đã lưu
             </span>
           )}
@@ -214,15 +198,20 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
             size="sm"
             onClick={handleSave}
             disabled={isSaving}
+            className="whitespace-nowrap"
           >
             {isSaving ? <Spinner size="sm" className="mr-2" /> : null}
             {isSaving ? "Đang lưu..." : saved ? "Đã lưu" : "Lưu thay đổi"}
           </Button>
           <button
             onClick={onClose}
-            className="p-1.5 text-gray-400 hover:bg-gray-200 rounded-lg transition-colors"
+            className="p-1.5 text-gray-400 hover:bg-gray-200 rounded-lg transition-colors bg-gray-200 sm:bg-transparent"
           >
-            <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 20 20">
+            <svg
+              className="h-5 w-5 sm:h-6 sm:w-6"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
               <path
                 fillRule="evenodd"
                 d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
@@ -233,14 +222,17 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
         </div>
       </div>
 
-      <div className="p-0 flex flex-col md:flex-row h-[70vh]">
-        <div className="w-full md:w-[60%] p-6 border-r border-gray-200 overflow-y-auto bg-white custom-scrollbar">
-          <h4 className="font-semibold text-orange-600 mb-3 border-b pb-1 text-sm uppercase">
+      {/* FIX MOBILE LAYOUT: flex-col trên đt, scroll dọc độc lập */}
+      <div className="p-0 flex flex-col md:flex-row max-h-[75vh] md:h-[70vh] overflow-hidden">
+        {/* CỘT TRÁI - THÔNG TIN CHI TIẾT */}
+        <div className="w-full md:w-[60%] p-4 sm:p-6 border-b md:border-b-0 md:border-r border-gray-200 overflow-y-auto bg-white custom-scrollbar h-[50vh] md:h-full">
+          <h4 className="font-semibold text-orange-600 mb-3 border-b pb-1 text-xs sm:text-sm uppercase">
             Thông tin Liên hệ
           </h4>
-          <div className="grid grid-cols-2 gap-4 mb-6">
+          {/* Đổi grid-cols-2 thành grid-cols-1 trên mobile */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-6">
             <div>
-              <Label className="text-xs uppercase text-gray-400">
+              <Label className="text-[10px] sm:text-xs uppercase text-gray-400">
                 Số điện thoại
               </Label>
               <TextInput
@@ -251,7 +243,9 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
               />
             </div>
             <div>
-              <Label className="text-xs uppercase text-gray-400">Email</Label>
+              <Label className="text-[10px] sm:text-xs uppercase text-gray-400">
+                Email
+              </Label>
               <TextInput
                 sizing="sm"
                 value={formData.email || ""}
@@ -260,7 +254,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
               />
             </div>
             <div>
-              <Label className="text-xs uppercase text-gray-400">
+              <Label className="text-[10px] sm:text-xs uppercase text-gray-400">
                 Diện Visa Quan Tâm
               </Label>
               <Select
@@ -278,7 +272,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
               </Select>
             </div>
             <div>
-              <Label className="text-xs uppercase text-gray-400">
+              <Label className="text-[10px] sm:text-xs uppercase text-gray-400">
                 Nguồn khách
               </Label>
               <Select
@@ -297,12 +291,12 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
             </div>
           </div>
 
-          <h4 className="font-semibold text-orange-600 mb-3 border-b pb-1 text-sm uppercase">
+          <h4 className="font-semibold text-orange-600 mb-3 border-b pb-1 text-xs sm:text-sm uppercase">
             Hồ sơ Pháp lý & Di trú
           </h4>
-          <div className="grid grid-cols-2 gap-4 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-6">
             <div>
-              <Label className="text-xs uppercase text-gray-400">
+              <Label className="text-[10px] sm:text-xs uppercase text-gray-400">
                 Tình trạng hôn nhân
               </Label>
               <Select
@@ -318,7 +312,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
               </Select>
             </div>
             <div>
-              <Label className="text-xs uppercase text-gray-400">
+              <Label className="text-[10px] sm:text-xs uppercase text-gray-400">
                 Số người phụ thuộc (Vợ/Con)
               </Label>
               <TextInput
@@ -329,8 +323,8 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
                 className="mt-1"
               />
             </div>
-            <div>
-              <Label className="text-xs uppercase text-gray-400">
+            <div className="sm:col-span-2">
+              <Label className="text-[10px] sm:text-xs uppercase text-gray-400">
                 Ngày ưu tiên
               </Label>
               <TextInput
@@ -343,12 +337,12 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
             </div>
           </div>
 
-          <h4 className="font-semibold text-orange-600 mb-3 border-b pb-1 text-sm uppercase">
+          <h4 className="font-semibold text-orange-600 mb-3 border-b pb-1 text-xs sm:text-sm uppercase">
             Đánh giá Năng lực
           </h4>
-          <div className="grid grid-cols-2 gap-4 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-6">
             <div>
-              <Label className="text-xs uppercase text-gray-400">
+              <Label className="text-[10px] sm:text-xs uppercase text-gray-400">
                 Bằng cấp cao nhất
               </Label>
               <Select
@@ -366,7 +360,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
               </Select>
             </div>
             <div>
-              <Label className="text-xs uppercase text-gray-400">
+              <Label className="text-[10px] sm:text-xs uppercase text-gray-400">
                 Điểm IELTS/PTE
               </Label>
               <TextInput
@@ -376,8 +370,8 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
                 className="mt-1"
               />
             </div>
-            <div className="col-span-2">
-              <Label className="text-xs uppercase text-gray-400">
+            <div className="sm:col-span-2">
+              <Label className="text-[10px] sm:text-xs uppercase text-gray-400">
                 Kinh nghiệm làm việc
               </Label>
               <TextInput
@@ -388,7 +382,8 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
               />
             </div>
           </div>
-          <h4 className="font-semibold text-orange-600 mb-3 border-b pb-1 text-sm uppercase">
+
+          <h4 className="font-semibold text-orange-600 mb-3 border-b pb-1 text-xs sm:text-sm uppercase">
             Đánh giá chi tiết / Lộ trình
           </h4>
           <div>
@@ -401,24 +396,24 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
         </div>
 
         {/* CỘT PHẢI - NHẬT KÝ TƯƠNG TÁC & UPLOAD */}
-        <div className="w-full md:w-[40%] bg-gray-50 flex flex-col border-l border-gray-200">
-          <div className="p-4 border-b border-gray-200 bg-white shadow-sm z-10">
-            <p className="text-xs font-bold text-gray-400 uppercase mb-2">
+        <div className="w-full md:w-[40%] bg-gray-50 flex flex-col md:border-l border-gray-200 h-[50vh] md:h-full">
+          <div className="p-3 sm:p-4 border-b border-gray-200 bg-white shadow-sm z-10 shrink-0">
+            <p className="text-[10px] sm:text-xs font-bold text-gray-400 uppercase mb-2">
               Ghi chú mới
             </p>
 
             <Textarea
-              placeholder="Nhập ghi chú nhanh hoặc báo cáo tiến độ..."
-              rows={3}
+              placeholder="Nhập ghi chú nhanh..."
+              rows={2} // Giảm row trên đt
               value={newNote}
               onChange={(e) => setNewNote(e.target.value)}
-              className="bg-gray-50 border-none focus:ring-1 focus:ring-orange-500 shadow-inner mb-3 text-sm"
+              className="bg-gray-50 border-none focus:ring-1 focus:ring-orange-500 shadow-inner mb-2 text-xs sm:text-sm"
             />
 
             {selectedFile && (
-              <div className="mb-3 relative inline-block">
+              <div className="mb-2 relative inline-block">
                 {previewUrl ? (
-                  <div className="relative w-24 h-24 rounded-lg overflow-hidden border border-gray-300 shadow-sm">
+                  <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden border border-gray-300 shadow-sm">
                     <img
                       src={previewUrl}
                       alt="Preview"
@@ -426,9 +421,9 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
                     />
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2 p-2 bg-blue-50 text-blue-700 rounded text-sm border border-blue-200">
+                  <div className="flex items-center gap-1.5 p-1.5 bg-blue-50 text-blue-700 rounded text-xs border border-blue-200 max-w-[200px]">
                     📄{" "}
-                    <span className="truncate max-w-[200px] font-medium">
+                    <span className="truncate font-medium">
                       {selectedFile.name}
                     </span>
                   </div>
@@ -442,7 +437,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
               </div>
             )}
 
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center mt-1">
               <div>
                 <input
                   type="file"
@@ -453,11 +448,10 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
                 />
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex items-center gap-1 text-sm font-semibold text-gray-500 hover:text-orange-600 transition-colors bg-gray-100 hover:bg-orange-50 px-3 py-1.5 rounded-lg"
-                  title="Đính kèm tài liệu/hình ảnh"
+                  className="flex items-center gap-1 text-xs sm:text-sm font-semibold text-gray-500 hover:text-orange-600 transition-colors bg-gray-100 hover:bg-orange-50 px-2 py-1.5 sm:px-3 sm:py-1.5 rounded-lg"
                 >
                   <svg
-                    className="w-4 h-4"
+                    className="w-3.5 h-3.5 sm:w-4 sm:h-4"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -472,7 +466,6 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
                   Đính kèm
                 </button>
               </div>
-
               <Button
                 size="sm"
                 color="warning"
@@ -483,31 +476,31 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
                 className="font-bold shadow-sm"
               >
                 {isSubmittingNote ? (
-                  <Spinner size="sm" className="mr-2" />
+                  <Spinner size="sm" className="mr-1" />
                 ) : null}
-                {isSubmittingNote ? "Đang gửi..." : "Gửi ghi chú"}
+                {isSubmittingNote ? "Gửi..." : "Gửi"}
               </Button>
             </div>
           </div>
 
           {/* LIST TIMELINE */}
-          <div className="flex-1 p-5 overflow-y-auto space-y-4 custom-scrollbar bg-gray-50">
+          <div className="flex-1 p-3 sm:p-5 overflow-y-auto space-y-3 custom-scrollbar bg-gray-50 pb-10">
             {formData.activities && formData.activities.length > 0 ? (
               formData.activities.map((act) => (
                 <div
                   key={act.id}
-                  className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm"
+                  className="bg-white p-2.5 sm:p-3 rounded-lg border border-gray-200 shadow-sm"
                 >
-                  <div className="flex justify-between items-start mb-2">
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 bg-indigo-500 rounded-full flex items-center justify-center text-xs text-white font-bold uppercase shadow-sm">
+                  <div className="flex justify-between items-start mb-1.5 sm:mb-2">
+                    <div className="flex items-center gap-1.5 sm:gap-2">
+                      <div className="w-6 h-6 sm:w-7 sm:h-7 bg-indigo-500 rounded-full flex items-center justify-center text-[10px] sm:text-xs text-white font-bold uppercase shadow-sm">
                         {act.assignee?.charAt(0) || "S"}
                       </div>
-                      <span className="text-sm font-bold text-gray-800">
+                      <span className="text-xs sm:text-sm font-bold text-gray-800">
                         {act.assignee}
                       </span>
                     </div>
-                    <span className="text-[11px] font-medium text-gray-400 bg-gray-100 px-2 py-0.5 rounded">
+                    <span className="text-[9px] sm:text-[11px] font-medium text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
                       {new Date(act.createdAt).toLocaleString("vi-VN", {
                         hour: "2-digit",
                         minute: "2-digit",
@@ -516,24 +509,23 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
                       })}
                     </span>
                   </div>
-
-                  <p className="text-sm text-gray-700 whitespace-pre-wrap ml-9">
+                  <p className="text-xs sm:text-sm text-gray-700 whitespace-pre-wrap ml-7 sm:ml-9">
                     {act.summary}
                   </p>
 
                   {act.fileUrl && act.fileUrl !== "document-icon" && (
-                    <div className="mt-3 ml-9">
+                    <div className="mt-2 ml-7 sm:ml-9">
                       <img
                         src={act.fileUrl}
                         alt={act.fileName}
-                        className="rounded-lg border border-gray-200 max-h-48 object-contain cursor-pointer hover:opacity-90 shadow-sm"
+                        className="rounded-lg border border-gray-200 max-h-32 sm:max-h-48 object-contain cursor-pointer hover:opacity-90 shadow-sm"
                       />
                     </div>
                   )}
                   {act.fileName && act.fileUrl === "document-icon" && (
-                    <div className="mt-2 ml-9 flex items-center gap-2 p-2 bg-blue-50 rounded-lg border border-blue-100 text-sm w-fit">
-                      <span className="text-lg">📄</span>
-                      <span className="text-blue-700 font-medium truncate max-w-[200px]">
+                    <div className="mt-1.5 sm:mt-2 ml-7 sm:ml-9 flex items-center gap-1.5 p-1.5 sm:p-2 bg-blue-50 rounded-lg border border-blue-100 text-xs sm:text-sm w-fit">
+                      <span className="text-sm sm:text-lg">📄</span>
+                      <span className="text-blue-700 font-medium truncate max-w-[150px] sm:max-w-[200px]">
                         {act.fileName}
                       </span>
                     </div>
@@ -541,9 +533,9 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
                 </div>
               ))
             ) : (
-              <div className="flex flex-col items-center justify-center h-full text-gray-400 space-y-3 opacity-60 mt-10">
+              <div className="flex flex-col items-center justify-center h-full text-gray-400 space-y-2 opacity-60 mt-6 sm:mt-10 pb-6">
                 <svg
-                  className="w-12 h-12"
+                  className="w-8 h-8 sm:w-12 sm:h-12"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -555,7 +547,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
                     d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
                   />
                 </svg>
-                <p className="text-sm italic font-medium">
+                <p className="text-xs sm:text-sm italic font-medium">
                   Chưa có ghi chú nào
                 </p>
               </div>

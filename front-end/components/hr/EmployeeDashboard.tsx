@@ -333,7 +333,6 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
       alert(`Đã chốt lương tháng ${finalizeMonth} thành công!`);
       setShowFinalizeModal(false);
       fetchData();
-      // Tự động mở lịch sử lương sau khi chốt
       await fetchSalaryHistory();
       setShowHistoryModal(true);
     } catch (error) {
@@ -452,26 +451,27 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
   }
 
   return (
-    <div className="flex-1 p-6 overflow-y-auto bg-gray-100 h-full relative">
+    // Tối ưu Padding mobile
+    <div className="flex-1 p-3 sm:p-6 overflow-y-auto bg-gray-100 h-full relative">
       <Card className="w-full h-full shadow-sm border-none rounded-xl">
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 border-b border-gray-200 pb-4 gap-4">
+        <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-4 sm:mb-6 border-b border-gray-200 pb-4 gap-4">
           <div>
-            <h2 className="text-2xl font-bold text-gray-800">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-800">
               Quản lý Nhân sự
             </h2>
-            <p className="text-gray-500 text-sm mt-1">
+            <p className="text-gray-500 text-xs sm:text-sm mt-1">
               Danh sách nhân viên, bộ phận và phân quyền
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {isBoss && (
               <button
                 onClick={() => setShowFinalizeModal(true)}
-                className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm"
+                className="flex items-center gap-1.5 sm:gap-2 bg-red-600 hover:bg-red-700 text-white px-3 py-2 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors shadow-sm"
               >
                 <svg
-                  className="w-5 h-5"
+                  className="w-4 h-4 sm:w-5 sm:h-5"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -483,16 +483,17 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
                     d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                   />
                 </svg>
-                Chốt Lương & Reset
+                <span className="hidden sm:inline">Chốt Lương & Reset</span>
+                <span className="sm:hidden">Chốt Lương</span>
               </button>
             )}
             {isBoss && (
               <button
                 onClick={handleOpenHistory}
-                className="flex items-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm"
+                className="flex items-center gap-1.5 sm:gap-2 bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-2 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors shadow-sm"
               >
                 <svg
-                  className="w-5 h-5"
+                  className="w-4 h-4 sm:w-5 sm:h-5"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -504,33 +505,37 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
                     d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                   />
                 </svg>
-                Lịch sử lương
+                <span className="hidden sm:inline">Lịch sử lương</span>
+                <span className="sm:hidden">Lịch sử</span>
               </button>
             )}
             {canAddPersonnel && (
               <>
                 <Button
                   color="light"
+                  size="sm"
                   onClick={() => setIsDeptModalOpen(true)}
                   className="focus:ring-0 border-gray-200 text-gray-700"
                 >
-                  ⚙️ Quản lý Bộ phận
+                  ⚙️{" "}
+                  <span className="hidden sm:inline ml-1">Quản lý Bộ phận</span>
                 </Button>
                 <Button
                   style={{ backgroundColor: "#1d4ed8" }}
+                  size="sm"
                   onClick={() => setIsAddEmpModalOpen(true)}
                   className="focus:ring-0"
                 >
-                  + Thêm nhân sự
+                  + Thêm <span className="hidden sm:inline ml-1">nhân sự</span>
                 </Button>
                 <button
                   onClick={handleOpenLeaveManager}
-                  className="flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm"
+                  className="flex items-center gap-1.5 sm:gap-2 bg-teal-600 hover:bg-teal-700 text-white px-3 py-2 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors shadow-sm"
                 >
-                  📋 Duyệt Nghỉ Phép
+                  📋 <span className="hidden sm:inline">Duyệt Nghỉ Phép</span>
                   <Badge
                     color="failure"
-                    className="ml-1 px-1.5 py-0.5 rounded-full text-xs"
+                    className="px-1.5 py-0.5 rounded-full text-[10px] sm:text-xs"
                   >
                     {leaveRequests.filter((r) => r.status === "Chờ duyệt")
                       .length || ""}
@@ -541,17 +546,26 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left text-gray-500">
+        {/* Tối ưu cuộn ngang cho Bảng */}
+        <div className="overflow-x-auto custom-scrollbar w-full">
+          <table className="w-full min-w-[800px] text-sm text-left text-gray-500">
             <thead className="text-xs text-gray-700 uppercase bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-4 py-4 font-bold w-24">Mã NV</th>
-                <th className="px-4 py-4 font-bold">Nhân viên</th>
-                <th className="px-4 py-4 font-bold">Email</th>
-                <th className="px-4 py-4 font-bold">Bộ phận</th>
-                <th className="px-4 py-4 font-bold">Chức vụ</th>
-                <th className="px-4 py-4 font-bold">Tình trạng</th>
-                <th className="px-4 py-4 text-right font-bold">Hành động</th>
+                <th className="px-3 sm:px-4 py-3 sm:py-4 font-bold w-20 sm:w-24">
+                  Mã NV
+                </th>
+                <th className="px-3 sm:px-4 py-3 sm:py-4 font-bold">
+                  Nhân viên
+                </th>
+                <th className="px-3 sm:px-4 py-3 sm:py-4 font-bold">Email</th>
+                <th className="px-3 sm:px-4 py-3 sm:py-4 font-bold">Bộ phận</th>
+                <th className="px-3 sm:px-4 py-3 sm:py-4 font-bold">Chức vụ</th>
+                <th className="px-3 sm:px-4 py-3 sm:py-4 font-bold">
+                  Tình trạng
+                </th>
+                <th className="px-3 sm:px-4 py-3 sm:py-4 text-right font-bold">
+                  Hành động
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -570,14 +584,14 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
                     <tr className="bg-gray-50 border-b border-gray-200">
                       <td
                         colSpan={7}
-                        className="px-4 py-3 font-bold text-gray-800"
+                        className="px-3 sm:px-4 py-2 sm:py-3 font-bold text-gray-800"
                       >
                         <span className="mr-2">📁</span>
                         Bộ phận:{" "}
-                        <span className="text-blue-700 uppercase tracking-wide ml-1">
+                        <span className="text-blue-700 uppercase tracking-wide ml-1 text-xs sm:text-sm">
                           {group.departmentName}
                         </span>
-                        <span className="ml-3 text-xs font-semibold text-gray-500 bg-white px-2.5 py-1 rounded-full border border-gray-200 shadow-sm">
+                        <span className="ml-3 text-[10px] sm:text-xs font-semibold text-gray-500 bg-white px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full border border-gray-200 shadow-sm">
                           {group.employees.length} nhân sự
                         </span>
                       </td>
@@ -587,42 +601,44 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
                         key={emp.id}
                         className="bg-white hover:bg-blue-50 transition-colors duration-150"
                       >
-                        <td className="px-4 py-4 font-bold text-gray-900">
+                        <td className="px-3 sm:px-4 py-3 sm:py-4 font-bold text-gray-900 text-xs sm:text-sm">
                           {emp.employeeCode}
                         </td>
-                        <td className="px-4 py-4">
-                          <div className="flex items-center gap-3">
+                        <td className="px-3 sm:px-4 py-3 sm:py-4">
+                          <div className="flex items-center gap-2 sm:gap-3">
                             <Avatar
                               size="sm"
                               rounded
                               placeholderInitials={emp.name.charAt(0)}
-                              className="bg-orange-400 text-white"
+                              className="bg-orange-400 text-white shrink-0"
                             />
-                            <span className="font-bold text-gray-800">
+                            <span className="font-bold text-gray-800 truncate max-w-[120px] sm:max-w-full text-xs sm:text-sm">
                               {emp.name}
                             </span>
                           </div>
                         </td>
-                        <td className="px-4 py-4 text-blue-600 font-medium">
+                        <td className="px-3 sm:px-4 py-3 sm:py-4 text-blue-600 font-medium text-xs sm:text-sm truncate max-w-[150px] sm:max-w-none">
                           {emp.email || "Chưa cập nhật"}
                         </td>
-                        <td className="px-4 py-4 font-medium text-gray-600">
+                        <td className="px-3 sm:px-4 py-3 sm:py-4 font-medium text-gray-600 text-xs sm:text-sm">
                           {emp.department}
                         </td>
-                        <td className="px-4 py-4 text-gray-600">{emp.role}</td>
-                        <td className="px-4 py-4">
+                        <td className="px-3 sm:px-4 py-3 sm:py-4 text-gray-600 text-xs sm:text-sm">
+                          {emp.role}
+                        </td>
+                        <td className="px-3 sm:px-4 py-3 sm:py-4">
                           <Badge
                             color={getStatusColor(emp.todayStatus)}
-                            className="w-fit font-semibold px-2.5 py-0.5"
+                            className="w-fit font-semibold px-2 py-0.5 text-[10px] sm:text-xs"
                           >
                             {emp.todayStatus}
                           </Badge>
                         </td>
-                        <td className="px-4 py-4 text-right">
-                          <div className="flex justify-end gap-3">
+                        <td className="px-3 sm:px-4 py-3 sm:py-4 text-right">
+                          <div className="flex justify-end gap-2 sm:gap-3">
                             <button
                               onClick={() => setSelectedEmpId(emp.id)}
-                              className="font-semibold text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+                              className="font-semibold text-blue-600 hover:text-blue-800 hover:underline text-xs sm:text-sm"
                             >
                               Chi tiết
                             </button>
@@ -632,7 +648,7 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
                                   setEmployeeToEdit(emp);
                                   setIsAddEmpModalOpen(true);
                                 }}
-                                className="font-semibold text-orange-500 hover:text-orange-700 hover:underline transition-colors"
+                                className="font-semibold text-orange-500 hover:text-orange-700 hover:underline text-xs sm:text-sm"
                               >
                                 Sửa
                               </button>
@@ -640,7 +656,7 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
                             {canDeletePersonnel && (
                               <button
                                 onClick={() => handleDeleteEmployee(emp.id)}
-                                className="font-semibold text-red-500 hover:text-red-700 hover:underline transition-colors"
+                                className="font-semibold text-red-500 hover:text-red-700 hover:underline text-xs sm:text-sm"
                               >
                                 Xóa
                               </button>
@@ -674,9 +690,12 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
         show={isDeptModalOpen}
         onClose={() => setIsDeptModalOpen(false)}
         size="lg"
+        className="md:p-4"
       >
-        <div className="p-6 border-b border-gray-200 flex justify-between items-center bg-gray-50 rounded-t-lg">
-          <h3 className="text-xl font-bold text-gray-800">Quản lý Bộ Phận</h3>
+        <div className="p-4 sm:p-6 border-b border-gray-200 flex justify-between items-center bg-gray-50 rounded-t-lg">
+          <h3 className="text-lg sm:text-xl font-bold text-gray-800">
+            Quản lý Bộ Phận
+          </h3>
           <button
             onClick={() => setIsDeptModalOpen(false)}
             className="text-gray-400 hover:text-gray-900 bg-white hover:bg-gray-200 rounded-full p-1.5 transition-colors border"
@@ -696,8 +715,8 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
             </svg>
           </button>
         </div>
-        <div className="p-6">
-          <div className="flex gap-2 mb-6">
+        <div className="p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row gap-2 mb-4 sm:mb-6">
             <TextInput
               className="flex-1 shadow-sm"
               placeholder="Nhập tên bộ phận mới..."
@@ -707,17 +726,19 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
             <Button
               color="success"
               onClick={handleAddDepartment}
-              className="shadow-sm"
+              className="shadow-sm whitespace-nowrap"
             >
               Thêm
             </Button>
           </div>
-          <div className="max-h-80 overflow-y-auto border border-gray-200 rounded-lg shadow-sm">
-            <table className="w-full text-sm text-left text-gray-500">
+          <div className="max-h-[50vh] sm:max-h-80 overflow-y-auto overflow-x-auto border border-gray-200 rounded-lg shadow-sm custom-scrollbar w-full">
+            <table className="w-full min-w-[400px] text-sm text-left text-gray-500">
               <thead className="text-xs text-gray-700 uppercase bg-gray-50 border-b">
                 <tr>
-                  <th className="px-6 py-3 font-bold">Tên bộ phận</th>
-                  <th className="px-6 py-3 text-right font-bold">Hành động</th>
+                  <th className="px-4 sm:px-6 py-3 font-bold">Tên bộ phận</th>
+                  <th className="px-4 sm:px-6 py-3 text-right font-bold">
+                    Hành động
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -726,7 +747,7 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
                     key={dept.id}
                     className="bg-white hover:bg-gray-50 transition-colors"
                   >
-                    <td className="px-6 py-4 font-medium text-gray-900">
+                    <td className="px-4 sm:px-6 py-3 sm:py-4 font-medium text-gray-900">
                       {editingDeptId === dept.id ? (
                         <TextInput
                           sizing="sm"
@@ -737,9 +758,9 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
                         dept.name
                       )}
                     </td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-4 sm:px-6 py-3 sm:py-4 text-right">
                       {editingDeptId === dept.id ? (
-                        <div className="flex justify-end gap-3">
+                        <div className="flex justify-end gap-2 sm:gap-3">
                           <button
                             className="text-green-600 hover:underline font-semibold"
                             onClick={() => handleUpdateDepartment(dept.id)}
@@ -754,14 +775,14 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
                           </button>
                         </div>
                       ) : (
-                        <div className="flex justify-end gap-4">
+                        <div className="flex justify-end gap-3 sm:gap-4">
                           {canAddPersonnel && (
                             <button
                               onClick={() => {
                                 setEditingDeptId(dept.id);
                                 setEditDeptName(dept.name);
                               }}
-                              className="font-semibold text-orange-500 hover:text-orange-700 hover:underline transition-colors"
+                              className="font-semibold text-orange-500 hover:text-orange-700 hover:underline"
                             >
                               Sửa
                             </button>
@@ -790,9 +811,10 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
         show={showHistoryModal}
         onClose={() => setShowHistoryModal(false)}
         size="7xl"
+        className="md:p-4"
       >
-        <div className="p-6 border-b border-gray-200 flex justify-between items-center bg-gray-50 rounded-t-lg">
-          <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+        <div className="p-4 sm:p-6 border-b border-gray-200 flex justify-between items-center bg-gray-50 rounded-t-lg">
+          <h3 className="text-lg sm:text-xl font-bold text-gray-800 flex items-center gap-2">
             📊 Lịch sử chốt lương các tháng
           </h3>
           <button
@@ -800,7 +822,7 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
             className="text-gray-400 hover:text-gray-900 bg-white hover:bg-gray-200 rounded-full p-1.5 transition-colors border"
           >
             <svg
-              className="w-5 h-5"
+              className="w-4 h-4 sm:w-5 sm:h-5"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -814,10 +836,9 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
             </svg>
           </button>
         </div>
-
-        <div className="p-6 bg-gray-100 overflow-y-auto max-h-[75vh]">
+        <div className="p-3 sm:p-6 bg-gray-100 overflow-y-auto max-h-[75vh]">
           {salaryHistories.length === 0 ? (
-            <p className="text-center italic text-gray-400 py-8 bg-white rounded-lg shadow-sm">
+            <p className="text-center italic text-gray-400 py-8 bg-white rounded-lg shadow-sm text-sm">
               Chưa có dữ liệu chốt lương nào.
             </p>
           ) : (
@@ -835,24 +856,24 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
               return (
                 <div
                   key={monthYear}
-                  className="mb-4 bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden"
+                  className="mb-3 sm:mb-4 bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden"
                 >
                   <button
                     onClick={() => toggleMonth(monthYear)}
-                    className="w-full flex justify-between items-center p-5 bg-blue-50 hover:bg-blue-100 transition-colors focus:outline-none"
+                    className="w-full flex justify-between items-center p-4 sm:p-5 bg-blue-50 hover:bg-blue-100 transition-colors focus:outline-none"
                   >
-                    <div className="font-bold text-lg text-blue-800 flex items-center gap-2">
+                    <div className="font-bold text-base sm:text-lg text-blue-800 flex items-center gap-2">
                       📅 Lương Tháng {monthYear}
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 sm:gap-4">
                       <Badge
                         color="info"
-                        className="px-3 py-1 text-sm font-semibold shadow-sm"
+                        className="px-2 py-0.5 sm:px-3 sm:py-1 text-xs sm:text-sm font-semibold shadow-sm"
                       >
                         {records.length} nhân sự
                       </Badge>
                       <svg
-                        className={`w-5 h-5 text-blue-600 transition-transform duration-300 ${isExpanded ? "rotate-180" : ""}`}
+                        className={`w-4 h-4 sm:w-5 sm:h-5 text-blue-600 transition-transform duration-300 ${isExpanded ? "rotate-180" : ""}`}
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -868,27 +889,29 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
                   </button>
 
                   {isExpanded && (
-                    <div className="overflow-x-auto border-t border-blue-100">
-                      <table className="w-full text-sm text-left text-gray-600">
+                    <div className="overflow-x-auto custom-scrollbar border-t border-blue-100 w-full">
+                      <table className="w-full min-w-[700px] text-sm text-left text-gray-600">
                         <thead className="text-xs text-gray-700 uppercase bg-gray-50 border-b border-gray-200">
                           <tr>
-                            <th className="px-6 py-4 font-bold w-24">Mã NV</th>
-                            <th className="px-6 py-4 font-bold">Nhân viên</th>
-                            <th className="px-6 py-4 font-bold">Phòng ban</th>
-                            <th className="px-6 py-4 font-bold text-right">
+                            <th className="px-4 sm:px-6 py-3 sm:py-4 font-bold w-20">
+                              Mã NV
+                            </th>
+                            <th className="px-4 sm:px-6 py-3 sm:py-4 font-bold">
+                              Nhân viên
+                            </th>
+                            <th className="px-4 sm:px-6 py-3 sm:py-4 font-bold text-right">
                               Lương CB
                             </th>
-                            <th className="px-6 py-4 font-bold text-right text-green-600">
+                            <th className="px-4 sm:px-6 py-3 sm:py-4 font-bold text-right text-green-600">
                               Thưởng / HH
                             </th>
-                            <th className="px-6 py-4 font-bold text-right text-red-600">
+                            <th className="px-4 sm:px-6 py-3 sm:py-4 font-bold text-right text-red-600">
                               Phạt / Trừ
                             </th>
-                            <th className="px-6 py-4 font-bold text-right text-blue-700">
+                            <th className="px-4 sm:px-6 py-3 sm:py-4 font-bold text-right text-blue-700">
                               Thực nhận
                             </th>
-                            {/* ← CỘT MỚI */}
-                            <th className="px-6 py-4 font-bold text-center">
+                            <th className="px-4 sm:px-6 py-3 sm:py-4 font-bold text-center w-24">
                               Phiếu lương
                             </th>
                           </tr>
@@ -899,49 +922,49 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
                               key={idx}
                               className="bg-white hover:bg-gray-50 transition-colors"
                             >
-                              <td className="px-6 py-4 font-bold text-gray-900">
+                              <td className="px-4 sm:px-6 py-3 sm:py-4 font-bold text-gray-900">
                                 {record.employee?.employeeCode}
                               </td>
-                              <td className="px-6 py-4 font-bold text-gray-800">
+                              <td className="px-4 sm:px-6 py-3 sm:py-4 font-bold text-gray-800">
                                 {record.employee?.name || "Đã xóa NV"}
+                                <p className="text-xs font-normal text-gray-500 mt-0.5">
+                                  {typeof record.employee?.department ===
+                                  "object"
+                                    ? (
+                                        record.employee?.department as {
+                                          name: string;
+                                        }
+                                      ).name
+                                    : record.employee?.department}
+                                </p>
                               </td>
-                              <td className="px-6 py-4 font-medium text-gray-500">
-                                {typeof record.employee?.department === "object"
-                                  ? (
-                                      record.employee?.department as {
-                                        name: string;
-                                      }
-                                    ).name
-                                  : record.employee?.department}
-                              </td>
-                              <td className="px-6 py-4 text-right font-medium">
+                              <td className="px-4 sm:px-6 py-3 sm:py-4 text-right font-medium">
                                 {new Intl.NumberFormat("vi-VN").format(
                                   record.baseSalary,
                                 )}
                                 đ
                               </td>
-                              <td className="px-6 py-4 text-right text-green-600 font-bold">
+                              <td className="px-4 sm:px-6 py-3 sm:py-4 text-right text-green-600 font-bold">
                                 +
                                 {new Intl.NumberFormat("vi-VN").format(
                                   record.totalBonus,
                                 )}
                                 đ
                               </td>
-                              <td className="px-6 py-4 text-right text-red-600 font-bold">
+                              <td className="px-4 sm:px-6 py-3 sm:py-4 text-right text-red-600 font-bold">
                                 -
                                 {new Intl.NumberFormat("vi-VN").format(
                                   record.totalDeduction,
                                 )}
                                 đ
                               </td>
-                              <td className="px-6 py-4 text-right font-bold text-blue-700 text-base">
+                              <td className="px-4 sm:px-6 py-3 sm:py-4 text-right font-bold text-blue-700 text-sm sm:text-base">
                                 {new Intl.NumberFormat("vi-VN").format(
                                   record.finalSalary,
                                 )}
                                 đ
                               </td>
-                              {/* ← NÚT TẢI PDF */}
-                              <td className="px-6 py-4 text-center">
+                              <td className="px-4 sm:px-6 py-3 sm:py-4 text-center">
                                 <button
                                   onClick={() =>
                                     handleDownloadSlip(
@@ -950,7 +973,7 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
                                       record.employee?.name ?? "NhanVien",
                                     )
                                   }
-                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-xs font-bold transition-colors border border-blue-200"
+                                  className="inline-flex items-center gap-1.5 px-2 py-1.5 sm:px-3 sm:py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-xs font-bold transition-colors border border-blue-200"
                                 >
                                   <svg
                                     className="w-3.5 h-3.5"
@@ -974,12 +997,15 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
                         <tfoot className="bg-blue-50 border-t-2 border-blue-200">
                           <tr>
                             <td
-                              colSpan={7}
-                              className="px-6 py-4 text-right font-bold text-gray-700 uppercase tracking-widest"
+                              colSpan={5}
+                              className="px-4 sm:px-6 py-3 sm:py-4 text-right font-bold text-gray-700 uppercase tracking-wide text-xs sm:text-sm"
                             >
-                              TỔNG LƯƠNG TRẢ CHO NHÂN VIÊN TRONG THÁNG:
+                              TỔNG LƯƠNG TRẢ TRONG THÁNG:
                             </td>
-                            <td className="px-6 py-4 text-right font-black text-blue-800 text-lg">
+                            <td
+                              colSpan={2}
+                              className="px-4 sm:px-6 py-3 sm:py-4 text-left font-black text-blue-800 text-base sm:text-lg"
+                            >
                               {new Intl.NumberFormat("vi-VN").format(
                                 records.reduce(
                                   (sum, r) => sum + r.finalSalary,
@@ -1002,21 +1028,21 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
 
       {/* ── MODAL CHỐT LƯƠNG ── */}
       {showFinalizeModal && (
-        <div className="fixed inset-0 z-100 flex items-center justify-center bg-black bg-opacity-50 p-4">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
-            <div className="p-5 border-b border-gray-200 bg-red-50">
-              <h3 className="text-lg font-bold text-red-700 flex items-center gap-2">
+            <div className="p-4 sm:p-5 border-b border-gray-200 bg-red-50">
+              <h3 className="text-base sm:text-lg font-bold text-red-700 flex items-center gap-2">
                 ⚠️ Cảnh báo: Chốt Lương Cuối Tháng
               </h3>
             </div>
-            <div className="p-5">
-              <p className="text-sm text-gray-600 mb-4">
+            <div className="p-4 sm:p-5">
+              <p className="text-xs sm:text-sm text-gray-600 mb-4">
                 Hành động này sẽ tính toán tổng lương hiện tại, lưu vào{" "}
                 <strong>Lịch sử lương</strong>, và{" "}
                 <span className="text-red-600 font-bold">XÓA TOÀN BỘ</span> dữ
                 liệu Chấm công, Thưởng/Phạt và Đơn nghỉ phép của tháng cũ.
               </p>
-              <label className="block text-sm font-bold text-gray-700 mb-2">
+              <label className="block text-xs sm:text-sm font-bold text-gray-700 mb-2">
                 Nhập tháng chốt (VD: 02/2026)
               </label>
               <input
@@ -1024,13 +1050,13 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
                 value={finalizeMonth}
                 onChange={(e) => setFinalizeMonth(e.target.value)}
                 placeholder="MM/YYYY"
-                className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all font-bold text-center text-lg tracking-widest"
+                className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all font-bold text-center text-base sm:text-lg tracking-widest"
               />
             </div>
-            <div className="p-4 border-t border-gray-200 flex justify-end gap-3 bg-gray-50">
+            <div className="p-4 border-t border-gray-200 flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 bg-gray-50">
               <button
                 onClick={() => setShowFinalizeModal(false)}
-                className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 font-medium"
+                className="w-full sm:w-auto px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 font-medium text-sm sm:text-base"
                 disabled={isFinalizing}
               >
                 Hủy bỏ
@@ -1038,7 +1064,7 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
               <button
                 onClick={handleFinalizeSalary}
                 disabled={isFinalizing}
-                className="px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700 font-medium shadow-sm flex items-center gap-2 disabled:opacity-50"
+                className="w-full sm:w-auto px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700 font-medium shadow-sm flex items-center justify-center gap-2 disabled:opacity-50 text-sm sm:text-base"
               >
                 {isFinalizing ? "Đang xử lý..." : "Xác nhận Chốt & Reset"}
               </button>
@@ -1052,9 +1078,10 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
         show={showLeaveManagerModal}
         onClose={() => setShowLeaveManagerModal(false)}
         size="6xl"
+        className="md:p-4"
       >
-        <div className="p-6 border-b border-gray-200 flex justify-between items-center bg-gray-50 rounded-t-lg">
-          <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+        <div className="p-4 sm:p-6 border-b border-gray-200 flex justify-between items-center bg-gray-50 rounded-t-lg">
+          <h3 className="text-lg sm:text-xl font-bold text-gray-800 flex items-center gap-2">
             📋 Danh sách Đơn xin nghỉ phép
           </h3>
           <button
@@ -1076,17 +1103,29 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
             </svg>
           </button>
         </div>
-        <div className="p-0 overflow-y-auto max-h-[70vh]">
-          <table className="w-full text-sm text-left text-gray-600">
-            <thead className="text-xs text-gray-700 uppercase bg-gray-100 sticky top-0 shadow-sm">
+        <div className="p-0 overflow-x-auto overflow-y-auto max-h-[70vh] custom-scrollbar w-full">
+          <table className="w-full min-w-[900px] text-sm text-left text-gray-600">
+            <thead className="text-xs text-gray-700 uppercase bg-gray-100 sticky top-0 shadow-sm z-10">
               <tr>
-                <th className="px-4 py-4 font-bold">Ngày nộp</th>
-                <th className="px-4 py-4 font-bold">Nhân viên</th>
-                <th className="px-4 py-4 font-bold">Loại phép</th>
-                <th className="px-4 py-4 font-bold">Thời gian</th>
-                <th className="px-4 py-4 font-bold w-1/4">Lý do</th>
-                <th className="px-4 py-4 font-bold text-center">Trạng thái</th>
-                <th className="px-4 py-4 font-bold text-right">Thao tác</th>
+                <th className="px-4 py-3 sm:py-4 font-bold whitespace-nowrap">
+                  Ngày nộp
+                </th>
+                <th className="px-4 py-3 sm:py-4 font-bold whitespace-nowrap">
+                  Nhân viên
+                </th>
+                <th className="px-4 py-3 sm:py-4 font-bold whitespace-nowrap">
+                  Loại phép
+                </th>
+                <th className="px-4 py-3 sm:py-4 font-bold whitespace-nowrap">
+                  Thời gian
+                </th>
+                <th className="px-4 py-3 sm:py-4 font-bold w-1/4">Lý do</th>
+                <th className="px-4 py-3 sm:py-4 font-bold text-center whitespace-nowrap">
+                  Trạng thái
+                </th>
+                <th className="px-4 py-3 sm:py-4 font-bold text-right whitespace-nowrap">
+                  Thao tác
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -1102,35 +1141,35 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
               ) : (
                 leaveRequests.map((req) => (
                   <tr key={req.id} className="bg-white hover:bg-gray-50">
-                    <td className="px-4 py-4 font-medium text-gray-500">
+                    <td className="px-4 py-3 sm:py-4 font-medium text-gray-500 whitespace-nowrap">
                       {new Date(req.createdAt).toLocaleDateString("vi-VN")}
                     </td>
-                    <td className="px-4 py-4">
-                      <p className="font-bold text-gray-900">
+                    <td className="px-4 py-3 sm:py-4">
+                      <p className="font-bold text-gray-900 whitespace-nowrap">
                         {req.employee?.name}
                       </p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-[10px] sm:text-xs text-gray-500 whitespace-nowrap">
                         {typeof req.employee?.department === "object"
                           ? (req.employee?.department as { name: string }).name
                           : req.employee?.department}
                       </p>
                     </td>
-                    <td className="px-4 py-4 font-bold text-blue-700">
+                    <td className="px-4 py-3 sm:py-4 font-bold text-blue-700 whitespace-nowrap">
                       {req.type}
                     </td>
-                    <td className="px-4 py-4 font-medium">
-                      <div className="text-gray-800">
+                    <td className="px-4 py-3 sm:py-4 font-medium whitespace-nowrap">
+                      <div className="text-gray-800 text-xs sm:text-sm">
                         Từ:{" "}
                         {new Date(req.startDate).toLocaleDateString("vi-VN")}
                       </div>
-                      <div className="text-gray-500">
+                      <div className="text-gray-500 text-xs sm:text-sm">
                         Đến: {new Date(req.endDate).toLocaleDateString("vi-VN")}
                       </div>
                     </td>
-                    <td className="px-4 py-4 text-xs italic text-gray-600">
+                    <td className="px-4 py-3 sm:py-4 text-[10px] sm:text-xs italic text-gray-600 min-w-[150px]">
                       {req.reason}
                     </td>
-                    <td className="px-4 py-4 text-center">
+                    <td className="px-4 py-3 sm:py-4 text-center">
                       <Badge
                         color={
                           req.status === "Chờ duyệt"
@@ -1139,19 +1178,19 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
                               ? "success"
                               : "failure"
                         }
-                        className="mx-auto w-fit"
+                        className="mx-auto w-fit whitespace-nowrap px-2 py-0.5"
                       >
                         {req.status}
                       </Badge>
                     </td>
-                    <td className="px-4 py-4 text-right">
+                    <td className="px-4 py-3 sm:py-4 text-right">
                       {req.status === "Chờ duyệt" ? (
-                        <div className="flex justify-end gap-2">
+                        <div className="flex justify-end gap-1 sm:gap-2">
                           <button
                             onClick={() =>
                               handleUpdateLeaveStatus(req.id, "Đã duyệt")
                             }
-                            className="px-3 py-1.5 bg-green-100 text-green-700 hover:bg-green-200 font-bold rounded-lg transition-colors text-xs"
+                            className="px-2 py-1 sm:px-3 sm:py-1.5 bg-green-100 text-green-700 hover:bg-green-200 font-bold rounded-lg transition-colors text-[10px] sm:text-xs whitespace-nowrap"
                           >
                             Duyệt
                           </button>
@@ -1159,13 +1198,13 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
                             onClick={() =>
                               handleUpdateLeaveStatus(req.id, "Từ chối")
                             }
-                            className="px-3 py-1.5 bg-red-100 text-red-700 hover:bg-red-200 font-bold rounded-lg transition-colors text-xs"
+                            className="px-2 py-1 sm:px-3 sm:py-1.5 bg-red-100 text-red-700 hover:bg-red-200 font-bold rounded-lg transition-colors text-[10px] sm:text-xs whitespace-nowrap"
                           >
                             Từ chối
                           </button>
                         </div>
                       ) : (
-                        <span className="text-xs text-gray-400 font-medium">
+                        <span className="text-[10px] sm:text-xs text-gray-400 font-medium whitespace-nowrap">
                           Đã xử lý
                         </span>
                       )}

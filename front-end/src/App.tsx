@@ -34,6 +34,11 @@ const App: React.FC = () => {
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
   const [activityToEdit, setActivityToEdit] = useState<Activity | null>(null);
 
+  // ==========================================
+  // STATE MỚI: QUẢN LÝ SIDEBAR TRÊN MOBILE
+  // ==========================================
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isActivityListOpen, setIsActivityListOpen] = useState(false);
@@ -74,9 +79,12 @@ const App: React.FC = () => {
 
   const handleAddCustomer = async (newCustomerData: Partial<Task>) => {
     try {
-      const { data: createdTask } = await api.post("/api/tasks", newCustomerData);
+      const { data: createdTask } = await api.post(
+        "/api/tasks",
+        newCustomerData,
+      );
 
-      // Lạc quan cập nhật UI (Socket sẽ lo phần báo cho máy khác)
+      // Lạc quan cập nhật UI
       setBoardData((prev) => {
         const startCol = prev.columns["col-1"];
         const newTaskIds = [createdTask.id, ...startCol.taskIds];
@@ -146,7 +154,10 @@ const App: React.FC = () => {
     };
 
     try {
-      const { data: savedActivity } = await api.post("/api/activities", activityPayload);
+      const { data: savedActivity } = await api.post(
+        "/api/activities",
+        activityPayload,
+      );
 
       setBoardData((prev) => {
         const task = prev.tasks[activeTaskId];
@@ -191,7 +202,9 @@ const App: React.FC = () => {
         };
       });
 
-      await api.put(`/api/activities/${activityId}`, { completed: newCompletedStatus });
+      await api.put(`/api/activities/${activityId}`, {
+        completed: newCompletedStatus,
+      });
     } catch (error) {
       console.error("Lỗi khi cập nhật:", error);
     }
@@ -295,19 +308,29 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="flex h-screen w-full bg-gray-100 font-sans text-gray-900">
+    <div className="flex h-screen w-full bg-gray-100 font-sans text-gray-900 overflow-hidden">
+      {/* TRUYỀN PROPS CHO SIDEBAR ĐỂ NÓ CÓ THỂ ĐÓNG MỞ */}
       <Sidebar
         currentUser={currentUser}
         currentView={currentView}
         setCurrentView={setCurrentView}
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
       />
 
-      <main className="flex-1 flex flex-col overflow-hidden">
-        <Header currentUser={currentUser} />
-        <div className="flex-1 overflow-hidden flex flex-col">
+      {/* VÙNG MAIN CONTENT BÊN PHẢI (HOẶC FULL MÀN HÌNH TRÊN MOBILE) */}
+      <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
+        {/* TRUYỀN HÀM MỞ SIDEBAR LÊN HEADER */}
+        <Header
+          currentUser={currentUser}
+          onToggleSidebar={() => setIsSidebarOpen(true)}
+        />
+
+        <div className="flex-1 overflow-hidden flex flex-col relative z-0">
           {currentView === "boss" && (
             <BossDashboard currentUser={currentUser} />
           )}
+
           {currentView === "crm" && (
             <div className="flex-1 h-full w-full overflow-hidden bg-gray-50/50">
               <KanbanBoard
@@ -321,8 +344,11 @@ const App: React.FC = () => {
               />
             </div>
           )}
+
           {currentView === "processing" && (
-            <div className="flex-1 p-6 overflow-hidden">
+            <div className="flex-1 p-3 md:p-6 overflow-hidden">
+              {" "}
+              {/* FIX padding mobile */}
               <ProcessingBoard
                 onOpenDetail={handleOpenDetail}
                 onOpenAttachments={handleOpenDocumentModal}
@@ -330,34 +356,36 @@ const App: React.FC = () => {
               />
             </div>
           )}
+
           {currentView === "processed_docs" && (
             <ProcessedDocDashboard currentUser={currentUser} />
           )}
+
           {currentView === "documents" && (
             <DocumentDashboard currentUser={currentUser} />
           )}
+
           {currentView === "hr" && (
             <div className="flex-1 overflow-hidden flex flex-col">
               <EmployeeDashboard currentUser={currentUser} />
             </div>
           )}
+
           {currentView === "weekly_tasks" && (
-            <div className="flex-1 overflow-y-auto flex flex-col">
-              {" "}
-              {/* đổi overflow-hidden → overflow-y-auto */}
+            <div className="flex-1 overflow-y-auto flex flex-col custom-scrollbar">
               <WeeklyTaskAssignment currentUser={currentUser} />
             </div>
           )}
+
           {currentView === "recruitment" && (
-            <div className="flex-1 overflow-x-hidden overflow-y-auto flex flex-col">
-              <RecruitmentBoard
-                onOpenDetail={handleOpenDetail}
-              />
+            <div className="flex-1 overflow-x-hidden overflow-y-auto flex flex-col custom-scrollbar">
+              <RecruitmentBoard onOpenDetail={handleOpenDetail} />
             </div>
           )}
         </div>
       </main>
 
+      {/* CÁC MODAL DÙNG CHUNG */}
       <CustomerModal
         show={isModalOpen}
         onClose={() => setIsModalOpen(false)}

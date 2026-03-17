@@ -34,9 +34,8 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({
       return;
     }
 
-    // Kiểm tra ngày hợp lệ (Ngày kết thúc không được nhỏ hơn ngày bắt đầu)
     if (new Date(endDate) < new Date(startDate)) {
-      alert("Ngày kết thúc không hợp lệ!");
+      alert("Ngày kết thúc không được nhỏ hơn ngày bắt đầu!");
       return;
     }
 
@@ -53,12 +52,14 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({
   };
 
   return (
-    <Modal show={show} onClose={handleClose} size="md">
+    <Modal show={show} onClose={handleClose} size="md" className="md:p-4">
       {/* Header */}
-      <div className="p-5 border-b border-gray-200 flex justify-between items-center bg-gray-50 rounded-t-lg">
+      <div className="p-4 sm:p-5 border-b border-gray-200 flex justify-between items-center bg-gray-50 rounded-t-lg">
         <div>
-          <h3 className="text-xl font-bold text-gray-800">Đơn Xin Nghỉ Phép</h3>
-          <p className="text-sm text-gray-500 mt-1">
+          <h3 className="text-lg sm:text-xl font-bold text-gray-800">
+            Đơn Xin Phép
+          </h3>
+          <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
             Nhân viên: <strong className="text-blue-600">{employeeName}</strong>
           </p>
         </div>
@@ -82,48 +83,59 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({
         </button>
       </div>
 
-      {/* Body Form */}
-      <div className="p-6">
+      {/* Body Form - Cuộn được trên mobile */}
+      <div className="p-4 sm:p-6 overflow-y-auto max-h-[65vh]">
         <form
           id="leave-request-form"
           onSubmit={handleSubmit}
           className="space-y-4"
         >
           <div>
-            <Label htmlFor="leaveType">Loại nghỉ phép (*)</Label>
+            <Label htmlFor="leaveType" className="text-xs sm:text-sm">
+              Loại nghỉ phép (*)
+            </Label>
             <Select
               id="leaveType"
               required
+              sizing="sm"
               value={type}
               onChange={(e) => setType(e.target.value)}
             >
               <option value="">-- Chọn loại --</option>
+              <option value="Vô trễ">Vô trễ (Đi muộn)</option>{" "}
+              {/* TUỲ CHỌN MỚI */}
+              <option value="Về sớm">Về Sớm</option>
               <option value="Nghỉ ốm">Nghỉ ốm</option>
               <option value="Nghỉ phép năm">Nghỉ phép năm</option>
               <option value="Việc cá nhân">Việc cá nhân</option>
               <option value="Nghỉ thai sản">Nghỉ thai sản</option>
               <option value="Nghỉ không lương">Nghỉ không lương</option>
-              <option value="Về sớm">Về Sớm</option>
             </Select>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="startDate">Từ ngày (*)</Label>
+              <Label htmlFor="startDate" className="text-xs sm:text-sm">
+                Từ ngày (*)
+              </Label>
               <TextInput
                 type="date"
                 id="startDate"
                 required
+                sizing="sm"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
               />
             </div>
             <div>
-              <Label htmlFor="endDate">Đến ngày (*)</Label>
+              <Label htmlFor="endDate" className="text-xs sm:text-sm">
+                Đến ngày (*)
+              </Label>
               <TextInput
                 type="date"
                 id="endDate"
                 required
+                sizing="sm"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
               />
@@ -131,26 +143,34 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({
           </div>
 
           <div>
-            <Label htmlFor="reason">Lý do nghỉ (*)</Label>
+            <Label htmlFor="reason" className="text-xs sm:text-sm">
+              Lý do cụ thể (*)
+            </Label>
             <Textarea
               id="reason"
               rows={3}
               required
-              placeholder="Ghi rõ lý do xin nghỉ..."
+              placeholder="Ghi rõ lý do..."
               value={reason}
               onChange={(e) => setReason(e.target.value)}
+              className="text-sm"
             />
           </div>
         </form>
       </div>
 
       {/* Footer */}
-      <div className="p-5 border-t border-gray-200 flex justify-end gap-2 bg-gray-50 rounded-b-lg">
-        <Button color="gray" onClick={handleClose}>
+      <div className="p-4 sm:p-5 border-t border-gray-200 flex justify-end gap-2 bg-gray-50 rounded-b-lg">
+        <Button color="gray" size="sm" onClick={handleClose}>
           Hủy
         </Button>
-        <Button type="submit" form="leave-request-form" color="failure">
-          Gửi Đơn Xin Nghỉ
+        <Button
+          type="submit"
+          form="leave-request-form"
+          color="failure"
+          size="sm"
+        >
+          Gửi Đơn Xin Phép
         </Button>
       </div>
     </Modal>

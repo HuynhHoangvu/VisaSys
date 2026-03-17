@@ -12,7 +12,7 @@ interface EmployeeDetailProps {
   currentUser: AuthUser | null;
   onBack: () => void;
   onCheckIn: (id: string) => void;
-  onCheckOut: (id: string) => void; // ← thêm
+  onCheckOut: (id: string) => void;
 }
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
@@ -28,7 +28,7 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
   employee,
   onBack,
   onCheckIn,
-  onCheckOut, // ← thêm
+  onCheckOut,
   currentUser,
 }) => {
   const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
@@ -45,7 +45,6 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
   const safeAttendanceRecords = employee.attendanceRecords || [];
   const safeSalesRecords = employee.salesRecords || [];
 
-  // ← fix: khai báo trong component
   const todayRecord = safeAttendanceRecords.find((r) => r.date === todayStr);
   const hasCheckedInToday = !!todayRecord;
   const hasCheckedOutToday =
@@ -71,13 +70,11 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
     }
   });
 
-  // Phạt đi trễ
   const attendanceFines = safeAttendanceRecords.reduce(
     (sum, r) => sum + (r.fine || 0),
     0,
   );
 
-  // Phạt về sớm / quên checkout (lưu trong halfDayDeduction)
   const halfDayDeductions = safeAttendanceRecords.reduce(
     (sum, r) => sum + (r.halfDayDeduction || 0),
     0,
@@ -143,13 +140,13 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
   // RENDER
   // ==========================================
   return (
-    <div className="flex-1 p-6 overflow-y-auto space-y-6 bg-gray-50 h-full relative">
+    <div className="flex-1 p-3 sm:p-6 overflow-y-auto space-y-4 sm:space-y-6 bg-gray-50 h-full relative">
       <div
-        className="flex items-center gap-2 text-gray-500 hover:text-orange-500 cursor-pointer font-medium w-fit transition-colors"
+        className="flex items-center gap-1.5 sm:gap-2 text-gray-500 hover:text-orange-500 cursor-pointer font-medium w-fit transition-colors text-sm sm:text-base"
         onClick={onBack}
       >
         <svg
-          className="w-5 h-5"
+          className="w-4 h-4 sm:w-5 sm:h-5"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -165,51 +162,59 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
       </div>
 
       {/* HEADER */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-6 rounded-xl shadow-sm border border-gray-200 gap-4">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-200 gap-4">
+        <div className="flex items-center gap-3 sm:gap-4 w-full xl:w-auto">
           <Avatar
             size="lg"
             rounded
             placeholderInitials={employee.name.charAt(0)}
-            className="bg-orange-400 text-white"
+            className="bg-orange-400 text-white shrink-0 hidden sm:block"
           />
-          <div>
-            <h2 className="text-2xl font-bold text-gray-800">
+          <Avatar
+            size="md"
+            rounded
+            placeholderInitials={employee.name.charAt(0)}
+            className="bg-orange-400 text-white shrink-0 sm:hidden"
+          />
+          <div className="min-w-0">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-800 truncate">
               {employee.name}
             </h2>
             <div className="text-gray-500 font-medium mt-1 flex items-center gap-2 flex-wrap">
-              <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs uppercase tracking-wide font-bold">
+              <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-[10px] sm:text-xs uppercase tracking-wide font-bold">
                 {employee.role}
               </span>
-              <span>
-                • Lương cơ bản:{" "}
+              <span className="text-xs sm:text-sm whitespace-nowrap">
+                • Lương CB:{" "}
                 <strong className="text-gray-800">
                   {formatVND(originalBaseSalary)}
                 </strong>
               </span>
               {salaryAdvances > 0 && (
-                <span className="text-xs text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded border border-red-100">
-                  Đã tạm ứng: -{formatVND(salaryAdvances)}
+                <span className="text-[10px] sm:text-xs text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded border border-red-100 whitespace-nowrap">
+                  Tạm ứng: -{formatVND(salaryAdvances)}
                 </span>
               )}
             </div>
           </div>
         </div>
 
-        <div className="flex gap-3 flex-wrap">
+        <div className="flex gap-2 w-full xl:w-auto flex-wrap sm:flex-nowrap">
           {isDirector && (
             <Button
               color="light"
+              size="sm"
               onClick={() => setIsBonusModalOpen(true)}
-              className="border-gray-200 text-indigo-600 font-bold focus:ring-0 shadow-sm hover:bg-indigo-50"
+              className="flex-1 sm:flex-none border-gray-200 text-indigo-600 font-bold focus:ring-0 shadow-sm hover:bg-indigo-50 whitespace-nowrap"
             >
-              ✨ Điều chỉnh Thưởng/Phạt
+              ✨ Thưởng/Phạt
             </Button>
           )}
           <Button
             color="light"
+            size="sm"
             onClick={() => setIsLeaveModalOpen(true)}
-            className="border-gray-200 text-gray-600 focus:ring-0 shadow-sm hover:bg-gray-50"
+            className="flex-1 sm:flex-none border-gray-200 text-gray-600 focus:ring-0 shadow-sm hover:bg-gray-50 whitespace-nowrap"
           >
             Nghỉ phép
           </Button>
@@ -217,14 +222,16 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
           {/* NÚT CHECK-IN / CHECK-OUT */}
           {!hasCheckedInToday ? (
             <Button
-              className="bg-orange-400 hover:bg-orange-500 focus:ring-0 text-white shadow-md border-none"
+              size="sm"
+              className="w-full sm:w-auto bg-orange-400 hover:bg-orange-500 focus:ring-0 text-white shadow-md border-none"
               onClick={() => onCheckIn(employee.id)}
             >
-              Check-in Hôm Nay
+              Check-in
             </Button>
           ) : !hasCheckedOutToday ? (
             <Button
-              className="bg-blue-500 hover:bg-blue-600 focus:ring-0 text-white shadow-md border-none"
+              size="sm"
+              className="w-full sm:w-auto bg-blue-500 hover:bg-blue-600 focus:ring-0 text-white shadow-md border-none"
               onClick={() => onCheckOut(employee.id)}
             >
               🕔 Check-out
@@ -232,46 +239,47 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
           ) : (
             <Button
               color="success"
+              size="sm"
               disabled
-              className="focus:ring-0 cursor-not-allowed opacity-80"
+              className="w-full sm:w-auto focus:ring-0 cursor-not-allowed opacity-80 whitespace-nowrap"
             >
-              ✅ Đã Check-out {todayRecord?.outTime}
+              ✅ Check-out {todayRecord?.outTime}
             </Button>
           )}
         </div>
       </div>
 
       {/* KPI CARDS */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
         <Card className="border-l-[5px] border-l-blue-500 shadow-sm border-y-0 border-r-0 rounded-xl hover:shadow-md transition-shadow">
-          <p className="text-sm font-bold text-gray-500 uppercase tracking-wide">
+          <p className="text-xs sm:text-sm font-bold text-gray-500 uppercase tracking-wide">
             Lương Thực Nhận (Dự kiến)
           </p>
-          <h4 className="text-2xl font-black text-blue-600 mt-1">
+          <h4 className="text-xl sm:text-2xl font-black text-blue-600 mt-1">
             {formatVND(finalSalary)}
           </h4>
-          <p className="text-xs font-medium text-gray-400 mt-1">
+          <p className="text-[10px] sm:text-xs font-medium text-gray-400 mt-1">
             (Đã trừ tạm ứng + phạt)
           </p>
         </Card>
 
         <Card className="border-l-[5px] border-l-green-500 shadow-sm border-y-0 border-r-0 rounded-xl hover:shadow-md transition-shadow">
-          <p className="text-sm font-bold text-gray-500 uppercase tracking-wide">
+          <p className="text-xs sm:text-sm font-bold text-gray-500 uppercase tracking-wide">
             Tổng Hoa Hồng & Thưởng
           </p>
-          <h4 className="text-2xl font-black text-green-500 mt-1">
+          <h4 className="text-xl sm:text-2xl font-black text-green-500 mt-1">
             +{formatVND(totalBonusAndCommission)}
           </h4>
         </Card>
 
-        <Card className="border-l-[5px] border-l-red-500 shadow-sm border-y-0 border-r-0 rounded-xl hover:shadow-md transition-shadow relative">
-          <p className="text-sm font-bold text-gray-500 uppercase tracking-wide">
+        <Card className="border-l-[5px] border-l-red-500 shadow-sm border-y-0 border-r-0 rounded-xl hover:shadow-md transition-shadow relative pb-10 sm:pb-4">
+          <p className="text-xs sm:text-sm font-bold text-gray-500 uppercase tracking-wide">
             Tổng Phạt & Khấu trừ
           </p>
-          <h4 className="text-2xl font-black text-red-500 mt-1">
+          <h4 className="text-xl sm:text-2xl font-black text-red-500 mt-1">
             -{formatVND(totalFines)}
           </h4>
-          <div className="absolute bottom-2 right-4 flex flex-col items-end text-[11px] font-medium text-gray-400">
+          <div className="absolute bottom-2 right-4 flex flex-col items-end text-[10px] sm:text-[11px] font-medium text-gray-400">
             <span>Đi muộn: -{formatVND(attendanceFines)}</span>
             <span>Về sớm/Quên CO: -{formatVND(halfDayDeductions)}</span>
             <span>Phạt khác: -{formatVND(manualFines)}</span>
@@ -280,24 +288,34 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
       </div>
 
       {/* BẢNG CHI TIẾT */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
         {/* BẢNG LỊCH SỬ CHẤM CÔNG */}
         <Card className="shadow-sm border border-gray-200 rounded-xl p-0 overflow-hidden">
-          <div className="p-4 border-b border-gray-200 bg-gray-50/50">
-            <h5 className="text-lg font-bold text-gray-800">
+          <div className="p-3 sm:p-4 border-b border-gray-200 bg-gray-50/50">
+            <h5 className="text-base sm:text-lg font-bold text-gray-800">
               Lịch sử Chấm công
             </h5>
           </div>
-          <div className="overflow-x-auto max-h-96">
-            <table className="w-full text-sm text-left text-gray-500">
-              <thead className="text-xs text-gray-700 uppercase border-b border-gray-200 bg-gray-50 sticky top-0">
+          <div className="overflow-x-auto max-h-[400px] custom-scrollbar w-full">
+            <table className="w-full min-w-[600px] text-sm text-left text-gray-500">
+              <thead className="text-[10px] sm:text-xs text-gray-700 uppercase border-b border-gray-200 bg-gray-50 sticky top-0 z-10">
                 <tr>
-                  <th className="px-4 py-3 font-bold">Ngày</th>
-                  <th className="px-4 py-3 font-bold">Giờ vào</th>
-                  <th className="px-4 py-3 font-bold">Giờ ra</th>
-                  <th className="px-4 py-3 font-bold">Trạng thái</th>
-                  <th className="px-4 py-3 text-right font-bold">Phạt CI</th>
-                  <th className="px-4 py-3 text-right font-bold">Trừ CO</th>
+                  <th className="px-3 sm:px-4 py-2 sm:py-3 font-bold">Ngày</th>
+                  <th className="px-3 sm:px-4 py-2 sm:py-3 font-bold">
+                    Giờ vào
+                  </th>
+                  <th className="px-3 sm:px-4 py-2 sm:py-3 font-bold">
+                    Giờ ra
+                  </th>
+                  <th className="px-3 sm:px-4 py-2 sm:py-3 font-bold">
+                    Trạng thái
+                  </th>
+                  <th className="px-3 sm:px-4 py-2 sm:py-3 text-right font-bold">
+                    Phạt CI
+                  </th>
+                  <th className="px-3 sm:px-4 py-2 sm:py-3 text-right font-bold">
+                    Trừ CO
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -305,7 +323,7 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
                   <tr>
                     <td
                       colSpan={6}
-                      className="px-4 py-8 text-center text-gray-400 italic"
+                      className="px-4 py-8 text-center text-gray-400 italic text-xs sm:text-sm"
                     >
                       Chưa có dữ liệu chấm công.
                     </td>
@@ -328,31 +346,31 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
                         key={index}
                         className="border-b border-gray-100 last:border-0 hover:bg-blue-50/30 transition-colors"
                       >
-                        <td className="px-4 py-4 font-bold text-gray-800">
+                        <td className="px-3 sm:px-4 py-3 sm:py-4 font-bold text-gray-800 text-xs sm:text-sm">
                           {record.date}
                         </td>
-                        <td className="px-4 py-4 font-medium text-gray-600">
+                        <td className="px-3 sm:px-4 py-3 sm:py-4 font-medium text-gray-600 text-xs sm:text-sm">
                           {record.inTime}
                         </td>
-                        <td className="px-4 py-4 font-medium text-gray-600">
+                        <td className="px-3 sm:px-4 py-3 sm:py-4 font-medium text-gray-600 text-xs sm:text-sm">
                           {record.outTime && record.outTime !== "-"
                             ? record.outTime
                             : "—"}
                         </td>
-                        <td className="px-4 py-4">
+                        <td className="px-3 sm:px-4 py-3 sm:py-4">
                           <span
-                            className={`px-2.5 py-1 rounded-full text-2xs font-bold uppercase tracking-wider ${statusColor}`}
+                            className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full text-[9px] sm:text-[10px] font-bold uppercase tracking-wider whitespace-nowrap ${statusColor}`}
                           >
                             {record.status}
                           </span>
                         </td>
                         <td
-                          className={`px-4 py-4 text-right font-bold ${record.fine > 0 ? "text-red-500" : "text-gray-300"}`}
+                          className={`px-3 sm:px-4 py-3 sm:py-4 text-right font-bold text-xs sm:text-sm ${record.fine > 0 ? "text-red-500" : "text-gray-300"}`}
                         >
                           {record.fine > 0 ? `-${formatVND(record.fine)}` : "—"}
                         </td>
                         <td
-                          className={`px-4 py-4 text-right font-bold ${(record.halfDayDeduction || 0) > 0 ? "text-orange-500" : "text-gray-300"}`}
+                          className={`px-3 sm:px-4 py-3 sm:py-4 text-right font-bold text-xs sm:text-sm ${(record.halfDayDeduction || 0) > 0 ? "text-orange-500" : "text-gray-300"}`}
                         >
                           {(record.halfDayDeduction || 0) > 0
                             ? `-${formatVND(record.halfDayDeduction!)}`
@@ -369,18 +387,24 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
 
         {/* BẢNG BIẾN ĐỘNG THU NHẬP */}
         <Card className="shadow-sm border border-gray-200 rounded-xl p-0 overflow-hidden">
-          <div className="p-4 border-b border-gray-200 bg-gray-50/50 flex justify-between items-center">
-            <h5 className="text-lg font-bold text-gray-800">
+          <div className="p-3 sm:p-4 border-b border-gray-200 bg-gray-50/50 flex justify-between items-center">
+            <h5 className="text-base sm:text-lg font-bold text-gray-800">
               Biến động thu nhập
             </h5>
           </div>
-          <div className="overflow-x-auto max-h-96">
-            <table className="w-full text-sm text-left text-gray-500">
-              <thead className="text-xs text-gray-700 uppercase border-b border-gray-200 bg-gray-50 sticky top-0">
+          <div className="overflow-x-auto max-h-[400px] custom-scrollbar w-full">
+            <table className="w-full min-w-[500px] text-sm text-left text-gray-500">
+              <thead className="text-[10px] sm:text-xs text-gray-700 uppercase border-b border-gray-200 bg-gray-50 sticky top-0 z-10">
                 <tr>
-                  <th className="px-4 py-3 font-bold">Nguồn / Dịch vụ</th>
-                  <th className="px-4 py-3 font-bold w-1/3">Ghi chú</th>
-                  <th className="px-4 py-3 text-right font-bold">Số tiền</th>
+                  <th className="px-3 sm:px-4 py-2 sm:py-3 font-bold w-1/3">
+                    Nguồn / Dịch vụ
+                  </th>
+                  <th className="px-3 sm:px-4 py-2 sm:py-3 font-bold w-1/3">
+                    Ghi chú
+                  </th>
+                  <th className="px-3 sm:px-4 py-2 sm:py-3 text-right font-bold">
+                    Số tiền
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -388,7 +412,7 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
                   <tr>
                     <td
                       colSpan={3}
-                      className="px-4 py-8 text-center text-gray-400 italic"
+                      className="px-4 py-8 text-center text-gray-400 italic text-xs sm:text-sm"
                     >
                       Chưa có dữ liệu.
                     </td>
@@ -399,11 +423,11 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
                       key={sale.id}
                       className="border-b border-gray-100 last:border-0 hover:bg-blue-50/30 transition-colors"
                     >
-                      <td className="px-4 py-4">
-                        <p className="font-bold text-gray-900">
+                      <td className="px-3 sm:px-4 py-3 sm:py-4">
+                        <p className="font-bold text-gray-900 text-xs sm:text-sm">
                           {sale.customer}
                         </p>
-                        <p className="text-xs font-medium text-gray-500 mt-0.5">
+                        <p className="text-[10px] sm:text-xs font-medium text-gray-500 mt-0.5">
                           {sale.service === "Tạm ứng" ? (
                             <span className="text-red-500 bg-red-50 px-1 py-0.5 rounded border border-red-100">
                               Tạm ứng lương
@@ -413,11 +437,11 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
                           )}
                         </p>
                       </td>
-                      <td className="px-4 py-4 text-xs italic text-gray-600">
+                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-[10px] sm:text-xs italic text-gray-600">
                         {sale.note || "Hệ thống tự động ghi nhận"}
                       </td>
                       <td
-                        className={`px-4 py-4 text-right font-bold ${sale.profit < 0 ? "text-red-500" : "text-green-600"}`}
+                        className={`px-3 sm:px-4 py-3 sm:py-4 text-right font-bold text-xs sm:text-sm whitespace-nowrap ${sale.profit < 0 ? "text-red-500" : "text-green-600"}`}
                       >
                         {sale.profit > 0 ? "+" : "-"}
                         {formatVND(Math.abs(sale.profit))}
@@ -436,18 +460,20 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
         show={isBonusModalOpen}
         onClose={() => setIsBonusModalOpen(false)}
         size="md"
+        className="md:p-4"
       >
-        <div className="p-5 border-b border-gray-200 bg-indigo-50 rounded-t-lg">
-          <h3 className="text-lg font-bold text-indigo-800">
+        <div className="p-4 sm:p-5 border-b border-gray-200 bg-indigo-50 rounded-t-lg">
+          <h3 className="text-base sm:text-lg font-bold text-indigo-800">
             Điều chỉnh lương/thưởng thủ công
           </h3>
         </div>
-        <div className="p-5 space-y-4">
+        <div className="p-4 sm:p-5 space-y-3 sm:space-y-4">
           <div>
-            <label className="font-bold text-sm text-gray-700">
+            <label className="font-bold text-xs sm:text-sm text-gray-700">
               Loại điều chỉnh
             </label>
             <Select
+              sizing="sm"
               value={bonusType}
               onChange={(e) => setBonusType(e.target.value)}
               className="mt-1 font-medium"
@@ -458,10 +484,11 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
             </Select>
           </div>
           <div>
-            <label className="font-bold text-sm text-gray-700">
+            <label className="font-bold text-xs sm:text-sm text-gray-700">
               Số tiền (VNĐ)
             </label>
             <TextInput
+              sizing="sm"
               type="text"
               placeholder="Ví dụ: 500000"
               value={bonusAmount}
@@ -470,22 +497,28 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
             />
           </div>
           <div>
-            <label className="font-bold text-sm text-gray-700">
+            <label className="font-bold text-xs sm:text-sm text-gray-700">
               Lý do / Ghi chú
             </label>
             <TextInput
-              placeholder="Ví dụ: Thưởng nóng chốt deal lớn..."
+              sizing="sm"
+              placeholder="Ví dụ: Thưởng nóng..."
               value={bonusNote}
               onChange={(e) => setBonusNote(e.target.value)}
               className="mt-1"
             />
           </div>
         </div>
-        <div className="p-5 border-t border-gray-200 flex justify-end gap-2 bg-gray-50 rounded-b-lg">
-          <Button color="gray" onClick={() => setIsBonusModalOpen(false)}>
+        <div className="p-4 sm:p-5 border-t border-gray-200 flex justify-end gap-2 bg-gray-50 rounded-b-lg">
+          <Button
+            size="sm"
+            color="gray"
+            onClick={() => setIsBonusModalOpen(false)}
+          >
             Hủy
           </Button>
           <Button
+            size="sm"
             style={{ backgroundColor: "#4f46e5" }}
             onClick={handleAddManualBonus}
           >
