@@ -680,11 +680,19 @@ const isProcessingDept = ["xử lý hồ sơ", "hồ sơ", "trợ lý giám đ�
                                         {task.assignedTo && (
                                           <div className="flex items-center gap-1 mt-1 sm:mt-0.5">
                                             <div className="w-4 h-4 sm:w-3.5 sm:h-3.5 rounded-full bg-indigo-50 flex items-center justify-center text-[9px] sm:text-[7px] font-bold text-indigo-600 border border-indigo-100">
-                                              {task.assignedTo.charAt(0)}
+                                              {task.assignedTo
+                                                .trim()
+                                                .split(" ")
+                                                .pop()
+                                                ?.charAt(0)
+                                                .toUpperCase()}
                                             </div>
                                             <span className="text-[10px] sm:text-[9px] text-gray-500 font-medium">
                                               Sale:{" "}
-                                              {task.assignedTo.split(" ")[0]}
+                                              {task.assignedTo
+                                                .trim()
+                                                .split(" ")
+                                                .pop()}
                                             </span>
                                           </div>
                                         )}
@@ -916,10 +924,15 @@ const isProcessingDept = ["xử lý hồ sơ", "hồ sơ", "trợ lý giám đ�
                         {task.assignedTo ? (
                           <div className="flex items-center gap-1.5">
                             <div className="w-5 h-5 rounded-full bg-indigo-100 flex items-center justify-center text-[10px] font-bold text-indigo-700">
-                              {task.assignedTo.charAt(0)}
+                              {task.assignedTo
+                                .trim()
+                                .split(" ")
+                                .pop()
+                                ?.charAt(0)
+                                .toUpperCase()}
                             </div>
                             <span className="text-sm">
-                              {task.assignedTo.split(" ")[0]}
+                              {task.assignedTo.trim().split(" ").pop()}
                             </span>
                           </div>
                         ) : (
