@@ -60,7 +60,13 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
     userRole === "quản lý" ||
     userRole === "trưởng phòng" ||
     userRole === "admin";
-  const canSeeAll = isBoss || isManager;
+
+
+const isProcessingDept = ["xử lý hồ sơ", "hồ sơ", "trợ lý giám đốc"].some((d) =>
+  currentUser.department?.toLowerCase().includes(d),
+);
+  // Gom tất cả lại thành quyền canSeeAll
+  const canSeeAll = isBoss || isManager || isProcessingDept;
 
   useEffect(() => {
     const fetchAlerts = async () => {
