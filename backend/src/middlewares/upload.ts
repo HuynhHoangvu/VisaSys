@@ -13,29 +13,22 @@ let storage: Storage;
 const keyFilename = path.join(process.cwd(), "config", "google-key.json");
 
 if (fs.existsSync(keyFilename)) {
-  // 1. CHẠY LOCAL: Dùng thẳng file JSON
+  // 1. CHẠY LOCAL
   storage = new Storage({ keyFilename });
   console.log("✅ Đã kết nối Google Cloud bằng file google-key.json");
 } else if (process.env.GCLOUD_CREDENTIALS_JSON) {
-  // 2. CHẠY TRÊN RAILWAY: Dùng file JSON dán nguyên cục vào biến môi trường
+  // 2. CHẠY TRÊN RAILWAY: Bê nguyên file JSON vào
   try {
     const credentials = JSON.parse(process.env.GCLOUD_CREDENTIALS_JSON);
-    
-    // Sửa lỗi JWT Signature do Railway đổi \n thành chuỗi thường
-    if (credentials.private_key) {
-      credentials.private_key = credentials.private_key.replace(/\\n/g, '\n');
-    }
-    
     storage = new Storage({ credentials });
-    console.log("✅ Đã kết nối Google Cloud bằng biến GCLOUD_CREDENTIALS_JSON");
+    console.log("✅ Đã kết nối Google Cloud bằng biến môi trường GCLOUD_CREDENTIALS_JSON");
   } catch (error) {
-    console.error("❌ Lỗi parse biến môi trường GCLOUD_CREDENTIALS_JSON", error);
-    storage = new Storage(); // Fallback an toàn
+    console.error("❌ Lỗi parse biến môi trường GCLOUD_CREDENTIALS_JSON:", error);
+    storage = new Storage();
   }
 } else {
-  // 3. FALLBACK cuối cùng (nếu cấu hình sai)
   storage = new Storage();
-  console.log("⚠️ Cảnh báo: Google Cloud khởi tạo không có cấu hình rõ ràng.");
+  console.log("⚠️ Cảnh báo: Chưa có cấu hình kết nối Google Cloud");
 }
 
 export const bucket = storage.bucket(process.env.GCS_BUCKET_NAME || "fly-visa-document");
