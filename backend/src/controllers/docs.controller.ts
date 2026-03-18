@@ -3,7 +3,7 @@ import { prisma } from "../../lib/prisma.js";
 import { getIO } from "../socket.js";
 import fs from "fs";
 import path from "path";
-import { bucket, uploadToGCS } from "../middlewares/upload.js"; // Import từ file upload
+import { bucket, uploadToGCS } from "../middlewares/upload.js"; 
 
 // ==========================================
 // XỬ LÝ THƯ MỤC
@@ -21,7 +21,9 @@ export const createFolder = async (req: Request, res: Response) => {
   try {
     const name = req.body.name as string;
     let parentId: string | null = null;
-    if (typeof req.body.parentId === "string" && req.body.parentId !== "null") parentId = req.body.parentId;
+    if (typeof req.body.parentId === "string" && req.body.parentId !== "null") {
+      parentId = req.body.parentId;
+    }
     
     const newFolder = await prisma.docFolder.create({ data: { name, parentId } });
     getIO().emit("docs_changed");
@@ -39,7 +41,7 @@ export const deleteFolder = async (req: Request, res: Response) => {
     for (const file of files) {
       if (file.cloudinaryPublicId) {
         // Xóa trên Google Cloud
-        await bucket.file(file.cloudinaryPublicId).delete().catch(()=>console.log("Không tìm thấy file trên GCS"));
+        await bucket.file(file.cloudinaryPublicId).delete().catch(() => console.log("Không tìm thấy file trên GCS"));
       } else if (file.fileUrl && file.fileUrl.startsWith("/uploads")) {
         const filePath = path.join(process.cwd(), file.fileUrl);
         if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
@@ -53,6 +55,20 @@ export const deleteFolder = async (req: Request, res: Response) => {
     res.json({ message: "Xóa thư mục thành công" });
   } catch (error) {
     res.status(500).json({ error: "Lỗi xóa thư mục" });
+  }
+};
+
+export const moveFolder = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id as string;
+    const { parentId } = req.body;
+    if (id === parentId) return res.status(400).json({ error: "Không thể di chuyển thư mục vào chính nó" });
+
+    const updatedFolder = await prisma.docFolder.update({ where: { id }, data: { parentId } });
+    getIO().emit("docs_changed");
+    res.json(updatedFolder);
+  } catch (error) {
+    res.status(500).json({ error: "Lỗi khi di chuyển thư mục" });
   }
 };
 
@@ -72,17 +88,20 @@ export const uploadFile = async (req: Request, res: Response) => {
   try {
     if (!req.file) return res.status(400).json({ error: "Chưa chọn file" });
 
-    const uploadedBy = (req.body.uploadedBy as string) || "An danh";
+    const uploadedBy = (req.body.uploadedBy as string) || "Ẩn danh";
     const size = (req.body.size as string) || "0 KB";
 
     let folderId: string | null = null;
-    if (typeof req.body.folderId === "string" && req.body.folderId !== "null") folderId = req.body.folderId;
-    else if (Array.isArray(req.body.folderId)) folderId = req.body.folderId[0] !== "null" ? req.body.folderId[0] : null;
+    if (typeof req.body.folderId === "string" && req.body.folderId !== "null") {
+      folderId = req.body.folderId;
+    } else if (Array.isArray(req.body.folderId)) {
+      folderId = req.body.folderId[0] !== "null" ? req.body.folderId[0] : null;
+    }
 
     const decodedName = Buffer.from(req.file.originalname, "latin1").toString("utf8");
     
-    // Dùng chung hàm helper GCS vừa tạo
-    const gcsResult = await uploadToGCS(req.file.buffer, "flyvisa-documents", decodedName);
+    // Dùng chung hàm helper GCS vừa tạo (Lưu vào thư mục 'documents' trên bucket)
+    const gcsResult = await uploadToGCS(req.file.buffer, "documents", decodedName);
 
     const newFile = await prisma.docFile.create({
       data: {
@@ -98,8 +117,8 @@ export const uploadFile = async (req: Request, res: Response) => {
     getIO().emit("docs_changed");
     res.status(201).json(newFile);
   } catch (error) {
-    console.error("Loi upload GCS:", error);
-    res.status(500).json({ error: "Loi upload file len Google Cloud" });
+    console.error("Lỗi upload GCS:", error);
+    res.status(500).json({ error: "Lỗi hệ thống khi tải file lên Google Cloud" });
   }
 };
 
@@ -110,7 +129,7 @@ export const deleteFile = async (req: Request, res: Response) => {
     
     if (file) {
       if (file.cloudinaryPublicId) {
-        await bucket.file(file.cloudinaryPublicId).delete().catch(()=>console.log("File ko ton tai tren GCS"));
+        await bucket.file(file.cloudinaryPublicId).delete().catch(() => console.log("File không tồn tại trên GCS"));
       } else if (file.fileUrl && file.fileUrl.startsWith("/uploads")) {
         const filePath = path.join(process.cwd(), file.fileUrl);
         if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
@@ -139,20 +158,6 @@ export const renameFile = async (req: Request, res: Response) => {
   }
 };
 
-export const moveFolder = async (req: Request, res: Response) => {
-  try {
-    const id = req.params.id as string;
-    const { parentId } = req.body;
-    if (id === parentId) return res.status(400).json({ error: "Không thể di chuyển thư mục vào chính nó" });
-
-    const updatedFolder = await prisma.docFolder.update({ where: { id }, data: { parentId } });
-    getIO().emit("docs_changed");
-    res.json(updatedFolder);
-  } catch (error) {
-    res.status(500).json({ error: "Lỗi khi di chuyển thư mục" });
-  }
-};
-
 export const moveFile = async (req: Request, res: Response) => {
   try {
     const id = req.params.id as string;
@@ -162,6 +167,7 @@ export const moveFile = async (req: Request, res: Response) => {
       where: { id },
       data: { folderId: folderId === "null" ? null : folderId },
     });
+    
     getIO().emit("docs_changed");
     res.json(updatedFile);
   } catch (error) {

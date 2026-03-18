@@ -9,26 +9,36 @@ import fs from "fs";
 // ==========================================
 let storage: Storage;
 
-// Trỏ tới thư mục backend/config/google-key.json
+// Trỏ tới thư mục backend/config/google-key.json (dành cho máy dev local)
 const keyFilename = path.join(process.cwd(), "config", "google-key.json");
 
 if (fs.existsSync(keyFilename)) {
-  // 1. CHẠY LOCAL: Dùng thẳng file JSON (Tuyệt đối không bao giờ lỗi Key)
+  // 1. CHẠY LOCAL: Dùng thẳng file JSON
   storage = new Storage({ keyFilename });
   console.log("✅ Đã kết nối Google Cloud bằng file google-key.json");
+} else if (process.env.GCLOUD_CREDENTIALS_JSON) {
+  // 2. CHẠY TRÊN RAILWAY: Dùng file JSON dán nguyên cục vào biến môi trường
+  try {
+    const credentials = JSON.parse(process.env.GCLOUD_CREDENTIALS_JSON);
+    
+    // Sửa lỗi JWT Signature do Railway đổi \n thành chuỗi thường
+    if (credentials.private_key) {
+      credentials.private_key = credentials.private_key.replace(/\\n/g, '\n');
+    }
+    
+    storage = new Storage({ credentials });
+    console.log("✅ Đã kết nối Google Cloud bằng biến GCLOUD_CREDENTIALS_JSON");
+  } catch (error) {
+    console.error("❌ Lỗi parse biến môi trường GCLOUD_CREDENTIALS_JSON", error);
+    storage = new Storage(); // Fallback an toàn
+  }
 } else {
-  // 2. CHẠY TRÊN RAILWAY: Dùng biến môi trường (Railway xử lý xuống dòng rất tốt)
-  storage = new Storage({
-    projectId: process.env.GCS_PROJECT_ID,
-    credentials: {
-      client_email: process.env.GCS_CLIENT_EMAIL,
-      private_key: process.env.GCS_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-    },
-  });
-  console.log("✅ Đã kết nối Google Cloud bằng biến môi trường (Environment Variables)");
+  // 3. FALLBACK cuối cùng (nếu cấu hình sai)
+  storage = new Storage();
+  console.log("⚠️ Cảnh báo: Google Cloud khởi tạo không có cấu hình rõ ràng.");
 }
 
-export const bucket = storage.bucket(process.env.GCS_BUCKET_NAME || "");
+export const bucket = storage.bucket(process.env.GCS_BUCKET_NAME || "fly-visa-document");
 
 // ==========================================
 // CẤU HÌNH MULTER (LƯU VÀO RAM TẠM THỜI)
@@ -73,8 +83,8 @@ export const uploadToGCS = (
     });
     
     stream.on("finish", () => {
-      const publicUrl = `https://storage.googleapis.com/${bucket.name}/${file.name}`;
-      // Trả về url public và "publicId" (chính là đường dẫn trên GCS để sau này xóa)
+      // Ép encodeURI để phòng trường hợp tên file có ký tự dị biệt
+      const publicUrl = `https://storage.googleapis.com/${bucket.name}/${encodeURI(file.name)}`;
       resolve({ url: publicUrl, publicId: file.name });
     });
 
