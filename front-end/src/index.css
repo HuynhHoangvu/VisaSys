@@ -14,6 +14,8 @@
   /* Màu vàng cam của Fly Visa */
   --color-flygold-hover: #D98C12;
   /* Màu đậm hơn khi hover chuột */
+  /* THÊM DÒNG NÀY ĐỂ KÍCH HOẠT DARK MODE THEO CLASS */
+    --dark-mode: class;
 }
 
 /* Tùy chỉnh thanh cuộn cho Column */

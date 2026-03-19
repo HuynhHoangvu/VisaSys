@@ -10,11 +10,42 @@ const FlyServicesDashboard: React.FC = () => {
 
   // DỮ LIỆU HỒ SƠ HĐLĐ
   const financialDocs = [
-    { id: 1, name: "Hợp đồng lao động", desc: "Ghi rõ vị trí, mức lương, thời hạn, chữ ký", price: "2.500.000 - 4.500.000" },
-    { id: 2, name: "Quyết định bổ nhiệm", desc: "Xác nhận vị trí, chức vụ trong công ty", price: "1.000.000" },
-    { id: 3, name: "Xác nhận lương", desc: "Mức lương nhận hàng tháng, có đóng dấu Cty", price: "1.000.000" },
-    { id: 4, name: "Sao kê lương", desc: "Dòng tiền chuyển khoản 6 - 12 tháng gần nhất", price: "6.000.000 - 8.000.000" },
-    { id: 5, name: "Tham gia BHXH", desc: "Giấy xác nhận đóng bảo hiểm xã hội 2 đến 3 năm", price: "6.000.000 - 8.000.000" },
+    {
+      id: 1,
+      name: "Hợp đồng lao động",
+      desc: "Ghi rõ vị trí, mức lương, thời hạn, chữ ký",
+      price: "2.500.000 - 4.500.000",
+    },
+    {
+      id: 2,
+      name: "Quyết định bổ nhiệm",
+      desc: "Xác nhận vị trí, chức vụ trong công ty",
+      price: "1.000.000",
+    },
+    {
+      id: 3,
+      name: "Xác nhận lương",
+      desc: "Mức lương nhận hàng tháng, có đóng dấu Cty",
+      price: "1.000.000",
+    },
+    {
+      id: 4,
+      name: "Sao kê lương",
+      desc: "Dòng tiền chuyển khoản 6 - 12 tháng gần nhất",
+      price: "6.000.000 - 8.000.000",
+    },
+    {
+      id: 5,
+      name: "Tham gia BHXH",
+      desc: "Giấy xác nhận đóng bảo hiểm xã hội 2 đến 3 năm",
+      price: "6.000.000 - 8.000.000",
+    },
+    {
+      id: 6,
+      name: "Chứng minh kinh nghiệm",
+      desc: "Chứng minh kinh nghiệm làm việc liên quan đến ngành nghề lao động định cư",
+      price: "15.000.000",
+    },
   ];
 
   // DỮ LIỆU DỊCH VỤ HỖ TRỢ KHÁC
