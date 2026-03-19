@@ -244,7 +244,7 @@ const DocumentModal: React.FC<DocumentModalProps> = ({
   );
 
   return (
-    <Modal show={show} onClose={onClose} size="6xl">
+    <Modal show={show} onClose={onClose} size="6xl" dismissible>
       <div className="p-5 border-b border-gray-200 bg-blue-50/50 rounded-t-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h3 className="text-xl font-bold text-blue-800 flex items-center gap-2">
@@ -285,7 +285,7 @@ const DocumentModal: React.FC<DocumentModalProps> = ({
       </div>
 
       {/* ✅ GỌI COMPONENT LỌC GIẤY TỜ VỪA TẠO VÀO ĐÂY */}
-      
+
       <DocumentFilterBar
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}

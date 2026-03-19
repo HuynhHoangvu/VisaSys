@@ -3,24 +3,32 @@ import {
   getFolders,
   createFolder,
   deleteFolder,
+  moveFolder, // <-- Bổ sung hàm này
   getFiles,
   uploadFile,
   deleteFile,
   renameFile,
+  moveFile,   // <-- Bổ sung hàm này
 } from "../controllers/processedDocs.controller.js";
 import { uploadProcessedDoc } from "../middlewares/upload.js";
 
 const router = Router();
 
-// Routes Thư mục
+// ==========================================
+// ROUTES THƯ MỤC (FOLDERS)
+// ==========================================
 router.get("/folders", getFolders);
 router.post("/folders", createFolder);
 router.delete("/folders/:id", deleteFolder);
+router.put("/folders/:id/move", moveFolder); // Cập nhật vị trí thư mục (kéo thả)
 
-// Routes File
+// ==========================================
+// ROUTES FILE
+// ==========================================
 router.get("/files", getFiles);
 router.post("/files/upload", uploadProcessedDoc.single("file"), uploadFile);
 router.delete("/files/:id", deleteFile);
 router.put("/files/:id/rename", renameFile);
+router.put("/files/:id/move", moveFile);     // Cập nhật thư mục cho file
 
 export default router;

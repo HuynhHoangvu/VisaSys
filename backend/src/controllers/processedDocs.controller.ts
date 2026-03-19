@@ -1,7 +1,9 @@
 import { Request, Response } from "express";
 import { prisma } from "../../lib/prisma.js";
 import { getIO } from "../socket.js";
-import { bucket, uploadToGCS } from "../middlewares/upload.js"; // Import từ file upload
+import { bucket, uploadToGCS } from "../middlewares/upload.js"; 
+import fs from "fs";
+import path from "path";
 
 // --- XỬ LÝ THƯ MỤC ---
 export const getFolders = async (req: Request, res: Response) => {
@@ -27,14 +29,35 @@ export const createFolder = async (req: Request, res: Response) => {
   }
 };
 
+// BỔ SUNG: Di chuyển thư mục
+export const moveFolder = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id as string;
+    const { parentId } = req.body;
+    if (id === parentId) return res.status(400).json({ error: "Không thể di chuyển vào chính nó" });
+
+    const updated = await prisma.processedFolder.update({ where: { id }, data: { parentId: parentId === "null" ? null : parentId } });
+    getIO().emit("docs_changed");
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({ error: "Lỗi di chuyển thư mục" });
+  }
+};
+
 export const deleteFolder = async (req: Request, res: Response) => {
   try {
     const id = req.params.id as string;
     const files = await prisma.processedFile.findMany({ where: { folderId: id } });
     
     for (const file of files) {
-      if ((file as any).cloudinaryPublicId) {
-        await bucket.file((file as any).cloudinaryPublicId).delete().catch(()=>console.log("Khong thay file tren GCS"));
+      // Xóa trên GCS
+      if (file.cloudinaryPublicId) {
+        await bucket.file(file.cloudinaryPublicId).delete().catch(() => console.log("Không tìm thấy trên GCS"));
+      } 
+      // Xóa nếu lỡ có file local (đồng bộ với file doc)
+      else if (file.fileUrl?.startsWith("/uploads")) {
+        const filePath = path.join(process.cwd(), file.fileUrl);
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
       }
     }
 
@@ -70,7 +93,7 @@ export const uploadFile = async (req: Request, res: Response) => {
 
     const decodedName = Buffer.from(req.file.originalname, "latin1").toString("utf8");
 
-    // Dùng chung hàm uploadToGCS
+    // Upload vào folder riêng trên GCS để dễ quản lý
     const result = await uploadToGCS(req.file.buffer, "flyvisa-processed-docs", decodedName);
 
     const newFile = await prisma.processedFile.create({
@@ -80,7 +103,7 @@ export const uploadFile = async (req: Request, res: Response) => {
         uploadedBy,
         fileUrl: result.url,
         folderId,
-        cloudinaryPublicId: result.publicId, // Lưu tên file GCS
+        cloudinaryPublicId: result.publicId, 
       },
     });
 
@@ -92,13 +115,34 @@ export const uploadFile = async (req: Request, res: Response) => {
   }
 };
 
+// BỔ SUNG: Di chuyển file (Giống file doc)
+export const moveFile = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id as string;
+    const { folderId } = req.body;
+    const updated = await prisma.processedFile.update({
+      where: { id },
+      data: { folderId: folderId === "null" ? null : folderId }
+    });
+    getIO().emit("docs_changed");
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({ error: "Lỗi di chuyển file" });
+  }
+};
+
 export const deleteFile = async (req: Request, res: Response) => {
   try {
     const id = req.params.id as string;
     const file = await prisma.processedFile.findUnique({ where: { id } });
     
-    if (file && (file as any).cloudinaryPublicId) {
-      await bucket.file((file as any).cloudinaryPublicId).delete().catch(()=>console.log("Khong the xoa GCS file"));
+    if (file) {
+      if (file.cloudinaryPublicId) {
+        await bucket.file(file.cloudinaryPublicId).delete().catch(() => console.log("Không thể xóa GCS file"));
+      } else if (file.fileUrl?.startsWith("/uploads")) {
+        const filePath = path.join(process.cwd(), file.fileUrl);
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      }
     }
 
     await prisma.processedFile.delete({ where: { id } });
@@ -113,13 +157,12 @@ export const renameFile = async (req: Request, res: Response) => {
   try {
     const id = req.params.id as string;
     const { name } = req.body;
-
     if (!name) return res.status(400).json({ error: "Tên file không được để trống" });
 
     const updatedFile = await prisma.processedFile.update({ where: { id }, data: { name } });
     getIO().emit("docs_changed");
     res.json(updatedFile);
   } catch (error) {
-    res.status(500).json({ error: "Lỗi khi đổi tên file" });
+    res.status(500).json({ error: "Lỗi đổi tên file" });
   }
 };

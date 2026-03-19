@@ -25,20 +25,22 @@ const ProcessedDocDashboard: React.FC<ProcessedDocDashboardProps> = ({
   const [isAddFolderModalOpen, setIsAddFolderModalOpen] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // State kéo thả tải file từ ngoài vào
   const [isDragging, setIsDragging] = useState(false);
+
+  // ==========================================
+  // BỔ SUNG: STATE KÉO THẢ DI CHUYỂN FILE/FOLDER
+  // ==========================================
+  const [draggedFolderId, setDraggedFolderId] = useState<string | null>(null);
+  const [draggedDocFileId, setDraggedDocFileId] = useState<string | null>(null);
 
   // Đổi tên file
   const [editingFileId, setEditingFileId] = useState<string | null>(null);
   const [editFileName, setEditFileName] = useState("");
 
-  // ==========================================
-  // SEARCH STATE
-  // ==========================================
   const [searchQuery, setSearchQuery] = useState("");
 
-  // ==========================================
-  // FETCH
-  // ==========================================
   const fetchData = useCallback(async () => {
     try {
       const [foldersRes, filesRes] = await Promise.all([
@@ -53,9 +55,7 @@ const ProcessedDocDashboard: React.FC<ProcessedDocDashboardProps> = ({
   }, []);
 
   useEffect(() => {
-    const loadInitialData = async () => {
-      await fetchData();
-    };
+    const loadInitialData = async () => await fetchData();
     loadInitialData();
     socket.on("docs_changed", fetchData);
     return () => {
@@ -63,9 +63,6 @@ const ProcessedDocDashboard: React.FC<ProcessedDocDashboardProps> = ({
     };
   }, [fetchData]);
 
-  // ==========================================
-  // FILTER THEO SEARCH
-  // ==========================================
   const displayFolders = useMemo(() => {
     if (!searchQuery)
       return folders.filter((f) => f.parentId === currentFolderId);
@@ -84,7 +81,9 @@ const ProcessedDocDashboard: React.FC<ProcessedDocDashboardProps> = ({
     );
   }, [files, currentFolderId, searchQuery]);
 
-  const totalDisplay =
+  const totalDisplay = displayFolders.length + displayFiles.length;
+
+  const totalItemsInFolder =
     folders.filter((f) => f.parentId === currentFolderId).length +
     files.filter((f) => f.folderId === currentFolderId).length;
 
@@ -107,9 +106,63 @@ const ProcessedDocDashboard: React.FC<ProcessedDocDashboardProps> = ({
     setSearchQuery("");
   };
 
+  const getErrorMessage = (error: unknown) => {
+    if (error instanceof Error) return error.message;
+    if (typeof error === "string") return error;
+    try {
+      return JSON.stringify(error);
+    } catch {
+      return "Lỗi không xác định";
+    }
+  };
+
   // ==========================================
-  // TẠO THƯ MỤC
+  // API GỌI THÊM: MOVE FOLDER / FILE
   // ==========================================
+  const handleMoveFolder = async (targetFolderId: string) => {
+    if (!draggedFolderId || draggedFolderId === targetFolderId) return;
+    try {
+      const response = await fetch(
+        `${API_URL}/api/processed-docs/folders/${draggedFolderId}/move`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ parentId: targetFolderId }),
+        },
+      );
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Không thể di chuyển thư mục");
+      }
+      setDraggedFolderId(null);
+      fetchData();
+    } catch (error) {
+      alert(`Lỗi khi di chuyển thư mục:\n${getErrorMessage(error)}`);
+    }
+  };
+
+  const handleMoveFile = async (targetFolderId: string) => {
+    if (!draggedDocFileId) return;
+    try {
+      const response = await fetch(
+        `${API_URL}/api/processed-docs/files/${draggedDocFileId}/move`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ folderId: targetFolderId }),
+        },
+      );
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Không thể di chuyển file");
+      }
+      setDraggedDocFileId(null);
+      fetchData();
+    } catch (error) {
+      alert(`Lỗi khi di chuyển file:\n${getErrorMessage(error)}`);
+    }
+  };
+
   const handleCreateFolder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newFolderName.trim()) return;
@@ -126,13 +179,10 @@ const ProcessedDocDashboard: React.FC<ProcessedDocDashboardProps> = ({
       setIsAddFolderModalOpen(false);
       fetchData();
     } catch (error) {
-      alert("Lỗi khi tạo thư mục! " + error);
+      alert(`Lỗi khi tạo thư mục:\n${getErrorMessage(error)}`);
     }
   };
 
-  // ==========================================
-  // XÓA
-  // ==========================================
   const handleDeleteFolder = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     if (
@@ -145,7 +195,7 @@ const ProcessedDocDashboard: React.FC<ProcessedDocDashboardProps> = ({
           method: "DELETE",
         });
       } catch (error) {
-        alert("Lỗi khi xóa thư mục! " + error);
+        alert(`Lỗi khi xóa thư mục:\n${getErrorMessage(error)}`);
       }
     }
   };
@@ -157,14 +207,11 @@ const ProcessedDocDashboard: React.FC<ProcessedDocDashboardProps> = ({
           method: "DELETE",
         });
       } catch (error) {
-        alert("Lỗi khi xóa file! " + error);
+        alert(`Lỗi khi xóa file:\n${getErrorMessage(error)}`);
       }
     }
   };
 
-  // ==========================================
-  // UPLOAD
-  // ==========================================
   const processUploadFile = async (file: File) => {
     const formData = new FormData();
     formData.append("file", file);
@@ -178,34 +225,42 @@ const ProcessedDocDashboard: React.FC<ProcessedDocDashboardProps> = ({
       });
       if (fileInputRef.current) fileInputRef.current.value = "";
     } catch (error) {
-      alert("Lỗi upload file! " + error);
+      alert(`Lỗi upload file "${file.name}":\n${getErrorMessage(error)}`);
     }
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      await processUploadFile(e.target.files[0]);
+      const filesToUpload = Array.from(e.target.files);
+      for (const file of filesToUpload) await processUploadFile(file);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
-  // Logic kéo thả
+  // Logic kéo thả TẢI FILE TỪ NGOÀI
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
-    setIsDragging(true);
+    if (draggedFolderId || draggedDocFileId) return; // Không hiển thị màn overlay nếu đang kéo thả file nội bộ
+    if (e.dataTransfer.types.includes("Files")) setIsDragging(true);
   };
   const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
   };
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      processUploadFile(e.dataTransfer.files[0]);
+    if (
+      !draggedFolderId &&
+      !draggedDocFileId &&
+      e.dataTransfer.files &&
+      e.dataTransfer.files.length > 0
+    ) {
+      const filesToDrop = Array.from(e.dataTransfer.files);
+      for (const file of filesToDrop) await processUploadFile(file);
     }
   };
 
-  // Logic đổi tên
   const handleRenameSubmit = async (e: React.FormEvent, id: string) => {
     e.preventDefault();
     if (!editFileName.trim()) return;
@@ -217,43 +272,46 @@ const ProcessedDocDashboard: React.FC<ProcessedDocDashboardProps> = ({
       });
       setEditingFileId(null);
     } catch (error) {
-      alert("Lỗi đổi tên file! " + error);
+      alert(`Lỗi đổi tên file:\n${getErrorMessage(error)}`);
     }
   };
 
-  // ==========================================
-  // DOWNLOAD
-  // ==========================================
   const handleDownload = async (
     fileUrl: string | undefined,
     fileName: string,
   ) => {
     if (!fileUrl) return alert("File không có đường dẫn!");
-    if (fileUrl.startsWith("https://")) {
+    try {
+      const fullUrl = fileUrl.startsWith("http")
+        ? fileUrl
+        : `${API_URL}${fileUrl}`;
+      const response = await fetch(`${fullUrl}?t=${new Date().getTime()}`, {
+        mode: "cors",
+      });
+      if (!response.ok) throw new Error(`HTTP lỗi: ${response.status}`);
+      const blob = await response.blob();
+      const localUrl = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
-      link.href = fileUrl;
+      link.href = localUrl;
       link.setAttribute("download", fileName);
-      link.target = "_blank";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      return;
+      window.URL.revokeObjectURL(localUrl);
+    } catch (error) {
+      alert(`Đã xảy ra lỗi khi tải file xuống:\n${getErrorMessage(error)}`);
     }
-    const response = await fetch(`${API_URL}${fileUrl}`);
-    const blob = await response.blob();
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", fileName);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
   };
 
-  // ==========================================
-  // HIGHLIGHT helper
-  // ==========================================
+  // BỔ SUNG: Preview File
+  const handlePreview = (fileUrl: string | undefined) => {
+    if (!fileUrl) return alert("File không có đường dẫn!");
+    let fullUrl = fileUrl.startsWith("http") ? fileUrl : `${API_URL}${fileUrl}`;
+    if (fullUrl.includes("/fl_attachment/"))
+      fullUrl = fullUrl.replace("/fl_attachment/", "/");
+    window.open(fullUrl, "_blank", "noopener,noreferrer");
+  };
+
   const highlight = (text: string) => {
     if (!searchQuery) return text;
     return text.split(new RegExp(`(${searchQuery})`, "gi")).map((part, i) =>
@@ -274,7 +332,7 @@ const ProcessedDocDashboard: React.FC<ProcessedDocDashboardProps> = ({
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      {/* OVERLAY KÉO THẢ FILE */}
+      {/* OVERLAY KÉO THẢ TẢI FILE */}
       {isDragging && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-blue-50 bg-opacity-90 pointer-events-none rounded-xl">
           <div className="text-center text-blue-600">
@@ -345,6 +403,7 @@ const ProcessedDocDashboard: React.FC<ProcessedDocDashboardProps> = ({
           </button>
           <input
             type="file"
+            multiple
             ref={fileInputRef}
             onChange={handleFileUpload}
             className="hidden"
@@ -352,7 +411,7 @@ const ProcessedDocDashboard: React.FC<ProcessedDocDashboardProps> = ({
         </div>
       </div>
 
-      {/* BREADCRUMB */}
+      {/* BREADCRUMB (Kèm kéo thả ra ngoài Folder gốc) */}
       <div className="flex items-center gap-2 mb-4 text-sm">
         <button
           onClick={() => {
@@ -360,6 +419,11 @@ const ProcessedDocDashboard: React.FC<ProcessedDocDashboardProps> = ({
             setSearchQuery("");
           }}
           className={`font-semibold hover:underline ${!currentFolderId ? "text-gray-800" : "text-blue-600"}`}
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={() => {
+            if (draggedFolderId) handleMoveFolder("null");
+            if (draggedDocFileId) handleMoveFile("null");
+          }}
         >
           Hồ sơ Đã xử lý
         </button>
@@ -439,10 +503,8 @@ const ProcessedDocDashboard: React.FC<ProcessedDocDashboardProps> = ({
         <span className="text-xs text-gray-400 font-medium">
           {searchQuery ? (
             <>
-              <span className="text-blue-600 font-bold">
-                {displayFolders.length + displayFiles.length}
-              </span>{" "}
-              / {totalDisplay} mục
+              <span className="text-blue-600 font-bold">{totalDisplay}</span> /{" "}
+              {totalItemsInFolder} mục
             </>
           ) : (
             <>
@@ -510,14 +572,33 @@ const ProcessedDocDashboard: React.FC<ProcessedDocDashboardProps> = ({
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {/* FOLDERS */}
+          {/* FOLDERS KÈM SỰ KIỆN DRAG & DROP */}
           {displayFolders.map((folder) => (
             <div
               key={folder.id}
               onClick={() => handleEnterFolder(folder.id)}
-              className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm hover:shadow-md hover:border-blue-300 cursor-pointer transition-all group flex items-center justify-between gap-2"
+              draggable
+              onDragStart={(e) => {
+                setDraggedFolderId(folder.id);
+                e.dataTransfer.effectAllowed = "move";
+              }}
+              onDragEnd={() => setDraggedFolderId(null)}
+              onDragOver={(e) => {
+                e.preventDefault();
+                if (draggedFolderId || draggedDocFileId)
+                  e.dataTransfer.dropEffect = "move";
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (draggedFolderId) handleMoveFolder(folder.id);
+                if (draggedDocFileId) handleMoveFile(folder.id);
+              }}
+              className={`bg-white p-4 rounded-xl border border-gray-200 shadow-sm hover:shadow-md hover:border-blue-300 cursor-pointer transition-all group flex items-center justify-between gap-2 
+                ${draggedFolderId === folder.id ? "opacity-50 grayscale" : ""}
+              `}
             >
-              <div className="flex items-center gap-3 overflow-hidden">
+              <div className="flex items-center gap-3 overflow-hidden pointer-events-none">
                 <svg
                   className="w-10 h-10 text-yellow-400 shrink-0"
                   fill="currentColor"
@@ -526,7 +607,7 @@ const ProcessedDocDashboard: React.FC<ProcessedDocDashboardProps> = ({
                   <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
                 </svg>
                 <div className="overflow-hidden">
-                  <h4 className="font-bold text-gray-800 truncate group-hover:text-blue-600 transition-colors">
+                  <h4 className="font-bold text-gray-800 wrap-break-word whitespace-normal group-hover:text-blue-600 transition-colors">
                     {highlight(folder.name)}
                   </h4>
                   <p className="text-xs text-gray-400 mt-0.5">Thư mục</p>
@@ -553,20 +634,28 @@ const ProcessedDocDashboard: React.FC<ProcessedDocDashboardProps> = ({
             </div>
           ))}
 
-          {/* FILES */}
+          {/* FILES KÈM SỰ KIỆN DRAG */}
           {displayFiles.map((file) => (
             <div
               key={file.id}
-              className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow relative group flex flex-col"
+              draggable
+              onDragStart={(e) => {
+                setDraggedDocFileId(file.id);
+                e.dataTransfer.effectAllowed = "move";
+              }}
+              onDragEnd={() => setDraggedDocFileId(null)}
+              className={`bg-white p-4 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow relative group flex flex-col cursor-grab active:cursor-grabbing
+                ${draggedDocFileId === file.id ? "opacity-50 grayscale" : ""}
+              `}
             >
-              {/* ACTION BUTTONS */}
-              <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
+              <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-all z-10">
                 <button
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     setEditingFileId(file.id);
                     setEditFileName(file.name);
                   }}
-                  className="text-gray-400 hover:text-blue-500 bg-white hover:bg-blue-50 p-1.5 rounded-lg border border-transparent hover:border-blue-200"
+                  className="text-gray-400 hover:text-blue-500 bg-white hover:bg-blue-50 p-1.5 rounded-lg border border-transparent hover:border-blue-200 shadow-sm"
                   title="Đổi tên"
                 >
                   <svg
@@ -584,8 +673,11 @@ const ProcessedDocDashboard: React.FC<ProcessedDocDashboardProps> = ({
                   </svg>
                 </button>
                 <button
-                  onClick={() => handleDeleteFile(file.id)}
-                  className="text-gray-400 hover:text-red-500 bg-white hover:bg-red-50 p-1.5 rounded-lg border border-transparent hover:border-red-200"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteFile(file.id);
+                  }}
+                  className="text-gray-400 hover:text-red-500 bg-white hover:bg-red-50 p-1.5 rounded-lg border border-transparent hover:border-red-200 shadow-sm"
                   title="Xóa"
                 >
                   <svg
@@ -604,7 +696,7 @@ const ProcessedDocDashboard: React.FC<ProcessedDocDashboardProps> = ({
                 </button>
               </div>
 
-              <div className="flex items-start gap-3 mb-3 pr-16">
+              <div className="flex items-start gap-3 mb-3 pr-16 pointer-events-none">
                 <svg
                   className="w-8 h-8 text-blue-500 shrink-0"
                   fill="none"
@@ -618,27 +710,46 @@ const ProcessedDocDashboard: React.FC<ProcessedDocDashboardProps> = ({
                     d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
                   />
                 </svg>
-                <div className="overflow-hidden w-full">
-                  {/* FORM ĐỔI TÊN */}
+                <div className="overflow-hidden w-full pointer-events-auto">
                   {editingFileId === file.id ? (
                     <form
                       onSubmit={(e) => handleRenameSubmit(e, file.id)}
-                      className="flex items-center gap-2"
+                      className="flex items-center gap-1 mt-0.5"
                     >
                       <input
                         type="text"
                         autoFocus
                         value={editFileName}
                         onChange={(e) => setEditFileName(e.target.value)}
-                        className="w-full text-sm font-bold text-gray-800 border-b-2 border-blue-500 outline-none pb-0.5 bg-transparent"
+                        className="w-full text-sm font-bold text-gray-800 border-2 border-blue-400 rounded-md px-2 py-1 outline-none bg-white shadow-inner"
                       />
+                      <button
+                        type="submit"
+                        className="text-green-600 hover:text-green-800 bg-green-50 hover:bg-green-100 rounded-md p-1.5 transition-colors"
+                        title="Lưu"
+                      >
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M5 13l4 4L19 7"
+                          />
+                        </svg>
+                      </button>
                       <button
                         type="button"
                         onClick={() => setEditingFileId(null)}
-                        className="text-gray-400 hover:text-gray-600 bg-gray-100 rounded-full p-1"
+                        className="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 rounded-md p-1.5 transition-colors"
+                        title="Hủy"
                       >
                         <svg
-                          className="w-3 h-3"
+                          className="w-4 h-4"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -653,42 +764,71 @@ const ProcessedDocDashboard: React.FC<ProcessedDocDashboardProps> = ({
                       </button>
                     </form>
                   ) : (
-                    <h4
-                      className="font-bold text-gray-800 truncate text-sm"
-                      title={file.name}
-                    >
+                    <h4 className="font-bold text-gray-800 text-sm wrap-break-word whitespace-normal leading-snug">
                       {highlight(file.name)}
                     </h4>
                   )}
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-gray-500 mt-1.5">
                     {file.size} • {file.uploadedBy}
                   </p>
                 </div>
               </div>
-
-              <div className="mt-auto flex justify-between items-center pt-3 border-t border-gray-100">
+              <div className="mt-auto flex justify-between items-center pt-3 border-t border-gray-100 pointer-events-none">
                 <span className="text-xs text-gray-400">
                   {new Date(file.createdAt).toLocaleDateString("vi-VN")}
                 </span>
-                <button
-                  onClick={() => handleDownload(file.fileUrl, file.name)}
-                  className="text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 p-1.5 rounded-md transition-colors cursor-pointer"
-                  title="Tải xuống"
-                >
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+                <div className="flex gap-1.5 pointer-events-auto">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handlePreview(file.fileUrl);
+                    }}
+                    className="text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 p-1.5 rounded-md transition-colors cursor-pointer"
+                    title="Xem trước file"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                    />
-                  </svg>
-                </button>
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                      />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDownload(file.fileUrl, file.name);
+                    }}
+                    className="text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 p-1.5 rounded-md transition-colors cursor-pointer"
+                    title="Tải xuống"
+                  >
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                      />
+                    </svg>
+                  </button>
+                </div>
               </div>
             </div>
           ))}

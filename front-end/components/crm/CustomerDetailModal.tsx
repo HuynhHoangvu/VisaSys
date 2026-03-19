@@ -154,7 +154,13 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
 
   return (
     // FIX MOBILE SIZE: Để tự động size, tránh vỡ trên đt
-    <Modal show={show} onClose={onClose} size="6xl" className="md:p-4">
+    <Modal
+      show={show}
+      onClose={onClose}
+      size="6xl"
+      className="md:p-4"
+      dismissible
+    >
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between rounded-t border-b border-gray-200 p-4 sm:p-5 bg-gray-50 gap-3">
         <div className="flex items-center gap-3 w-full">
           <div className="w-12 h-12 sm:w-14 sm:h-14 shrink-0 bg-orange-400 text-white rounded-lg flex items-center justify-center text-xl sm:text-2xl font-bold shadow-sm">

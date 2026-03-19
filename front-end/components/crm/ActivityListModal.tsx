@@ -104,6 +104,7 @@ const ActivityListModal: React.FC<ActivityListModalProps> = ({
       size="sm"
       position="center"
       className="md:p-4"
+      dismissible
     >
       <div className="bg-white rounded-lg flex flex-col max-h-[85vh] overflow-hidden">
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
