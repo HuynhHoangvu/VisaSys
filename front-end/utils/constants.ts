@@ -53,11 +53,18 @@ export const CUSTOMER_SOURCES = [
         required: false,
       },
       {
-        id: "p15",
+        id: "p16",
         section: "1. Hồ sơ nhân thân",
         name: "Giấy khai sinh con",
         note: "Nếu có con (Scan)",
         required: false,
+      },
+       {
+        id: "p15",
+        section: "1. Hồ sơ nhân thân",
+        name: "Giấy khai sinh đương đơn",
+        note: "Giấy khai sinh của người xin visa (Scan)",
+        required: true,
       },
       {
         id: "t5",

@@ -274,7 +274,7 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onToggleSidebar }) => {
 
       {/* POPUP THÔNG BÁO GÓC MÀN HÌNH - TỐI ƯU MOBILE */}
       {latestToast && (
-        <div className="fixed bottom-4 left-4 right-4 md:left-auto md:bottom-5 md:right-5 z-[9999] animate-bounce-short flex justify-center">
+        <div className="fixed bottom-4 left-4 right-4 md:left-auto md:bottom-5 md:right-5 z-9999 animate-bounce-short flex justify-center">
           <div className="bg-white border-l-4 border-l-red-500 shadow-2xl rounded-r-lg rounded-l-md flex items-start p-3 md:p-4 pr-8 md:pr-10 w-full max-w-sm relative">
             <div className="inline-flex h-8 w-8 md:h-10 md:w-10 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-500 mr-2 md:mr-3">
               <svg

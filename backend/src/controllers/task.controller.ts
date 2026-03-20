@@ -99,16 +99,6 @@ export const moveTask = async (req: Request, res: Response) => {
 
       if (employee) {
         // Tự động tạo 1 phiếu thưởng 1.500.000đ vào bảng lương của Sale đó
-        await prisma.salesRecord.create({
-          data: {
-            employeeId: employee.id,
-            customer: oldTask.content.split(" - ")[0] || "Khách hàng",
-            service: oldTask.visaType || "Ký hợp đồng dịch vụ",
-            profit: 1500000, // CỘNG CỨNG 1.5 TRIỆU
-            note: "Hệ thống: Tự động ghi nhận khi chốt HĐ", 
-          }
-          
-        });
          await prisma.task.update({
     where: { id: id as string },
     data: { commissionPaid: true }
