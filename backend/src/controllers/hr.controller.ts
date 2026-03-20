@@ -686,7 +686,7 @@ export const createLeaveRequest = async (req: Request, res: Response) => {
     });
 
     // 2. Gom danh sách người nhận (Admin + Giám đốc + Các trưởng phòng Sale)
-    const managerNames = saleManagers.map(m => m.name);
+    const managerNames = saleManagers.map(m => m.name.trim());
     console.log("👉 Danh sách Trưởng phòng SALE tìm được:", managerNames);
     const receivers = Array.from(new Set(["Giám đốc", "Admin", ...managerNames]));
 console.log("👉 Dữ liệu đẩy vào DB cột receiver:", receivers);
