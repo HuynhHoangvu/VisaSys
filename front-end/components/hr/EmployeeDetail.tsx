@@ -7,6 +7,10 @@ import {
 } from "../../types";
 import LeaveRequestModal from "./LeaveRequestModal";
 
+// TODO: Đảm bảo bạn đã tạo file socket.ts và import đúng đường dẫn.
+// Nếu bạn chưa dùng thư viện socket.io-client ở Frontend, bạn có thể comment dòng này lại.
+import  socket  from "../../services/socket";
+
 interface EmployeeDetailProps {
   employee: Employee;
   currentUser: AuthUser | null;
@@ -33,10 +37,12 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
 }) => {
   const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
   const [isBonusModalOpen, setIsBonusModalOpen] = useState(false);
+
   const isDirector =
     currentUser?.role.toLowerCase().includes("giám đốc") ||
     currentUser?.role.toLowerCase().includes("admin") ||
     currentUser?.role.toLowerCase().includes("phó giám đốc");
+
   const [bonusAmount, setBonusAmount] = useState("");
   const [bonusNote, setBonusNote] = useState("");
   const [bonusType, setBonusType] = useState("Thưởng");
@@ -99,10 +105,23 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
           body: JSON.stringify(data),
         },
       );
+
       if (!response.ok) throw new Error("Lỗi gửi đơn");
+
       alert("Đã gửi đơn xin nghỉ phép thành công! Vui lòng chờ Quản lý duyệt.");
+
+      // 1. Đóng Modal sau khi gửi thành công
+      setIsLeaveModalOpen(false);
+
+      // 2. Kích hoạt Event cục bộ để Component Cha (nếu có) tự reload dữ liệu
+      window.dispatchEvent(new Event("refreshBoard"));
+
+      // 3. Kích hoạt Socket để bắn thông báo sang màn hình của Trưởng phòng/Admin (Nếu dùng Socket Frontend)
+      if (socket) {
+        socket.emit("data_changed");
+      }
     } catch (error) {
-      alert("Có lỗi xảy ra khi gửi đơn!" + error);
+      alert("Có lỗi xảy ra khi gửi đơn! " + error);
     }
   };
 
@@ -129,7 +148,11 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
       setIsBonusModalOpen(false);
       setBonusAmount("");
       setBonusNote("");
+
+      // Load lại giao diện
       window.dispatchEvent(new Event("refreshBoard"));
+      if (socket) socket.emit("data_changed");
+
       alert("Đã cập nhật điều chỉnh thành công!");
     } catch (error) {
       alert("Lỗi khi cập nhật! " + error);
@@ -527,6 +550,7 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
         </div>
       </Modal>
 
+      {/* MODAL NGHỈ PHÉP */}
       <LeaveRequestModal
         show={isLeaveModalOpen}
         onClose={() => setIsLeaveModalOpen(false)}

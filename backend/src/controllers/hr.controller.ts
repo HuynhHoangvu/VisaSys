@@ -654,42 +654,63 @@ export const createLeaveRequest = async (req: Request, res: Response) => {
     const { type, startDate, endDate, reason } = req.body;
 
     const emp = await prisma.employee.findUnique({
-      where: { id: id as string }
+      where: { id: id as string },
+      include: { department: true }
     });
 
-    if (!emp) {
-      return res.status(404).json({ error: "Không tìm thấy nhân viên" });
-    }
+    if (!emp) return res.status(404).json({ error: "Không tìm thấy nhân viên" });
 
     const newRequest = await prisma.leaveRequest.create({
       data: {
-        type,
-        startDate,
-        endDate,
-        reason,
+        type, startDate, endDate, reason,
         employeeId: id as string,
         status: "Chờ duyệt"
       }
     });
 
+    // 1. Tìm tất cả Trưởng phòng thuộc bộ phận SALE
+    const saleManagers = await prisma.employee.findMany({
+      where: {
+        role: {
+          contains: "Trưởng phòng", // Tìm chữ chứa "Trưởng phòng"
+          mode: "insensitive"       // Bỏ qua phân biệt hoa/thường
+        },
+        department: { 
+          name: {
+            contains: "Sale",       // Tìm chữ chứa "Sale"
+            mode: "insensitive"     // Bỏ qua phân biệt hoa/thường ("SALE", "Sale", "sale" đều dính)
+          } 
+        }
+      },
+      select: { name: true }
+    });
+
+    // 2. Gom danh sách người nhận (Admin + Giám đốc + Các trưởng phòng Sale)
+    const managerNames = saleManagers.map(m => m.name);
+    console.log("👉 Danh sách Trưởng phòng SALE tìm được:", managerNames);
+    const receivers = Array.from(new Set(["Giám đốc", "Admin", ...managerNames]));
+console.log("👉 Dữ liệu đẩy vào DB cột receiver:", receivers);
+    // 3. Lưu vào bảng Notification
     await prisma.notification.create({
       data: {
         sender: emp.name,
-        message: `Nhân viên ${emp.name} vừa gửi đơn xin ${type.toLowerCase()}. Vui lòng kiểm tra và xét duyệt!`,
-        receiver: ["Giám đốc", "Admin"],
+        message: `Nhân viên ${emp.name} (Phòng SALE) vừa gửi đơn xin ${type.toLowerCase()}.`,
+        receiver: receivers, // Đảm bảo cột receiver trong DB của bạn nhận mảng string
       }
     });
 
-    getIO().emit("data_changed");
-    getIO().emit("new_notification");
+    // 4. Bắn Socket để hiện thông báo ngay lập tức
+    getIO().emit("new_notification", {
+      message: `Có đơn mới từ ${emp.name}`,
+      receivers: receivers
+    });
 
+    getIO().emit("data_changed");
     res.status(201).json(newRequest);
   } catch (error) {
-    console.error("Lỗi tạo đơn nghỉ phép:", error);
     res.status(500).json({ error: "Lỗi hệ thống khi gửi đơn" });
   }
 };
-
 export const getLeaveRequests = async (req: Request, res: Response) => {
   try {
     const requests = await prisma.leaveRequest.findMany({
