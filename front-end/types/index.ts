@@ -21,29 +21,51 @@ export interface Activity {
 }
 
 export interface Task {
+  // --- Thông tin định danh cơ bản ---
   id: string;
-  content: string;
-  price: string;
+  content: string; // Tên khách hàng
   phone: string;
   email?: string;
-  description?: string;
-  source?: string;
-  assignedTo: string;
-  activities?: Activity[];
-  visaType?: string;
-  checklistType?: string;
   passportNumber?: string;
-  maritalStatus?: string;
-  dependents?: number | string;
-  priorityDate?: string;
-  educationLevel?: string;
-  englishScore?: string;
-  workExperience?: string;
-  documents?: { [key: string]: { name: string; url: string }[] };
-  processingColId?: string; // Vị trí cột của phòng BO
-  createdAt?: string;
-  jobType?: string;
+
+  // --- Thông tin Phân quyền & Trạng thái ---
+  assignedTo: string; // Sale phụ trách
+  columnId: string;   // Cột hiện tại ở Kanban Sale
+  processingColId?: string; // Cột hiện tại ở Kanban của Phòng Hồ sơ (BO)
   
+  // --- Thông tin Marketing (QUAN TRỌNG) ---
+  source?: "Facebook" | "TikTok" | "Zalo" | "Cá nhân" | "Website" | "Giới thiệu"; 
+  adCampaign?: string; // Tên chiến dịch quảng cáo để Marketing theo dõi
+  createdAt: string;   // Ngày tạo (bắt buộc để lọc 7 ngày, 30 ngày)
+  updatedAt?: string;  // Ngày cập nhật cuối cùng
+
+  // --- Thông tin Tài chính & Dịch vụ ---
+  price: string;       // Giá trị hợp đồng/Phí dịch vụ
+  visaType?: string;   // Loại Visa khách quan tâm
+  jobType?: string;    // Ngành nghề (nếu đi diện lao động)
+  
+  // --- Thông tin Chi tiết Hồ sơ (Cho Sale & BO) ---
+  description?: string;
+  maritalStatus?: string;      // Tình trạng hôn nhân
+  dependents?: number | string; // Số người đi kèm
+  priorityDate?: string;       // Ngày ưu tiên
+  educationLevel?: string;     // Trình độ học vấn
+  englishScore?: string;       // Chứng chỉ tiếng Anh (IELTS/PTE...)
+  workExperience?: string;     // Kinh nghiệm làm việc
+  
+  // --- Quản lý công việc & Tài liệu ---
+  activities?: Activity[];     // Lịch sử tương tác
+  checklistType?: string;      // Loại danh mục hồ sơ cần chuẩn bị
+  documents?: { 
+    [category: string]: { 
+      name: string; 
+      url: string; 
+      uploadedAt: string;
+    }[] 
+  }; // Lưu trữ tệp tin theo nhóm (VD: Giấy tờ cá nhân, Giấy tờ tài chính)
+
+  // --- Metadata (Nếu cần) ---
+  isUrgent?: boolean; // Khách hàng khẩn cấp (để hiện cảnh báo)
 }
 
 export interface Column {

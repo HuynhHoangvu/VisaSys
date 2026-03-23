@@ -15,25 +15,39 @@ interface CustomerModalProps {
   onClose: () => void;
   onAddCustomer: (customer: Partial<Task>) => void;
 }
+
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+
+// Định nghĩa form data chấp nhận chuỗi rỗng để không bị lỗi Type
+interface CustomerFormData {
+  name: string;
+  service: string;
+  price: string;
+  phone: string;
+  email: string;
+  description: string;
+  source: Task["source"] | ""; // Chấp nhận kiểu của Task HOẶC chuỗi rỗng
+  assignedTo: string;
+}
+
+const initialFormState: CustomerFormData = {
+  name: "",
+  service: "",
+  price: "",
+  phone: "",
+  email: "",
+  description: "",
+  source: "",
+  assignedTo: "",
+};
 
 const CustomerModal: React.FC<CustomerModalProps> = ({
   show,
   onClose,
   onAddCustomer,
 }) => {
-  const initialFormState = {
-    name: "",
-    service: "",
-    price: "",
-    phone: "",
-    email: "",
-    description: "",
-    source: "",
-    assignedTo: "",
-  };
-  const [formData, setFormData] = useState(initialFormState);
   const [salesStaff, setSalesStaff] = useState<Employee[]>([]);
+  const [formData, setFormData] = useState<CustomerFormData>(initialFormState);
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -76,6 +90,7 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
       source,
       assignedTo,
     } = formData;
+
     if (!name || !service || !phone) return;
 
     const formattedPrice = price
@@ -83,6 +98,7 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
           Number(price.replace(/\D/g, "")),
         ) + " đ"
       : "Chưa báo giá";
+
     let autoChecklistType = "tourism";
     const lowerService = service.toLowerCase();
     if (
@@ -93,13 +109,15 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
     } else if (lowerService.includes("du học")) {
       autoChecklistType = "study";
     }
+
     onAddCustomer({
       content: `${name} - ${service}`,
       price: formattedPrice,
       phone,
       email,
       description,
-      source,
+      // Ép kiểu về đúng định dạng mong đợi của Task
+      source: source === "" ? undefined : (source as Task["source"]),
       assignedTo,
       activities: [],
       visaType: service,
