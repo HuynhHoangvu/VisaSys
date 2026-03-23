@@ -743,3 +743,15 @@ export const updateLeaveRequestStatus = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Lỗi cập nhật trạng thái đơn" });
   }
 };
+export const getLeaveRequestsByEmployee = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const requests = await prisma.leaveRequest.findMany({
+      where: { employeeId: id as string },
+      orderBy: { createdAt: "desc" },
+    });
+    res.json(requests);
+  } catch (error) {
+    res.status(500).json({ error: "Lỗi lấy lịch sử nghỉ phép" });
+  }
+};

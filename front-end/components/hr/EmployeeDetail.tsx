@@ -6,10 +6,10 @@ import {
   type LeaveRequestData,
 } from "../../types";
 import LeaveRequestModal from "./LeaveRequestModal";
-
 // TODO: Đảm bảo bạn đã tạo file socket.ts và import đúng đường dẫn.
 // Nếu bạn chưa dùng thư viện socket.io-client ở Frontend, bạn có thể comment dòng này lại.
 import  socket  from "../../services/socket";
+import LeaveHistoryModal from "./Leavehistorymodal";
 
 interface EmployeeDetailProps {
   employee: Employee;
@@ -20,7 +20,6 @@ interface EmployeeDetailProps {
 }
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
-
 const formatVND = (amount: number): string => {
   return new Intl.NumberFormat("vi-VN", {
     style: "currency",
@@ -50,6 +49,7 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
   const todayStr = new Date().toLocaleDateString("vi-VN");
   const safeAttendanceRecords = employee.attendanceRecords || [];
   const safeSalesRecords = employee.salesRecords || [];
+  const [isLeaveHistoryOpen, setIsLeaveHistoryOpen] = useState(false);
 
   const todayRecord = safeAttendanceRecords.find((r) => r.date === todayStr);
   const hasCheckedInToday = !!todayRecord;
@@ -241,7 +241,14 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
           >
             Nghỉ phép
           </Button>
-
+          <Button
+            color="light"
+            size="sm"
+            onClick={() => setIsLeaveHistoryOpen(true)}
+            className="flex-1 sm:flex-none border-gray-200 text-blue-600 focus:ring-0 shadow-sm hover:bg-blue-50 whitespace-nowrap"
+          >
+            📋 Lịch sử phép
+          </Button>
           {/* NÚT CHECK-IN / CHECK-OUT */}
           {!hasCheckedInToday ? (
             <Button
@@ -556,6 +563,12 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
         onClose={() => setIsLeaveModalOpen(false)}
         employeeName={employee.name}
         onSubmit={handleSubmitLeaveRequest}
+      />
+      <LeaveHistoryModal
+        show={isLeaveHistoryOpen}
+        onClose={() => setIsLeaveHistoryOpen(false)}
+        employeeId={employee.id}
+        employeeName={employee.name}
       />
     </div>
   );
