@@ -67,6 +67,13 @@ export const CUSTOMER_SOURCES = [
         required: true,
       },
       {
+        id: "p17",
+        section: "1. Hồ sơ nhân thân",
+        name: "Giấy xác nhận cư trú",
+        note: "Giấy xác nhận nơi ở hiện tại (Scan)",
+        required: true,
+      },
+      {
         id: "t5",
         section: "2. Hồ sơ chuyến đi",
         name: "Lịch trình du lịch",
