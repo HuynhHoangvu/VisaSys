@@ -207,11 +207,21 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
 
         if (filterVisa !== "all" && task.visaType !== filterVisa) return false;
 
-        if (
-          filterSource !== "all" &&
-          task.source?.toLowerCase() !== filterSource.toLowerCase()
-        )
-          return false;
+        if (filterSource !== "all") {
+          if (!task.source) return false;
+
+          const s = task.source;
+          const f = filterSource;
+
+          // Logic bắc cầu: Nếu lọc Ads mà data cũ là Facebook/TikTok thì vẫn cho hiện
+          const isMatch =
+            s === f ||
+            (f === "Facebook Ads" && s === "Facebook") ||
+            (f === "Tiktok Ads" && s === "TikTok") ||
+            (f === "Facebook cá nhân" && s === "Cá Nhân"); // Nếu bạn muốn gộp Cá nhân cũ vào FB cá nhân
+
+          if (!isMatch) return false;
+        }
 
         if (filterDateRange !== "all") {
           if (!task.createdAt) return false; // Khách không có ngày tạo sẽ bị ẩn khi lọc thời gian
@@ -615,11 +625,12 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
               placeholder: "🌐 Nguồn khách",
               value: filterSource,
               options: [
-                { value: "Facebook", label: "Facebook" },
-                { value: "Tik Tok", label: "Tik Tok" },
+                { value: "Facebook Ads", label: "Facebook Ads" },
+                { value: "Facebook cá nhân", label: "Facebook cá nhân" },
+                { value: "Tiktok Ads", label: "Tiktok Ads" },
+                { value: "Tiktok cá nhân", label: "Tiktok cá nhân" },
                 { value: "Zalo", label: "Zalo" },
                 { value: "Website", label: "Website" },
-                { value: "Cá nhân", label: "Cá nhân" },
                 { value: "Giới thiệu", label: "Giới thiệu" },
                 { value: "Hotline", label: "Hotline" },
               ],
@@ -1233,11 +1244,12 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {[
-                      "Facebook",
-                      "Tik Tok",
+                      "Facebook Ads",
+                      "Facebook cá nhân",
+                      "Tiktok Ads",
+                      "Tiktok cá nhân",
                       "Zalo",
                       "Website",
-                      "Cá nhân",
                       "Hotline",
                       "Giới thiệu",
                     ].map((src) => {

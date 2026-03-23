@@ -34,7 +34,11 @@ export interface Task {
   processingColId?: string; // Cột hiện tại ở Kanban của Phòng Hồ sơ (BO)
   
   // --- Thông tin Marketing (QUAN TRỌNG) ---
-  source?: "Facebook" | "TikTok" | "Zalo" | "Cá nhân" | "Website" | "Giới thiệu"; 
+  source?: "Facebook Ads" 
+    | "Facebook cá nhân" |"Tiktok Ads" 
+    | "Tiktok cá nhân" | "Zalo" | "Website" | "Giới thiệu" | "Facebook" // Dữ liệu cũ (giữ lại để không lỗi)
+    | "TikTok"   // Dữ liệu cũ
+    | "Cá Nhân";  // Dữ liệu cũ; 
   adCampaign?: string; // Tên chiến dịch quảng cáo để Marketing theo dõi
   createdAt: string;   // Ngày tạo (bắt buộc để lọc 7 ngày, 30 ngày)
   updatedAt?: string;  // Ngày cập nhật cuối cùng

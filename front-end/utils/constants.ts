@@ -12,7 +12,8 @@ export const VISA_SERVICES = [
 ];
 
 export const CUSTOMER_SOURCES = [
-  "Facebook", "Cá Nhân", "Tik Tok", "Website", "Giới thiệu", "Zalo", "Hotline",
+  "Facebook Ads",
+  "Facebook cá nhân", "Tiktok Ads", "Tiktok cá nhân", "Zalo", "Website", "Giới thiệu", "Hotline",
 ];
   export const getRequirementsList = (jobType: string) => {
     const reqs = [
