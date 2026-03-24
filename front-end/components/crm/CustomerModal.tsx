@@ -16,23 +16,37 @@ interface CustomerModalProps {
   onAddCustomer: (customer: Partial<Task>) => void;
 }
 
+const JOB_TYPES = [
+  "Nông nghiệp",
+  "Nhà hàng",
+  "Y tế",
+  "Nail",
+  "Kỹ thuật",
+  "Công nghệ thông tin",
+  "Xây dựng",
+  "Làm đẹp",
+  "Chăm sóc khách hàng",
+  "Khác",
+];
+
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
-// Định nghĩa form data chấp nhận chuỗi rỗng để không bị lỗi Type
 interface CustomerFormData {
   name: string;
   service: string;
+  jobType: string;
   price: string;
   phone: string;
   email: string;
   description: string;
-  source: Task["source"] | ""; // Chấp nhận kiểu của Task HOẶC chuỗi rỗng
+  source: Task["source"] | "";
   assignedTo: string;
 }
 
 const initialFormState: CustomerFormData = {
   name: "",
   service: "",
+  jobType: "",
   price: "",
   phone: "",
   email: "",
@@ -83,6 +97,7 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
     const {
       name,
       service,
+      jobType,
       price,
       phone,
       email,
@@ -116,9 +131,10 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
       phone,
       email,
       description,
-      // Ép kiểu về đúng định dạng mong đợi của Task
       source: source === "" ? undefined : (source as Task["source"]),
       assignedTo,
+      // Nếu user để trống ô nhập khác, mặc định lưu thành Khác
+      jobType: jobType === "" ? "Khác" : jobType,
       activities: [],
       visaType: service,
       checklistType: autoChecklistType,
@@ -132,21 +148,27 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
     onClose();
   };
 
+  // Logic kiểm tra xem Ngành nghề đang nhập có phải là Custom (tự nhập) không
+  const currentJobType = formData.jobType || "";
+  const isCustomJob =
+    currentJobType !== "" &&
+    !JOB_TYPES.includes(currentJobType) &&
+    currentJobType !== "Khác";
+
   return (
-    <Modal show={show} onClose={handleClose} size="lg" className="md:p-4">
+    <Modal show={show} onClose={handleClose} size="3xl" className="md:p-4">
       <div className="p-4 sm:p-6 border-b border-gray-200">
         <h3 className="text-lg sm:text-xl font-bold text-gray-800">
           Thêm Khách Hàng Mới
         </h3>
       </div>
-      {/* CUỘN ĐƯỢC TRÊN MOBILE */}
       <div className="p-4 sm:p-6 max-h-[70vh] overflow-y-auto">
         <form
           id="add-customer-form"
           onSubmit={handleSubmit}
           className="space-y-4"
         >
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <Label htmlFor="name" className="text-xs sm:text-sm">
                 Họ và Tên (*)
@@ -178,7 +200,47 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
                 ))}
               </Select>
             </div>
+
+            {/* CỤM CHỌN VÀ NHẬP NGÀNH NGHỀ */}
+            <div>
+              <Label htmlFor="jobType" className="text-xs sm:text-sm">
+                Ngành nghề
+              </Label>
+              <Select
+                id="jobType"
+                value={isCustomJob ? "Khác" : currentJobType}
+                onChange={handleChange}
+                sizing="sm"
+              >
+                <option value="">-- Chọn ngành nghề --</option>
+                {JOB_TYPES.map((job) => (
+                  <option key={job} value={job}>
+                    {job}
+                  </option>
+                ))}
+              </Select>
+
+              {/* Hiển thị ô gõ chữ khi chọn Khác */}
+              {(currentJobType === "Khác" || isCustomJob) && (
+                <TextInput
+                  id="jobType"
+                  placeholder="Nhập ngành nghề khác..."
+                  value={currentJobType === "Khác" ? "" : currentJobType}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setFormData((prev) => ({
+                      ...prev,
+                      jobType: val === "" ? "Khác" : val,
+                    }));
+                  }}
+                  sizing="sm"
+                  className="mt-2"
+                  autoFocus
+                />
+              )}
+            </div>
           </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="phone" className="text-xs sm:text-sm">
@@ -205,6 +267,7 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
               />
             </div>
           </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="source" className="text-xs sm:text-sm">
@@ -243,6 +306,7 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
               </Select>
             </div>
           </div>
+
           <div>
             <Label htmlFor="price" className="text-xs sm:text-sm">
               Doanh thu dự kiến
@@ -255,6 +319,7 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
               sizing="sm"
             />
           </div>
+
           <div>
             <Label htmlFor="description" className="text-xs sm:text-sm">
               Mô tả
@@ -268,6 +333,7 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
           </div>
         </form>
       </div>
+
       <div className="p-4 sm:p-6 border-t border-gray-200 flex justify-end gap-2">
         <Button color="gray" onClick={handleClose} size="sm">
           Hủy

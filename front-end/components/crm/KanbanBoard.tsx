@@ -228,7 +228,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
 
           const taskDate = new Date(task.createdAt);
           if (isNaN(taskDate.getTime())) return false; // Ngày tháng lỗi cũng ẩn
-
+          
           const diffTime = Math.abs(now.getTime() - taskDate.getTime());
           const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
@@ -824,6 +824,19 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                                     <h4 className="font-bold text-gray-800 text-sm sm:text-xs leading-tight pr-8 mb-1.5 line-clamp-2">
                                       {task.content}
                                     </h4>
+                                    {/* THÊM HIỂN THỊ VISA VÀ NGÀNH NGHỀ Ở ĐÂY */}
+                                    <div className="flex flex-wrap gap-1 mb-2">
+                                      {task.visaType && (
+                                        <span className="text-[9px] bg-blue-50 text-blue-700 border border-blue-100 px-1.5 py-0.5 rounded font-semibold">
+                                          {task.visaType}
+                                        </span>
+                                      )}
+                                      {task.jobType && (
+                                        <span className="text-[9px] bg-emerald-50 text-emerald-700 border border-emerald-100 px-1.5 py-0.5 rounded font-semibold">
+                                          {task.jobType}
+                                        </span>
+                                      )}
+                                    </div>
                                     <div className="flex justify-between items-end mb-3 sm:mb-2">
                                       <div className="flex flex-col gap-0.5">
                                         <span className="text-xs sm:text-[11px] font-bold text-gray-700">
@@ -1047,6 +1060,11 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                         <span className="bg-blue-50 text-blue-600 px-2 py-1 rounded text-xs font-semibold">
                           {task.visaType || "Chưa rõ"}
                         </span>
+                        {task.jobType && (
+                          <span className="bg-emerald-50 text-emerald-600 px-2 py-1 rounded text-[10px] font-semibold whitespace-nowrap">
+                            {task.jobType}
+                          </span>
+                        )}
                       </td>
                       <td
                         className="px-4 py-3"

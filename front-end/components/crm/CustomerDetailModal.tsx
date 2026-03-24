@@ -10,7 +10,21 @@ import {
 } from "flowbite-react";
 import type { Task, CustomerDetailModalProps } from "../../types";
 import { VISA_SERVICES, CUSTOMER_SOURCES } from "../../utils/constants";
+
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+
+const JOB_TYPES = [
+  "Nông nghiệp",
+  "Nhà hàng",
+  "Y tế",
+  "Nail",
+  "Kỹ thuật",
+  "Công nghệ thông tin",
+  "Xây dựng",
+  "Làm đẹp",
+  "Chăm sóc khách hàng",
+  "Khác",
+];
 
 const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
   show,
@@ -152,8 +166,14 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
     }
   };
 
+  // Logic kiểm tra xem Ngành nghề đang lưu có phải là Custom (tự nhập) không
+  const currentJobType = formData.jobType || "";
+  const isCustomJob =
+    currentJobType !== "" &&
+    !JOB_TYPES.includes(currentJobType) &&
+    currentJobType !== "Khác";
+
   return (
-    // FIX MOBILE SIZE: Để tự động size, tránh vỡ trên đt
     <Modal
       show={show}
       onClose={onClose}
@@ -192,7 +212,6 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
           </div>
         </div>
 
-        {/* CỤM NÚT LƯU & ĐÓNG TRÊN MOBILE SẼ CHẠY XUỐNG DƯỚI */}
         <div className="flex items-center justify-end w-full sm:w-auto gap-2 mt-2 sm:mt-0">
           {saved && (
             <span className="text-green-600 text-xs sm:text-sm font-medium animate-pulse hidden sm:inline">
@@ -228,14 +247,12 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
         </div>
       </div>
 
-      {/* FIX MOBILE LAYOUT: flex-col trên đt, scroll dọc độc lập */}
       <div className="p-0 flex flex-col md:flex-row max-h-[75vh] md:h-[70vh] overflow-hidden">
         {/* CỘT TRÁI - THÔNG TIN CHI TIẾT */}
         <div className="w-full md:w-[60%] p-4 sm:p-6 border-b md:border-b-0 md:border-r border-gray-200 overflow-y-auto bg-white custom-scrollbar h-[50vh] md:h-full">
           <h4 className="font-semibold text-orange-600 mb-3 border-b pb-1 text-xs sm:text-sm uppercase">
             Thông tin Liên hệ
           </h4>
-          {/* Đổi grid-cols-2 thành grid-cols-1 trên mobile */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-6">
             <div>
               <Label className="text-[10px] sm:text-xs uppercase text-gray-400">
@@ -277,7 +294,43 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
                 ))}
               </Select>
             </div>
+
+            {/* CHỌN VÀ NHẬP NGÀNH NGHỀ CHI TIẾT */}
             <div>
+              <Label className="text-[10px] sm:text-xs uppercase text-gray-400">
+                Ngành nghề / Diện đi
+              </Label>
+              <Select
+                sizing="sm"
+                value={isCustomJob ? "Khác" : currentJobType}
+                onChange={(e) => handleChange("jobType", e.target.value)}
+                className="mt-1"
+              >
+                <option value="">-- Chọn ngành --</option>
+                {JOB_TYPES.map((job) => (
+                  <option key={job} value={job}>
+                    {job}
+                  </option>
+                ))}
+              </Select>
+
+              {/* Box hiện thêm nếu là Khác hoặc tự gõ */}
+              {(currentJobType === "Khác" || isCustomJob) && (
+                <TextInput
+                  sizing="sm"
+                  placeholder="Nhập ngành nghề khác..."
+                  value={currentJobType === "Khác" ? "" : currentJobType}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    handleChange("jobType", val === "" ? "Khác" : val);
+                  }}
+                  className="mt-2"
+                  autoFocus
+                />
+              )}
+            </div>
+
+            <div className="sm:col-span-2">
               <Label className="text-[10px] sm:text-xs uppercase text-gray-400">
                 Nguồn khách
               </Label>
@@ -410,7 +463,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
 
             <Textarea
               placeholder="Nhập ghi chú nhanh..."
-              rows={2} // Giảm row trên đt
+              rows={2}
               value={newNote}
               onChange={(e) => setNewNote(e.target.value)}
               className="bg-gray-50 border-none focus:ring-1 focus:ring-orange-500 shadow-inner mb-2 text-xs sm:text-sm"
