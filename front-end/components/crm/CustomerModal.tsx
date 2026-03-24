@@ -60,7 +60,8 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
   onClose,
   onAddCustomer,
 }) => {
-  const [salesStaff, setSalesStaff] = useState<Employee[]>([]);
+  // Đã đổi tên state thành staffList để thể hiện toàn bộ nhân viên
+  const [staffList, setStaffList] = useState<Employee[]>([]);
   const [formData, setFormData] = useState<CustomerFormData>(initialFormState);
 
   const handleChange = (
@@ -74,21 +75,17 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
 
   useEffect(() => {
     if (show) {
-      const fetchSalesStaff = async () => {
+      const fetchStaffList = async () => {
         try {
           const response = await fetch(`${API_URL}/api/hr/employees`);
           const allEmployees: Employee[] = await response.json();
-          const filteredSales = allEmployees.filter(
-            (emp) =>
-              emp.department.toLowerCase().includes("sale") ||
-              emp.role.toLowerCase().includes("sale"),
-          );
-          setSalesStaff(filteredSales);
+          // Đã bỏ hàm .filter() ở đây, trực tiếp gán toàn bộ nhân sự vào danh sách
+          setStaffList(allEmployees);
         } catch (error) {
-          console.error("Lỗi khi tải danh sách nhân viên Sale:", error);
+          console.error("Lỗi khi tải danh sách nhân viên:", error);
         }
       };
-      fetchSalesStaff();
+      fetchStaffList();
     }
   }, [show]);
 
@@ -133,7 +130,6 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
       description,
       source: source === "" ? undefined : (source as Task["source"]),
       assignedTo,
-      // Nếu user để trống ô nhập khác, mặc định lưu thành Khác
       jobType: jobType === "" ? "Khác" : jobType,
       activities: [],
       visaType: service,
@@ -148,7 +144,6 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
     onClose();
   };
 
-  // Logic kiểm tra xem Ngành nghề đang nhập có phải là Custom (tự nhập) không
   const currentJobType = formData.jobType || "";
   const isCustomJob =
     currentJobType !== "" &&
@@ -201,7 +196,6 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
               </Select>
             </div>
 
-            {/* CỤM CHỌN VÀ NHẬP NGÀNH NGHỀ */}
             <div>
               <Label htmlFor="jobType" className="text-xs sm:text-sm">
                 Ngành nghề
@@ -220,7 +214,6 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
                 ))}
               </Select>
 
-              {/* Hiển thị ô gõ chữ khi chọn Khác */}
               {(currentJobType === "Khác" || isCustomJob) && (
                 <TextInput
                   id="jobType"
@@ -289,7 +282,7 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
             </div>
             <div>
               <Label htmlFor="assignedTo" className="text-xs sm:text-sm">
-                Sale phụ trách
+                Nhân viên phụ trách
               </Label>
               <Select
                 id="assignedTo"
@@ -298,7 +291,8 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
                 sizing="sm"
               >
                 <option value="">-- Chọn nhân viên --</option>
-                {salesStaff.map((staff) => (
+                {/* Đã render lại từ danh sách toàn bộ nhân sự */}
+                {staffList.map((staff) => (
                   <option key={staff.id} value={staff.name}>
                     {staff.name} - {staff.employeeCode}
                   </option>
