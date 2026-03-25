@@ -12,6 +12,7 @@ import type {
   Notification,
   Task,
   Column,
+  Employee, // Đã thêm type Employee
 } from "../../types";
 import { io } from "socket.io-client";
 import SearchFilterBar from "../Filter/SearchFilterBar";
@@ -39,6 +40,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
   currentUser,
 }) => {
   const [boardData, setBoardData] = useState<BoardData | null>(null);
+  const [staffList, setStaffList] = useState<Employee[]>([]); // Thêm state lưu toàn bộ nhân viên
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeAlerts, setActiveAlerts] = useState<string[]>([]);
@@ -73,6 +75,22 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
   );
 
   const canSeeAll = isBoss || isManager || isProcessingDept || isMarketingDept;
+
+  // Gọi API lấy danh sách toàn bộ nhân viên
+  useEffect(() => {
+    const fetchStaffList = async () => {
+      try {
+        const response = await fetch(`${API_URL}/api/hr/employees`);
+        if (response.ok) {
+          const data: Employee[] = await response.json();
+          setStaffList(data);
+        }
+      } catch (error) {
+        console.error("Lỗi tải danh sách nhân viên:", error);
+      }
+    };
+    fetchStaffList();
+  }, []);
 
   useEffect(() => {
     const fetchAlerts = async () => {
@@ -162,11 +180,18 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
   const filterOptions = useMemo(() => {
     if (!boardData) return { sales: [], visaTypes: [], columns: [] };
     const allTasks = Object.values(boardData.tasks);
-    const sales = [
-      ...new Set(allTasks.map((t) => t.assignedTo).filter(Boolean)),
-    ]
-      .sort()
-      .map((name) => ({ value: name, label: name }));
+
+    // ƯU TIÊN LẤY TỪ staffList NẾU CÓ, NẾU KHÔNG THÌ MỚI LẤY TỪ TASK HIỆN TẠI
+    let sales = [];
+    if (staffList.length > 0) {
+      sales = staffList
+        .map((emp) => ({ value: emp.name, label: emp.name }))
+        .sort((a, b) => a.label.localeCompare(b.label));
+    } else {
+      sales = [...new Set(allTasks.map((t) => t.assignedTo).filter(Boolean))]
+        .sort()
+        .map((name) => ({ value: name, label: name }));
+    }
 
     const visaTypes = [
       ...new Set(allTasks.map((t) => t.visaType).filter(Boolean)),
@@ -180,7 +205,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
       .map((col) => ({ value: col.id, label: col.title }));
 
     return { sales, visaTypes, columns };
-  }, [boardData]);
+  }, [boardData, staffList]);
 
   const getFilteredTaskIds = useCallback(
     (columnId: string): string[] => {
@@ -213,22 +238,21 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
           const s = task.source;
           const f = filterSource;
 
-          // Logic bắc cầu: Nếu lọc Ads mà data cũ là Facebook/TikTok thì vẫn cho hiện
           const isMatch =
             s === f ||
             (f === "Facebook Ads" && s === "Facebook") ||
             (f === "Tiktok Ads" && s === "TikTok") ||
-            (f === "Facebook cá nhân" && s === "Cá Nhân"); // Nếu bạn muốn gộp Cá nhân cũ vào FB cá nhân
+            (f === "Facebook cá nhân" && s === "Cá Nhân");
 
           if (!isMatch) return false;
         }
 
         if (filterDateRange !== "all") {
-          if (!task.createdAt) return false; // Khách không có ngày tạo sẽ bị ẩn khi lọc thời gian
+          if (!task.createdAt) return false;
 
           const taskDate = new Date(task.createdAt);
-          if (isNaN(taskDate.getTime())) return false; // Ngày tháng lỗi cũng ẩn
-          
+          if (isNaN(taskDate.getTime())) return false;
+
           const diffTime = Math.abs(now.getTime() - taskDate.getTime());
           const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
@@ -490,7 +514,6 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
 
   return (
     <div className="flex flex-col h-full w-full bg-[#f8f9fa] p-3 sm:p-6 overflow-hidden">
-      {/* STYLE CHUẨN CHO HIỆU ỨNG POPUP (Không cần sửa file CSS ngoài) */}
       <style>{`
         @keyframes custom-pop-in {
           0% { transform: scale(0.95); opacity: 0; }
@@ -605,7 +628,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
       {/* SEARCH + FILTER */}
       <div className="shrink-0 mb-2">
         <SearchFilterBar
-          searchPlaceholder="Tìm tên, SĐT, sale..."
+          searchPlaceholder="Tìm tên, SĐT, nhân viên..."
           searchValue={searchQuery}
           onSearchChange={setSearchQuery}
           filters={[
@@ -613,7 +636,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
               ? [
                   {
                     key: "sale",
-                    placeholder: "👤 Sale",
+                    placeholder: "👤 Nhân viên",
                     value: filterSale,
                     options: filterOptions.sales,
                     onChange: setFilterSale,
@@ -824,7 +847,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                                     <h4 className="font-bold text-gray-800 text-sm sm:text-xs leading-tight pr-8 mb-1.5 line-clamp-2">
                                       {task.content}
                                     </h4>
-                                    {/* THÊM HIỂN THỊ VISA VÀ NGÀNH NGHỀ Ở ĐÂY */}
+
                                     <div className="flex flex-wrap gap-1 mb-2">
                                       {task.visaType && (
                                         <span className="text-[9px] bg-blue-50 text-blue-700 border border-blue-100 px-1.5 py-0.5 rounded font-semibold">
@@ -837,6 +860,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                                         </span>
                                       )}
                                     </div>
+
                                     <div className="flex justify-between items-end mb-3 sm:mb-2">
                                       <div className="flex flex-col gap-0.5">
                                         <span className="text-xs sm:text-[11px] font-bold text-gray-700">
@@ -853,7 +877,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                                                 .toUpperCase()}
                                             </div>
                                             <span className="text-[10px] sm:text-[9px] text-gray-500 font-medium">
-                                              Sale:{" "}
+                                              NV:{" "}
                                               {task.assignedTo
                                                 .trim()
                                                 .split(" ")
@@ -1057,14 +1081,16 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                         {task.phone}
                       </td>
                       <td className="px-4 py-3">
-                        <span className="bg-blue-50 text-blue-600 px-2 py-1 rounded text-xs font-semibold">
-                          {task.visaType || "Chưa rõ"}
-                        </span>
-                        {task.jobType && (
-                          <span className="bg-emerald-50 text-emerald-600 px-2 py-1 rounded text-[10px] font-semibold whitespace-nowrap">
-                            {task.jobType}
+                        <div className="flex flex-col gap-1 items-start">
+                          <span className="bg-blue-50 text-blue-600 px-2 py-1 rounded text-xs font-semibold whitespace-nowrap">
+                            {task.visaType || "Chưa rõ"}
                           </span>
-                        )}
+                          {task.jobType && (
+                            <span className="bg-emerald-50 text-emerald-600 px-2 py-1 rounded text-[10px] font-semibold whitespace-nowrap">
+                              {task.jobType}
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td
                         className="px-4 py-3"
@@ -1169,7 +1195,11 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                 </h3>
                 <p className="text-xs text-indigo-600 font-medium">
                   {filterDateRange !== "all"
-                    ? `Dữ liệu lọc trong ${filterDateRange === "7days" ? "7 ngày qua" : "30 ngày qua"}`
+                    ? `Dữ liệu lọc trong ${
+                        filterDateRange === "7days"
+                          ? "7 ngày qua"
+                          : "30 ngày qua"
+                      }`
                     : "Toàn bộ thời gian"}
                 </p>
               </div>
@@ -1228,7 +1258,6 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                     Đã chốt hợp đồng
                   </p>
                   <span className="text-3xl font-black text-green-700">
-                    {/* QUAN TRỌNG: Sửa 'col-4' thành ID của cột "Đã chốt hợp đồng" trên hệ thống thật của bạn */}
                     {flatTableData.filter((t) => t.columnId === "col-4").length}
                   </span>
                 </div>
