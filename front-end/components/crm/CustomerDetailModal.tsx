@@ -54,14 +54,18 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
     setFormData((prev) => {
       if (!prev) return null;
       const updatedData = { ...prev, [field]: value };
+
+      // Nếu đổi Visa Type thì cập nhật lại Tên Khách Hàng (content) và Tự động gợi ý Nhóm Hồ Sơ
       if (field === "visaType") {
         const namePart = prev.content.split(" - ")[0];
         updatedData.content = `${namePart} - ${value}`;
+
         const lowerValue = value.toLowerCase();
         if (
           lowerValue.includes("lao động") ||
           lowerValue.includes("tay nghề") ||
-          lowerValue.includes("việc làm")
+          lowerValue.includes("việc làm") ||
+          lowerValue.includes("work")
         ) {
           updatedData.checklistType = "labor";
         } else if (
@@ -173,6 +177,13 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
     !JOB_TYPES.includes(currentJobType) &&
     currentJobType !== "Khác";
 
+  // Logic kiểm tra xem Visa Type đang lưu có phải là Custom (tự nhập) không
+  const currentVisaType = formData.visaType || "";
+  const isCustomVisa =
+    currentVisaType !== "" &&
+    !VISA_SERVICES.some((v) => v.name === currentVisaType) &&
+    currentVisaType !== "Khác";
+
   return (
     <Modal
       show={show}
@@ -276,14 +287,19 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
                 className="mt-1"
               />
             </div>
+
+            {/* SỬA ĐỔI: Diện Visa có hỗ trợ tự nhập */}
             <div>
               <Label className="text-[10px] sm:text-xs uppercase text-gray-400">
                 Diện Visa Quan Tâm
               </Label>
               <Select
                 sizing="sm"
-                value={formData.visaType || ""}
-                onChange={(e) => handleChange("visaType", e.target.value)}
+                value={isCustomVisa ? "Khác" : currentVisaType}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  handleChange("visaType", val === "Khác" ? "" : val);
+                }}
                 className="mt-1"
               >
                 <option value="">-- Chọn diện Visa --</option>
@@ -292,6 +308,34 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
                     {visa.flag} {visa.name}
                   </option>
                 ))}
+                <option value="Khác">✏️ Khác (Tự nhập...)</option>
+              </Select>
+              {(currentVisaType === "Khác" || isCustomVisa) && (
+                <TextInput
+                  sizing="sm"
+                  placeholder="Nhập tên diện Visa..."
+                  value={currentVisaType === "Khác" ? "" : currentVisaType}
+                  onChange={(e) => handleChange("visaType", e.target.value)}
+                  className="mt-2"
+                  autoFocus
+                />
+              )}
+            </div>
+
+            {/* BỔ SUNG: Cho phép chủ động chọn Nhóm bộ hồ sơ */}
+            <div>
+              <Label className="text-[10px] sm:text-xs uppercase text-gray-400">
+                Nhóm bộ hồ sơ
+              </Label>
+              <Select
+                sizing="sm"
+                value={formData.checklistType || "tourism"}
+                onChange={(e) => handleChange("checklistType", e.target.value)}
+                className="mt-1 font-bold text-blue-700"
+              >
+                <option value="tourism">✈️ Du lịch / Thăm thân</option>
+                <option value="study">🎓 Du học</option>
+                <option value="labor">👷‍♂️ Lao động / Việc làm</option>
               </Select>
             </div>
 
@@ -312,6 +356,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
                     {job}
                   </option>
                 ))}
+                <option value="Khác">✏️ Khác (Tự nhập...)</option>
               </Select>
 
               {/* Box hiện thêm nếu là Khác hoặc tự gõ */}
@@ -330,7 +375,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
               )}
             </div>
 
-            <div className="sm:col-span-2">
+            <div>
               <Label className="text-[10px] sm:text-xs uppercase text-gray-400">
                 Nguồn khách
               </Label>

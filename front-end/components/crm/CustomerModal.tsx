@@ -34,6 +34,8 @@ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 interface CustomerFormData {
   name: string;
   service: string;
+  customService: string; // <-- Thêm field cho Visa tự nhập
+  checklistType: string; // <-- Thêm field để ép kiểu hồ sơ
   jobType: string;
   price: string;
   phone: string;
@@ -46,6 +48,8 @@ interface CustomerFormData {
 const initialFormState: CustomerFormData = {
   name: "",
   service: "",
+  customService: "",
+  checklistType: "tourism", // Mặc định là du lịch
   jobType: "",
   price: "",
   phone: "",
@@ -60,7 +64,6 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
   onClose,
   onAddCustomer,
 }) => {
-  // Đã đổi tên state thành staffList để thể hiện toàn bộ nhân viên
   const [staffList, setStaffList] = useState<Employee[]>([]);
   const [formData, setFormData] = useState<CustomerFormData>(initialFormState);
 
@@ -73,13 +76,35 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
     setFormData((prev) => ({ ...prev, [id]: value }));
   };
 
+  // Hàm xử lý riêng khi chọn Diện Visa để tự động gợi ý Nhóm Hồ Sơ
+  const handleServiceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const val = e.target.value;
+    let autoChecklist = "tourism";
+    const lower = val.toLowerCase();
+
+    if (
+      lower.includes("lao động") ||
+      lower.includes("tay nghề") ||
+      lower.includes("work")
+    ) {
+      autoChecklist = "labor";
+    } else if (lower.includes("du học") || lower.includes("student")) {
+      autoChecklist = "study";
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      service: val,
+      checklistType: val === "Khác" ? prev.checklistType : autoChecklist, // Nếu chọn Khác thì giữ nguyên để user tự chọn
+    }));
+  };
+
   useEffect(() => {
     if (show) {
       const fetchStaffList = async () => {
         try {
           const response = await fetch(`${API_URL}/api/hr/employees`);
           const allEmployees: Employee[] = await response.json();
-          // Đã bỏ hàm .filter() ở đây, trực tiếp gán toàn bộ nhân sự vào danh sách
           setStaffList(allEmployees);
         } catch (error) {
           console.error("Lỗi khi tải danh sách nhân viên:", error);
@@ -94,6 +119,8 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
     const {
       name,
       service,
+      customService,
+      checklistType,
       jobType,
       price,
       phone,
@@ -103,7 +130,10 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
       assignedTo,
     } = formData;
 
-    if (!name || !service || !phone) return;
+    // Lấy tên diện visa cuối cùng (tự nhập hoặc chọn sẵn)
+    const finalService = service === "Khác" ? customService : service;
+
+    if (!name || !finalService || !phone) return;
 
     const formattedPrice = price
       ? new Intl.NumberFormat("vi-VN").format(
@@ -111,19 +141,8 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
         ) + " đ"
       : "Chưa báo giá";
 
-    let autoChecklistType = "tourism";
-    const lowerService = service.toLowerCase();
-    if (
-      lowerService.includes("lao động") ||
-      lowerService.includes("tay nghề")
-    ) {
-      autoChecklistType = "labor";
-    } else if (lowerService.includes("du học")) {
-      autoChecklistType = "study";
-    }
-
     onAddCustomer({
-      content: `${name} - ${service}`,
+      content: `${name} - ${finalService}`,
       price: formattedPrice,
       phone,
       email,
@@ -132,8 +151,8 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
       assignedTo,
       jobType: jobType === "" ? "Khác" : jobType,
       activities: [],
-      visaType: service,
-      checklistType: autoChecklistType,
+      visaType: finalService,
+      checklistType: checklistType, // Truyền thẳng checklistType rõ ràng vào database
       createdAt: new Date().toISOString(),
     });
     handleClose();
@@ -157,7 +176,7 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
           Thêm Khách Hàng Mới
         </h3>
       </div>
-      <div className="p-4 sm:p-6 max-h-[70vh] overflow-y-auto">
+      <div className="p-4 sm:p-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
         <form
           id="add-customer-form"
           onSubmit={handleSubmit}
@@ -176,6 +195,8 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
                 sizing="sm"
               />
             </div>
+
+            {/* CỘT DIỆN VISA */}
             <div>
               <Label htmlFor="service" className="text-xs sm:text-sm">
                 Diện Visa (*)
@@ -184,7 +205,7 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
                 id="service"
                 required
                 value={formData.service}
-                onChange={handleChange}
+                onChange={handleServiceChange}
                 sizing="sm"
               >
                 <option value="">-- Chọn diện Visa --</option>
@@ -193,12 +214,48 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
                     {visa.flag} {visa.name}
                   </option>
                 ))}
+                <option value="Khác">✏️ Khác (Tự nhập...)</option>
               </Select>
+
+              {/* Hiển thị ô gõ text nếu chọn Khác */}
+              {formData.service === "Khác" && (
+                <TextInput
+                  id="customService"
+                  placeholder="Nhập tên diện Visa..."
+                  required
+                  value={formData.customService}
+                  onChange={handleChange}
+                  sizing="sm"
+                  className="mt-2"
+                  autoFocus
+                />
+              )}
             </div>
 
+            {/* CỘT NHÓM HỒ SƠ YÊU CẦU */}
+            <div>
+              <Label htmlFor="checklistType" className="text-xs sm:text-sm">
+                Nhóm bộ hồ sơ (*)
+              </Label>
+              <Select
+                id="checklistType"
+                required
+                value={formData.checklistType}
+                onChange={handleChange}
+                sizing="sm"
+                className="font-bold text-blue-700"
+              >
+                <option value="tourism">✈️ Du lịch / Thăm thân</option>
+                <option value="study">🎓 Du học</option>
+                <option value="labor">👷‍♂️ Lao động / Việc làm</option>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="jobType" className="text-xs sm:text-sm">
-                Ngành nghề
+                Ngành nghề (Dành cho diện Lao động)
               </Label>
               <Select
                 id="jobType"
@@ -232,9 +289,7 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
                 />
               )}
             </div>
-          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="phone" className="text-xs sm:text-sm">
                 Số điện thoại (*)
@@ -247,6 +302,9 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
                 sizing="sm"
               />
             </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="email" className="text-xs sm:text-sm">
                 Email
@@ -255,6 +313,18 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
                 id="email"
                 type="email"
                 value={formData.email}
+                onChange={handleChange}
+                sizing="sm"
+              />
+            </div>
+            <div>
+              <Label htmlFor="price" className="text-xs sm:text-sm">
+                Doanh thu dự kiến
+              </Label>
+              <TextInput
+                id="price"
+                placeholder="Ví dụ: 50000000"
+                value={formData.price}
                 onChange={handleChange}
                 sizing="sm"
               />
@@ -291,7 +361,6 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
                 sizing="sm"
               >
                 <option value="">-- Chọn nhân viên --</option>
-                {/* Đã render lại từ danh sách toàn bộ nhân sự */}
                 {staffList.map((staff) => (
                   <option key={staff.id} value={staff.name}>
                     {staff.name} - {staff.employeeCode}
@@ -302,21 +371,8 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
           </div>
 
           <div>
-            <Label htmlFor="price" className="text-xs sm:text-sm">
-              Doanh thu dự kiến
-            </Label>
-            <TextInput
-              id="price"
-              placeholder="Ví dụ: 50000000"
-              value={formData.price}
-              onChange={handleChange}
-              sizing="sm"
-            />
-          </div>
-
-          <div>
             <Label htmlFor="description" className="text-xs sm:text-sm">
-              Mô tả
+              Mô tả thêm
             </Label>
             <Textarea
               id="description"
@@ -338,7 +394,7 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
           className="bg-orange-500 hover:bg-orange-600"
           size="sm"
         >
-          Lưu
+          Lưu khách hàng
         </Button>
       </div>
     </Modal>

@@ -727,20 +727,74 @@ export const getLeaveRequests = async (req: Request, res: Response) => {
   }
 };
 
+// Trong file Controller của bạn (ví dụ: hrController.ts)
+
 export const updateLeaveRequestStatus = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { status } = req.body;
+    const { status } = req.body; // Giá trị: "Đã duyệt" hoặc "Từ chối"
 
+    // 1. Tìm đơn xin nghỉ và thông tin nhân viên đi kèm
+    const leaveRequest = await prisma.leaveRequest.findUnique({
+      where: { id: id as string },
+      include: { employee: true }
+    });
+
+    if (!leaveRequest) {
+      return res.status(404).json({ error: "Không tìm thấy đơn xin nghỉ này!" });
+    }
+
+    // 2. Xử lý logic TRỪ LƯƠNG tự động nếu DUYỆT đơn "Xin phép nghỉ"
+    // Điều kiện: Trạng thái mới là "Đã duyệt" VÀ trạng thái cũ chưa phải là "Đã duyệt" (tránh trừ trùng)
+    if (status === "Đã duyệt" && leaveRequest.status !== "Đã duyệt") {
+      
+      if (leaveRequest.type === "Xin phép nghỉ") {
+        const start = new Date(leaveRequest.startDate);
+        const end = new Date(leaveRequest.endDate);
+
+        // Tính số ngày nghỉ (bao gồm cả ngày bắt đầu và kết thúc)
+        // Lưu ý: Nếu đơn chỉ nghỉ 1 ngày thì start = end, kết quả diffDays = 1
+        const diffTime = Math.abs(end.getTime() - start.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
+        // Lấy mức lương cơ bản từ database của nhân viên đó (mặc định 6tr nếu trống)
+        const baseSalary = leaveRequest.employee.baseSalary;
+        
+        // Công thức: Lương 1 ngày = Lương cơ bản / 22 ngày công chuẩn
+        const standardWorkDays = 22;
+        const dailyWage = Math.round(baseSalary / standardWorkDays);
+        
+        // Tổng số tiền trừ
+        const totalDeduction = dailyWage * diffDays;
+
+        // Tự động tạo bản ghi Phạt vào bảng SalesRecord
+        await prisma.salesRecord.create({
+          data: {
+            employeeId: leaveRequest.employeeId,
+            customer: "Hệ thống tự động",
+            service: "Phạt",
+            profit: -totalDeduction, // Lưu số âm để trừ vào tổng lương
+            note: `Trừ ${diffDays} ngày lương: Nghỉ phép từ ${leaveRequest.startDate} đến ${leaveRequest.endDate}`,
+          }
+        });
+        
+        console.log(`✅ Đã trừ ${totalDeduction}đ vào lương của ${leaveRequest.employee.name}`);
+      }
+    }
+
+    // 3. Cập nhật trạng thái đơn xin nghỉ trong Database
     const updatedRequest = await prisma.leaveRequest.update({
       where: { id: id as string },
       data: { status }
     });
 
+    // 4. Thông báo cho Frontend qua Socket để cập nhật giao diện ngay lập tức
     getIO().emit("data_changed");
+
     res.json(updatedRequest);
   } catch (error) {
-    res.status(500).json({ error: "Lỗi cập nhật trạng thái đơn" });
+    console.error("Lỗi khi cập nhật trạng thái đơn nghỉ phép:", error);
+    res.status(500).json({ error: "Lỗi hệ thống khi xử lý duyệt đơn" });
   }
 };
 export const getLeaveRequestsByEmployee = async (req: Request, res: Response) => {
