@@ -1,42 +1,46 @@
 {
-  "name": "fly-labour-backend",
+  "name": "backend",
   "version": "1.0.0",
-  "description": "Fly Labour - Backend API NestJS + PostgreSQL",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "description": "",
+  "main": "index.js",
   "scripts": {
-    "build": "nest build",
-    "start": "node dist/main",
-    "start:dev": "nest start --watch",
-    "seed": "node -e \"require('ts-node').register({project:'tsconfig.json'}); require('./src/database/seeds/run-seeds.ts')\"",
-    "seed:prod": "node dist/database/seeds/run-seeds.js"
+    "dev": "nodemon ",
+    "start": "npx prisma generate && npx prisma db push --accept-data-loss && npx tsx src/server.ts",
+    "build": "npx prisma generate"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/express-session": "^1.18.2",
+    "@types/multer": "^2.0.0",
+    "@types/node": "^25.3.3",
+    "@types/pg": "^8.18.0",
+    "@types/ws": "^8.18.1",
+    "nodemon": "^3.1.14",
+    "prisma": "^7.4.2",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
   },
   "dependencies": {
-    "@nestjs/common": "^10.0.0",
-    "@nestjs/config": "^3.0.0",
-    "@nestjs/core": "^10.0.0",
-    "@nestjs/jwt": "^10.1.0",
-    "@nestjs/passport": "^10.0.0",
-    "@nestjs/platform-express": "^10.0.0",
-    "@nestjs/swagger": "^7.1.0",
-    "@nestjs/typeorm": "^10.0.0",
-    "bcryptjs": "^2.4.3",
-    "class-transformer": "^0.5.1",
-    "class-validator": "^0.14.0",
-    "multer": "^1.4.5-lts.1",
-    "passport": "^0.6.0",
-    "passport-jwt": "^4.0.1",
-    "pg": "^8.11.0",
-    "reflect-metadata": "^0.1.13",
-    "rxjs": "^7.8.1",
-    "typeorm": "^0.3.17"
-  },
-  "devDependencies": {
-    "@nestjs/cli": "^10.0.0",
-    "@types/bcryptjs": "^2.4.3",
-    "@types/multer": "^1.4.7",
-    "@types/node": "^20.3.1",
-    "@types/passport-jwt": "^3.0.8",
-    "ts-node": "^10.9.1",
-    "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.1.3"
+    "@google-cloud/storage": "^7.15.0",
+    "@prisma/adapter-pg": "^7.4.2",
+    "@prisma/client": "^7.4.2",
+    "@types/node-cron": "^3.0.11",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "express-session": "^1.19.0",
+    "multer": "^2.1.1",
+    "node-cron": "^4.2.1",
+    "pg": "^8.19.0",
+    "socket.io": "^4.8.3"
   }
 }
