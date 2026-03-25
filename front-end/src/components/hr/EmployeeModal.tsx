@@ -1,5 +1,5 @@
 // frontend/components/hr/EmployeeModal.tsx
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Modal, Button, Label, TextInput, Select } from "flowbite-react";
 import type { Department, NewEmployeeData, Employee } from "../../types";
 
@@ -31,19 +31,6 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({
   const [baseSalary, setBaseSalary] = useState<number>(
     employeeToEdit?.baseSalary || 6000000,
   );
-
-  // VẪN CẦN GIỮ LẠI ĐOẠN USEEFFECT NÀY
-  // Để đồng bộ state nội bộ khi props `employeeToEdit` thay đổi từ bên ngoài
-  useEffect(() => {
-    if (show) {
-      setName(employeeToEdit?.name || "");
-      setEmail(employeeToEdit?.email || "");
-      setPassword("");
-      setDepartment(employeeToEdit?.department || "");
-      setRole(employeeToEdit?.role || "");
-      setBaseSalary(employeeToEdit?.baseSalary || 6000000);
-    }
-  }, [employeeToEdit, show]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

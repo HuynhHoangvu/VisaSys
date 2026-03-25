@@ -12,7 +12,7 @@ import {
 } from "flowbite-react";
 import type { AuthUser, Task } from "../../types";
 import { io } from "socket.io-client";
-import SearchFilterBar from "../Filter/SearchFilterBar";
+import SearchFilterBar from "../filter/SearchFilterBar";
 
 interface BossDashboardProps {
   currentUser: AuthUser;

@@ -6,7 +6,7 @@ import {
   getLaborRequirements,
   getStudyAbroadRequirements,
 } from "../../utils/constants";
-import DocumentFilterBar from "../Filter/DocumentFilterBar"; // <-- IMPORT TỪ FILE MỚI VỪA TẠO
+import DocumentFilterBar from "../filter/DocumentFilterBar";
 
 interface DocumentModalProps {
   show: boolean;

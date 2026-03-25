@@ -8,7 +8,7 @@ import {
 import { Spinner } from "flowbite-react";
 import type { BoardData, Task } from "../../types";
 import { io } from "socket.io-client";
-import SearchFilterBar from "../Filter/SearchFilterBar";
+import SearchFilterBar from "../filter/SearchFilterBar";
 
 interface RecruitmentBoardProps {
   onOpenDetail: (taskId: string) => void;

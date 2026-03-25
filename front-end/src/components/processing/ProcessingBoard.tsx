@@ -8,7 +8,7 @@ import {
 import { Progress, Spinner } from "flowbite-react";
 import type { AuthUser, BoardData, Column, Task } from "../../types";
 import { io } from "socket.io-client";
-import SearchFilterBar from "../Filter/SearchFilterBar";
+import SearchFilterBar from "../filter/SearchFilterBar";
 
 import {
   getRequirementsList,

@@ -15,7 +15,7 @@ import type {
   Employee, // Đã thêm type Employee
 } from "../../types";
 import { io } from "socket.io-client";
-import SearchFilterBar from "../Filter/SearchFilterBar";
+import SearchFilterBar from "../filter/SearchFilterBar";
 
 interface KanbanBoardProps {
   onOpenActivityList: (taskId: string) => void;

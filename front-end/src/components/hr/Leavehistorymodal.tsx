@@ -21,7 +21,7 @@ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 const statusConfig: Record<
   LeaveRecord["status"],
-  { color: "warning" | "success" | "failure"; label: string; icon: string }
+  { color: "warning" | "success" | "failure" | "gray"; label: string; icon: string }
 > = {
   "Chờ duyệt": { color: "warning", label: "Chờ duyệt", icon: "🕐" },
   "Đã duyệt": { color: "success", label: "Đã duyệt", icon: "✅" },
@@ -200,7 +200,7 @@ const LeaveHistoryModal: React.FC<LeaveHistoryModalProps> = ({
                         </td>
                         <td className="px-4 py-3 text-center">
                           <Badge
-                            color={cfg.color as any}
+                            color={cfg.color}
                             className="inline-flex items-center gap-1 text-2xs sm:text-xs font-bold px-2 py-1 whitespace-nowrap"
                           >
                             {cfg.icon} {cfg.label}

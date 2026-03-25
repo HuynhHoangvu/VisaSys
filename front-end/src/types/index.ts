@@ -263,9 +263,9 @@ export interface AttendanceRecord {
   halfDayDeduction?: number;  // ← thêm
 }
 export interface SidebarProps {
-  currentView: string;
-  setCurrentView: (view: string) => void;
-  currentUser: AuthUser; 
+  currentUser: AuthUser;
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
 export interface Workspace {

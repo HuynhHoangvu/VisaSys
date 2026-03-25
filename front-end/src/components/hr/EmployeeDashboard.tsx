@@ -675,6 +675,7 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
 
       {/* ── EMPLOYEE MODAL ── */}
       <EmployeeModal
+        key={employeeToEdit?.id || "new"}
         show={isAddEmpModalOpen}
         onClose={() => {
           setIsAddEmpModalOpen(false);
