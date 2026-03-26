@@ -29,6 +29,7 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
   const folderInputRef = useRef<HTMLInputElement>(null);
   const [downloadingFolderId, setDownloadingFolderId] = useState<string | null>(null);
   const [isUploadingFolder, setIsUploadingFolder] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
 
   // State kéo thả
   const [isDraggingFile, setIsDraggingFile] = useState(false);
@@ -317,26 +318,34 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
       }
     }
 
-    // Upload all files in parallel
-    await Promise.all(
-      uploadFiles.map(async (file) => {
-        const relPath = (file as File & { webkitRelativePath: string }).webkitRelativePath;
-        const dirPath = relPath.split("/").slice(0, -1).join("/");
-        const targetFolderId = folderIdMap.get(dirPath) ?? currentFolderId;
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("uploadedBy", currentUser?.name || "Admin");
-        formData.append("size", formatFileSize(file.size));
-        if (targetFolderId) formData.append("folderId", targetFolderId);
-        try {
-          await fetch(`${API_URL}/api/docs/files/upload`, { method: "POST", body: formData });
-        } catch (error) {
-          console.error(`Lỗi khi tải file ${file.name}:`, error);
-        }
-      }),
-    );
+    // Upload theo batch (3 file/lần) để tránh ERR_ACCESS_DENIED
+    const BATCH_SIZE = 3;
+    setUploadProgress({ current: 0, total: uploadFiles.length });
+
+    for (let i = 0; i < uploadFiles.length; i += BATCH_SIZE) {
+      const batch = uploadFiles.slice(i, i + BATCH_SIZE);
+      await Promise.all(
+        batch.map(async (file) => {
+          const relPath = (file as File & { webkitRelativePath: string }).webkitRelativePath;
+          const dirPath = relPath.split("/").slice(0, -1).join("/");
+          const targetFolderId = folderIdMap.get(dirPath) ?? currentFolderId;
+          const formData = new FormData();
+          formData.append("file", file);
+          formData.append("uploadedBy", currentUser?.name || "Admin");
+          formData.append("size", formatFileSize(file.size));
+          if (targetFolderId) formData.append("folderId", targetFolderId);
+          try {
+            await fetch(`${API_URL}/api/docs/files/upload`, { method: "POST", body: formData });
+          } catch (error) {
+            console.error(`Lỗi khi tải file ${file.name}:`, error);
+          }
+        }),
+      );
+      setUploadProgress({ current: Math.min(i + BATCH_SIZE, uploadFiles.length), total: uploadFiles.length });
+    }
 
     setIsUploadingFolder(false);
+    setUploadProgress({ current: 0, total: 0 });
     if (folderInputRef.current) folderInputRef.current.value = "";
     fetchData();
   };
@@ -375,14 +384,103 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
   const handleDropFile = async (e: React.DragEvent) => {
     e.preventDefault();
     setIsDraggingFile(false);
-    if (
-      !draggedFolderId &&
-      !draggedDocFileId &&
-      e.dataTransfer.files &&
-      e.dataTransfer.files.length > 0
-    ) {
-      const filesToDrop = Array.from(e.dataTransfer.files);
-      for (const file of filesToDrop) await processUploadFile(file);
+    if (draggedFolderId || draggedDocFileId) return;
+    if (!e.dataTransfer.items || e.dataTransfer.items.length === 0) return;
+
+    const items = Array.from(e.dataTransfer.items);
+
+    // Helper: đọc FileEntry thành File
+    const readEntryFile = (entry: FileSystemFileEntry): Promise<File> =>
+      new Promise((resolve, reject) => entry.file(resolve, reject));
+
+    // Helper: đọc toàn bộ entries trong một directory (xử lý giới hạn 100 entries/lần)
+    const readAllEntries = (reader: FileSystemDirectoryReader): Promise<FileSystemEntry[]> =>
+      new Promise((resolve, reject) => {
+        const allEntries: FileSystemEntry[] = [];
+        const readBatch = () => {
+          reader.readEntries((batch) => {
+            if (batch.length === 0) return resolve(allEntries);
+            allEntries.push(...batch);
+            readBatch();
+          }, reject);
+        };
+        readBatch();
+      });
+
+    // Helper: duyệt đệ quy folder, tạo folder trên server, thu thập file
+    const collectedFiles: { file: File; folderId: string | null }[] = [];
+    const traverseEntry = async (
+      entry: FileSystemEntry,
+      parentServerId: string | null,
+    ) => {
+      if (entry.isFile) {
+        const file = await readEntryFile(entry as FileSystemFileEntry);
+        collectedFiles.push({ file, folderId: parentServerId });
+      } else if (entry.isDirectory) {
+        // Tạo folder trên server
+        let newFolderId: string | null = parentServerId;
+        try {
+          const res = await fetch(`${API_URL}/api/docs/folders`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name: entry.name, parentId: parentServerId }),
+          });
+          const newFolder = await res.json();
+          newFolderId = newFolder.id;
+        } catch (err) {
+          console.error(`Lỗi tạo thư mục "${entry.name}":`, err);
+        }
+        // Duyệt tiếp con bên trong
+        const reader = (entry as FileSystemDirectoryEntry).createReader();
+        const children = await readAllEntries(reader);
+        for (const child of children) await traverseEntry(child, newFolderId);
+      }
+    };
+
+    // Kiểm tra có folder nào không
+    const entries = items
+      .map((item) => item.webkitGetAsEntry?.())
+      .filter(Boolean) as FileSystemEntry[];
+
+    const hasFolder = entries.some((entry) => entry.isDirectory);
+
+    if (hasFolder) {
+      // Có folder → dùng FileSystem API
+      setIsUploadingFolder(true);
+      for (const entry of entries) await traverseEntry(entry, currentFolderId);
+
+      // Upload theo batch
+      const BATCH_SIZE = 3;
+      setUploadProgress({ current: 0, total: collectedFiles.length });
+      for (let i = 0; i < collectedFiles.length; i += BATCH_SIZE) {
+        const batch = collectedFiles.slice(i, i + BATCH_SIZE);
+        await Promise.all(
+          batch.map(async ({ file, folderId }) => {
+            const formData = new FormData();
+            formData.append("file", file);
+            formData.append("uploadedBy", currentUser?.name || "Admin");
+            formData.append("size", formatFileSize(file.size));
+            if (folderId) formData.append("folderId", folderId);
+            try {
+              await fetch(`${API_URL}/api/docs/files/upload`, { method: "POST", body: formData });
+            } catch (err) {
+              console.error(`Lỗi upload "${file.name}":`, err);
+            }
+          }),
+        );
+        setUploadProgress({ current: Math.min(i + BATCH_SIZE, collectedFiles.length), total: collectedFiles.length });
+      }
+      setIsUploadingFolder(false);
+      setUploadProgress({ current: 0, total: 0 });
+      fetchData();
+    } else {
+      // Chỉ file thường → upload trực tiếp
+      for (const entry of entries) {
+        if (entry.isFile) {
+          const file = await readEntryFile(entry as FileSystemFileEntry);
+          await processUploadFile(file);
+        }
+      }
     }
   };
 
