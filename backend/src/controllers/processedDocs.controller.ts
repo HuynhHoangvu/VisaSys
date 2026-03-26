@@ -94,7 +94,7 @@ export const uploadFile = async (req: Request, res: Response) => {
     const decodedName = Buffer.from(req.file.originalname, "latin1").toString("utf8");
 
     // Upload vào folder riêng trên GCS để dễ quản lý
-    const result = await uploadToGCS(req.file.buffer, "flyvisa-processed-docs", decodedName);
+    const result = await uploadToGCS(req.file.path, "flyvisa-processed-docs", decodedName);
 
     const newFile = await prisma.processedFile.create({
       data: {

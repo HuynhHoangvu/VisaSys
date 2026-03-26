@@ -30,7 +30,7 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
-    "@google-cloud/storage": "^7.15.0",
+    "@google-cloud/storage": "^7.19.0",
     "@prisma/adapter-pg": "^7.4.2",
     "@prisma/client": "^7.4.2",
     "@types/node-cron": "^3.0.11",

@@ -101,7 +101,7 @@ export const uploadFile = async (req: Request, res: Response) => {
     const decodedName = Buffer.from(req.file.originalname, "latin1").toString("utf8");
     
     // Dùng chung hàm helper GCS vừa tạo (Lưu vào thư mục 'documents' trên bucket)
-    const gcsResult = await uploadToGCS(req.file.buffer, "documents", decodedName);
+    const gcsResult = await uploadToGCS(req.file.path, "documents", decodedName);
 
     const newFile = await prisma.docFile.create({
       data: {

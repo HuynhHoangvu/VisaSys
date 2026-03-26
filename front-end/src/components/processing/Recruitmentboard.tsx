@@ -530,17 +530,24 @@ const RecruitmentBoard: React.FC<RecruitmentBoardProps> = ({
                                   <p className="font-bold text-gray-800 text-[13px] leading-tight truncate mb-1">
                                     {task.content.split(" - ")[0]}
                                   </p>
-                                  {task.visaType && (
-                                    <p
-                                      className="text-2xs font-bold px-1.5 py-0.5 rounded w-fit mb-1.5"
-                                      style={{
-                                        background: step.accent,
-                                        color: step.color,
-                                      }}
-                                    >
-                                      {task.visaType}
-                                    </p>
-                                  )}
+                                  <div className="flex flex-wrap gap-1 mb-1.5">
+                                    {task.visaType && (
+                                      <p
+                                        className="text-2xs font-bold px-1.5 py-0.5 rounded"
+                                        style={{
+                                          background: step.accent,
+                                          color: step.color,
+                                        }}
+                                      >
+                                        {task.visaType}
+                                      </p>
+                                    )}
+                                    {task.jobType && (
+                                      <p className="text-2xs font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 truncate max-w-[100px]">
+                                        {task.jobType}
+                                      </p>
+                                    )}
+                                  </div>
                                   <p className="text-[11px] text-gray-400 mb-2">
                                     {task.phone}
                                   </p>
@@ -606,6 +613,9 @@ const RecruitmentBoard: React.FC<RecruitmentBoardProps> = ({
                     Loại Visa
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">
+                    Ngành nghề
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">
                     Sale
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">
@@ -620,7 +630,7 @@ const RecruitmentBoard: React.FC<RecruitmentBoardProps> = ({
                 {filteredTasks.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={6}
+                      colSpan={7}
                       className="px-4 py-10 text-center text-gray-400 italic text-sm"
                     >
                       Không tìm thấy hồ sơ phù hợp
@@ -660,6 +670,17 @@ const RecruitmentBoard: React.FC<RecruitmentBoardProps> = ({
                           {task.visaType ? (
                             <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-100">
                               {task.visaType}
+                            </span>
+                          ) : (
+                            <span className="text-gray-300">—</span>
+                          )}
+                        </td>
+
+                        {/* Ngành nghề */}
+                        <td className="px-4 py-3">
+                          {task.jobType ? (
+                            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                              {task.jobType}
                             </span>
                           ) : (
                             <span className="text-gray-300">—</span>

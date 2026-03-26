@@ -1,8 +1,8 @@
 import multer from "multer";
 import { Storage } from "@google-cloud/storage";
-import { Readable } from "stream";
 import path from "path";
 import fs from "fs";
+import os from "os";
 
 // ==========================================
 // GOOGLE CLOUD STORAGE CONFIG
@@ -39,14 +39,17 @@ if (fs.existsSync(keyFilename)) {
 export const bucket = storage.bucket(process.env.GCS_BUCKET_NAME || "flyvisa-documents");
 
 // ==========================================
-// CẤU HÌNH MULTER (LƯU TẠM VÀO RAM)
+// CẤU HÌNH MULTER (LƯU TẠM VÀO DISK - hỗ trợ file lớn)
 // ==========================================
-const memStorage = multer.memoryStorage();
+const diskStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => cb(null, os.tmpdir()),
+  filename: (_req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`),
+});
 
-// Cấu hình giới hạn 50MB
+// Giới hạn 500MB
 const multerUpload = multer({
-  storage: memStorage,
-  limits: { fileSize: 50 * 1024 * 1024 },
+  storage: diskStorage,
+  limits: { fileSize: 500 * 1024 * 1024 },
 });
 
 // Export cả 2 tên để fix lỗi SyntaxError ở các file Routes
@@ -55,9 +58,10 @@ export const uploadProcessedDoc = multerUpload;
 
 // ==========================================
 // HÀM HELPER UPLOAD DÙNG CHUNG
+// Nhận đường dẫn file tạm trên disk, stream lên GCS rồi xóa file tạm
 // ==========================================
 export const uploadToGCS = (
-  buffer: Buffer,
+  filePath: string,
   folder: string,
   filename: string
 ): Promise<{ url: string; publicId: string }> => {
@@ -69,30 +73,35 @@ export const uploadToGCS = (
       .replace(/đ/g, 'd').replace(/Đ/g, 'D')
       .replace(/\s+/g, "_")
       .replace(/[^a-zA-Z0-9._-]/g, "");
-      
+
     const gcsPath = `${folder}/${Date.now()}-${safeName}`;
     const file = bucket.file(gcsPath);
 
-    // 2. Tạo luồng ghi vào GCS
-    const stream = file.createWriteStream({ 
-      resumable: false,
+    const cleanup = () => fs.unlink(filePath, () => {});
+
+    // 2. Tạo luồng ghi vào GCS (resumable=true cho file lớn)
+    const writeStream = file.createWriteStream({
+      resumable: true,
       metadata: {
-        cacheControl: 'public, max-age=31536000', // Tối ưu cache cho browser
+        cacheControl: 'public, max-age=31536000',
       }
     });
 
-    stream.on("error", (err) => {
+    writeStream.on("error", (err) => {
+      cleanup();
       console.error("❌ GCS Stream Error:", err);
       reject(err);
     });
 
-    stream.on("finish", () => {
-      // Encode URI để đảm bảo link không bị gãy nếu có ký tự lạ
+    writeStream.on("finish", () => {
+      cleanup();
       const publicUrl = `https://storage.googleapis.com/${bucket.name}/${encodeURIComponent(file.name)}`;
       resolve({ url: publicUrl, publicId: file.name });
     });
 
-    // 3. Đẩy dữ liệu từ RAM lên Cloud
-    Readable.from(buffer).pipe(stream);
+    // 3. Stream từ disk lên GCS (không đọc vào RAM)
+    fs.createReadStream(filePath)
+      .on("error", (err) => { cleanup(); reject(err); })
+      .pipe(writeStream);
   });
 };

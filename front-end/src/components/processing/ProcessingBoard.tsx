@@ -480,7 +480,7 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
                                   onClick={() =>
                                     !isHidden && onOpenDetail(task.id)
                                   }
-                                  className={`bg-white p-4 rounded-xl shadow-sm border-l-[5px] cursor-grab active:cursor-grabbing relative group transition-all
+                                  className={`bg-white p-3 rounded-xl shadow-sm border-l-[4px] cursor-grab active:cursor-grabbing relative group transition-all
                                     ${isMissing ? "border-l-red-500 bg-red-50" : "border-l-indigo-500 hover:shadow-md"}
                                     ${snapshot.isDragging ? "shadow-2xl rotate-2 z-9999" : ""}
                                     ${isHidden ? "opacity-20 pointer-events-none scale-95" : ""}
@@ -488,26 +488,34 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
                                   style={{ ...provided.draggableProps.style }}
                                 >
                                   {isMissing && !isHidden && (
-                                    <span className="absolute top-2.5 right-2.5 flex h-3 w-3">
+                                    <span className="absolute top-2 right-2 flex h-2.5 w-2.5">
                                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                                       <span
-                                        className="relative inline-flex rounded-full h-3 w-3 bg-red-500"
+                                        className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"
                                         title="Chưa đủ hồ sơ"
                                       ></span>
                                     </span>
                                   )}
 
-                                  <h4 className="font-bold text-gray-800 text-[15px] pr-5 truncate">
+                                  <h4 className="font-bold text-gray-800 text-[13px] pr-4 truncate">
                                     {task.content.split(" - ")[0]}
                                   </h4>
-                                  <p className="text-[11px] font-bold text-indigo-600 mb-3 bg-indigo-50 px-2 py-0.5 rounded w-fit mt-1 border border-indigo-100">
-                                    {task.visaType ||
-                                      task.content.split(" - ")[1]}
-                                  </p>
+                                  <div className="flex flex-wrap gap-1 mt-1 mb-2">
+                                    {(task.visaType || task.content.split(" - ")[1]) && (
+                                      <p className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100">
+                                        {task.visaType || task.content.split(" - ")[1]}
+                                      </p>
+                                    )}
+                                    {task.jobType && (
+                                      <p className="text-[10px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 truncate max-w-[120px]">
+                                        {task.jobType}
+                                      </p>
+                                    )}
+                                  </div>
 
-                                  <div className="mb-3">
-                                    <div className="flex justify-between text-[11px] font-bold text-gray-500 mb-1">
-                                      <span>Tiến độ giấy tờ:</span>
+                                  <div className="mb-2">
+                                    <div className="flex justify-between text-[10px] font-bold text-gray-500 mb-1">
+                                      <span>Giấy tờ:</span>
                                       <span
                                         className={
                                           percent === 100
@@ -527,11 +535,10 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
                                     />
                                   </div>
 
-                                  <div className="flex justify-between items-center border-t border-gray-100 pt-3 mt-2">
-                                    <span className="text-[11px] text-gray-600 bg-gray-50 px-2 py-1 rounded font-medium border border-gray-200 truncate max-w-25">
-                                      Sale:{" "}
+                                  <div className="flex justify-between items-center border-t border-gray-100 pt-2">
+                                    <span className="text-[10px] text-gray-600 bg-gray-50 px-1.5 py-0.5 rounded font-medium border border-gray-200 truncate max-w-[80px]">
                                       <span className="font-bold text-gray-800">
-                                        {task.assignedTo?.split(" ")[0] ||
+                                        {task.assignedTo?.split(" ").slice(-1)[0] ||
                                           "Trống"}
                                       </span>
                                     </span>
@@ -541,11 +548,11 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
                                           e.stopPropagation();
                                           onOpenAttachments(task.id);
                                         }}
-                                        className="flex items-center justify-center p-1.5 text-gray-500 hover:text-green-600 bg-gray-50 hover:bg-green-50 rounded border border-gray-200 transition-colors"
+                                        className="flex items-center justify-center p-1 text-gray-500 hover:text-green-600 bg-gray-50 hover:bg-green-50 rounded border border-gray-200 transition-colors"
                                         title="Xem danh sách tài liệu"
                                       >
                                         <svg
-                                          className="w-4 h-4"
+                                          className="w-3.5 h-3.5"
                                           fill="none"
                                           stroke="currentColor"
                                           viewBox="0 0 24 24"
@@ -560,13 +567,13 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
                                       </button>
                                       <button
                                         onClick={(e) => handlePingSale(task, e)}
-                                        className={`text-[11px] font-bold px-2 py-1 rounded transition-colors shadow-sm ${
+                                        className={`text-[10px] font-bold px-1.5 py-0.5 rounded transition-colors shadow-sm ${
                                           isMissing
                                             ? "text-white bg-red-500 hover:bg-red-600"
                                             : "text-orange-600 bg-orange-100 hover:bg-orange-200"
                                         }`}
                                       >
-                                        {isMissing ? "Đòi hồ sơ" : "Báo sale"}
+                                        {isMissing ? "Đòi HS" : "Báo sale"}
                                       </button>
                                     </div>
                                   </div>

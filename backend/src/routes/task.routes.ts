@@ -22,10 +22,10 @@ router.post("/upload", uploadDoc.single("file"), async (req, res) => {
     
     const decodedName = Buffer.from(req.file.originalname, "latin1").toString("utf8");
 
-    // Upload file buffer lên Google Cloud
+    // Stream file từ disk lên Google Cloud
     const gcsResult = await uploadToGCS(
-      req.file.buffer, 
-      "tasks-documents", 
+      req.file.path,
+      "tasks-documents",
       decodedName
     );
 
