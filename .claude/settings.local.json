@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find . -not -path */.* -type d)",
+      "Bash(du -sh /d/Fly_Visa/Fly-Visa-System/*)",
+      "Bash(rm \"backend/server.ts\")",
+      "Bash(rm \"package.json\")",
+      "Bash(rmdir \"backend/src/untils\")",
+      "Bash(rmdir \"backend/src/services\")",
+      "Bash(cd:*)",
+      "Bash(rm \"D:/Fly_Visa/Fly-Visa-System/package-lock.json\")",
+      "Bash(rm -rf \"D:/Fly_Visa/Fly-Visa-System/node_modules\")",
+      "Bash(npm install:*)",
+      "Bash(npm run:*)",
+      "Bash(npm list:*)",
+      "Bash(npx eslint:*)"
+    ]
+  }
+}

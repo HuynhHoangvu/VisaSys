@@ -32,3 +32,4 @@ duyệt đơn về sớm về trễ
 auth chưa có bcrypt
 sửa phần duyệt nghỉ phép  tự động trừ lương
 thêm các diện visa nhưng mà lỡ vậy thì bấm vô cái document modal 
+thiết kế mobile tải app trên điện thoại đồ

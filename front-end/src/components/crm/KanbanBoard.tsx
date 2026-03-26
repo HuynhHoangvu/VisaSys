@@ -181,7 +181,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
     if (!boardData) return { sales: [], visaTypes: [], columns: [] };
     const allTasks = Object.values(boardData.tasks);
 
-    // ƯU TIÊN LẤY TỪ staffList NẾU CÓ, NẾU KHÔNG THÌ MỚI LẤY TỪ TASK HIỆN TẠI
+    // 1. Xử lý Nhân viên (Sales)
     let sales = [];
     if (staffList.length > 0) {
       sales = staffList
@@ -193,12 +193,21 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
         .map((name) => ({ value: name, label: name }));
     }
 
+    // 2. Xử lý Loại Visa (Nơi gây ra lỗi trùng Key)
     const visaTypes = [
-      ...new Set(allTasks.map((t) => t.visaType).filter(Boolean)),
+      ...new Set(
+        allTasks
+          .map((t) => t.visaType)
+          .filter((val) => val && val.trim() !== ""),
+      ),
     ]
       .sort()
-      .map((v) => ({ value: v!, label: v! }));
+      .map((v) => ({
+        value: v!,
+        label: v!,
+      }));
 
+    // 3. Xử lý Cột (Trạng thái)
     const columns = boardData.columnOrder
       .map((colId) => boardData.columns[colId])
       .filter(Boolean)

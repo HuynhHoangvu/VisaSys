@@ -5,6 +5,7 @@ import React, {
   useCallback,
   useMemo,
 } from "react";
+import JSZip from "jszip";
 import { type AuthUser, type DocFolder, type DocFile } from "../../types";
 import { formatFileSize } from "../../utils/helpers";
 import { io } from "socket.io-client";
@@ -25,6 +26,9 @@ const ProcessedDocDashboard: React.FC<ProcessedDocDashboardProps> = ({
   const [isAddFolderModalOpen, setIsAddFolderModalOpen] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const folderInputRef = useRef<HTMLInputElement>(null);
+  const [downloadingFolderId, setDownloadingFolderId] = useState<string | null>(null);
+  const [isUploadingFolder, setIsUploadingFolder] = useState(false);
 
   // State kéo thả tải file từ ngoài vào
   const [isDragging, setIsDragging] = useState(false);
@@ -237,6 +241,113 @@ const ProcessedDocDashboard: React.FC<ProcessedDocDashboardProps> = ({
     }
   };
 
+  // ==========================================
+  // TẢI XUỐNG TOÀN BỘ THƯ MỤC (ZIP)
+  // ==========================================
+  const collectFilesInFolder = useCallback(
+    (folderId: string, allFolders: DocFolder[], allFiles: DocFile[], pathPrefix = ""): { file: DocFile; path: string }[] => {
+      const result: { file: DocFile; path: string }[] = [];
+      allFiles.filter((f) => f.folderId === folderId).forEach((f) => result.push({ file: f, path: pathPrefix }));
+      allFolders.filter((f) => f.parentId === folderId).forEach((sub) => {
+        const subPath = pathPrefix ? `${pathPrefix}/${sub.name}` : sub.name;
+        result.push(...collectFilesInFolder(sub.id, allFolders, allFiles, subPath));
+      });
+      return result;
+    },
+    [],
+  );
+
+  const handleDownloadFolder = async (folderId: string, folderName: string) => {
+    const items = collectFilesInFolder(folderId, folders, files);
+    if (items.length === 0) return alert("Thư mục này không có file nào để tải xuống!");
+    setDownloadingFolderId(folderId);
+    try {
+      const zip = new JSZip();
+      await Promise.all(
+        items.map(async ({ file, path }) => {
+          if (!file.fileUrl) return;
+          try {
+            const url = file.fileUrl.startsWith("http") ? file.fileUrl : `${API_URL}${file.fileUrl}`;
+            const res = await fetch(url);
+            if (!res.ok) return;
+            const blob = await res.blob();
+            const filePath = path ? `${path}/${file.name}` : file.name;
+            zip.file(filePath, blob);
+          } catch (error) {
+            console.error(`Lỗi khi tải file ${file.name}:`, error);
+          }
+        }),
+      );
+      const content = await zip.generateAsync({ type: "blob", compression: "DEFLATE" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(content);
+      link.download = `${folderName}.zip`;
+      link.click();
+      URL.revokeObjectURL(link.href);
+    } catch (error) {
+      alert(`Lỗi khi tạo file ZIP:\n${getErrorMessage(error)}`);
+    } finally {
+      setDownloadingFolderId(null);
+    }
+  };
+
+  // ==========================================
+  // TẢI LÊN TOÀN BỘ THƯ MỤC
+  // ==========================================
+  const handleFolderUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    setIsUploadingFolder(true);
+    const uploadFiles = Array.from(e.target.files);
+    const folderIdMap = new Map<string, string>();
+
+    const dirPaths = [
+      ...new Set(uploadFiles.map((f) => (f as File & { webkitRelativePath: string }).webkitRelativePath.split("/").slice(0, -1).join("/"))),
+    ].filter(Boolean).sort((a, b) => a.split("/").length - b.split("/").length);
+
+    for (const dirPath of dirPaths) {
+      const parts = dirPath.split("/");
+      for (let depth = 1; depth <= parts.length; depth++) {
+        const pathKey = parts.slice(0, depth).join("/");
+        if (folderIdMap.has(pathKey)) continue;
+        const folderName = parts[depth - 1];
+        const parentId = depth === 1 ? currentFolderId : (folderIdMap.get(parts.slice(0, depth - 1).join("/")) ?? null);
+        try {
+          const res = await fetch(`${API_URL}/api/processed-docs/folders`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name: folderName, parentId }),
+          });
+          const newFolder = await res.json();
+          folderIdMap.set(pathKey, newFolder.id);
+        } catch (error) {
+          console.error(`Lỗi khi tạo thư mục "${folderName}":`, error);
+        }
+      }
+    }
+
+    await Promise.all(
+      uploadFiles.map(async (file) => {
+        const relPath = (file as File & { webkitRelativePath: string }).webkitRelativePath;
+        const dirPath = relPath.split("/").slice(0, -1).join("/");
+        const targetFolderId = folderIdMap.get(dirPath) ?? currentFolderId;
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("uploadedBy", currentUser?.name || "Admin");
+        formData.append("size", formatFileSize(file.size));
+        if (targetFolderId) formData.append("folderId", targetFolderId);
+        try {
+          await fetch(`${API_URL}/api/processed-docs/files/upload`, { method: "POST", body: formData });
+        } catch (error) {
+          console.error(`Lỗi khi tải file ${file.name}:`, error);
+        }
+      }),
+    );
+
+    setIsUploadingFolder(false);
+    if (folderInputRef.current) folderInputRef.current.value = "";
+    fetchData();
+  };
+
   // Logic kéo thả TẢI FILE TỪ NGOÀI
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -383,6 +494,23 @@ const ProcessedDocDashboard: React.FC<ProcessedDocDashboardProps> = ({
             Tạo thư mục
           </button>
           <button
+            onClick={() => folderInputRef.current?.click()}
+            disabled={isUploadingFolder}
+            className="flex items-center gap-2 bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm"
+          >
+            {isUploadingFolder ? (
+              <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+              </svg>
+            ) : (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+              </svg>
+            )}
+            {isUploadingFolder ? "Đang tải..." : "Upload thư mục"}
+          </button>
+          <button
             onClick={() => fileInputRef.current?.click()}
             className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm"
           >
@@ -407,6 +535,13 @@ const ProcessedDocDashboard: React.FC<ProcessedDocDashboardProps> = ({
             ref={fileInputRef}
             onChange={handleFileUpload}
             className="hidden"
+          />
+          <input
+            ref={folderInputRef}
+            type="file"
+            className="hidden"
+            onChange={handleFolderUpload}
+            {...({ webkitdirectory: "", directory: "", multiple: true } as React.InputHTMLAttributes<HTMLInputElement>)}
           />
         </div>
       </div>
@@ -613,24 +748,34 @@ const ProcessedDocDashboard: React.FC<ProcessedDocDashboardProps> = ({
                   <p className="text-xs text-gray-400 mt-0.5">Thư mục</p>
                 </div>
               </div>
-              <button
-                onClick={(e) => handleDeleteFolder(e, folder.id)}
-                className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-all shrink-0"
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all shrink-0">
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleDownloadFolder(folder.id, folder.name); }}
+                  disabled={downloadingFolderId === folder.id}
+                  className="text-gray-400 hover:text-green-600 hover:bg-green-50 p-2 rounded-lg transition-all disabled:opacity-50"
+                  title="Tải xuống toàn bộ thư mục (ZIP)"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                  />
-                </svg>
-              </button>
+                  {downloadingFolderId === folder.id ? (
+                    <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                    </svg>
+                  ) : (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                  )}
+                </button>
+                <button
+                  onClick={(e) => handleDeleteFolder(e, folder.id)}
+                  className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-2 rounded-lg transition-all"
+                  title="Xóa thư mục"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              </div>
             </div>
           ))}
 

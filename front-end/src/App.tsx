@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { BrowserRouter, Routes, Route, Navigate, Outlet, useNavigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, Outlet, useNavigate, useLocation } from "react-router-dom";
 import Sidebar from "./components/layout/Sidebar";
 import Header from "./components/layout/Header";
 import Login from "./components/auth/Login";
@@ -14,6 +14,16 @@ import ServicesPage from "./pages/ServicesPage";
 import KpiPage from "./pages/KpiPage";
 import RecruitmentPage from "./pages/RecruitmentPage";
 import type { AuthUser } from "./types";
+
+// Re-mounts on each route change so the fade-in animation replays
+const PageWrapper: React.FC = () => {
+  const { pathname } = useLocation();
+  return (
+    <div key={pathname} className="flex-1 overflow-hidden flex flex-col relative z-0 page-fade-in">
+      <Outlet />
+    </div>
+  );
+};
 
 // Layout chung: Sidebar + Header + nội dung trang (Outlet)
 const AppLayout: React.FC = () => {
@@ -32,9 +42,7 @@ const AppLayout: React.FC = () => {
           currentUser={currentUser}
           onToggleSidebar={() => setIsSidebarOpen(true)}
         />
-        <div className="flex-1 overflow-hidden flex flex-col relative z-0">
-          <Outlet />
-        </div>
+        <PageWrapper />
       </main>
     </div>
   );
@@ -56,10 +64,20 @@ const isBossOrManager = (user: AuthUser) =>
     user.role?.toLowerCase().includes(r),
   );
 
-const isProcessingDept = (user: AuthUser) =>
-  ["xử lý hồ sơ", "hồ sơ", "trợ lý giám đốc"].some((d) =>
-    user.department?.toLowerCase().includes(d),
-  ) && !isBossOrManager(user);
+const isProcessingDept = (user: AuthUser) => {
+  const isBoss =
+    user.id === "admin" ||
+    ["giám đốc", "phó giám đốc"].some((r) =>
+      user.role?.toLowerCase().includes(r),
+    );
+  const isManager = ["quản lý", "trưởng phòng"].some((r) =>
+    user.role?.toLowerCase().includes(r),
+  );
+  const isProcessingDeptUser = ["xử lý hồ sơ", "hồ sơ", "trợ lý giám đốc"].some(
+    (d) => user.department?.toLowerCase().includes(d),
+  );
+  return (isBoss || isProcessingDeptUser) && !isManager;
+};
 
 const App: React.FC = () => {
   return (

@@ -57,24 +57,30 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
 
       // Nếu đổi Visa Type thì cập nhật lại Tên Khách Hàng (content) và Tự động gợi ý Nhóm Hồ Sơ
       if (field === "visaType") {
-        const namePart = prev.content.split(" - ")[0];
-        updatedData.content = `${namePart} - ${value}`;
+        // Không cập nhật content khi đang ở trạng thái tạm "Khác" (chưa nhập xong)
+        if (value !== "Khác") {
+          const namePart = prev.content.split(" - ")[0];
+          updatedData.content = `${namePart} - ${value}`;
+        }
 
-        const lowerValue = value.toLowerCase();
-        if (
-          lowerValue.includes("lao động") ||
-          lowerValue.includes("tay nghề") ||
-          lowerValue.includes("việc làm") ||
-          lowerValue.includes("work")
-        ) {
-          updatedData.checklistType = "labor";
-        } else if (
-          lowerValue.includes("du học") ||
-          lowerValue.includes("student")
-        ) {
-          updatedData.checklistType = "study";
-        } else {
-          updatedData.checklistType = "tourism";
+        // Không tự động thay đổi checklistType khi chọn "Khác" — giữ nguyên để user tự chọn
+        if (value !== "Khác") {
+          const lowerValue = value.toLowerCase();
+          if (
+            lowerValue.includes("lao động") ||
+            lowerValue.includes("tay nghề") ||
+            lowerValue.includes("việc làm") ||
+            lowerValue.includes("work")
+          ) {
+            updatedData.checklistType = "labor";
+          } else if (
+            lowerValue.includes("du học") ||
+            lowerValue.includes("student")
+          ) {
+            updatedData.checklistType = "study";
+          } else {
+            updatedData.checklistType = "tourism";
+          }
         }
       }
       return updatedData;
@@ -288,7 +294,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
               />
             </div>
 
-            {/* SỬA ĐỔI: Diện Visa có hỗ trợ tự nhập */}
+            {/* Diện Visa có hỗ trợ tự nhập */}
             <div>
               <Label className="text-[10px] sm:text-xs uppercase text-gray-400">
                 Diện Visa Quan Tâm
@@ -296,10 +302,8 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
               <Select
                 sizing="sm"
                 value={isCustomVisa ? "Khác" : currentVisaType}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  handleChange("visaType", val === "Khác" ? "" : val);
-                }}
+                // SỬA Ở ĐÂY: Lưu trực tiếp giá trị e.target.value (kể cả là chữ "Khác")
+                onChange={(e) => handleChange("visaType", e.target.value)}
                 className="mt-1"
               >
                 <option value="">-- Chọn diện Visa --</option>
@@ -310,12 +314,17 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
                 ))}
                 <option value="Khác">✏️ Khác (Tự nhập...)</option>
               </Select>
+
               {(currentVisaType === "Khác" || isCustomVisa) && (
                 <TextInput
                   sizing="sm"
                   placeholder="Nhập tên diện Visa..."
                   value={currentVisaType === "Khác" ? "" : currentVisaType}
-                  onChange={(e) => handleChange("visaType", e.target.value)}
+                  // SỬA Ở ĐÂY: Nếu người dùng xoá hết text, gán lại thành "Khác" để giữ ô input không bị biến mất
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    handleChange("visaType", val === "" ? "Khác" : val);
+                  }}
                   className="mt-2"
                   autoFocus
                 />

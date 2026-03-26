@@ -101,8 +101,11 @@ const SearchFilterBar: React.FC<SearchFilterConfig> = ({
             }`}
           >
             <option value="all">{filter.placeholder}</option>
-            {filter.options.map((opt) => (
-              <option key={opt.value} value={opt.value}>
+            {filter.options.map((opt, idx) => (
+              <option
+                key={`${filter.key}-${opt.value}-${idx}`} // Key kết hợp: tiền tố filter + giá trị + chỉ số index
+                value={opt.value}
+              >
                 {opt.label}
               </option>
             ))}
