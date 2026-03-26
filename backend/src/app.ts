@@ -41,8 +41,8 @@ app.use(cors(corsOptions));
 // ==========================================
 // BODY PARSER
 // ==========================================
-app.use(express.json({ limit: "500mb" }));
-app.use(express.urlencoded({ extended: true, limit: "500mb" }));
+app.use(express.json({ limit: "1000mb" }));
+app.use(express.urlencoded({ extended: true, limit: "1000mb" }));
 
 // ==========================================
 // SESSION CONFIG

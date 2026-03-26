@@ -14,7 +14,15 @@
       "Bash(npm run:*)",
       "Bash(npm list:*)",
       "Bash(npx eslint:*)",
-      "Bash(find D:Fly_VisaFly-Visa-System -maxdepth 3 -type f \\\\\\(-name .env* -o -name *.env* \\\\\\))"
+      "Bash(find D:Fly_VisaFly-Visa-System -maxdepth 3 -type f \\\\\\(-name .env* -o -name *.env* \\\\\\))",
+      "Bash(find D:/Fly_Visa/Fly-Visa-System/front-end -name onboarding*)",
+      "Bash(grep -r \"GET.*flyvisa.*hr\\\\|fetch.*\\\\/hr\\\\|axios.*\\\\/hr\" D:/Fly_Visa/Fly-Visa-System/front-end/src --include=*.ts --include=*.tsx --include=*.js -l)",
+      "Bash(grep -rn \"\\\\/hr\\\\|''''\\\\/hr''''\\\\|\\\\`\\\\/hr\\\\`\\\\|url.*\\\\/hr[^\\\\/]\" D:/Fly_Visa/Fly-Visa-System/front-end/src --include=*.ts --include=*.tsx --include=*.js)",
+      "Bash(grep -rn \"VITE_API_URL\\\\|baseURL\\\\|axios.create\\\\|fetch.*\\\\/hr\" D:/Fly_Visa/Fly-Visa-System/front-end/src --include=*.ts --include=*.tsx)",
+      "Bash(cat D:/Fly_Visa/Fly-Visa-System/front-end/.env*)",
+      "Bash(grep -rn /hr[^/a-zA-Z] D:/Fly_Visa/Fly-Visa-System/front-end/src --include=*.ts --include=*.tsx)",
+      "Bash(cat D:/Fly_Visa/Fly-Visa-System/front-end/dockerfile*)",
+      "Bash(cat D:/Fly_Visa/Fly-Visa-System/front-end/vite.config*)"
     ]
   }
 }
