@@ -27,9 +27,14 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
   const [newFolderName, setNewFolderName] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
-  const [downloadingFolderId, setDownloadingFolderId] = useState<string | null>(null);
+  const [downloadingFolderId, setDownloadingFolderId] = useState<string | null>(
+    null,
+  );
   const [isUploadingFolder, setIsUploadingFolder] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
+  const [uploadProgress, setUploadProgress] = useState({
+    current: 0,
+    total: 0,
+  });
 
   // State kéo thả
   const [isDraggingFile, setIsDraggingFile] = useState(false);
@@ -236,13 +241,24 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
   // TẢI XUỐNG TOÀN BỘ THƯ MỤC (ZIP)
   // ==========================================
   const collectFilesInFolder = useCallback(
-    (folderId: string, allFolders: DocFolder[], allFiles: DocFile[], pathPrefix = ""): { file: DocFile; path: string }[] => {
+    (
+      folderId: string,
+      allFolders: DocFolder[],
+      allFiles: DocFile[],
+      pathPrefix = "",
+    ): { file: DocFile; path: string }[] => {
       const result: { file: DocFile; path: string }[] = [];
-      allFiles.filter((f) => f.folderId === folderId).forEach((f) => result.push({ file: f, path: pathPrefix }));
-      allFolders.filter((f) => f.parentId === folderId).forEach((sub) => {
-        const subPath = pathPrefix ? `${pathPrefix}/${sub.name}` : sub.name;
-        result.push(...collectFilesInFolder(sub.id, allFolders, allFiles, subPath));
-      });
+      allFiles
+        .filter((f) => f.folderId === folderId)
+        .forEach((f) => result.push({ file: f, path: pathPrefix }));
+      allFolders
+        .filter((f) => f.parentId === folderId)
+        .forEach((sub) => {
+          const subPath = pathPrefix ? `${pathPrefix}/${sub.name}` : sub.name;
+          result.push(
+            ...collectFilesInFolder(sub.id, allFolders, allFiles, subPath),
+          );
+        });
       return result;
     },
     [],
@@ -250,7 +266,8 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
 
   const handleDownloadFolder = async (folderId: string, folderName: string) => {
     const items = collectFilesInFolder(folderId, folders, files);
-    if (items.length === 0) return alert("Thư mục này không có file nào để tải xuống!");
+    if (items.length === 0)
+      return alert("Thư mục này không có file nào để tải xuống!");
     setDownloadingFolderId(folderId);
     try {
       const zip = new JSZip();
@@ -258,7 +275,9 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
         items.map(async ({ file, path }) => {
           if (!file.fileUrl) return;
           try {
-            const url = file.fileUrl.startsWith("http") ? file.fileUrl : `${API_URL}${file.fileUrl}`;
+            const url = file.fileUrl.startsWith("http")
+              ? file.fileUrl
+              : `${API_URL}${file.fileUrl}`;
             const res = await fetch(url);
             if (!res.ok) return;
             const blob = await res.blob();
@@ -269,7 +288,10 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
           }
         }),
       );
-      const content = await zip.generateAsync({ type: "blob", compression: "DEFLATE" });
+      const content = await zip.generateAsync({
+        type: "blob",
+        compression: "DEFLATE",
+      });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(content);
       link.download = `${folderName}.zip`;
@@ -293,8 +315,17 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
 
     // Collect unique directory paths sorted shallow → deep
     const dirPaths = [
-      ...new Set(uploadFiles.map((f) => (f as File & { webkitRelativePath: string }).webkitRelativePath.split("/").slice(0, -1).join("/"))),
-    ].filter(Boolean).sort((a, b) => a.split("/").length - b.split("/").length);
+      ...new Set(
+        uploadFiles.map((f) =>
+          (f as File & { webkitRelativePath: string }).webkitRelativePath
+            .split("/")
+            .slice(0, -1)
+            .join("/"),
+        ),
+      ),
+    ]
+      .filter(Boolean)
+      .sort((a, b) => a.split("/").length - b.split("/").length);
 
     // Create folders level by level
     for (const dirPath of dirPaths) {
@@ -303,7 +334,10 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
         const pathKey = parts.slice(0, depth).join("/");
         if (folderIdMap.has(pathKey)) continue;
         const folderName = parts[depth - 1];
-        const parentId = depth === 1 ? currentFolderId : (folderIdMap.get(parts.slice(0, depth - 1).join("/")) ?? null);
+        const parentId =
+          depth === 1
+            ? currentFolderId
+            : (folderIdMap.get(parts.slice(0, depth - 1).join("/")) ?? null);
         try {
           const res = await fetch(`${API_URL}/api/docs/folders`, {
             method: "POST",
@@ -326,7 +360,8 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
       const batch = uploadFiles.slice(i, i + BATCH_SIZE);
       await Promise.all(
         batch.map(async (file) => {
-          const relPath = (file as File & { webkitRelativePath: string }).webkitRelativePath;
+          const relPath = (file as File & { webkitRelativePath: string })
+            .webkitRelativePath;
           const dirPath = relPath.split("/").slice(0, -1).join("/");
           const targetFolderId = folderIdMap.get(dirPath) ?? currentFolderId;
           const formData = new FormData();
@@ -335,13 +370,19 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
           formData.append("size", formatFileSize(file.size));
           if (targetFolderId) formData.append("folderId", targetFolderId);
           try {
-            await fetch(`${API_URL}/api/docs/files/upload`, { method: "POST", body: formData });
+            await fetch(`${API_URL}/api/docs/files/upload`, {
+              method: "POST",
+              body: formData,
+            });
           } catch (error) {
             console.error(`Lỗi khi tải file ${file.name}:`, error);
           }
         }),
       );
-      setUploadProgress({ current: Math.min(i + BATCH_SIZE, uploadFiles.length), total: uploadFiles.length });
+      setUploadProgress({
+        current: Math.min(i + BATCH_SIZE, uploadFiles.length),
+        total: uploadFiles.length,
+      });
     }
 
     setIsUploadingFolder(false);
@@ -394,7 +435,9 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
       new Promise((resolve, reject) => entry.file(resolve, reject));
 
     // Helper: đọc toàn bộ entries trong một directory (xử lý giới hạn 100 entries/lần)
-    const readAllEntries = (reader: FileSystemDirectoryReader): Promise<FileSystemEntry[]> =>
+    const readAllEntries = (
+      reader: FileSystemDirectoryReader,
+    ): Promise<FileSystemEntry[]> =>
       new Promise((resolve, reject) => {
         const allEntries: FileSystemEntry[] = [];
         const readBatch = () => {
@@ -423,7 +466,10 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
           const res = await fetch(`${API_URL}/api/docs/folders`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name: entry.name, parentId: parentServerId }),
+            body: JSON.stringify({
+              name: entry.name,
+              parentId: parentServerId,
+            }),
           });
           const newFolder = await res.json();
           newFolderId = newFolder.id;
@@ -462,13 +508,19 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
             formData.append("size", formatFileSize(file.size));
             if (folderId) formData.append("folderId", folderId);
             try {
-              await fetch(`${API_URL}/api/docs/files/upload`, { method: "POST", body: formData });
+              await fetch(`${API_URL}/api/docs/files/upload`, {
+                method: "POST",
+                body: formData,
+              });
             } catch (err) {
               console.error(`Lỗi upload "${file.name}":`, err);
             }
           }),
         );
-        setUploadProgress({ current: Math.min(i + BATCH_SIZE, collectedFiles.length), total: collectedFiles.length });
+        setUploadProgress({
+          current: Math.min(i + BATCH_SIZE, collectedFiles.length),
+          total: collectedFiles.length,
+        });
       }
       setIsUploadingFolder(false);
       setUploadProgress({ current: 0, total: 0 });
@@ -618,13 +670,38 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
             className="flex items-center gap-2 bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm"
           >
             {isUploadingFolder ? (
-              <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+              <svg
+                className="w-5 h-5 animate-spin"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v8z"
+                />
               </svg>
             ) : (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"
+                />
               </svg>
             )}
             {isUploadingFolder ? "Đang tải..." : "Upload thư mục"}
@@ -660,7 +737,11 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
             type="file"
             className="hidden"
             onChange={handleFolderUpload}
-            {...({ webkitdirectory: "", directory: "", multiple: true } as React.InputHTMLAttributes<HTMLInputElement>)}
+            {...({
+              webkitdirectory: "",
+              directory: "",
+              multiple: true,
+            } as React.InputHTMLAttributes<HTMLInputElement>)}
           />
         </div>
       </div>
@@ -819,19 +900,47 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
               </div>
               <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all shrink-0">
                 <button
-                  onClick={(e) => { e.stopPropagation(); handleDownloadFolder(folder.id, folder.name); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDownloadFolder(folder.id, folder.name);
+                  }}
                   disabled={downloadingFolderId === folder.id}
                   className="text-gray-400 hover:text-green-600 hover:bg-green-50 p-2 rounded-lg transition-all disabled:opacity-50"
                   title="Tải xuống toàn bộ thư mục (ZIP)"
                 >
                   {downloadingFolderId === folder.id ? (
-                    <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                    <svg
+                      className="w-5 h-5 animate-spin"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8v8z"
+                      />
                     </svg>
                   ) : (
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                      />
                     </svg>
                   )}
                 </button>
@@ -840,8 +949,18 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
                   className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-2 rounded-lg transition-all"
                   title="Xóa thư mục"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
                   </svg>
                 </button>
               </div>
@@ -1046,6 +1165,49 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* COMPONENT HIỂN THỊ TIẾN TRÌNH UPLOAD (SỬ DỤNG uploadProgress Ở ĐÂY ĐỂ FIX LỖI) */}
+      {isUploadingFolder && uploadProgress.total > 0 && (
+        <div className="fixed bottom-6 right-6 z-50 bg-white p-5 rounded-xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.2)] border border-blue-100 w-80 animate-fade-in">
+          <div className="flex justify-between items-center mb-3">
+            <span className="text-sm font-bold text-blue-700 flex items-center gap-2">
+              <svg
+                className="w-4 h-4 animate-spin text-blue-500"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v8z"
+                ></path>
+              </svg>
+              Đang tải lên...
+            </span>
+            <span className="text-xs font-bold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full border border-gray-200">
+              {uploadProgress.current} / {uploadProgress.total}
+            </span>
+          </div>
+          <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden border border-gray-200">
+            <div
+              className="bg-blue-600 h-2.5 rounded-full transition-all duration-300 ease-out relative"
+              style={{
+                width: `${(uploadProgress.current / uploadProgress.total) * 100}%`,
+              }}
+            >
+              <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
+            </div>
+          </div>
         </div>
       )}
 
