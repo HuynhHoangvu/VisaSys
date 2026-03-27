@@ -31,7 +31,7 @@ const PROCESSING_COLUMNS = {
   },
   "proc-col-2": {
     id: "proc-col-2",
-    title: "Đang xử lý (Dịch thuật/Form)",
+    title: "Đang xử lý",
     taskIds: [] as string[],
   },
   "proc-col-3": {
@@ -44,6 +44,16 @@ const PROCESSING_COLUMNS = {
     title: "Đợi trả kết quả",
     taskIds: [] as string[],
   },
+  "proc-col-5": {
+    id: "proc-col-5",
+    title: "Rớt visa",
+    taskIds: [] as string[],
+  },
+  "proc-col-6": {
+    id: "proc-col-6",
+    title: "Đậu visa",
+    taskIds: [] as string[],
+  },
 };
 
 const PROCESSING_COLUMN_ORDER = [
@@ -51,6 +61,8 @@ const PROCESSING_COLUMN_ORDER = [
   "proc-col-2",
   "proc-col-3",
   "proc-col-4",
+  "proc-col-5",
+  "proc-col-6",
 ];
 
 const API_BASE_URL = `${import.meta.env.VITE_API_URL || "http://localhost:3001"}/api`;
@@ -129,6 +141,15 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
           ...PROCESSING_COLUMNS["proc-col-4"],
           taskIds: [] as string[],
         },
+        "proc-col-5": {
+          ...PROCESSING_COLUMNS["proc-col-5"],
+          taskIds: [] as string[],
+        },
+        "proc-col-6": {
+          ...PROCESSING_COLUMNS["proc-col-6"],
+          taskIds: [] as string[],
+        },
+        
       };
 
       salesHandoverTaskIds.forEach((taskId) => {
