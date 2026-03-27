@@ -111,18 +111,34 @@ const CrmPage: React.FC = () => {
       const task = boardData.tasks[taskId];
       const activity = task.activities?.find((a) => a.id === activityId);
       if (!activity) return;
-      const newCompletedStatus = !activity.completed;
-      setBoardData((prev) => {
-        const t = prev.tasks[taskId];
-        return {
-          ...prev,
-          tasks: {
-            ...prev.tasks,
-            [taskId]: { ...t, activities: t.activities?.map((act) => act.id === activityId ? { ...act, completed: newCompletedStatus } : act) },
-          },
-        };
-      });
-      await api.put(`/api/activities/${activityId}`, { completed: newCompletedStatus });
+
+      if (!activity.completed) {
+        // Hoàn thành → xóa luôn để hiển thị việc tiếp theo
+        setBoardData((prev) => {
+          const t = prev.tasks[taskId];
+          return {
+            ...prev,
+            tasks: {
+              ...prev.tasks,
+              [taskId]: { ...t, activities: t.activities?.filter((act) => act.id !== activityId) },
+            },
+          };
+        });
+        await api.delete(`/api/activities/${activityId}`);
+      } else {
+        // Bỏ hoàn thành → về lại chưa xong
+        setBoardData((prev) => {
+          const t = prev.tasks[taskId];
+          return {
+            ...prev,
+            tasks: {
+              ...prev.tasks,
+              [taskId]: { ...t, activities: t.activities?.map((act) => act.id === activityId ? { ...act, completed: false } : act) },
+            },
+          };
+        });
+        await api.put(`/api/activities/${activityId}`, { completed: false });
+      }
     } catch (error) {
       console.error("Lỗi khi cập nhật:", error);
     }

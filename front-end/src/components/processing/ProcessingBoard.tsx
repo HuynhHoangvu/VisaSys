@@ -425,7 +425,7 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
               return (
                 <div
                   key={column.id}
-                  className="flex flex-col bg-gray-200/60 rounded-xl w-75 min-w-75 max-h-full shrink-0 border border-gray-300 shadow-sm"
+                  className="flex flex-col bg-gray-200/60 rounded-xl w-56 min-w-[14rem] max-h-full shrink-0 border border-gray-300 shadow-sm"
                 >
                   <div className="p-3 flex justify-between items-center bg-gray-100 rounded-t-xl border-b border-gray-300">
                     <h3 className="font-bold text-gray-700 uppercase text-[12px] tracking-wide">
@@ -497,17 +497,19 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
                                     </span>
                                   )}
 
-                                  <h4 className="font-bold text-gray-800 text-[13px] pr-4 truncate">
+                                  <h4 className="font-bold text-gray-800 text-xs pr-4 truncate mb-1">
                                     {task.content.split(" - ")[0]}
                                   </h4>
-                                  <div className="flex flex-wrap gap-1 mt-1 mb-2">
-                                    {(task.visaType || task.content.split(" - ")[1]) && (
-                                      <p className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100">
-                                        {task.visaType || task.content.split(" - ")[1]}
+                                  <div className="flex flex-nowrap gap-1 mb-2 overflow-hidden">
+                                    {(task.visaType ||
+                                      task.content.split(" - ")[1]) && (
+                                      <p className="text-[9px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100 truncate max-w-[90px] shrink-0">
+                                        {task.visaType ||
+                                          task.content.split(" - ")[1]}
                                       </p>
                                     )}
                                     {task.jobType && (
-                                      <p className="text-[10px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 truncate max-w-[120px]">
+                                      <p className="text-[9px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 truncate max-w-[80px] shrink-0">
                                         {task.jobType}
                                       </p>
                                     )}
@@ -535,24 +537,23 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
                                     />
                                   </div>
 
-                                  <div className="flex justify-between items-center border-t border-gray-100 pt-2">
-                                    <span className="text-[10px] text-gray-600 bg-gray-50 px-1.5 py-0.5 rounded font-medium border border-gray-200 truncate max-w-[80px]">
-                                      <span className="font-bold text-gray-800">
-                                        {task.assignedTo?.split(" ").slice(-1)[0] ||
-                                          "Trống"}
-                                      </span>
+                                  <div className="flex justify-between items-center border-t border-gray-100 pt-1.5 gap-1">
+                                    <span className="text-[9px] font-bold text-gray-700 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-200 truncate max-w-[60px] shrink-0">
+                                      {task.assignedTo
+                                        ?.split(" ")
+                                        .slice(-1)[0] || "Trống"}
                                     </span>
-                                    <div className="flex gap-1 shrink-0">
+                                    <div className="flex gap-1 shrink-0 items-center">
                                       <button
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           onOpenAttachments(task.id);
                                         }}
-                                        className="flex items-center justify-center p-1 text-gray-500 hover:text-green-600 bg-gray-50 hover:bg-green-50 rounded border border-gray-200 transition-colors"
+                                        className="w-6 h-6 flex items-center justify-center text-gray-500 hover:text-green-600 bg-gray-50 hover:bg-green-50 rounded border border-gray-200 transition-colors"
                                         title="Xem danh sách tài liệu"
                                       >
                                         <svg
-                                          className="w-3.5 h-3.5"
+                                          className="w-3 h-3"
                                           fill="none"
                                           stroke="currentColor"
                                           viewBox="0 0 24 24"
@@ -567,7 +568,7 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
                                       </button>
                                       <button
                                         onClick={(e) => handlePingSale(task, e)}
-                                        className={`text-[10px] font-bold px-1.5 py-0.5 rounded transition-colors shadow-sm ${
+                                        className={`text-[9px] font-bold px-1.5 py-0.5 rounded transition-colors ${
                                           isMissing
                                             ? "text-white bg-red-500 hover:bg-red-600"
                                             : "text-orange-600 bg-orange-100 hover:bg-orange-200"

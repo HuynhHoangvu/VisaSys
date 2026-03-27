@@ -12,7 +12,7 @@ import type {
   Notification,
   Task,
   Column,
-  Employee, // Đã thêm type Employee
+  Employee,
 } from "../../types";
 import { io } from "socket.io-client";
 import SearchFilterBar from "../filter/SearchFilterBar";
@@ -40,7 +40,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
   currentUser,
 }) => {
   const [boardData, setBoardData] = useState<BoardData | null>(null);
-  const [staffList, setStaffList] = useState<Employee[]>([]); // Thêm state lưu toàn bộ nhân viên
+  const [staffList, setStaffList] = useState<Employee[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeAlerts, setActiveAlerts] = useState<string[]>([]);
@@ -76,7 +76,6 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
 
   const canSeeAll = isBoss || isManager || isProcessingDept || isMarketingDept;
 
-  // Gọi API lấy danh sách toàn bộ nhân viên
   useEffect(() => {
     const fetchStaffList = async () => {
       try {
@@ -181,7 +180,6 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
     if (!boardData) return { sales: [], visaTypes: [], columns: [] };
     const allTasks = Object.values(boardData.tasks);
 
-    // 1. Xử lý Nhân viên (Sales)
     let sales = [];
     if (staffList.length > 0) {
       sales = staffList
@@ -193,7 +191,6 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
         .map((name) => ({ value: name, label: name }));
     }
 
-    // 2. Xử lý Loại Visa (Nơi gây ra lỗi trùng Key)
     const visaTypes = [
       ...new Set(
         allTasks
@@ -202,12 +199,8 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
       ),
     ]
       .sort()
-      .map((v) => ({
-        value: v!,
-        label: v!,
-      }));
+      .map((v) => ({ value: v!, label: v! }));
 
-    // 3. Xử lý Cột (Trạng thái)
     const columns = boardData.columnOrder
       .map((colId) => boardData.columns[colId])
       .filter(Boolean)
@@ -238,33 +231,26 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
 
         if (filterSale !== "all" && task.assignedTo !== filterSale)
           return false;
-
         if (filterVisa !== "all" && task.visaType !== filterVisa) return false;
 
         if (filterSource !== "all") {
           if (!task.source) return false;
-
           const s = task.source;
           const f = filterSource;
-
           const isMatch =
             s === f ||
             (f === "Facebook Ads" && s === "Facebook") ||
             (f === "Tiktok Ads" && s === "TikTok") ||
             (f === "Facebook cá nhân" && s === "Cá Nhân");
-
           if (!isMatch) return false;
         }
 
         if (filterDateRange !== "all") {
           if (!task.createdAt) return false;
-
           const taskDate = new Date(task.createdAt);
           if (isNaN(taskDate.getTime())) return false;
-
           const diffTime = Math.abs(now.getTime() - taskDate.getTime());
           const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
           if (filterDateRange === "7days" && diffDays > 7) return false;
           if (filterDateRange === "30days" && diffDays > 30) return false;
         }
@@ -700,7 +686,6 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
           hasActiveFilter={hasActiveFilter}
         />
 
-        {/* THÔNG BÁO NHANH CHO MARKETING */}
         {isMarketingDept && (
           <div className="flex items-center gap-3 mt-3 mb-1 px-2">
             <div className="flex items-center gap-2 py-1.5 px-4 bg-orange-50 border border-orange-100 rounded-lg shadow-sm">
@@ -716,12 +701,9 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                 khách hàng
                 {filterSource !== "all" && ` từ ${filterSource}`}
                 {filterDateRange !== "all" &&
-                  ` trong ${
-                    filterDateRange === "7days" ? "7 ngày qua" : "30 ngày qua"
-                  }`}
+                  ` trong ${filterDateRange === "7days" ? "7 ngày qua" : "30 ngày qua"}`}
               </p>
             </div>
-
             {filteredTotal > 0 && filterSource !== "all" && (
               <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-md font-bold uppercase">
                 Đang đo lường hiệu quả
@@ -731,7 +713,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
         )}
       </div>
 
-      {/* CHẾ ĐỘ HIỂN THỊ KANBAN BOARD */}
+      {/* KANBAN BOARD */}
       {viewMode === "board" && (
         <DragDropContext onDragEnd={onDragEnd}>
           <div className="flex-1 min-h-0 w-full flex space-x-4 overflow-x-auto pb-2 items-start custom-scrollbar">
@@ -752,7 +734,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
               return (
                 <div
                   key={column.id}
-                  className="flex flex-col bg-gray-100/50 rounded-xl w-[85vw] sm:w-64 min-w-[16rem] h-full shrink-0"
+                  className="flex flex-col bg-gray-100/50 rounded-xl w-[85vw] sm:w-52 min-w-[13rem] h-full shrink-0"
                 >
                   <div className="px-3 py-3 flex justify-between items-center shrink-0 border-b border-gray-200/50">
                     <h3 className="font-bold text-gray-600 uppercase text-[11px] tracking-wider">
@@ -806,15 +788,14 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                                     {...provided.draggableProps}
                                     {...provided.dragHandleProps}
                                     onClick={() => onOpenDetail(task.id)}
-                                    className={`p-3 sm:p-2.5 relative group select-none transition-colors duration-200 rounded-lg ${getCardStyle(
+                                    className={`p-2 relative group select-none transition-colors duration-200 rounded-lg ${getCardStyle(
                                       column.id,
                                       snapshot.isDragging,
                                       isAlerted,
                                     )}`}
-                                    style={{
-                                      ...provided.draggableProps.style,
-                                    }}
+                                    style={{ ...provided.draggableProps.style }}
                                   >
+                                    {/* Alert badge */}
                                     {isAlerted && (
                                       <div className="absolute -top-2 -left-2 bg-red-500 text-white w-5 h-5 rounded-full flex items-center justify-center shadow-lg border-2 border-white z-10 animate-bounce">
                                         <svg
@@ -831,15 +812,16 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                                       </div>
                                     )}
 
+                                    {/* Delete button */}
                                     {!isMarketingDept && (
                                       <button
                                         onClick={(e) =>
                                           handleDeleteClick(e, task.id)
                                         }
-                                        className="absolute top-1 right-1 lg:opacity-0 lg:group-hover:opacity-100 opacity-100 p-2 lg:p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                                        className="absolute top-1 right-1 lg:opacity-0 lg:group-hover:opacity-100 opacity-100 p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
                                       >
                                         <svg
-                                          className="w-4 h-4 lg:w-3.5 lg:h-3.5"
+                                          className="w-3 h-3"
                                           fill="none"
                                           stroke="currentColor"
                                           viewBox="0 0 24 24"
@@ -853,87 +835,96 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                                         </svg>
                                       </button>
                                     )}
-                                    <h4 className="font-bold text-gray-800 text-sm sm:text-xs leading-tight pr-8 mb-1.5 line-clamp-2">
-                                      {task.content}
-                                    </h4>
 
-                                    <div className="flex flex-wrap gap-1 mb-2">
+                                    {/* Row 1: Tên + NV */}
+                                    <div className="flex justify-between items-start mb-1 pr-4 gap-1">
+                                      <h4 className="font-bold text-gray-800 text-xs leading-tight line-clamp-1 min-w-0 flex-1">
+                                        {task.content.split(" - ")[0]}
+                                      </h4>
+                                      {task.assignedTo && (
+                                        <div className="flex items-center gap-1 shrink-0 ml-1">
+                                          <div className="w-3.5 h-3.5 rounded-full bg-indigo-50 flex items-center justify-center text-[7px] font-bold text-indigo-600 border border-indigo-100 shrink-0">
+                                            {task.assignedTo
+                                              .trim()
+                                              .split(" ")
+                                              .pop()
+                                              ?.charAt(0)
+                                              .toUpperCase()}
+                                          </div>
+                                          <span className="text-[9px] text-gray-500 whitespace-nowrap">
+                                            {task.assignedTo
+                                              .trim()
+                                              .split(" ")
+                                              .pop()}
+                                          </span>
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    {/* Row 2: SĐT + Visa tag + Job tag */}
+                                    <div className="flex flex-wrap items-center gap-1 mb-2">
+                                      <span className="text-[11px] font-bold text-gray-700 w-full">
+                                        {task.phone}
+                                      </span>
                                       {task.visaType && (
-                                        <span className="text-[9px] bg-blue-50 text-blue-700 border border-blue-100 px-1.5 py-0.5 rounded font-semibold">
+                                        <span className="text-[9px] bg-blue-50 text-blue-700 border border-blue-100 px-1.5 py-0.5 rounded font-semibold max-w-[90px] truncate">
                                           {task.visaType}
                                         </span>
                                       )}
                                       {task.jobType && (
-                                        <span className="text-[9px] bg-emerald-50 text-emerald-700 border border-emerald-100 px-1.5 py-0.5 rounded font-semibold">
+                                        <span className="text-[9px] bg-emerald-50 text-emerald-700 border border-emerald-100 px-1.5 py-0.5 rounded font-semibold max-w-[90px] truncate">
                                           {task.jobType}
                                         </span>
                                       )}
                                     </div>
 
-                                    <div className="flex justify-between items-end mb-3 sm:mb-2">
-                                      <div className="flex flex-col gap-0.5">
-                                        <span className="text-xs sm:text-[11px] font-bold text-gray-700">
-                                          {task.phone}
-                                        </span>
-                                        {task.assignedTo && (
-                                          <div className="flex items-center gap-1 mt-1 sm:mt-0.5">
-                                            <div className="w-4 h-4 sm:w-3.5 sm:h-3.5 rounded-full bg-indigo-50 flex items-center justify-center text-[9px] sm:text-[7px] font-bold text-indigo-600 border border-indigo-100">
-                                              {task.assignedTo
-                                                .trim()
-                                                .split(" ")
-                                                .pop()
-                                                ?.charAt(0)
-                                                .toUpperCase()}
-                                            </div>
-                                            <span className="text-[10px] sm:text-[9px] text-gray-500 font-medium">
-                                              NV:{" "}
-                                              {task.assignedTo
-                                                .trim()
-                                                .split(" ")
-                                                .pop()}
-                                            </span>
-                                          </div>
-                                        )}
-                                      </div>
-                                      <span className="text-[10px] sm:text-[8px] font-bold text-blue-600 bg-blue-50 border border-blue-100 px-1.5 py-0.5 rounded uppercase">
-                                        {task.price}
-                                      </span>
-                                    </div>
-
-                                    <div className="pt-2 sm:pt-1.5 border-t border-gray-100 flex justify-between items-center min-h-[28px] sm:min-h-[24px]">
-                                      <div className="flex flex-wrap gap-1">
+                                    {/* Row 3: Activities + Select cột + Icons */}
+                                    <div className="flex justify-between items-center pt-1.5 border-t border-gray-100 gap-1">
+                                      {/* Activities: tối đa 1 + badge +N */}
+                                      <div className="flex gap-1 items-center shrink-0">
                                         {task.activities &&
                                         task.activities.length > 0 ? (
-                                          task.activities.map((act) => {
-                                            const config = getActivityConfig(
-                                              act.type,
-                                              act.completed,
-                                            );
-                                            return (
-                                              <div
-                                                key={act.id}
-                                                title={act.summary}
-                                                onClick={(e) =>
-                                                  handleActivityClick(
-                                                    e,
-                                                    task.id,
-                                                    act.id,
-                                                  )
-                                                }
-                                                className={`w-6 h-6 sm:w-5 sm:h-5 rounded-full border ${config.border} ${config.color} flex items-center justify-center text-[10px] sm:text-[8px] shadow-sm cursor-pointer hover:scale-110 transition-transform`}
-                                              >
-                                                {config.icon}
+                                          <>
+                                            {task.activities
+                                              .slice(0, 1)
+                                              .map((act) => {
+                                                const config =
+                                                  getActivityConfig(
+                                                    act.type,
+                                                    act.completed,
+                                                  );
+                                                return (
+                                                  <div
+                                                    key={act.id}
+                                                    title={act.summary}
+                                                    onClick={(e) =>
+                                                      handleActivityClick(
+                                                        e,
+                                                        task.id,
+                                                        act.id,
+                                                      )
+                                                    }
+                                                    className={`w-5 h-5 rounded-full border ${config.border} ${config.color} flex items-center justify-center text-[9px] cursor-pointer hover:scale-110 transition-transform shrink-0`}
+                                                  >
+                                                    {config.icon}
+                                                  </div>
+                                                );
+                                              })}
+                                            {task.activities.length > 1 && (
+                                              <div className="w-5 h-5 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center text-[8px] font-bold text-gray-500 shrink-0">
+                                                +{task.activities.length - 1}
                                               </div>
-                                            );
-                                          })
+                                            )}
+                                          </>
                                         ) : (
-                                          <span className="text-[10px] sm:text-[9px] text-gray-300 italic">
+                                          <span className="text-[9px] text-gray-300 italic">
                                             Trống
                                           </span>
                                         )}
                                       </div>
 
-                                      <div className="flex items-center gap-1 sm:gap-1">
+                                      {/* Select + Icons */}
+                                      <div className="flex items-center gap-0.5 min-w-0">
                                         <select
                                           value={column.id}
                                           onMouseDown={(e) =>
@@ -948,7 +939,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                                             )
                                           }
                                           disabled={isMarketingDept}
-                                          className="lg:opacity-0 lg:group-hover:opacity-100 opacity-100 w-24 sm:w-24 appearance-none bg-gray-100 sm:bg-none sm:bg-gray-50 border border-gray-200 text-gray-700 sm:text-gray-600 hover:text-blue-600 hover:border-blue-300 text-[11px] sm:text-[10px] font-medium py-1 sm:py-0.5 px-1.5 text-center rounded cursor-pointer outline-none transition-opacity shadow-sm truncate disabled:opacity-50"
+                                          className="w-16 appearance-none bg-gray-50 border border-gray-200 text-gray-600 text-[9px] font-medium py-0.5 px-1 rounded cursor-pointer outline-none truncate disabled:opacity-50"
                                         >
                                           {boardData.columnOrder.map(
                                             (colId) => (
@@ -968,11 +959,11 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                                             e.stopPropagation();
                                             onOpenAttachments(task.id);
                                           }}
-                                          className="w-9 h-9 sm:w-8 sm:h-8 flex items-center justify-center rounded-full text-green-600 bg-green-50 hover:bg-green-100 border border-green-100 transition-all shadow-sm active:scale-95"
+                                          className="w-6 h-6 flex items-center justify-center rounded text-green-600 hover:bg-green-50 transition-colors shrink-0"
                                           title="Tệp đính kèm"
                                         >
                                           <svg
-                                            className="w-5 h-5 sm:w-4 sm:h-4"
+                                            className="w-3.5 h-3.5"
                                             fill="none"
                                             stroke="currentColor"
                                             viewBox="0 0 24 24"
@@ -991,10 +982,10 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                                             e.stopPropagation();
                                             onOpenActivityList(task.id);
                                           }}
-                                          className="w-7 h-7 sm:w-5 sm:h-5 flex items-center justify-center rounded text-gray-500 sm:text-gray-400 hover:text-blue-600 bg-gray-50 sm:bg-transparent hover:bg-blue-50 transition-colors"
+                                          className="w-6 h-6 flex items-center justify-center rounded text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors shrink-0"
                                         >
                                           <svg
-                                            className="w-4 h-4 sm:w-3.5 sm:h-3.5"
+                                            className="w-3.5 h-3.5"
                                             fill="none"
                                             stroke="currentColor"
                                             viewBox="0 0 24 24"
@@ -1041,7 +1032,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
         </DragDropContext>
       )}
 
-      {/* CHẾ ĐỘ HIỂN THỊ TABLE VIEW */}
+      {/* TABLE VIEW */}
       {viewMode === "table" && (
         <div className="flex-1 min-h-0 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
           <div className="overflow-auto custom-scrollbar flex-1 w-full">
@@ -1192,11 +1183,10 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
         </div>
       )}
 
-      {/* TÍCH HỢP POPUP MARKETING Ở ĐÂY */}
+      {/* POPUP MARKETING REPORT */}
       {isShowReport && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm transition-opacity">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-custom-pop">
-            {/* Header */}
             <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-indigo-50/50">
               <div>
                 <h3 className="text-lg font-bold text-indigo-900">
@@ -1204,11 +1194,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                 </h3>
                 <p className="text-xs text-indigo-600 font-medium">
                   {filterDateRange !== "all"
-                    ? `Dữ liệu lọc trong ${
-                        filterDateRange === "7days"
-                          ? "7 ngày qua"
-                          : "30 ngày qua"
-                      }`
+                    ? `Dữ liệu lọc trong ${filterDateRange === "7days" ? "7 ngày qua" : "30 ngày qua"}`
                     : "Toàn bộ thời gian"}
                 </p>
               </div>
@@ -1232,7 +1218,6 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
               </button>
             </div>
 
-            {/* Body */}
             <div className="p-6">
               <div className="px-6 pb-4 flex justify-center gap-2">
                 {[
@@ -1288,7 +1273,6 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                 </div>
               </div>
 
-              {/* Bảng chi tiết nguồn */}
               <div className="border rounded-xl overflow-hidden border-gray-200">
                 <table className="w-full text-sm">
                   <thead className="bg-gray-50 text-gray-500 uppercase text-[10px]">
@@ -1348,7 +1332,6 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
               </div>
             </div>
 
-            {/* Footer */}
             <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
               <button
                 onClick={() => window.print()}
