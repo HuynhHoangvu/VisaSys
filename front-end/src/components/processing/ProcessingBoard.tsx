@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { createPortal } from "react-dom";
 import {
   DragDropContext,
   Droppable,
@@ -472,7 +473,8 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
                               draggableId={task.id}
                               index={index}
                             >
-                              {(provided, snapshot) => (
+                              {(provided, snapshot) => {
+                                const card = (
                                 <div
                                   ref={provided.innerRef}
                                   {...provided.draggableProps}
@@ -482,7 +484,7 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
                                   }
                                   className={`bg-white p-3 rounded-xl shadow-sm border-l-[4px] cursor-grab active:cursor-grabbing relative group transition-all
                                     ${isMissing ? "border-l-red-500 bg-red-50" : "border-l-indigo-500 hover:shadow-md"}
-                                    ${snapshot.isDragging ? "shadow-2xl rotate-2 z-9999" : ""}
+                                    ${snapshot.isDragging ? "shadow-2xl z-9999" : ""}
                                     ${isHidden ? "opacity-20 pointer-events-none scale-95" : ""}
                                   `}
                                   style={{ ...provided.draggableProps.style }}
@@ -579,7 +581,11 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
                                     </div>
                                   </div>
                                 </div>
-                              )}
+                                );
+                                return snapshot.isDragging
+                                  ? createPortal(card, document.body)
+                                  : card;
+                              }}
                             </Draggable>
                           );
                         })}

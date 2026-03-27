@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { createPortal } from "react-dom";
 import {
   DragDropContext,
   Droppable,
@@ -508,7 +509,10 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
     );
 
   return (
-    <div className="flex flex-col h-full w-full bg-[#f8f9fa] p-3 sm:p-6 overflow-hidden">
+    <div
+      className="flex flex-col h-full w-full bg-[#f8f9fa] p-3 sm:p-6 overflow-hidden"
+      style={{ transform: "none" }}
+    >
       <style>{`
         @keyframes custom-pop-in {
           0% { transform: scale(0.95); opacity: 0; }
@@ -782,7 +786,8 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                                   hasActiveFilter || isMarketingDept
                                 }
                               >
-                                {(provided, snapshot) => (
+                                {(provided, snapshot) => {
+                                  const card = (
                                   <div
                                     ref={provided.innerRef}
                                     {...provided.draggableProps}
@@ -1001,7 +1006,11 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                                       </div>
                                     </div>
                                   </div>
-                                )}
+                                  );
+                                  return snapshot.isDragging
+                                    ? createPortal(card, document.body)
+                                    : card;
+                                }}
                               </Draggable>
                             );
                           })}
