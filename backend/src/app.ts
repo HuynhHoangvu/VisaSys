@@ -21,7 +21,6 @@ const app = express();
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:5174",
-
   "https://flyvisa.up.railway.app", // Thêm dòng này để cho phép Frontend gọi API
   process.env.FRONTEND_URL
 ].filter(Boolean) as string[];

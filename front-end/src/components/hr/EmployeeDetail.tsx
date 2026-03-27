@@ -42,6 +42,10 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
     currentUser?.role.toLowerCase().includes("admin") ||
     currentUser?.role.toLowerCase().includes("phó giám đốc");
 
+  const isTruongPhong = currentUser?.role.toLowerCase().includes("trưởng phòng");
+  const isSameDepartment = currentUser?.department === employee.department;
+  const canAdjustBonus = isDirector || (isTruongPhong && isSameDepartment);
+
   const [bonusAmount, setBonusAmount] = useState("");
   const [bonusNote, setBonusNote] = useState("");
   const [bonusType, setBonusType] = useState("Thưởng");
@@ -223,7 +227,7 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
         </div>
 
         <div className="flex gap-2 w-full xl:w-auto flex-wrap sm:flex-nowrap">
-          {isDirector && (
+          {canAdjustBonus && (
             <Button
               color="light"
               size="sm"
