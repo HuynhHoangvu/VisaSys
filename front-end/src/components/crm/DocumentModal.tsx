@@ -184,7 +184,7 @@ function UploadPanelOverlay({
 
   return (
     <div
-      className="absolute inset-0 z-20 flex items-center justify-center bg-black/30 backdrop-blur-[2px] rounded-b-lg"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/30 backdrop-blur-[2px]"
       onClick={(e) => { if (e.target === e.currentTarget && !isUploading) onClose(); }}
     >
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
@@ -647,16 +647,17 @@ const DocumentModal: React.FC<DocumentModalProps> = ({ show, onClose, taskId, ta
           </tbody>
         </table>
 
-        {/* Upload panel overlay */}
-        {uploadPanel && (
-          <UploadPanelOverlay
-            panel={uploadPanel}
-            isUploading={uploadingRows.has(uploadPanel.rowId)}
-            onClose={() => setUploadPanel(null)}
-            onFiles={handleFileUpload}
-          />
-        )}
-      </div>
+        </div>
+
+      {/* Upload panel overlay – rendered outside scrollable area so it centers on screen */}
+      {uploadPanel && (
+        <UploadPanelOverlay
+          panel={uploadPanel}
+          isUploading={uploadingRows.has(uploadPanel.rowId)}
+          onClose={() => setUploadPanel(null)}
+          onFiles={handleFileUpload}
+        />
+      )}
 
       {/* ── Footer ── */}
       <div className="p-4 border-t border-gray-200 flex justify-end gap-2 bg-gray-50 rounded-b-lg">
