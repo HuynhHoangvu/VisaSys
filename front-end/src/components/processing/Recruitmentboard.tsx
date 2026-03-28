@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { createPortal } from "react-dom";
 import {
   DragDropContext,
   Droppable,
@@ -155,7 +156,6 @@ const getInitials = (n: string) =>
 // ==========================================
 const RecruitmentBoard: React.FC<RecruitmentBoardProps> = ({
   onOpenDetail,
-
 }) => {
   const [boardData, setBoardData] = useState<BoardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -512,68 +512,76 @@ const RecruitmentBoard: React.FC<RecruitmentBoardProps> = ({
                               draggableId={task.id}
                               index={index}
                             >
-                              {(provided, snapshot) => (
-                                <div
-                                  ref={provided.innerRef}
-                                  {...provided.draggableProps}
-                                  {...provided.dragHandleProps}
-                                  onClick={() =>
-                                    !hidden && onOpenDetail(task.id)
-                                  }
-                                  className={`bg-white rounded-xl p-3 shadow-sm cursor-grab active:cursor-grabbing transition-all select-none
-                                    ${snapshot.isDragging ? "shadow-xl rotate-1 z-50" : "hover:shadow-md"}
-                                    ${hidden ? "opacity-20 pointer-events-none scale-95" : ""}
-                                    ${step.isFail ? "border-l-4 border-red-400" : ""}
-                                  `}
-                                  style={{ ...provided.draggableProps.style }}
-                                >
-                                  <p className="font-bold text-gray-800 text-[13px] leading-tight truncate mb-1">
-                                    {task.content.split(" - ")[0]}
-                                  </p>
-                                  <div className="flex flex-wrap gap-1 mb-1.5">
-                                    {task.visaType && (
-                                      <p
-                                        className="text-2xs font-bold px-1.5 py-0.5 rounded"
-                                        style={{
-                                          background: step.accent,
-                                          color: step.color,
-                                        }}
-                                      >
-                                        {task.visaType}
-                                      </p>
-                                    )}
-                                    {task.jobType && (
-                                      <p className="text-2xs font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 truncate max-w-[100px]">
-                                        {task.jobType}
-                                      </p>
+                              {(provided, snapshot) => {
+                                // BỌC GIAO DIỆN VÀO BIẾN CARD
+                                const card = (
+                                  <div
+                                    ref={provided.innerRef}
+                                    {...provided.draggableProps}
+                                    {...provided.dragHandleProps}
+                                    onClick={() =>
+                                      !hidden && onOpenDetail(task.id)
+                                    }
+                                    className={`bg-white rounded-xl p-3 shadow-sm cursor-grab active:cursor-grabbing transition-all select-none
+                                      ${snapshot.isDragging ? "shadow-2xl rotate-1 z-50 ring-2 ring-indigo-400" : "hover:shadow-md"}
+                                      ${hidden ? "opacity-20 pointer-events-none scale-95" : ""}
+                                      ${step.isFail ? "border-l-4 border-red-400" : ""}
+                                    `}
+                                    style={{ ...provided.draggableProps.style }}
+                                  >
+                                    <p className="font-bold text-gray-800 text-[13px] leading-tight truncate mb-1">
+                                      {task.content.split(" - ")[0]}
+                                    </p>
+                                    <div className="flex flex-wrap gap-1 mb-1.5">
+                                      {task.visaType && (
+                                        <p
+                                          className="text-2xs font-bold px-1.5 py-0.5 rounded"
+                                          style={{
+                                            background: step.accent,
+                                            color: step.color,
+                                          }}
+                                        >
+                                          {task.visaType}
+                                        </p>
+                                      )}
+                                      {task.jobType && (
+                                        <p className="text-2xs font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 truncate max-w-[100px]">
+                                          {task.jobType}
+                                        </p>
+                                      )}
+                                    </div>
+                                    <p className="text-[11px] text-gray-400 mb-2">
+                                      {task.phone}
+                                    </p>
+                                    {task.assignedTo && (
+                                      <div className="flex items-center gap-1.5 pt-2 border-t border-gray-100">
+                                        <div
+                                          className="w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-black text-white shrink-0"
+                                          style={{
+                                            background: getAvatarColor(
+                                              task.assignedTo,
+                                            ),
+                                          }}
+                                        >
+                                          {getInitials(task.assignedTo)}
+                                        </div>
+                                        <span className="text-2xs text-gray-500 font-medium truncate">
+                                          {
+                                            task.assignedTo
+                                              .split(" ")
+                                              .slice(-1)[0]
+                                          }
+                                        </span>
+                                      </div>
                                     )}
                                   </div>
-                                  <p className="text-[11px] text-gray-400 mb-2">
-                                    {task.phone}
-                                  </p>
-                                  {task.assignedTo && (
-                                    <div className="flex items-center gap-1.5 pt-2 border-t border-gray-100">
-                                      <div
-                                        className="w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-black text-white shrink-0"
-                                        style={{
-                                          background: getAvatarColor(
-                                            task.assignedTo,
-                                          ),
-                                        }}
-                                      >
-                                        {getInitials(task.assignedTo)}
-                                      </div>
-                                      <span className="text-2xs text-gray-500 font-medium truncate">
-                                        {
-                                          task.assignedTo
-                                            .split(" ")
-                                            .slice(-1)[0]
-                                        }
-                                      </span>
-                                    </div>
-                                  )}
-                                </div>
-                              )}
+                                );
+
+                                // TRẢ VỀ THEO HÀM PORTAL
+                                return snapshot.isDragging
+                                  ? createPortal(card, document.body)
+                                  : card;
+                              }}
                             </Draggable>
                           );
                         })}

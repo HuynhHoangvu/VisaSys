@@ -13,6 +13,8 @@ import ProcessingPage from "./pages/ProcessingPage";
 import ServicesPage from "./pages/ServicesPage";
 import KpiPage from "./pages/KpiPage";
 import RecruitmentPage from "./pages/RecruitmentPage";
+import DashboardPage from "./pages/DashboardPage";
+import SettingsPage from "./pages/SettingsPage";
 import type { AuthUser } from "./types";
 
 // Re-mounts on each route change so the fade-in animation replays
@@ -53,7 +55,7 @@ const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const handleLoginSuccess = (user: AuthUser) => {
     localStorage.setItem("flyvisa_user", JSON.stringify(user));
-    navigate("/crm", { replace: true });
+    navigate("/dashboard", { replace: true });
   };
   return <Login onLoginSuccess={handleLoginSuccess} />;
 };
@@ -89,7 +91,9 @@ const App: React.FC = () => {
         {/* Routes yêu cầu đăng nhập */}
         <Route element={<PrivateRoute />}>
           <Route element={<AppLayout />}>
-            <Route path="/" element={<Navigate to="/crm" replace />} />
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
             <Route path="/crm" element={<CrmPage />} />
             <Route path="/kpi" element={<KpiPage />} />
             <Route path="/documents" element={<DocumentsPage />} />
@@ -111,7 +115,7 @@ const App: React.FC = () => {
         </Route>
 
         {/* Fallback */}
-        <Route path="*" element={<Navigate to="/crm" replace />} />
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </BrowserRouter>
   );

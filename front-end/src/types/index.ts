@@ -271,4 +271,5 @@ export interface SidebarProps {
 export interface Workspace {
   id: string;
   name: string;
+  url?: string; // nếu có thì click vào sẽ mở tab ngoài
 }

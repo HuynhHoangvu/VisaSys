@@ -22,7 +22,8 @@
       "Bash(cat D:/Fly_Visa/Fly-Visa-System/front-end/.env*)",
       "Bash(grep -rn /hr[^/a-zA-Z] D:/Fly_Visa/Fly-Visa-System/front-end/src --include=*.ts --include=*.tsx)",
       "Bash(cat D:/Fly_Visa/Fly-Visa-System/front-end/dockerfile*)",
-      "Bash(cat D:/Fly_Visa/Fly-Visa-System/front-end/vite.config*)"
+      "Bash(cat D:/Fly_Visa/Fly-Visa-System/front-end/vite.config*)",
+      "Bash(npx tsc:*)"
     ]
   }
 }

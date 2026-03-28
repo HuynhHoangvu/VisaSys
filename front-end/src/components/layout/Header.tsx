@@ -123,9 +123,14 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onToggleSidebar }) => {
         </button>
 
         {/* TRÁI: TIÊU ĐỀ */}
-        <h2 className="text-xl font-bold text-gray-800 whitespace-nowrap hidden lg:block">
-          Fly Visa System
-        </h2>
+        <div className="hidden lg:flex items-center gap-2">
+          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center">
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h2 className="text-base font-bold text-gray-800 whitespace-nowrap">Fly Visa System</h2>
+        </div>
       </div>
 
       {/* GIỮA: BIỂN BÁO LỆNH ĐIỀU HÀNH */}
@@ -175,11 +180,13 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onToggleSidebar }) => {
             </div>
           </button>
         ) : (
-          <div className="w-full flex items-center justify-center text-gray-400 text-xs md:text-sm italic py-2">
-            <span className="hidden sm:inline">
-              Không có thông báo khẩn nào
-            </span>
-            <span className="sm:hidden">Trống</span>
+          <div className="w-full flex items-center gap-2 bg-gray-50 border border-gray-200 px-3 py-2 rounded-lg">
+            <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <span className="text-sm text-gray-400 hidden sm:block">Tìm kiếm khách hàng, hồ sơ...</span>
+            <span className="text-xs text-gray-400 sm:hidden">Tìm kiếm...</span>
+            <span className="ml-auto text-[10px] bg-gray-200 text-gray-500 px-1.5 py-0.5 rounded font-medium hidden md:block">Ctrl K</span>
           </div>
         )}
 

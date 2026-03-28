@@ -117,7 +117,6 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
       const data: BoardData = await response.json();
       setBoardData(data);
 
-      // CẬP NHẬT CHỖ NÀY: Tìm cột "Đang xử lý" tự động thay vì fix cứng col-5
       const processingColumn = Object.values(data.columns).find(
         (col: Column) =>
           col.title?.toLowerCase().includes("đang xử lý") || col.id === "col-5",
@@ -149,7 +148,6 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
           ...PROCESSING_COLUMNS["proc-col-6"],
           taskIds: [] as string[],
         },
-        
       };
 
       salesHandoverTaskIds.forEach((taskId) => {
@@ -560,12 +558,67 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
                                       />
                                     </div>
 
-                                    <div className="flex justify-between items-center border-t border-gray-100 pt-1.5 gap-1">
-                                      <span className="text-[9px] font-bold text-gray-700 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-200 truncate max-w-[60px] shrink-0">
+                                    {/* --- PHẦN BOTTOM: SALE + DROPDOWN CỘT + NÚT BẤM (GOM TRÊN 1 DÒNG) --- */}
+                                    <div className="flex items-center justify-between border-t border-gray-100 pt-2 gap-1 mt-1">
+                                      {/* 1. Tên Sale */}
+                                      <span
+                                        className="text-[9px] font-bold text-gray-700 bg-gray-50 px-1.5 py-1 rounded border border-gray-200 truncate max-w-[45px] shrink-0 text-center"
+                                        title={task.assignedTo || "Trống"}
+                                      >
                                         {task.assignedTo
                                           ? task.assignedTo.split(" ").pop()
                                           : "Trống"}
                                       </span>
+
+                                      {/* 2. Dropdown chuyển cột */}
+                                      <div
+                                        className="flex-1 min-w-0"
+                                        onClick={(e) => e.stopPropagation()}
+                                        onMouseDown={(e) => e.stopPropagation()}
+                                      >
+                                        <select
+                                          value={columnId}
+                                          onChange={async (e) => {
+                                            const newColId = e.target.value;
+                                            try {
+                                              await fetch(
+                                                `${API_BASE_URL}/tasks/${task.id}/processing-move`,
+                                                {
+                                                  method: "PUT",
+                                                  headers: {
+                                                    "Content-Type":
+                                                      "application/json",
+                                                  },
+                                                  body: JSON.stringify({
+                                                    processingColId: newColId,
+                                                  }),
+                                                },
+                                              );
+                                              fetchBoardData(false);
+                                            } catch (error) {
+                                              alert(
+                                                "Lỗi khi chuyển cột xử lý!" +
+                                                  error,
+                                              );
+                                            }
+                                          }}
+                                          className="text-[9px] font-medium px-1 py-1 rounded border border-gray-200 bg-white outline-none cursor-pointer w-full text-gray-700 hover:border-indigo-300 transition-colors"
+                                        >
+                                          {PROCESSING_COLUMN_ORDER.map(
+                                            (cId) => (
+                                              <option key={cId} value={cId}>
+                                                {
+                                                  PROCESSING_COLUMNS[
+                                                    cId as keyof typeof PROCESSING_COLUMNS
+                                                  ].title
+                                                }
+                                              </option>
+                                            ),
+                                          )}
+                                        </select>
+                                      </div>
+
+                                      {/* 3. Nút bấm */}
                                       <div className="flex gap-1 shrink-0 items-center">
                                         <button
                                           onClick={(e) => {
@@ -593,7 +646,7 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
                                           onClick={(e) =>
                                             handlePingSale(task, e)
                                           }
-                                          className={`text-[9px] font-bold px-1.5 py-0.5 rounded transition-colors ${
+                                          className={`text-[9px] font-bold px-1.5 py-1 rounded transition-colors ${
                                             isMissing
                                               ? "text-white bg-red-500 hover:bg-red-600"
                                               : "text-orange-600 bg-orange-100 hover:bg-orange-200"
@@ -603,6 +656,7 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
                                         </button>
                                       </div>
                                     </div>
+                                    {/* --- KẾT THÚC PHẦN BOTTOM --- */}
                                   </div>
                                 );
                                 return snapshot.isDragging
@@ -706,7 +760,7 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
                         <td className="px-4 py-3 font-medium text-gray-700">
                           {task.assignedTo
                             ? task.assignedTo.split(" ").pop()
-                            : "Trống"}{" "}
+                            : "Trống"}
                         </td>
 
                         {/* Loại Visa */}
