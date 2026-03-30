@@ -105,7 +105,7 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onToggleSidebar }) => {
       <div className="flex items-center gap-2">
         <button
           onClick={onToggleSidebar}
-          className="md:hidden p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+          className="lg:hidden p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
         >
           <svg
             className="w-6 h-6"
