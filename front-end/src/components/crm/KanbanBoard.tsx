@@ -843,7 +843,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
 
                                     {/* Row 1: Tên + NV */}
                                     <div className="flex justify-between items-start mb-1 pr-4 gap-1">
-                                      <h4 className="font-bold text-gray-800 text-xs leading-tight line-clamp-1 min-w-0 flex-1">
+                                      <h4 className="font-bold text-gray-800 text-xs leading-tight min-w-0 flex-1">
                                         {task.content.split(" - ")[0]}
                                       </h4>
                                       {task.assignedTo && (

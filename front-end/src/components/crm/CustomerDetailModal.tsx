@@ -224,7 +224,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
                   type="text"
                   value={formData.price || ""}
                   onChange={(e) => handleChange("price", e.target.value)}
-                  className="border-b border-dashed border-gray-300 bg-transparent p-0 font-bold text-gray-800 focus:ring-0 focus:border-orange-500 w-full sm:w-32 max-w-[150px]"
+                  className="border-b border-dashed border-gray-300 bg-transparent p-0 font-bold text-gray-800 focus:ring-0 focus:border-orange-500 w-full sm:w-32 max-w-37.5"
                   placeholder="Ví dụ: 50.000.000 đ"
                 />
               </div>
@@ -291,7 +291,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
           </h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-6">
             <div>
-              <Label className="text-[10px] sm:text-xs uppercase text-gray-400">
+              <Label className="text-2xs sm:text-xs uppercase text-gray-400">
                 Số điện thoại
               </Label>
               <TextInput
@@ -302,7 +302,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
               />
             </div>
             <div>
-              <Label className="text-[10px] sm:text-xs uppercase text-gray-400">
+              <Label className="text-2xs sm:text-xs uppercase text-gray-400">
                 Email
               </Label>
               <TextInput
@@ -315,7 +315,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
 
             {/* Diện Visa có hỗ trợ tự nhập */}
             <div>
-              <Label className="text-[10px] sm:text-xs uppercase text-gray-400">
+              <Label className="text-2xs sm:text-xs uppercase text-gray-400">
                 Diện Visa Quan Tâm
               </Label>
               <Select
@@ -352,7 +352,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
 
             {/* BỔ SUNG: Cho phép chủ động chọn Nhóm bộ hồ sơ */}
             <div>
-              <Label className="text-[10px] sm:text-xs uppercase text-gray-400">
+              <Label className="text-2xs sm:text-xs uppercase text-gray-400">
                 Nhóm bộ hồ sơ
               </Label>
               <Select
@@ -369,7 +369,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
 
             {/* CHỌN VÀ NHẬP NGÀNH NGHỀ CHI TIẾT */}
             <div>
-              <Label className="text-[10px] sm:text-xs uppercase text-gray-400">
+              <Label className="text-2xs sm:text-xs uppercase text-gray-400">
                 Ngành nghề / Diện đi
               </Label>
               <Select
@@ -404,7 +404,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
             </div>
 
             <div>
-              <Label className="text-[10px] sm:text-xs uppercase text-gray-400">
+              <Label className="text-2xs sm:text-xs uppercase text-gray-400">
                 Nguồn khách
               </Label>
               <Select
@@ -428,7 +428,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
           </h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-6">
             <div>
-              <Label className="text-[10px] sm:text-xs uppercase text-gray-400">
+              <Label className="text-2xs sm:text-xs uppercase text-gray-400">
                 Tình trạng hôn nhân
               </Label>
               <Select
@@ -444,7 +444,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
               </Select>
             </div>
             <div>
-              <Label className="text-[10px] sm:text-xs uppercase text-gray-400">
+              <Label className="text-2xs sm:text-xs uppercase text-gray-400">
                 Số người phụ thuộc (Vợ/Con)
               </Label>
               <TextInput
@@ -456,7 +456,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
               />
             </div>
             <div className="sm:col-span-2">
-              <Label className="text-[10px] sm:text-xs uppercase text-gray-400">
+              <Label className="text-2xs sm:text-xs uppercase text-gray-400">
                 Ngày ưu tiên
               </Label>
               <TextInput
@@ -474,7 +474,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
           </h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-6">
             <div>
-              <Label className="text-[10px] sm:text-xs uppercase text-gray-400">
+              <Label className="text-2xs sm:text-xs uppercase text-gray-400">
                 Bằng cấp cao nhất
               </Label>
               <Select
@@ -492,7 +492,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
               </Select>
             </div>
             <div>
-              <Label className="text-[10px] sm:text-xs uppercase text-gray-400">
+              <Label className="text-2xs sm:text-xs uppercase text-gray-400">
                 Điểm IELTS/PTE
               </Label>
               <TextInput
@@ -503,7 +503,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
               />
             </div>
             <div className="sm:col-span-2">
-              <Label className="text-[10px] sm:text-xs uppercase text-gray-400">
+              <Label className="text-2xs sm:text-xs uppercase text-gray-400">
                 Kinh nghiệm làm việc
               </Label>
               <TextInput
@@ -530,7 +530,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
         {/* CỘT PHẢI - NHẬT KÝ TƯƠNG TÁC & UPLOAD */}
         <div className="w-full md:w-[40%] bg-gray-50 flex flex-col md:border-l border-gray-200 h-[50vh] md:h-full">
           <div className="p-3 sm:p-4 border-b border-gray-200 bg-white shadow-sm z-10 shrink-0">
-            <p className="text-[10px] sm:text-xs font-bold text-gray-400 uppercase mb-2">
+            <p className="text-2xs sm:text-xs font-bold text-gray-400 uppercase mb-2">
               Ghi chú mới
             </p>
 
@@ -625,7 +625,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
                 >
                   <div className="flex justify-between items-start mb-1.5 sm:mb-2">
                     <div className="flex items-center gap-1.5 sm:gap-2">
-                      <div className="w-6 h-6 sm:w-7 sm:h-7 bg-indigo-500 rounded-full flex items-center justify-center text-[10px] sm:text-xs text-white font-bold uppercase shadow-sm">
+                      <div className="w-6 h-6 sm:w-7 sm:h-7 bg-indigo-500 rounded-full flex items-center justify-center text-2xs sm:text-xs text-white font-bold uppercase shadow-sm">
                         {act.assignee?.charAt(0) || "S"}
                       </div>
                       <span className="text-xs sm:text-sm font-bold text-gray-800">
