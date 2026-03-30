@@ -8,7 +8,7 @@ import {
   Label,
   Spinner,
 } from "flowbite-react";
-import type { Task, CustomerDetailModalProps } from "../../types";
+import type { Task, CustomerDetailModalProps, Employee } from "../../types";
 import { VISA_SERVICES, CUSTOMER_SOURCES } from "../../utils/constants";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
@@ -36,6 +36,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
   const [formData, setFormData] = useState<Task | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [staffList, setStaffList] = useState<Employee[]>([]);
 
   const [newNote, setNewNote] = useState("");
   const [isSubmittingNote, setIsSubmittingNote] = useState(false);
@@ -46,6 +47,15 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
   useEffect(() => {
     setFormData(task);
   }, [task]);
+
+  useEffect(() => {
+    if (show) {
+      fetch(`${API_URL}/api/hr/employees`)
+        .then((r) => r.json())
+        .then((data: Employee[]) => setStaffList(data))
+        .catch(console.error);
+    }
+  }, [show]);
 
   if (!task || !formData) return null;
 
@@ -220,10 +230,19 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
               </div>
 
               <div className="flex items-center gap-1.5 text-xs sm:text-sm text-gray-600 font-medium mt-1 sm:mt-0">
-                <span className="text-orange-600 font-bold">👤 Sale:</span>
-                <span className="truncate max-w-[120px] sm:max-w-none">
-                  {formData.assignedTo || "Chưa phân công"}
-                </span>
+                <span className="text-orange-600 font-bold shrink-0">👤 Sale:</span>
+                <select
+                  value={formData.assignedTo || ""}
+                  onChange={(e) => handleChange("assignedTo", e.target.value)}
+                  className="border-b border-dashed border-gray-300 bg-transparent p-0 font-semibold text-gray-800 focus:ring-0 focus:border-orange-500 outline-none cursor-pointer text-xs sm:text-sm"
+                >
+                  <option value="">-- Chọn nhân viên --</option>
+                  {staffList.map((staff) => (
+                    <option key={staff.id} value={staff.name}>
+                      {staff.name} - {staff.employeeCode}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
           </div>
