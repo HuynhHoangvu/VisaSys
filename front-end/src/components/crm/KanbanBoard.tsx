@@ -733,7 +733,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
 
               const limit = visibleLimits[columnId] || DEFAULT_LIMIT;
               const hasMore = column.taskIds.length > limit;
-              const tasksToRender = column.taskIds.slice(0, limit);
+              const tasksToRender = hasActiveFilter ? column.taskIds : column.taskIds.slice(0, limit);
 
               return (
                 <div
