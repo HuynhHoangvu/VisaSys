@@ -92,11 +92,16 @@ const ProcessedDocDashboard: React.FC<ProcessedDocDashboardProps> = ({
     folders.filter((f) => f.parentId === currentFolderId).length +
     files.filter((f) => f.folderId === currentFolderId).length;
 
-  const getCurrentFolderName = () => {
-    if (!currentFolderId) return "Thư mục gốc";
-    return (
-      folders.find((f) => f.id === currentFolderId)?.name || "Không xác định"
-    );
+  const getFolderPath = (folderId: string | null): { id: string; name: string }[] => {
+    const path: { id: string; name: string }[] = [];
+    let current = folderId;
+    while (current) {
+      const folder = folders.find((f) => f.id === current);
+      if (!folder) break;
+      path.unshift({ id: folder.id, name: folder.name });
+      current = (folder.parentId as string | null) || null;
+    }
+    return path;
   };
 
   const handleGoBack = () => {
@@ -655,10 +660,26 @@ const ProcessedDocDashboard: React.FC<ProcessedDocDashboardProps> = ({
         </button>
         {currentFolderId && (
           <>
-            <span className="text-gray-400">/</span>
-            <span className="text-gray-800 font-semibold">
-              {getCurrentFolderName()}
-            </span>
+            {getFolderPath(currentFolderId).map((folder, index, arr) => (
+              <React.Fragment key={folder.id}>
+                <span className="text-gray-400">/</span>
+                {index < arr.length - 1 ? (
+                  <button
+                    onClick={() => { setCurrentFolderId(folder.id); setSearchQuery(""); }}
+                    className="text-blue-600 font-semibold hover:underline"
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={() => {
+                      if (draggedFolderId) handleMoveFolder(folder.id);
+                      if (draggedDocFileId) handleMoveFile(folder.id);
+                    }}
+                  >
+                    {folder.name}
+                  </button>
+                ) : (
+                  <span className="text-gray-800 font-semibold">{folder.name}</span>
+                )}
+              </React.Fragment>
+            ))}
             <button
               onClick={handleGoBack}
               className="ml-auto flex items-center gap-1 text-gray-500 hover:text-gray-800 font-medium bg-gray-200 px-3 py-1 rounded-full transition-colors"
