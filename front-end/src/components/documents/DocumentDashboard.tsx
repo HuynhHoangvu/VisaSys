@@ -45,6 +45,10 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
   const [editingFileId, setEditingFileId] = useState<string | null>(null);
   const [editFileName, setEditFileName] = useState("");
 
+  // Đổi tên thư mục
+  const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
+  const [editFolderName, setEditFolderName] = useState("");
+
   const [searchQuery, setSearchQuery] = useState("");
 
   const fetchData = useCallback(async () => {
@@ -215,6 +219,26 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
       } catch (error) {
         alert(`Lỗi khi xóa thư mục:\n${getErrorMessage(error)}`);
       }
+    }
+  };
+
+  const handleRenameFolderSubmit = async (e: React.FormEvent, id: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!editFolderName.trim()) return;
+    try {
+      const response = await fetch(`${API_URL}/api/docs/folders/${id}/rename`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: editFolderName.trim() }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Không thể đổi tên thư mục");
+      }
+      setEditingFolderId(null);
+    } catch (error) {
+      alert(`Lỗi đổi tên thư mục:\n${getErrorMessage(error)}`);
     }
   };
 
@@ -913,9 +937,26 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
                   <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
                 </svg>
                 <div className="overflow-hidden">
-                  <h4 className="font-bold text-gray-800 wrap-break-word whitespace-normal group-hover:text-blue-600 transition-colors">
-                    {highlight(folder.name)}
-                  </h4>
+                  {editingFolderId === folder.id ? (
+                    <form
+                      onSubmit={(e) => handleRenameFolderSubmit(e, folder.id)}
+                      onClick={(e) => e.stopPropagation()}
+                      className="flex items-center gap-1 pointer-events-auto"
+                    >
+                      <input
+                        type="text"
+                        autoFocus
+                        value={editFolderName}
+                        onChange={(e) => setEditFolderName(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Escape") setEditingFolderId(null); }}
+                        className="text-sm font-bold text-gray-800 border-2 border-blue-400 rounded-md px-2 py-0.5 outline-none bg-white shadow-inner w-full"
+                      />
+                    </form>
+                  ) : (
+                    <h4 className="font-bold text-gray-800 wrap-break-word whitespace-normal group-hover:text-blue-600 transition-colors">
+                      {highlight(folder.name)}
+                    </h4>
+                  )}
                   <p className="text-xs text-gray-400 mt-0.5">Thư mục</p>
                 </div>
               </div>
@@ -964,6 +1005,20 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
                       />
                     </svg>
                   )}
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setEditingFolderId(folder.id);
+                    setEditFolderName(folder.name);
+                  }}
+                  className="text-gray-400 hover:text-blue-500 hover:bg-blue-50 p-2 rounded-lg transition-all"
+                  title="Đổi tên thư mục"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
                 </button>
                 <button
                   onClick={(e) => handleDeleteFolder(e, folder.id)}
