@@ -488,14 +488,15 @@ export const penalizeForgotCheckout = async (req: Request, res: Response) => {
       where: {
         date: todayStr,
         outTime: "-",
+        halfDayDeduction: 0, // ✅ Chỉ xử lý những record chưa bị trừ tiền
       },
       include: { employee: true },
     });
 
     for (const record of forgotRecords) {
       const workDays = getWorkDaysInMonth(now.getFullYear(), now.getMonth());
-      const fullDayDeduction = Math.round(
-        (record.employee.baseSalary || 0) / workDays
+      const halfDayDeduction = Math.round(
+        (record.employee.baseSalary || 0) / workDays / 2
       );
 
       await prisma.$transaction(async (tx) => {
@@ -504,7 +505,7 @@ export const penalizeForgotCheckout = async (req: Request, res: Response) => {
           data: {
             outTime: "Quên checkout",
             status: "Quên checkout",
-            halfDayDeduction: fullDayDeduction,
+            halfDayDeduction: halfDayDeduction,
           },
         });
 
@@ -513,8 +514,8 @@ export const penalizeForgotCheckout = async (req: Request, res: Response) => {
             employeeId: record.employeeId,
             customer: "Hệ thống tự động",
             service: "Phạt",
-            profit: -fullDayDeduction,
-            note: `Quên check-out ngày ${todayStr} — mất 1 ngày công`,
+            profit: -halfDayDeduction,
+            note: `Quên check-out ngày ${todayStr} — mất nửa ngày công`,
           },
         });
       });
