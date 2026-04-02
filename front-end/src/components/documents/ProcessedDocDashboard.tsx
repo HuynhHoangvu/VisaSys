@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import JSZip from "jszip";
 import { type AuthUser, type DocFolder, type DocFile } from "../../types";
-import { formatFileSize } from "../../utils/helpers";
+import { formatFileSize, formatUploadTime } from "../../utils/helpers";
 import { io } from "socket.io-client";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
@@ -899,6 +899,7 @@ const ProcessedDocDashboard: React.FC<ProcessedDocDashboardProps> = ({
                     </h4>
                   )}
                   <p className="text-xs text-gray-400 mt-0.5">Thư mục</p>
+                  <p className="text-xs text-gray-500 mt-1">{formatUploadTime(folder.createdAt)}</p>
                 </div>
               </div>
               <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all shrink-0">
@@ -1034,11 +1035,12 @@ const ProcessedDocDashboard: React.FC<ProcessedDocDashboardProps> = ({
                   <p className="text-xs text-gray-500 mt-1.5">
                     {file.size} • {file.uploadedBy}
                   </p>
+                  <p className="text-xs text-gray-400 mt-2">{formatUploadTime(file.createdAt)}</p>
                 </div>
               </div>
               <div className="mt-auto flex justify-between items-center pt-3 border-t border-gray-100 pointer-events-none">
                 <span className="text-xs text-gray-400">
-                  {new Date(file.createdAt).toLocaleDateString("vi-VN")}
+                  {new Date(file.createdAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}
                 </span>
                 <div className="flex gap-1.5 pointer-events-auto">
                   <button
