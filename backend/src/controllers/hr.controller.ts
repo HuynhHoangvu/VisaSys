@@ -186,8 +186,7 @@ export const downloadSalarySummary = async (req: Request, res: Response) => {
       const bhtnNld  = Math.round(base * 0.01);
       const totalNld = bhxhNld + bhytNld + bhtnNld;
 
-      const thueTNCN = Math.round((base - bhxhNld - bhytNld - bhtnNld) * 0.05);
-      const finalSalary = base - tamUng + totalBonus - (manualFines + attendanceFines + halfDayDeduction + bhxhNld + bhytNld + bhtnNld + thueTNCN);
+      const finalSalary = base - tamUng + totalBonus - (manualFines + attendanceFines + halfDayDeduction + bhxhNld + bhytNld + bhtnNld);
 
       return {
         name: emp.name,
@@ -203,7 +202,6 @@ export const downloadSalarySummary = async (req: Request, res: Response) => {
         insuranceSalary: base,
         bhxhCty, bhytCty, bhtnCty, totalCty,
         bhxhNld, bhytNld, bhtnNld, totalNld,
-        thueTNCN,
         tamUng,
         halfDayDeduction,
         finalSalary,

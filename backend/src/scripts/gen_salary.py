@@ -322,7 +322,6 @@ def generate_summary(data, output_path):
     tot_bhyt_nld  = total_field('bhytNld')
     tot_bhtn_nld  = total_field('bhtnNld')
     tot_nld       = total_field('totalNld')
-    tot_thue      = total_field('thueTNCN')
     tot_tu        = total_field('tamUng')
     tot_hd        = total_field('halfDayDeduction')
     tot_final     = total_field('finalSalary')
@@ -352,7 +351,6 @@ def generate_summary(data, output_path):
         cp("Luong dong BH", bold=True),
         cp("Cac khoan trich chi phi DN", bold=True), cp(""), cp(""), cp(""),  # 4 cot cty
         cp("Cac khoan trich vao luong", bold=True), cp(""), cp(""), cp(""),  # 4 cot NLD
-        cp("Thue TNCN", bold=True),
         cp("Tam ung", bold=True),
         cp("Tru tien di tre", bold=True),
         cp("Thuc linh", bold=True),
@@ -368,20 +366,20 @@ def generate_summary(data, output_path):
         cp("BHTN\n(1%)", bold=True), cp("Tong", bold=True),
         cp("BHXH\n(8%)", bold=True), cp("BHYT\n(1,5%)", bold=True),
         cp("BHTN\n(1%)", bold=True), cp("Tong", bold=True),
-        cp(""), cp(""), cp(""), cp(""), cp(""),
+        cp(""), cp(""), cp(""), cp(""),
     ]
 
-    # Col widths — 25 cot, tong = 0.970W (< 1.0 de tranh tran)
+    # Col widths — 24 cot, tong = 0.970W (< 1.0 de tranh tran)
     cws = [
         W*0.020,  # STT
-        W*0.090,  # Ho ten      — rong hon de hien day du ten
+        W*0.100,  # Ho ten
         W*0.045,  # Chuc vu
-        W*0.050,  # Luong CB
+        W*0.055,  # Luong CB
         W*0.038,  # Chuyen can
         W*0.035,  # An trua
         W*0.035,  # Ho tro khac
         W*0.038,  # Hoa hong
-        W*0.050,  # Tong thu nhap
+        W*0.055,  # Tong thu nhap
         W*0.028,  # Ngay cong
         W*0.050,  # Tong luong TT
         W*0.045,  # Luong dong BH
@@ -393,10 +391,9 @@ def generate_summary(data, output_path):
         W*0.030,  # BHYT nld (1.5%)
         W*0.030,  # BHTN nld (1%)
         W*0.035,  # Tong nld
-        W*0.035,  # Thue TNCN
-        W*0.030,  # Tam ung
+        W*0.037,  # Tam ung
         W*0.038,  # Tru di tre
-        W*0.052,  # Thuc linh
+        W*0.060,  # Thuc linh
         W*0.025,  # Ghi chu
     ]
 
@@ -420,7 +417,6 @@ def generate_summary(data, output_path):
         by_n     = emp.get('bhytNld', 0) or 0
         bt_n     = emp.get('bhtnNld', 0) or 0
         t_nld    = emp.get('totalNld', 0) or 0
-        thue     = emp.get('thueTNCN', 0) or 0
         tu       = emp.get('tamUng', 0) or 0
         hd       = emp.get('halfDayDeduction', 0) or 0
         final    = emp.get('finalSalary', 0) or 0
@@ -437,7 +433,7 @@ def generate_summary(data, output_path):
             cv(ins),
             cv(bx_c), cv(by_c), cv(bt_c), cv(t_cty),
             cv(bx_n), cv(by_n), cv(bt_n), cv(t_nld),
-            cv(thue), cv(tu), cv(hd), cv(final),
+            cv(tu), cv(hd), cv(final),
             p('', size=fs),
         ]
         table_rows.append(row_data)
@@ -453,7 +449,7 @@ def generate_summary(data, output_path):
         tv(tot_ins),
         tv(tot_bhxh_cty), tv(tot_bhyt_cty), tv(tot_bhtn_cty), tv(tot_cty),
         tv(tot_bhxh_nld), tv(tot_bhyt_nld), tv(tot_bhtn_nld), tv(tot_nld),
-        tv(tot_thue), tv(tot_tu), tv(tot_hd), tv(tot_final),
+        tv(tot_tu), tv(tot_hd), tv(tot_final),
         cp(""),
     ]
     table_rows.append(total_row)
@@ -478,11 +474,10 @@ def generate_summary(data, output_path):
         ('SPAN', (11, 0), (11, 1)), # Luong dong BH
         ('SPAN', (12, 0), (15, 0)), # Chi phi DN (4 cot)
         ('SPAN', (16, 0), (19, 0)), # Trich vao luong (4 cot)
-        ('SPAN', (20, 0), (20, 1)), # Thue TNCN
-        ('SPAN', (21, 0), (21, 1)), # Tam ung
-        ('SPAN', (22, 0), (22, 1)), # Tru di tre
-        ('SPAN', (23, 0), (23, 1)), # Thuc linh
-        ('SPAN', (24, 0), (24, 1)), # Ghi chu
+        ('SPAN', (20, 0), (20, 1)), # Tam ung
+        ('SPAN', (21, 0), (21, 1)), # Tru di tre
+        ('SPAN', (22, 0), (22, 1)), # Thuc linh
+        ('SPAN', (23, 0), (23, 1)), # Ghi chu
         # Merge dong TONG: STT + Ho ten + Chuc vu
         ('SPAN', (0, n_data - 1), (2, n_data - 1)),
         # Mau header
