@@ -243,6 +243,105 @@ export const downloadSalarySummary = async (req: Request, res: Response) => {
 };
 
 // ==========================================
+// 1c. TẢI BẢNG LƯƠNG TỔNG EXCEL (MỚI THÊM)
+// ==========================================
+export const downloadSalarySummaryExcel = async (req: Request, res: Response) => {
+  let tmpJson: string | null = null;
+  let tmpXlsx: string | null = null;
+
+  try {
+    const { monthYear } = req.params as { monthYear: string };
+
+    let scriptPath = path.join(process.cwd(), "src/scripts/gen_salary.py");
+    if (!fs.existsSync(scriptPath)) {
+      scriptPath = path.join(process.cwd(), "scripts/gen_salary.py");
+    }
+    if (!fs.existsSync(scriptPath)) {
+      return res.status(500).json({ error: "Không tìm thấy file Python generator" });
+    }
+
+    const employees = await prisma.employee.findMany({
+      include: { salesRecords: true, attendanceRecords: true },
+      orderBy: { name: "asc" },
+    });
+
+    const employeeData = employees.map((emp) => {
+      let chuyenCan = 0, anTrua = 0, hoTroKhac = 0, hoaHong = 0;
+      let tamUng = 0, manualFines = 0;
+
+      emp.salesRecords.forEach((r) => {
+        const amount = Number(r.profit) || 0;
+        if (r.service === "Phạt") manualFines += Math.abs(amount);
+        else if (r.service === "Tạm ứng") tamUng += Math.abs(amount);
+        else if (r.service === "Chuyên cần") chuyenCan += amount;
+        else if (r.service === "Ăn trưa") anTrua += amount;
+        else if (r.service === "Hỗ trợ khác") hoTroKhac += amount;
+        else hoaHong += amount;
+      });
+
+      const attendanceFines = emp.attendanceRecords.reduce((s, r) => s + (r.fine || 0), 0);
+      const halfDayDeduction = emp.attendanceRecords.reduce((s, r) => s + (r.halfDayDeduction || 0), 0);
+      const workDays = emp.attendanceRecords.filter(
+        (r) => r.outTime && r.outTime !== "-" && r.outTime !== "Quên checkout"
+      ).length;
+
+      const base = emp.baseSalary || 0;
+      const totalBonus = chuyenCan + anTrua + hoTroKhac + hoaHong;
+      const totalSalary = base + totalBonus;
+
+      return {
+        name: emp.name,
+        role: emp.role || "",
+        baseSalary: base, // Python sẽ tự động tách giảm xuống với những ai >= 6tr
+        chuyenCan,
+        anTrua,
+        hoTroKhac,
+        hoaHong,
+        totalBonus,
+        workDays,
+        totalSalary,
+        tamUng,
+        halfDayDeduction,
+      };
+    });
+
+    const summaryData = { monthYear, employees: employeeData };
+
+    const tmpDir = os.tmpdir();
+    const ts = Date.now();
+    tmpJson = path.join(tmpDir, `salary_summary_${ts}.json`);
+    tmpXlsx = path.join(tmpDir, `salary_summary_${ts}.xlsx`);
+    fs.writeFileSync(tmpJson, JSON.stringify(summaryData, null, 2), "utf8");
+
+    const pythonCmd = process.platform === "win32" ? "python" : "python3";
+    try {
+      // Gọi lệnh: python gen_salary.py excel input.json output.xlsx
+      execSync(`${pythonCmd} "${scriptPath}" excel "${tmpJson}" "${tmpXlsx}"`, {
+        encoding: "utf8",
+        timeout: 30000,
+      });
+    } catch (pyError: any) {
+      throw new Error("Python failed: " + (pyError.stderr || pyError.message));
+    }
+
+    const safeMonth = monthYear.replace("/", "_");
+    const filename = `BangLuong_${safeMonth}.xlsx`;
+    
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    res.send(fs.readFileSync(tmpXlsx));
+
+    if (tmpJson && fs.existsSync(tmpJson)) fs.unlinkSync(tmpJson);
+    if (tmpXlsx && fs.existsSync(tmpXlsx)) fs.unlinkSync(tmpXlsx);
+  } catch (error) {
+    if (tmpJson && fs.existsSync(tmpJson)) fs.unlinkSync(tmpJson);
+    if (tmpXlsx && fs.existsSync(tmpXlsx)) fs.unlinkSync(tmpXlsx);
+    console.error("Lỗi tạo bảng lương tổng Excel:", error);
+    res.status(500).json({ error: "Lỗi tạo bảng lương tổng Excel" });
+  }
+};
+
+// ==========================================
 // 2. QUẢN LÝ PHÒNG BAN
 // ==========================================
 export const getDepartments = async (req: Request, res: Response) => {
@@ -440,14 +539,13 @@ export const deleteEmployee = async (req: Request, res: Response) => {
 };
 
 // ==========================================
-// 4. CHECK-IN / CHECK-OUT (ĐÃ TÍCH HỢP KIỂM TRA ĐƠN PHÉP)
+// 4. CHECK-IN / CHECK-OUT
 // ==========================================
 export const checkInEmployee = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     let { date, inTime, outTime, status, fine } = req.body;
 
-    // 1. Lấy ngày hiện tại theo chuẩn múi giờ VN
     const now = new Date();
     const timeZone = "Asia/Ho_Chi_Minh";
     const formatter = new Intl.DateTimeFormat("en-US", {
@@ -464,7 +562,6 @@ export const checkInEmployee = async (req: Request, res: Response) => {
 
     const todayISO = `${vnYear}-${vnMonth}-${vnDay}`;
 
-    // 2. Tìm xem nhân viên có đơn xin phép "Đã duyệt" hôm nay không
     const approvedLeave = await prisma.leaveRequest.findFirst({
       where: {
         employeeId: id as string,
@@ -474,7 +571,6 @@ export const checkInEmployee = async (req: Request, res: Response) => {
       }
     });
 
-    // 3. Nếu có đơn được duyệt -> Miễn phạt hoàn toàn
     if (approvedLeave) {
       fine = 0; 
       if (status === "Đi muộn") {
@@ -482,7 +578,6 @@ export const checkInEmployee = async (req: Request, res: Response) => {
       }
     }
 
-    // 4. Lưu vào Database
     const newRecord = await prisma.attendanceRecord.create({
       data: {
         date,
@@ -530,7 +625,6 @@ export const checkOutEmployee = async (req: Request, res: Response) => {
     if (!todayRecord) return res.status(400).json({ error: "Chưa check-in hôm nay!" });
     if (todayRecord.outTime && todayRecord.outTime !== "-") return res.status(400).json({ error: "Đã check-out rồi!" });
 
-    // Kiểm tra về sớm (trước 17:00 giờ VN)
     const outMinutes = vnHour * 60 + vnMinute;
     const isEarlyLeave = outMinutes < 17 * 60;
 
@@ -540,7 +634,6 @@ export const checkOutEmployee = async (req: Request, res: Response) => {
     if (isEarlyLeave) {
       const todayISO = `${vnYear}-${vnMonth}-${vnDay}`; 
       
-      // Kiểm tra đơn xin phép "Đã duyệt"
       const approvedLeave = await prisma.leaveRequest.findFirst({
         where: {
           employeeId: id,
@@ -551,7 +644,6 @@ export const checkOutEmployee = async (req: Request, res: Response) => {
       });
 
       if (!approvedLeave) {
-        // KHÔNG CÓ PHÉP -> BỊ PHẠT NỬA NGÀY
         const employee = await prisma.employee.findUnique({ where: { id: id } });
         const workDays = getWorkDaysInMonth(parseInt(vnYear), parseInt(vnMonth) - 1); 
         halfDayDeduction = Math.round((employee!.baseSalary || 0) / workDays / 2);
@@ -560,7 +652,6 @@ export const checkOutEmployee = async (req: Request, res: Response) => {
           ? "Về sớm"
           : `${todayRecord.status} + Về sớm`;
       } else {
-        // CÓ PHÉP -> MIỄN PHẠT HOÀN TOÀN
         newStatus = todayRecord.status === "Đúng giờ" || todayRecord.status.includes("Có phép")
           ? "Về sớm (Có phép)"
           : `${todayRecord.status} + Về sớm (Có phép)`;
@@ -573,7 +664,6 @@ export const checkOutEmployee = async (req: Request, res: Response) => {
         data: { outTime, status: newStatus, halfDayDeduction },
       });
 
-      // Chỉ sinh ra SalesRecord phạt nếu bị trừ tiền thật sự
       if (halfDayDeduction > 0) {
         await tx.salesRecord.create({
           data: {
@@ -604,7 +694,7 @@ export const penalizeForgotCheckout = async (req: Request, res: Response) => {
       where: {
         date: todayStr,
         outTime: "-",
-        halfDayDeduction: 0, // ✅ Chỉ xử lý những record chưa bị trừ tiền
+        halfDayDeduction: 0,
       },
       include: { employee: true },
     });
@@ -785,38 +875,33 @@ export const createLeaveRequest = async (req: Request, res: Response) => {
       }
     });
 
-    // 1. Tìm tất cả Trưởng phòng thuộc bộ phận SALE
     const saleManagers = await prisma.employee.findMany({
       where: {
         role: {
-          contains: "Trưởng phòng", // Tìm chữ chứa "Trưởng phòng"
-          mode: "insensitive"       // Bỏ qua phân biệt hoa/thường
+          contains: "Trưởng phòng",
+          mode: "insensitive"
         },
         department: { 
           name: {
-            contains: "Sale",       // Tìm chữ chứa "Sale"
-            mode: "insensitive"     // Bỏ qua phân biệt hoa/thường ("SALE", "Sale", "sale" đều dính)
+            contains: "Sale",
+            mode: "insensitive"
           } 
         }
       },
       select: { name: true }
     });
 
-    // 2. Gom danh sách người nhận (Admin + Giám đốc + Các trưởng phòng Sale)
     const managerNames = saleManagers.map(m => m.name.trim());
-    console.log("👉 Danh sách Trưởng phòng SALE tìm được:", managerNames);
     const receivers = Array.from(new Set(["Giám đốc", "Admin", ...managerNames]));
-console.log("👉 Dữ liệu đẩy vào DB cột receiver:", receivers);
-    // 3. Lưu vào bảng Notification
+    
     await prisma.notification.create({
       data: {
         sender: emp.name,
         message: `Nhân viên ${emp.name} (Phòng SALE) vừa gửi đơn xin ${type.toLowerCase()}.`,
-        receiver: receivers, // Đảm bảo cột receiver trong DB của bạn nhận mảng string
+        receiver: receivers,
       }
     });
 
-    // 4. Bắn Socket để hiện thông báo ngay lập tức
     getIO().emit("new_notification", {
       message: `Có đơn mới từ ${emp.name}`,
       receivers: receivers
@@ -828,6 +913,7 @@ console.log("👉 Dữ liệu đẩy vào DB cột receiver:", receivers);
     res.status(500).json({ error: "Lỗi hệ thống khi gửi đơn" });
   }
 };
+
 export const getLeaveRequests = async (req: Request, res: Response) => {
   try {
     const requests = await prisma.leaveRequest.findMany({
@@ -844,14 +930,11 @@ export const getLeaveRequests = async (req: Request, res: Response) => {
   }
 };
 
-// Trong file Controller của bạn (ví dụ: hrController.ts)
-
 export const updateLeaveRequestStatus = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { status } = req.body; // Giá trị: "Đã duyệt" hoặc "Từ chối"
+    const { status } = req.body;
 
-    // 1. Tìm đơn xin nghỉ và thông tin nhân viên đi kèm
     const leaveRequest = await prisma.leaveRequest.findUnique({
       where: { id: id as string },
       include: { employee: true }
@@ -861,51 +944,36 @@ export const updateLeaveRequestStatus = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Không tìm thấy đơn xin nghỉ này!" });
     }
 
-    // 2. Xử lý logic TRỪ LƯƠNG tự động nếu DUYỆT đơn "Xin phép nghỉ"
-    // Điều kiện: Trạng thái mới là "Đã duyệt" VÀ trạng thái cũ chưa phải là "Đã duyệt" (tránh trừ trùng)
     if (status === "Đã duyệt" && leaveRequest.status !== "Đã duyệt") {
-      
       if (leaveRequest.type === "Xin phép nghỉ") {
         const start = new Date(leaveRequest.startDate);
         const end = new Date(leaveRequest.endDate);
 
-        // Tính số ngày nghỉ (bao gồm cả ngày bắt đầu và kết thúc)
-        // Lưu ý: Nếu đơn chỉ nghỉ 1 ngày thì start = end, kết quả diffDays = 1
         const diffTime = Math.abs(end.getTime() - start.getTime());
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
 
-        // Lấy mức lương cơ bản từ database của nhân viên đó (mặc định 6tr nếu trống)
         const baseSalary = leaveRequest.employee.baseSalary;
-        
-        // Công thức: Lương 1 ngày = Lương cơ bản / 22 ngày công chuẩn
         const standardWorkDays = 22;
-        const dailyWage = Math.round(baseSalary / standardWorkDays);
-        
-        // Tổng số tiền trừ
+        const dailyWage = Math.round((baseSalary || 0) / standardWorkDays);
         const totalDeduction = dailyWage * diffDays;
 
-        // Tự động tạo bản ghi Phạt vào bảng SalesRecord
         await prisma.salesRecord.create({
           data: {
             employeeId: leaveRequest.employeeId,
             customer: "Hệ thống tự động",
             service: "Phạt",
-            profit: -totalDeduction, // Lưu số âm để trừ vào tổng lương
+            profit: -totalDeduction,
             note: `Trừ ${diffDays} ngày lương: Nghỉ phép từ ${leaveRequest.startDate} đến ${leaveRequest.endDate}`,
           }
         });
-        
-        console.log(`✅ Đã trừ ${totalDeduction}đ vào lương của ${leaveRequest.employee.name}`);
       }
     }
 
-    // 3. Cập nhật trạng thái đơn xin nghỉ trong Database
     const updatedRequest = await prisma.leaveRequest.update({
       where: { id: id as string },
       data: { status }
     });
 
-    // 4. Thông báo cho Frontend qua Socket để cập nhật giao diện ngay lập tức
     getIO().emit("data_changed");
 
     res.json(updatedRequest);
@@ -914,6 +982,7 @@ export const updateLeaveRequestStatus = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Lỗi hệ thống khi xử lý duyệt đơn" });
   }
 };
+
 export const getLeaveRequestsByEmployee = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;

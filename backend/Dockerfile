@@ -6,7 +6,7 @@ WORKDIR /app
 RUN apk add --no-cache build-base python3 py3-pip jpeg-dev zlib-dev freetype-dev ttf-dejavu
 
 # Cài reportlab (--break-system-packages cần thiết trên Alpine mới)
-RUN pip3 install reportlab --break-system-packages
+RUN pip3 install reportlab openpyxl --break-system-packages
 
 # Copy package.json và package-lock.json trước để tận dụng cache Docker
 COPY package*.json ./

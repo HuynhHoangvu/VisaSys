@@ -1,37 +1,61 @@
-// src/routes/hr.routes.ts
 import { Router } from "express";
-import { getDepartments, createDepartment, getEmployees, createEmployee, deleteDepartment, updateDepartment, deleteEmployee, checkInEmployee, addManualBonus, finalizeMonthSalary, getSalaryHistory, createLeaveRequest, getLeaveRequests, updateLeaveRequestStatus, updateEmployee, penalizeForgotCheckout, checkOutEmployee, downloadSalarySlip, downloadSalarySummary, getLeaveRequestsByEmployee } from "../controllers/hr.controller.js";
+import { 
+  getDepartments, 
+  createDepartment, 
+  getEmployees, 
+  createEmployee, 
+  deleteDepartment, 
+  updateDepartment, 
+  deleteEmployee, 
+  checkInEmployee, 
+  addManualBonus, 
+  finalizeMonthSalary, 
+  getSalaryHistory, 
+  createLeaveRequest, 
+  getLeaveRequests, 
+  updateLeaveRequestStatus, 
+  updateEmployee, 
+  penalizeForgotCheckout, 
+  checkOutEmployee, 
+  downloadSalarySlip, 
+  downloadSalarySummary, 
+  downloadSalarySummaryExcel, // BỔ SUNG HÀM MỚI Ở ĐÂY
+  getLeaveRequestsByEmployee 
+} from "../controllers/hr.controller.js";
 
 const router = Router();
 
 // 1. API Chốt Lương
-router.post("/salary/finalize", finalizeMonthSalary)
+router.post("/salary/finalize", finalizeMonthSalary);
 router.get("/salary/slip/:employeeId/:monthYear", downloadSalarySlip);
 router.get("/salary/summary/:monthYear", downloadSalarySummary);
+
+router.get("/salary/summary-excel/:monthYear", downloadSalarySummaryExcel);
+
 router.get("/salary/history", getSalaryHistory);
-// Routes Phòng Ban
+
+// 2. Routes Phòng Ban
 router.get("/departments", getDepartments);
 router.post("/departments", createDepartment);
 router.put("/departments/:id", updateDepartment);
 router.delete("/departments/:id", deleteDepartment);
-// Routes Nhân viên
 
+// 3. Routes Nhân viên
 router.get("/employees", getEmployees);
 router.post("/employees", createEmployee);
 router.put("/employees/:id", updateEmployee);
 router.delete("/employees/:id", deleteEmployee);
-// Thêm Route này dành riêng cho Check-in
+
+// 4. API Thưởng/phạt & Điểm danh thủ công
 router.post("/employees/:id/checkin", checkInEmployee);
 router.post("/employees/:id/bonus", addManualBonus);
-// Thêm Route này dành riêng cho Check-out
-router.post("/employees/:id/leave", createLeaveRequest);
-router.get("/employees/:id/leave", getLeaveRequestsByEmployee);
 router.post("/employees/:id/checkout", checkOutEmployee);
 router.post("/attendance/penalize-forgot-checkout", penalizeForgotCheckout);
-// Các API quản lý Đơn nghỉ phép (Dành cho Sếp)
+
+// 5. Các API quản lý Đơn nghỉ phép
+router.post("/employees/:id/leave", createLeaveRequest);
+router.get("/employees/:id/leave", getLeaveRequestsByEmployee);
 router.get("/leave-requests", getLeaveRequests);
 router.put("/leave-requests/:id/status", updateLeaveRequestStatus);
-
-
 
 export default router;

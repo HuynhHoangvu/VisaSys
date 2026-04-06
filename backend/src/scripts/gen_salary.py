@@ -522,17 +522,254 @@ def generate_summary(data, output_path):
 
 
 # ══════════════════════════════════════════════════════════════
+#  BANG LUONG TONG — EXCEL (openpyxl)
+# ══════════════════════════════════════════════════════════════
+def generate_summary_excel(data, output_path):
+    try:
+        from openpyxl import Workbook
+        from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+    except ImportError:
+        raise Exception("Thieu thu vien: pip install openpyxl")
+
+    employees = data.get('employees', [])
+    parts = str(data.get('monthYear', '')).split('/')
+    month_text = f"THANG {parts[0]} NAM {parts[1]}" if len(parts) == 2 else data.get('monthYear', '')
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Bang Luong"
+
+    ORANGE      = "FFA500"
+    LT_ORANGE   = "FFF3E0"
+    WHITE       = "FFFFFF"
+
+    _thin  = Side(style='thin')
+
+    def bd(left=_thin, right=_thin, top=_thin, bottom=_thin):
+        return Border(left=left, right=right, top=top, bottom=bottom)
+
+    def style(cell, bold=False, size=9, color=None, fill=None,
+              h='center', v='center', wrap=False, fmt=None, bdr=True):
+        cell.font = Font(name='Arial', bold=bold, size=size,
+                         color=color or "000000")
+        if fill:
+            cell.fill = PatternFill("solid", fgColor=fill)
+        cell.alignment = Alignment(horizontal=h, vertical=v, wrap_text=wrap)
+        if bdr:
+            cell.border = bd()
+        if fmt:
+            cell.number_format = fmt
+
+    NUM = '#,##0'
+
+    # ── HEADER CONG TY ──
+    ws.merge_cells('A1:X1')
+    ws['A1'] = 'CONG TY TNHH FLY VISA'
+    style(ws['A1'], bold=True, size=11, h='left', bdr=False)
+
+    ws.merge_cells('A2:X2')
+    ws['A2'] = 'MST: 0316444315'
+    style(ws['A2'], size=9, h='left', bdr=False)
+
+    ws.merge_cells('A3:X3')
+    ws['A3'] = 'DC: 219A Duong No Trang Long, Phuong Binh Thanh, TP.HCM'
+    style(ws['A3'], size=9, h='left', bdr=False)
+
+    # ── TIEU DE ──
+    ws.merge_cells('A5:X5')
+    ws['A5'] = 'BANG LUONG NHAN VIEN'
+    style(ws['A5'], bold=True, size=14, bdr=False)
+    ws.row_dimensions[5].height = 22
+
+    ws.merge_cells('A6:X6')
+    ws['A6'] = month_text
+    style(ws['A6'], bold=True, size=12, bdr=False)
+    ws.row_dimensions[6].height = 18
+
+    # ── HEADER BANG — 2 DONG ──
+    # Columns A..X (24 cols):
+    # A=STT B=Ho ten C=Chuc vu D=Luong CB
+    # E=CC  F=AT     G=HTK     H=HH
+    # I=Tong TN  J=Ngay cong  K=Tong luong TT  L=Luong dong BH
+    # M=BHXH cty N=BHYT cty  O=BHTN cty  P=Tong cty
+    # Q=BHXH nld R=BHYT nld  S=BHTN nld  T=Tong nld
+    # U=Tam ung  V=Tru di tre W=Thuc linh X=Ghi chu
+
+    HR1, HR2 = 8, 9
+    DS = 10  # Data Start row
+
+    # Merge header row 1
+    for rng in ['A8:A9','B8:B9','C8:C9','D8:D9',
+                'E8:H8',                           # Phu cap
+                'I8:I9','J8:J9','K8:K9','L8:L9',
+                'M8:P8',                           # Chi phi DN
+                'Q8:T8',                           # Trich vao luong
+                'U8:U9','V8:V9','W8:W9','X8:X9']:
+        ws.merge_cells(rng)
+
+    h1_vals = {
+        'A': 'STT', 'B': 'Ho va ten', 'C': 'Chuc vu', 'D': 'Luong co ban',
+        'E': 'Phu cap',
+        'I': 'Tong thu nhap', 'J': 'Ngay cong TT', 'K': 'Tong luong TT',
+        'L': 'Luong dong BH',
+        'M': 'Cac khoan trich chi phi DN',
+        'Q': 'Cac khoan trich vao luong',
+        'U': 'Tam ung', 'V': 'Tru tien di tre', 'W': 'Thuc linh', 'X': 'Ghi chu',
+    }
+    h2_vals = {
+        'E': 'Chuyen can', 'F': 'An trua', 'G': 'Ho tro khac', 'H': 'Hoa hong',
+        'M': 'BHXH\n(17,5%)', 'N': 'BHYT\n(3%)', 'O': 'BHTN\n(1%)', 'P': 'Tong',
+        'Q': 'BHXH\n(8%)',    'R': 'BHYT\n(1,5%)', 'S': 'BHTN\n(1%)', 'T': 'Tong',
+    }
+
+    all_cols = [chr(c) for c in range(ord('A'), ord('X') + 1)]
+
+    for c in all_cols:
+        c1 = ws[f'{c}{HR1}']
+        c2 = ws[f'{c}{HR2}']
+        for cell in (c1, c2):
+            style(cell, bold=True, size=8, fill=ORANGE, wrap=True)
+        if c in h1_vals:
+            c1.value = h1_vals[c]
+        if c in h2_vals:
+            c2.value = h2_vals[c]
+
+    ws.row_dimensions[HR1].height = 28
+    ws.row_dimensions[HR2].height = 28
+
+    # ── DATA ROWS ──
+    for i, emp in enumerate(employees, start=1):
+        r = DS + i - 1
+        base = emp.get('baseSalary', 0) or 0
+        cc   = emp.get('chuyenCan', 0) or 0
+        at_  = emp.get('anTrua', 0) or 0
+        htk  = emp.get('hoTroKhac', 0) or 0
+        hh   = emp.get('hoaHong', 0) or 0
+        ngay = emp.get('workDays', 0) or 0
+        tu   = emp.get('tamUng', 0) or 0
+        hd   = emp.get('halfDayDeduction', 0) or 0
+
+        fill_c = LT_ORANGE if i % 2 == 0 else WHITE
+
+        # Gia tri truc tiep
+        raw = {
+            'A': i, 'B': emp.get('name', ''), 'C': emp.get('role', ''),
+            'D': base,
+            'E': cc  if cc  else None,
+            'F': at_ if at_ else None,
+            'G': htk if htk else None,
+            'H': hh  if hh  else None,
+            'J': ngay if ngay else None,
+            'U': tu  if tu  else None,
+            'V': hd  if hd  else None,
+            'X': None,
+        }
+        for c, val in raw.items():
+            cell = ws[f'{c}{r}']
+            cell.value = val
+            cell.fill = PatternFill("solid", fgColor=fill_c)
+            cell.border = bd()
+            cell.font = Font(name='Arial', size=8)
+            if c in ('A', 'J'):
+                cell.alignment = Alignment(horizontal='center', vertical='center')
+            elif c in ('B', 'C'):
+                cell.alignment = Alignment(horizontal='left', vertical='center')
+            else:
+                cell.alignment = Alignment(horizontal='right', vertical='center')
+                if val is not None:
+                    cell.number_format = NUM
+
+        # Cong thuc Excel tu tinh
+        formulas = {
+            'I': f'=D{r}+IF(E{r}="",0,E{r})+IF(F{r}="",0,F{r})+IF(G{r}="",0,G{r})+IF(H{r}="",0,H{r})',
+            'K': f'=IF(J{r}=0,0,ROUND(I{r}*J{r}/21,0))',
+            'L': f'=D{r}',
+            'M': f'=ROUND(L{r}*17.5%,0)',
+            'N': f'=ROUND(L{r}*3%,0)',
+            'O': f'=ROUND(L{r}*1%,0)',
+            'P': f'=M{r}+N{r}+O{r}',
+            'Q': f'=ROUND(L{r}*8%,0)',
+            'R': f'=ROUND(L{r}*1.5%,0)',
+            'S': f'=ROUND(L{r}*1%,0)',
+            'T': f'=Q{r}+R{r}+S{r}',
+            'W': f'=K{r}-T{r}-IF(U{r}="",0,U{r})-IF(V{r}="",0,V{r})',
+        }
+        for c, formula in formulas.items():
+            cell = ws[f'{c}{r}']
+            cell.value = formula
+            cell.fill = PatternFill("solid", fgColor=fill_c)
+            cell.border = bd()
+            cell.font = Font(name='Arial', size=8)
+            cell.number_format = NUM
+            cell.alignment = Alignment(horizontal='right', vertical='center')
+
+        ws.row_dimensions[r].height = 16
+
+    # ── DONG TONG ──
+    TR = DS + len(employees)
+    data_end = TR - 1
+
+    ws.merge_cells(f'A{TR}:C{TR}')
+    cell = ws[f'A{TR}']
+    cell.value = 'TONG'
+    style(cell, bold=True, size=10, fill=ORANGE)
+
+    for c in all_cols[3:]:   # D..X
+        cell = ws[f'{c}{TR}']
+        if c != 'X':
+            cell.value = f'=SUM({c}{DS}:{c}{data_end})'
+        style(cell, bold=True, fill=ORANGE, h='right', fmt=NUM)
+    # Fix B, C cells cua dong tong (da merge)
+    for c in ('B', 'C'):
+        ws[f'{c}{TR}'].fill = PatternFill("solid", fgColor=ORANGE)
+        ws[f'{c}{TR}'].border = bd()
+
+    ws.row_dimensions[TR].height = 18
+
+    # ── CHU KY ──
+    SR = TR + 3
+    sigs = [('B', 'Nguoi lap bieu'), ('J', 'Ke toan'), ('T', 'Giam doc')]
+    for col, title in sigs:
+        ws[f'{col}{SR}'].value = title
+        style(ws[f'{col}{SR}'], bold=True, size=9, bdr=False)
+        ws[f'{col}{SR + 1}'].value = '(Ky, ghi ro ho ten)'
+        style(ws[f'{col}{SR + 1}'], size=8, bdr=False)
+        ws[f'{col}{SR + 1}'].font = Font(name='Arial', size=8, italic=True)
+        ws[f'{col}{SR + 1}'].alignment = Alignment(horizontal='center')
+
+    # ── DO RONG COT ──
+    widths = {
+        'A': 5,  'B': 22, 'C': 12, 'D': 14,
+        'E': 12, 'F': 10, 'G': 12, 'H': 12,
+        'I': 14, 'J': 8,  'K': 14, 'L': 14,
+        'M': 12, 'N': 10, 'O': 10, 'P': 12,
+        'Q': 10, 'R': 10, 'S': 10, 'T': 12,
+        'U': 12, 'V': 12, 'W': 14, 'X': 12,
+    }
+    for c, w in widths.items():
+        ws.column_dimensions[c].width = w
+
+    # Freeze header
+    ws.freeze_panes = f'A{DS}'
+
+    wb.save(output_path)
+
+
+# ══════════════════════════════════════════════════════════════
 #  ENTRY POINT
 # ══════════════════════════════════════════════════════════════
 if __name__ == '__main__':
     if len(sys.argv) == 4 and sys.argv[1] == 'summary':
-        # python gen_salary.py summary input.json output.pdf
         with open(sys.argv[2], encoding='utf-8') as f:
             data = json.load(f)
         generate_summary(data, sys.argv[3])
         print(f"OK: {sys.argv[3]}")
+    elif len(sys.argv) == 4 and sys.argv[1] == 'excel':
+        with open(sys.argv[2], encoding='utf-8') as f:
+            data = json.load(f)
+        generate_summary_excel(data, sys.argv[3])
+        print(f"OK: {sys.argv[3]}")
     elif len(sys.argv) == 3:
-        # python gen_salary.py input.json output.pdf
         with open(sys.argv[1], encoding='utf-8') as f:
             data = json.load(f)
         generate(data, sys.argv[2])
@@ -541,4 +778,5 @@ if __name__ == '__main__':
         print("Usage:")
         print("  python gen_salary.py <input.json> <output.pdf>")
         print("  python gen_salary.py summary <input.json> <output.pdf>")
+        print("  python gen_salary.py excel   <input.json> <output.xlsx>")
         sys.exit(1)

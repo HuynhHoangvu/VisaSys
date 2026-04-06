@@ -35,9 +35,7 @@ interface EmployeeDashboardProps {
   currentUser: AuthUser | null;
 }
 
-const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
-  currentUser,
-}) => {
+const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ currentUser }) => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [selectedEmpId, setSelectedEmpId] = useState<string | null>(null);
@@ -272,7 +270,22 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
       alert("Lỗi khi cập nhật bộ phận!" + error);
     }
   };
-
+  // --- TẢI BẢNG LƯƠNG TỔNG EXCEL ---
+  const handleDownloadSummaryExcel = async (monthYear: string) => {
+    try {
+      const url = `${API_URL}/api/hr/salary/summary-excel/${encodeURIComponent(monthYear)}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Lỗi tải bảng lương tổng Excel");
+      const blob = await res.blob();
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `BangLuong_${monthYear.replace("/", "_")}.xlsx`;
+      link.click();
+      URL.revokeObjectURL(link.href);
+    } catch (error) {
+      alert("Lỗi tải bảng lương tổng Excel: " + error);
+    }
+  };
   const handleDeleteDepartment = async (id: string) => {
     if (!canDeletePersonnel)
       return alert("Chỉ Giám đốc mới có quyền xóa phòng ban!");
@@ -384,7 +397,7 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
   const [showLeaveManagerModal, setShowLeaveManagerModal] = useState(false);
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
   const [leaveMonthFilter, setLeaveMonthFilter] = useState<string>(
-    () => new Date().toISOString().slice(0, 7) // "YYYY-MM"
+    () => new Date().toISOString().slice(0, 7), // "YYYY-MM"
   );
 
   const fetchLeaveRequests = async () => {
@@ -901,10 +914,43 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
                         className="inline-flex items-center gap-1.5 px-2 py-1.5 sm:px-3 sm:py-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-xs font-bold transition-colors shadow-sm"
                         title="Tải bảng lương tổng"
                       >
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        <svg
+                          className="w-3.5 h-3.5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                          />
                         </svg>
                         Bảng tổng
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDownloadSummaryExcel(monthYear);
+                        }}
+                        className="inline-flex items-center gap-1.5 px-2 py-1.5 sm:px-3 sm:py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-bold transition-colors shadow-sm"
+                        title="Tải bảng lương tổng Excel"
+                      >
+                        <svg
+                          className="w-3.5 h-3.5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                          />
+                        </svg>
+                        Excel
                       </button>
                       <svg
                         className={`w-4 h-4 sm:w-5 sm:h-5 text-blue-600 transition-transform duration-300 ${isExpanded ? "rotate-180" : ""}`}
@@ -1119,7 +1165,9 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
             📋 Danh sách Đơn xin nghỉ phép
           </h3>
           <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-gray-600 whitespace-nowrap">Lọc tháng:</label>
+            <label className="text-sm font-medium text-gray-600 whitespace-nowrap">
+              Lọc tháng:
+            </label>
             <input
               type="month"
               value={leaveMonthFilter}
@@ -1188,13 +1236,19 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
                       return ym === leaveMonthFilter;
                     })
                   : leaveRequests;
-                if (filtered.length === 0) return (
-                  <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center italic text-gray-400">
-                      {leaveMonthFilter ? "Không có đơn nào trong tháng này." : "Không có đơn xin nghỉ phép nào."}
-                    </td>
-                  </tr>
-                );
+                if (filtered.length === 0)
+                  return (
+                    <tr>
+                      <td
+                        colSpan={7}
+                        className="px-4 py-8 text-center italic text-gray-400"
+                      >
+                        {leaveMonthFilter
+                          ? "Không có đơn nào trong tháng này."
+                          : "Không có đơn xin nghỉ phép nào."}
+                      </td>
+                    </tr>
+                  );
                 return filtered.map((req) => (
                   <tr key={req.id} className="bg-white hover:bg-gray-50">
                     <td className="px-4 py-3 sm:py-4 font-medium text-gray-500 whitespace-nowrap">
@@ -1274,6 +1328,6 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
       </Modal>
     </div>
   );
-};
+};;
 
 export default EmployeeDashboard;
