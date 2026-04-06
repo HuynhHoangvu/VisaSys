@@ -3,7 +3,7 @@ FROM node:22-alpine
 WORKDIR /app
 
 # Cài đặt build tools, Python, pip và các thư viện cần cho reportlab (xử lý ảnh, font)
-RUN apk add --no-cache build-base python3 py3-pip jpeg-dev zlib-dev freetype-dev
+RUN apk add --no-cache build-base python3 py3-pip jpeg-dev zlib-dev freetype-dev ttf-dejavu
 
 # Cài reportlab (--break-system-packages cần thiết trên Alpine mới)
 RUN pip3 install reportlab --break-system-packages

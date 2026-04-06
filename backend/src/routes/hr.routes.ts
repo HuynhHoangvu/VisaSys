@@ -1,12 +1,13 @@
 // src/routes/hr.routes.ts
 import { Router } from "express";
-import { getDepartments, createDepartment, getEmployees, createEmployee, deleteDepartment, updateDepartment, deleteEmployee, checkInEmployee, addManualBonus, finalizeMonthSalary, getSalaryHistory, createLeaveRequest, getLeaveRequests, updateLeaveRequestStatus, updateEmployee, penalizeForgotCheckout, checkOutEmployee, downloadSalarySlip, getLeaveRequestsByEmployee } from "../controllers/hr.controller.js";
+import { getDepartments, createDepartment, getEmployees, createEmployee, deleteDepartment, updateDepartment, deleteEmployee, checkInEmployee, addManualBonus, finalizeMonthSalary, getSalaryHistory, createLeaveRequest, getLeaveRequests, updateLeaveRequestStatus, updateEmployee, penalizeForgotCheckout, checkOutEmployee, downloadSalarySlip, downloadSalarySummary, getLeaveRequestsByEmployee } from "../controllers/hr.controller.js";
 
 const router = Router();
 
 // 1. API Chốt Lương
 router.post("/salary/finalize", finalizeMonthSalary)
 router.get("/salary/slip/:employeeId/:monthYear", downloadSalarySlip);
+router.get("/salary/summary/:monthYear", downloadSalarySummary);
 router.get("/salary/history", getSalaryHistory);
 // Routes Phòng Ban
 router.get("/departments", getDepartments);

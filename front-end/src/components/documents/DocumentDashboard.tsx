@@ -98,7 +98,9 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
 
   const totalDisplay = displayFolders.length + displayFiles.length;
 
-  const getFolderPath = (folderId: string | null): { id: string; name: string }[] => {
+  const getFolderPath = (
+    folderId: string | null,
+  ): { id: string; name: string }[] => {
     const path: { id: string; name: string }[] = [];
     let current = folderId;
     while (current) {
@@ -798,7 +800,10 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
                 <span className="text-gray-400">/</span>
                 {index < arr.length - 1 ? (
                   <button
-                    onClick={() => { setCurrentFolderId(folder.id); setSearchQuery(""); }}
+                    onClick={() => {
+                      setCurrentFolderId(folder.id);
+                      setSearchQuery("");
+                    }}
                     className="text-blue-600 font-semibold hover:underline"
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={() => {
@@ -809,7 +814,9 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
                     {folder.name}
                   </button>
                 ) : (
-                  <span className="text-gray-800 font-semibold">{folder.name}</span>
+                  <span className="text-gray-800 font-semibold">
+                    {folder.name}
+                  </span>
                 )}
               </React.Fragment>
             ))}
@@ -948,7 +955,9 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
                         autoFocus
                         value={editFolderName}
                         onChange={(e) => setEditFolderName(e.target.value)}
-                        onKeyDown={(e) => { if (e.key === "Escape") setEditingFolderId(null); }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Escape") setEditingFolderId(null);
+                        }}
                         className="text-sm font-bold text-gray-800 border-2 border-blue-400 rounded-md px-2 py-0.5 outline-none bg-white shadow-inner w-full"
                       />
                     </form>
@@ -958,7 +967,9 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
                     </h4>
                   )}
                   <p className="text-xs text-gray-400 mt-0.5">Thư mục</p>
-                  <p className="text-xs text-gray-500 mt-1">{formatUploadTime(folder.createdAt)}</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {formatUploadTime(folder.createdAt)}
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all shrink-0">
@@ -1016,9 +1027,18 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
                   className="text-gray-400 hover:text-blue-500 hover:bg-blue-50 p-2 rounded-lg transition-all"
                   title="Đổi tên thư mục"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
-                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                    />
                   </svg>
                 </button>
               </div>
@@ -1027,8 +1047,18 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
                 className="absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 hover:bg-red-50 p-1 rounded-full transition-all"
                 title="Xóa thư mục"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2.5"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               </button>
             </div>
@@ -1171,12 +1201,17 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
                   <p className="text-xs text-gray-500 mt-1.5">
                     {file.size} • {file.uploadedBy}
                   </p>
-                  <p className="text-xs text-gray-400 mt-2">{formatUploadTime(file.createdAt)}</p>
+                  <p className="text-xs text-gray-400 mt-2">
+                    {formatUploadTime(file.createdAt)}
+                  </p>
                 </div>
               </div>
               <div className="mt-auto flex justify-between items-center pt-3 border-t border-gray-100 pointer-events-none">
                 <span className="text-xs text-gray-400">
-                  {new Date(file.createdAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}
+                  {new Date(file.createdAt).toLocaleTimeString("vi-VN", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
                 </span>
                 <div className="flex gap-1.5 pointer-events-auto">
                   <button

@@ -54,9 +54,11 @@ export const downloadSalarySlip = async (req: Request, res: Response) => {
 
     const attendanceFines = employee.attendanceRecords.reduce((s, r) => s + (r.fine || 0), 0);
     halfDayDeduction = employee.attendanceRecords.reduce((s, r) => s + (r.halfDayDeduction || 0), 0);
-    const workDays = employee.attendanceRecords.filter(
+    const checkedOutRecords = employee.attendanceRecords.filter(
       (r) => r.outTime && r.outTime !== "-" && r.outTime !== "Quên checkout"
-    ).length;
+    );
+    const workDays = checkedOutRecords.length;
+    const workDates = checkedOutRecords.map((r) => r.date).sort();
 
     const baseSalary = employee.baseSalary || 0;
     const bhxh = Math.round(baseSalary * 0.08);
@@ -73,6 +75,7 @@ export const downloadSalarySlip = async (req: Request, res: Response) => {
       baseSalary,
       totalBonus,
       workDays,
+      workDates,
       thueTNCN,
       halfDayDeduction,
       otherDeduction: manualFines + attendanceFines,
@@ -123,6 +126,121 @@ export const downloadSalarySlip = async (req: Request, res: Response) => {
     if (tmpPdf && fs.existsSync(tmpPdf)) fs.unlinkSync(tmpPdf);
     console.error("Lỗi tạo phiếu lương:", error);
     res.status(500).json({ error: "Lỗi tạo phiếu lương PDF" });
+  }
+};
+
+// ==========================================
+// 1b. TẢI BẢNG LƯƠNG TỔNG PDF
+// ==========================================
+export const downloadSalarySummary = async (req: Request, res: Response) => {
+  let tmpJson: string | null = null;
+  let tmpPdf: string | null = null;
+
+  try {
+    const { monthYear } = req.params as { monthYear: string };
+
+    let scriptPath = path.join(process.cwd(), "src/scripts/gen_salary.py");
+    if (!fs.existsSync(scriptPath)) {
+      scriptPath = path.join(process.cwd(), "scripts/gen_salary.py");
+    }
+    if (!fs.existsSync(scriptPath)) {
+      return res.status(500).json({ error: "Không tìm thấy file PDF generator" });
+    }
+
+    const employees = await prisma.employee.findMany({
+      include: { salesRecords: true, attendanceRecords: true },
+      orderBy: { name: "asc" },
+    });
+
+    const employeeData = employees.map((emp) => {
+      let chuyenCan = 0, anTrua = 0, hoTroKhac = 0, hoaHong = 0;
+      let tamUng = 0, manualFines = 0;
+
+      emp.salesRecords.forEach((r) => {
+        const amount = Number(r.profit) || 0;
+        if (r.service === "Phạt") manualFines += Math.abs(amount);
+        else if (r.service === "Tạm ứng") tamUng += Math.abs(amount);
+        else if (r.service === "Chuyên cần") chuyenCan += amount;
+        else if (r.service === "Ăn trưa") anTrua += amount;
+        else if (r.service === "Hỗ trợ khác") hoTroKhac += amount;
+        else hoaHong += amount;
+      });
+
+      const attendanceFines = emp.attendanceRecords.reduce((s, r) => s + (r.fine || 0), 0);
+      const halfDayDeduction = emp.attendanceRecords.reduce((s, r) => s + (r.halfDayDeduction || 0), 0);
+      const workDays = emp.attendanceRecords.filter(
+        (r) => r.outTime && r.outTime !== "-" && r.outTime !== "Quên checkout"
+      ).length;
+
+      const base = emp.baseSalary || 0;
+      const totalBonus = chuyenCan + anTrua + hoTroKhac + hoaHong;
+      const totalSalary = base + totalBonus;
+
+      const bhxhCty  = Math.round(base * 0.175);
+      const bhytCty  = Math.round(base * 0.03);
+      const bhtnCty  = Math.round(base * 0.01);
+      const totalCty = bhxhCty + bhytCty + bhtnCty;
+
+      const bhxhNld  = Math.round(base * 0.08);
+      const bhytNld  = Math.round(base * 0.015);
+      const bhtnNld  = Math.round(base * 0.01);
+      const totalNld = bhxhNld + bhytNld + bhtnNld;
+
+      const thueTNCN = Math.round((base - bhxhNld - bhytNld - bhtnNld) * 0.05);
+      const finalSalary = base - tamUng + totalBonus - (manualFines + attendanceFines + halfDayDeduction + bhxhNld + bhytNld + bhtnNld + thueTNCN);
+
+      return {
+        name: emp.name,
+        role: emp.role || "",
+        baseSalary: base,
+        chuyenCan,
+        anTrua,
+        hoTroKhac,
+        hoaHong,
+        totalBonus,
+        workDays,
+        totalSalary,
+        insuranceSalary: base,
+        bhxhCty, bhytCty, bhtnCty, totalCty,
+        bhxhNld, bhytNld, bhtnNld, totalNld,
+        thueTNCN,
+        tamUng,
+        halfDayDeduction,
+        finalSalary,
+      };
+    });
+
+    const summaryData = { monthYear, employees: employeeData };
+
+    const tmpDir = os.tmpdir();
+    const ts = Date.now();
+    tmpJson = path.join(tmpDir, `salary_summary_${ts}.json`);
+    tmpPdf  = path.join(tmpDir, `salary_summary_${ts}.pdf`);
+    fs.writeFileSync(tmpJson, JSON.stringify(summaryData, null, 2), "utf8");
+
+    const pythonCmd = process.platform === "win32" ? "python" : "python3";
+    try {
+      execSync(`${pythonCmd} "${scriptPath}" summary "${tmpJson}" "${tmpPdf}"`, {
+        encoding: "utf8",
+        timeout: 30000,
+      });
+    } catch (pyError: any) {
+      throw new Error("Python failed: " + (pyError.stderr || pyError.message));
+    }
+
+    const safeMonth = monthYear.replace("/", "_");
+    const filename = `BangLuong_${safeMonth}.pdf`;
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    res.send(fs.readFileSync(tmpPdf));
+
+    if (tmpJson && fs.existsSync(tmpJson)) fs.unlinkSync(tmpJson);
+    if (tmpPdf && fs.existsSync(tmpPdf)) fs.unlinkSync(tmpPdf);
+  } catch (error) {
+    if (tmpJson && fs.existsSync(tmpJson)) fs.unlinkSync(tmpJson);
+    if (tmpPdf && fs.existsSync(tmpPdf)) fs.unlinkSync(tmpPdf);
+    console.error("Lỗi tạo bảng lương tổng:", error);
+    res.status(500).json({ error: "Lỗi tạo bảng lương tổng PDF" });
   }
 };
 

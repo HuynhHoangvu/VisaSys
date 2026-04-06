@@ -363,9 +363,29 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
     }
   };
 
+  // --- TẢI BẢNG LƯƠNG TỔNG PDF ---
+  const handleDownloadSummary = async (monthYear: string) => {
+    try {
+      const url = `${API_URL}/api/hr/salary/summary/${encodeURIComponent(monthYear)}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Lỗi tải bảng lương tổng");
+      const blob = await res.blob();
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `BangLuong_${monthYear.replace("/", "_")}.pdf`;
+      link.click();
+      URL.revokeObjectURL(link.href);
+    } catch (error) {
+      alert("Lỗi tải bảng lương tổng: " + error);
+    }
+  };
+
   // --- STATE QUẢN LÝ NGHỈ PHÉP ---
   const [showLeaveManagerModal, setShowLeaveManagerModal] = useState(false);
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
+  const [leaveMonthFilter, setLeaveMonthFilter] = useState<string>(
+    () => new Date().toISOString().slice(0, 7) // "YYYY-MM"
+  );
 
   const fetchLeaveRequests = async () => {
     try {
@@ -859,9 +879,9 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
                   key={monthYear}
                   className="mb-3 sm:mb-4 bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden"
                 >
-                  <button
+                  <div
+                    className="w-full flex justify-between items-center p-4 sm:p-5 bg-blue-50 hover:bg-blue-100 transition-colors cursor-pointer"
                     onClick={() => toggleMonth(monthYear)}
-                    className="w-full flex justify-between items-center p-4 sm:p-5 bg-blue-50 hover:bg-blue-100 transition-colors focus:outline-none"
                   >
                     <div className="font-bold text-base sm:text-lg text-blue-800 flex items-center gap-2">
                       📅 Lương Tháng {monthYear}
@@ -873,6 +893,19 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
                       >
                         {records.length} nhân sự
                       </Badge>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDownloadSummary(monthYear);
+                        }}
+                        className="inline-flex items-center gap-1.5 px-2 py-1.5 sm:px-3 sm:py-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-xs font-bold transition-colors shadow-sm"
+                        title="Tải bảng lương tổng"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        Bảng tổng
+                      </button>
                       <svg
                         className={`w-4 h-4 sm:w-5 sm:h-5 text-blue-600 transition-transform duration-300 ${isExpanded ? "rotate-180" : ""}`}
                         fill="none"
@@ -887,7 +920,7 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
                         />
                       </svg>
                     </div>
-                  </button>
+                  </div>
 
                   {isExpanded && (
                     <div className="overflow-x-auto custom-scrollbar border-t border-blue-100 w-full">
@@ -1081,10 +1114,27 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
         size="6xl"
         className="md:p-4"
       >
-        <div className="p-4 sm:p-6 border-b border-gray-200 flex justify-between items-center bg-gray-50 rounded-t-lg">
+        <div className="p-4 sm:p-6 border-b border-gray-200 flex flex-wrap justify-between items-center gap-3 bg-gray-50 rounded-t-lg">
           <h3 className="text-lg sm:text-xl font-bold text-gray-800 flex items-center gap-2">
             📋 Danh sách Đơn xin nghỉ phép
           </h3>
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium text-gray-600 whitespace-nowrap">Lọc tháng:</label>
+            <input
+              type="month"
+              value={leaveMonthFilter}
+              onChange={(e) => setLeaveMonthFilter(e.target.value)}
+              className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            />
+            {leaveMonthFilter && (
+              <button
+                onClick={() => setLeaveMonthFilter("")}
+                className="text-xs text-gray-500 hover:text-gray-800 px-2 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors whitespace-nowrap"
+              >
+                Tất cả
+              </button>
+            )}
+          </div>
           <button
             onClick={() => setShowLeaveManagerModal(false)}
             className="text-gray-400 hover:text-gray-900 bg-white hover:bg-gray-200 rounded-full p-1.5 transition-colors border"
@@ -1130,17 +1180,22 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {leaveRequests.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={7}
-                    className="px-4 py-8 text-center italic text-gray-400"
-                  >
-                    Không có đơn xin nghỉ phép nào.
-                  </td>
-                </tr>
-              ) : (
-                leaveRequests.map((req) => (
+              {(() => {
+                const filtered = leaveMonthFilter
+                  ? leaveRequests.filter((r) => {
+                      const d = new Date(r.createdAt);
+                      const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+                      return ym === leaveMonthFilter;
+                    })
+                  : leaveRequests;
+                if (filtered.length === 0) return (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-8 text-center italic text-gray-400">
+                      {leaveMonthFilter ? "Không có đơn nào trong tháng này." : "Không có đơn xin nghỉ phép nào."}
+                    </td>
+                  </tr>
+                );
+                return filtered.map((req) => (
                   <tr key={req.id} className="bg-white hover:bg-gray-50">
                     <td className="px-4 py-3 sm:py-4 font-medium text-gray-500 whitespace-nowrap">
                       {new Date(req.createdAt).toLocaleDateString("vi-VN")}
@@ -1211,8 +1266,8 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
                       )}
                     </td>
                   </tr>
-                ))
-              )}
+                ));
+              })()}
             </tbody>
           </table>
         </div>
