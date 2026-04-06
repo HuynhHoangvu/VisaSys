@@ -186,7 +186,7 @@ export interface DocFolder {
   id: string;
   name: string;
   parentId: string | null; // null nghĩa là nằm ở thư mục gốc (ngoài cùng)
-  createdAt?: string;
+  createdAt: string;
 }
 
 export interface DocFile {
