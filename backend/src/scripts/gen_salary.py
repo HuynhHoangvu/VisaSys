@@ -354,7 +354,7 @@ def generate_summary(data, output_path):
         cp("Tam ung", bold=True),
         cp("Tru tien di tre", bold=True),
         cp("Thuc linh", bold=True),
-        cp("Ghi chu", bold=True),
+        cp("Ngay cong di lam", bold=True),
     ]
 
     header2 = [
@@ -394,7 +394,7 @@ def generate_summary(data, output_path):
         W*0.037,  # Tam ung
         W*0.038,  # Tru di tre
         W*0.060,  # Thuc linh
-        W*0.025,  # Ghi chu
+        W*0.025,  # Ngay cong di lam
     ]
 
     table_rows = [header1, header2]
@@ -434,7 +434,7 @@ def generate_summary(data, output_path):
             cv(bx_c), cv(by_c), cv(bt_c), cv(t_cty),
             cv(bx_n), cv(by_n), cv(bt_n), cv(t_nld),
             cv(tu), cv(hd), cv(final),
-            p('', size=fs),
+            cp(str(ngay), align=1),
         ]
         table_rows.append(row_data)
 
@@ -450,7 +450,7 @@ def generate_summary(data, output_path):
         tv(tot_bhxh_cty), tv(tot_bhyt_cty), tv(tot_bhtn_cty), tv(tot_cty),
         tv(tot_bhxh_nld), tv(tot_bhyt_nld), tv(tot_bhtn_nld), tv(tot_nld),
         tv(tot_tu), tv(tot_hd), tv(tot_final),
-        cp(""),
+        cp(str(int(tot_ngay)), align=1, bold=True),
     ]
     table_rows.append(total_row)
 
@@ -593,7 +593,7 @@ def generate_summary_excel(data, output_path):
     # I=Tong TN  J=Ngay cong  K=Tong luong TT  L=Luong dong BH
     # M=BHXH cty N=BHYT cty  O=BHTN cty  P=Tong cty
     # Q=BHXH nld R=BHYT nld  S=BHTN nld  T=Tong nld
-    # U=Tam ung  V=Tru di tre W=Thuc linh X=Ghi chu
+    # U=Tam ung  V=Tru di tre W=Thuc linh X=Ngay cong di lam
 
     HR1, HR2 = 8, 9
     DS = 10  # Data Start row
@@ -614,7 +614,7 @@ def generate_summary_excel(data, output_path):
         'L': 'Luong dong BH',
         'M': 'Cac khoan trich chi phi DN',
         'Q': 'Cac khoan trich vao luong',
-        'U': 'Tam ung', 'V': 'Tru tien di tre', 'W': 'Thuc linh', 'X': 'Ghi chu',
+        'U': 'Tam ung', 'V': 'Tru tien di tre', 'W': 'Thuc linh', 'X': 'Ngay cong di lam',
     }
     h2_vals = {
         'E': 'Chuyen can', 'F': 'An trua', 'G': 'Ho tro khac', 'H': 'Hoa hong',
@@ -662,7 +662,7 @@ def generate_summary_excel(data, output_path):
             'J': ngay if ngay else None,
             'U': tu  if tu  else None,
             'V': hd  if hd  else None,
-            'X': None,
+            'X': ngay if ngay else 0,
         }
         for c, val in raw.items():
             cell = ws[f'{c}{r}']
@@ -670,7 +670,7 @@ def generate_summary_excel(data, output_path):
             cell.fill = PatternFill("solid", fgColor=fill_c)
             cell.border = bd()
             cell.font = Font(name='Arial', size=8)
-            if c in ('A', 'J'):
+            if c in ('A', 'J', 'X'):
                 cell.alignment = Alignment(horizontal='center', vertical='center')
             elif c in ('B', 'C'):
                 cell.alignment = Alignment(horizontal='left', vertical='center')
@@ -718,7 +718,10 @@ def generate_summary_excel(data, output_path):
         cell = ws[f'{c}{TR}']
         if c != 'X':
             cell.value = f'=SUM({c}{DS}:{c}{data_end})'
-        style(cell, bold=True, fill=ORANGE, h='right', fmt=NUM)
+            style(cell, bold=True, fill=ORANGE, h='right', fmt=NUM)
+        else:
+            cell.value = ''  # Cột X không cộng tổng (đó là ngày công)
+            style(cell, bold=True, fill=ORANGE)
     # Fix B, C cells cua dong tong (da merge)
     for c in ('B', 'C'):
         ws[f'{c}{TR}'].fill = PatternFill("solid", fgColor=ORANGE)
@@ -744,7 +747,7 @@ def generate_summary_excel(data, output_path):
         'I': 14, 'J': 8,  'K': 14, 'L': 14,
         'M': 12, 'N': 10, 'O': 10, 'P': 12,
         'Q': 10, 'R': 10, 'S': 10, 'T': 12,
-        'U': 12, 'V': 12, 'W': 14, 'X': 12,
+        'U': 12, 'V': 12, 'W': 14, 'X': 10,
     }
     for c, w in widths.items():
         ws.column_dimensions[c].width = w
