@@ -897,10 +897,10 @@ def generate_summary_excel(data, output_path):
             'F': at_ if at_ else None,
             'G': htk if htk else None,
             'H': hh  if hh  else None,
-            'J': ngay if ngay else None,
-            'U': tu  if tu  else None,
-            'V': hd  if hd  else None,
-            'X': ngay if ngay else 0,
+            'J': ngay,  # Luôn gán giá trị ngày công (kể cả 0)
+            'U': tu,    # Luôn gán giá trị tạm ứng
+            'V': hd,    # Luôn gán giá trị trừ nửa ngày
+            'X': ngay,
         }
         for c, val in raw.items():
             cell = ws[f'{c}{r}']
