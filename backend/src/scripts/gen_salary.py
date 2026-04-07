@@ -1117,7 +1117,7 @@ def generate_summary_excel(data, output_path):
         'L': 'Luong dong BH',
         'M': 'Cac khoan trich chi phi DN',
         'Q': 'Cac khoan trich vao luong',
-        'U': 'Tam ung', 'V': 'Tru tien di tre', 'W': 'Thuc linh', 'X': 'Ngay cong di lam',
+        'U': 'Tam ung', 'V': 'Tong tru (di tre, vang, 1/2 ngay)', 'W': 'Thuc linh', 'X': 'Ngay cong di lam',
     }
     h2_vals = {
         'E': 'Chuyen can', 'F': 'An trua', 'G': 'Ho tro khac', 'H': 'Hoa hong',
@@ -1151,6 +1151,10 @@ def generate_summary_excel(data, output_path):
         ngay = emp.get('workDays', 0) or 0
         tu   = emp.get('tamUng', 0) or 0
         hd   = emp.get('halfDayDeduction', 0) or 0
+        # Tính tổng trừ tiền: đi trễ + vắng không phép + nửa ngày
+        att_fine = emp.get('attendanceFines', 0) or 0  # Phạt đi trễ
+        full_day = emp.get('fullDayAbsenceDeduction', 0) or 0  # Vắng cả ngày
+        total_tru = att_fine + full_day + hd  # Tổng trừ (đi trễ + vắng + nửa ngày)
 
         fill_c = LT_ORANGE if i % 2 == 0 else WHITE
 
@@ -1162,8 +1166,8 @@ def generate_summary_excel(data, output_path):
             'F': at_ if at_ else None,
             'G': htk if htk else None,
             'H': hh  if hh  else None,
-            'U': tu,    # Luôn gán giá trị tạm ứng
-            'V': hd,    # Luôn gán giá trị trừ nửa ngày
+            'U': tu,    # Tiền tạm ứng
+            'V': total_tru,    # Tổng trừ: đi trễ + vắng + nửa ngày
             'W': emp.get('finalSalary', 0) or 0,  # Thuc linh (từ backend)
             'X': ngay,
         }
