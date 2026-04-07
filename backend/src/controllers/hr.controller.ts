@@ -1281,6 +1281,9 @@ export const updateLeaveRequestStatus = async (req: Request, res: Response) => {
 
         const totalDeduction = Math.round(dailyWage * diffDays);
 
+        // Dùng startDate của đơn nghỉ làm createdAt để phạt đúng tháng nghỉ
+        const leaveCreatedAt = new Date(leaveRequest.startDate);
+
         await prisma.salesRecord.create({
           data: {
             employeeId: leaveRequest.employeeId,
@@ -1288,6 +1291,7 @@ export const updateLeaveRequestStatus = async (req: Request, res: Response) => {
             service: "Phạt",
             profit: -totalDeduction,
             note: `Trừ ${diffDays} ngày lương: Nghỉ phép từ ${leaveRequest.startDate} đến ${leaveRequest.endDate}`,
+            createdAt: leaveCreatedAt,
           }
         });
       }
