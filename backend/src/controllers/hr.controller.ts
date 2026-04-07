@@ -48,7 +48,7 @@ export const downloadSalarySlip = async (req: Request, res: Response) => {
     const [mm, yyyy] = monthYear.split('/');
     const monthAttendance = employee.attendanceRecords.filter((r) => {
       const parts = r.date ? r.date.split('/') : [];
-      return parts.length === 3 && parts[1] === mm && parts[2] === yyyy;
+      return parts.length === 3 && parseInt(parts[1]) === parseInt(mm) && parseInt(parts[2]) === parseInt(yyyy);
     });
     const monthSales = employee.salesRecords.filter((r) => {
       if (!r.createdAt) return true;
@@ -226,7 +226,7 @@ export const testSalaryCalculation = async (req: Request, res: Response) => {
     const [mm, yyyy] = monthYear.split('/');
     const monthAttendance = employee.attendanceRecords.filter((r) => {
       const parts = r.date ? r.date.split('/') : [];
-      return parts.length === 3 && parts[1] === mm && parts[2] === yyyy;
+      return parts.length === 3 && parseInt(parts[1]) === parseInt(mm) && parseInt(parts[2]) === parseInt(yyyy);
     });
     const monthSales = employee.salesRecords.filter((r) => {
       if (!r.createdAt) return true;
@@ -353,7 +353,7 @@ export const downloadSalarySummary = async (req: Request, res: Response) => {
       // Lọc theo tháng
       const monthAtt = emp.attendanceRecords.filter((r) => {
         const parts = r.date ? r.date.split('/') : [];
-        return parts.length === 3 && parts[1] === smm && parts[2] === syyyy;
+        return parts.length === 3 && parseInt(parts[1]) === parseInt(smm) && parseInt(parts[2]) === parseInt(syyyy);
       });
       const monthSales = emp.salesRecords.filter((r) => {
         if (!r.createdAt) return true;
@@ -457,16 +457,24 @@ export const downloadSalarySummary = async (req: Request, res: Response) => {
 // Helper: tính data lương theo tháng cho từng nhân viên
 function buildEmployeePayrollData(employees: any[], monthYear: string, threshold = 8_000_000) {
   const [mm, yyyy] = monthYear.split('/');
+  console.log(`\n[buildPayroll] ===== Tháng: ${monthYear} (mm=${mm}, yyyy=${yyyy}) =====`);
   return employees.map((emp) => {
     const monthAtt = emp.attendanceRecords.filter((r: any) => {
       const parts = r.date ? r.date.split('/') : [];
-      return parts.length === 3 && parts[1] === mm && parts[2] === yyyy;
+      return parts.length === 3 && parseInt(parts[1]) === parseInt(mm) && parseInt(parts[2]) === parseInt(yyyy);
     });
     const monthSales = emp.salesRecords.filter((r: any) => {
       if (!r.createdAt) return true;
       const d = new Date(r.createdAt);
       return d.getMonth() + 1 === parseInt(mm) && d.getFullYear() === parseInt(yyyy);
     });
+    console.log(`[buildPayroll] ${emp.name}: attendanceRecords tổng=${emp.attendanceRecords.length} lọc tháng=${monthAtt.length} | salesRecords tổng=${emp.salesRecords.length} lọc tháng=${monthSales.length}`);
+    if (emp.attendanceRecords.length > 0) {
+      console.log(`[buildPayroll]   Sample date: "${emp.attendanceRecords[0]?.date}" → parts[1]="${emp.attendanceRecords[0]?.date?.split('/')[1]}" vs mm="${mm}"`);
+    }
+    const tamUngRecords = monthSales.filter((r: any) => r.service === "Tạm ứng");
+    const phatRecords = monthSales.filter((r: any) => r.service === "Phạt");
+    console.log(`[buildPayroll]   tamUng=${tamUngRecords.length} records, phat=${phatRecords.length} records`);
 
     let hoaHong = 0, tamUng = 0, manualFines = 0;
     monthSales.forEach((r: any) => {

@@ -1151,10 +1151,11 @@ def generate_summary_excel(data, output_path):
         ngay = emp.get('workDays', 0) or 0
         tu   = emp.get('tamUng', 0) or 0
         hd   = emp.get('halfDayDeduction', 0) or 0
-        # Tính tổng trừ tiền: đi trễ + vắng không phép + nửa ngày
+        # Tính tổng trừ tiền: đi trễ + vắng không phép + nửa ngày + phạt nghỉ phép
         att_fine = emp.get('attendanceFines', 0) or 0  # Phạt đi trễ
         full_day = emp.get('fullDayAbsenceDeduction', 0) or 0  # Vắng cả ngày
-        total_tru = att_fine + full_day + hd  # Tổng trừ (đi trễ + vắng + nửa ngày)
+        mf       = emp.get('manualFines', 0) or 0              # Phạt nghỉ phép (từ LeaveRequest)
+        total_tru = att_fine + full_day + hd + mf  # Tổng trừ (đi trễ + vắng + nửa ngày + phạt nghỉ)
 
         fill_c = LT_ORANGE if i % 2 == 0 else WHITE
 

@@ -274,6 +274,8 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ currentUser }) =>
   const handleDownloadSummaryExcel = async (monthYear: string) => {
     try {
       const url = `${API_URL}/api/hr/salary/summary-excel/${encodeURIComponent(monthYear)}`;
+      console.log("[Excel] monthYear gửi đi:", monthYear);
+      console.log("[Excel] URL:", url);
       const res = await fetch(url);
       if (!res.ok) throw new Error("Lỗi tải bảng lương tổng Excel");
       const blob = await res.blob();
