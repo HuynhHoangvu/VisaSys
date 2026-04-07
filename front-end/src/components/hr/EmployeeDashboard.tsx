@@ -311,6 +311,32 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ currentUser }) =>
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [salaryHistories, setSalaryHistories] = useState<SalaryHistory[]>([]);
   const [expandedMonths, setExpandedMonths] = useState<string[]>([]);
+  type EmployeeBreakdown = {
+    name: string; employeeCode: string; role: string;
+    hoaHong: number; tamUng: number; manualFines: number;
+    attendanceFines: number; halfDayDeduction: number; fullDayAbsenceDeduction: number;
+    totalBonus: number; finalSalary: number;
+  };
+  const [breakdownData, setBreakdownData] = useState<Record<string, EmployeeBreakdown[]>>({});
+  const [loadingBreakdown, setLoadingBreakdown] = useState<string | null>(null);
+  const [expandedBreakdown, setExpandedBreakdown] = useState<string | null>(null);
+
+  const fetchBreakdown = async (monthYear: string) => {
+    if (breakdownData[monthYear]) { setExpandedBreakdown(monthYear); return; }
+    setLoadingBreakdown(monthYear);
+    try {
+      const res = await fetch(`${API_URL}/api/hr/salary/breakdown/${encodeURIComponent(monthYear)}`);
+      if (res.ok) {
+        const data = await res.json();
+        setBreakdownData(prev => ({ ...prev, [monthYear]: data }));
+        setExpandedBreakdown(monthYear);
+      }
+    } catch (e) {
+      console.error("Lỗi lấy breakdown:", e);
+    } finally {
+      setLoadingBreakdown(null);
+    }
+  };
 
   const toggleMonth = (monthYear: string) => {
     setExpandedMonths((prev) =>
@@ -954,6 +980,13 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ currentUser }) =>
                         </svg>
                         Excel
                       </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); fetchBreakdown(monthYear); }}
+                        className="inline-flex items-center gap-1.5 px-2 py-1.5 sm:px-3 sm:py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-bold transition-colors shadow-sm"
+                        title="Xem chi tiết thưởng/phạt"
+                      >
+                        {loadingBreakdown === monthYear ? "..." : "Chi tiết"}
+                      </button>
                       <svg
                         className={`w-4 h-4 sm:w-5 sm:h-5 text-blue-600 transition-transform duration-300 ${isExpanded ? "rotate-180" : ""}`}
                         fill="none"
@@ -969,6 +1002,43 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ currentUser }) =>
                       </svg>
                     </div>
                   </div>
+
+                  {expandedBreakdown === monthYear && breakdownData[monthYear] && (
+                    <div className="overflow-x-auto custom-scrollbar border-t-2 border-purple-200 w-full bg-purple-50">
+                      <div className="px-4 py-2 text-xs font-bold text-purple-700 uppercase tracking-wide">Chi tiết thưởng / phạt tháng {monthYear}</div>
+                      <table className="w-full min-w-[800px] text-xs text-left text-gray-600">
+                        <thead className="bg-purple-100 text-purple-800 uppercase">
+                          <tr>
+                            <th className="px-3 py-2 font-bold">Nhân viên</th>
+                            <th className="px-3 py-2 font-bold text-green-700 text-right">Hoa hồng</th>
+                            <th className="px-3 py-2 font-bold text-red-600 text-right">Tạm ứng</th>
+                            <th className="px-3 py-2 font-bold text-red-600 text-right">Phạt (đơn nghỉ)</th>
+                            <th className="px-3 py-2 font-bold text-red-600 text-right">Phạt đi trễ</th>
+                            <th className="px-3 py-2 font-bold text-red-600 text-right">Nửa ngày</th>
+                            <th className="px-3 py-2 font-bold text-red-600 text-right">Vắng cả ngày</th>
+                            <th className="px-3 py-2 font-bold text-blue-700 text-right">Thực nhận</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-purple-100">
+                          {breakdownData[monthYear].map((emp, i) => {
+                            const fmt = (n: number) => new Intl.NumberFormat("vi-VN").format(n);
+                            return (
+                              <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-purple-50"}>
+                                <td className="px-3 py-2 font-medium">{emp.name}</td>
+                                <td className="px-3 py-2 text-right text-green-700">{emp.hoaHong ? `+${fmt(emp.hoaHong)}` : "-"}</td>
+                                <td className="px-3 py-2 text-right text-red-600">{emp.tamUng ? `-${fmt(emp.tamUng)}` : "-"}</td>
+                                <td className="px-3 py-2 text-right text-red-600">{emp.manualFines ? `-${fmt(emp.manualFines)}` : "-"}</td>
+                                <td className="px-3 py-2 text-right text-red-600">{emp.attendanceFines ? `-${fmt(emp.attendanceFines)}` : "-"}</td>
+                                <td className="px-3 py-2 text-right text-red-600">{emp.halfDayDeduction ? `-${fmt(emp.halfDayDeduction)}` : "-"}</td>
+                                <td className="px-3 py-2 text-right text-red-600">{emp.fullDayAbsenceDeduction ? `-${fmt(emp.fullDayAbsenceDeduction)}` : "-"}</td>
+                                <td className="px-3 py-2 text-right font-bold text-blue-700">{fmt(emp.finalSalary)}đ</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
 
                   {isExpanded && (
                     <div className="overflow-x-auto custom-scrollbar border-t border-blue-100 w-full">

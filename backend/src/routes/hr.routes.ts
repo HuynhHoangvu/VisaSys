@@ -22,7 +22,8 @@ import {
   downloadSalarySummaryExcel,
   downloadSalarySlipsExcel,
   getLeaveRequestsByEmployee,
-  testSalaryCalculation
+  testSalaryCalculation,
+  getSalaryBreakdown
 } from "../controllers/hr.controller.js";
 
 const router = Router();
@@ -37,6 +38,7 @@ router.get("/salary/summary-excel/:monthYear", downloadSalarySummaryExcel);
 router.get("/salary/slips-excel/:monthYear", downloadSalarySlipsExcel);
 
 router.get("/salary/history", getSalaryHistory);
+router.get("/salary/breakdown/:monthYear", getSalaryBreakdown);
 
 // 2. Routes Phòng Ban
 router.get("/departments", getDepartments);

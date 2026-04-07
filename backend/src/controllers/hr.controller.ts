@@ -579,7 +579,25 @@ function buildEmployeePayrollData(employees: any[], monthYear: string, threshold
 }
 
 // ==========================================
-// 1c. TẢI BẢNG LƯƠNG TỔNG EXCEL
+// 1c. BREAKDOWN CHI TIẾT LƯƠNG THÁNG (JSON)
+// ==========================================
+export const getSalaryBreakdown = async (req: Request, res: Response) => {
+  try {
+    const { monthYear } = req.params as { monthYear: string };
+    const employees = await prisma.employee.findMany({
+      include: { salesRecords: true, attendanceRecords: true },
+      orderBy: { name: "asc" },
+    });
+    const breakdown = buildEmployeePayrollData(employees, monthYear);
+    res.json(breakdown);
+  } catch (error) {
+    console.error("Lỗi lấy breakdown lương:", error);
+    res.status(500).json({ error: "Lỗi lấy breakdown lương" });
+  }
+};
+
+// ==========================================
+// 1d. TẢI BẢNG LƯƠNG TỔNG EXCEL
 // ==========================================
 export const downloadSalarySummaryExcel = async (req: Request, res: Response) => {
   let tmpJson: string | null = null;
