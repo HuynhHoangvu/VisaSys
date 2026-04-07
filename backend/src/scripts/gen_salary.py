@@ -593,8 +593,6 @@ def _add_slip_sheets(wb, employees, month_text):
         wdays = emp.get('workDays', 0) or 0
         total_in  = base + cc + at + htk + hh
         total_bh  = bhxh + bhyt + bhtn
-        # Tổng lương thực tế = tổng thu nhập × ngày công / 21
-        total_salary_tt = round(total_in * wdays / 21) if wdays > 0 else total_in
         # Tổng trừ = BH NLD + vắng cả ngày + vắng nửa ngày + ứng lương + phạt khác
         total_out = total_bh + full_day_abs + half + tu + other
         # Lấy thực lĩnh từ backend (đã tính sẵn)
@@ -764,7 +762,7 @@ def _add_slip_sheets(wb, employees, month_text):
         dr(ws, start_data_row + 7, '',    '',                      '',   '2,2', 'BHYT (1,5%)',             bhyt)
         dr(ws, start_data_row + 8, '',    '',                      '',   '2,3', 'BHTN (1%)',               bhtn)
         dr(ws, start_data_row + 9, '',    'Tong Thu Nhap',        total_in, '2,4', 'Tong Trich vao',       total_bh)
-        dr(ws, start_data_row + 10, '',    'Tong Luong TT',        total_salary_tt, '3', 'Vang ca ngay',        full_day_abs)
+        dr(ws, start_data_row + 10, '',    '',                      '',   '3', 'Vang ca ngay',        full_day_abs)
         dr(ws, start_data_row + 11, '',    '',                      '',   '3,1', 'Vang 1/2 ngay',          half)
         dr(ws, start_data_row + 12, '',    '',                      '',   '4',   'Tam ung',                 tu)
         dr(ws, start_data_row + 13, '',    '',                      '',   '5',   'Khac (phat + di tre)',    other)
