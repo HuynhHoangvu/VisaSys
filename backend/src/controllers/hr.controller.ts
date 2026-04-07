@@ -44,39 +44,62 @@ export const downloadSalarySlip = async (req: Request, res: Response) => {
     });
     if (!employee) return res.status(404).json({ error: "Không tìm thấy nhân viên" });
 
-    let totalBonus = 0, manualFines = 0, salaryAdvances = 0, halfDayDeduction = 0;
-    employee.salesRecords.forEach((r) => {
+    // Lọc theo tháng (monthYear = "MM/YYYY")
+    const [mm, yyyy] = monthYear.split('/');
+    const monthAttendance = employee.attendanceRecords.filter((r) => {
+      const parts = r.date ? r.date.split('/') : [];
+      return parts.length === 3 && parts[1] === mm && parts[2] === yyyy;
+    });
+    const monthSales = employee.salesRecords.filter((r) => {
+      if (!r.createdAt) return true;
+      const d = new Date(r.createdAt);
+      return d.getMonth() + 1 === parseInt(mm) && d.getFullYear() === parseInt(yyyy);
+    });
+
+    let hoaHong = 0, manualFines = 0, salaryAdvances = 0;
+    monthSales.forEach((r) => {
       const amount = Number(r.profit) || 0;
       if (r.service === "Phạt") manualFines += Math.abs(amount);
       else if (r.service === "Tạm ứng") salaryAdvances += Math.abs(amount);
-      else totalBonus += amount;
+      else if (!["Chuyên cần", "Ăn trưa", "Hỗ trợ khác"].includes(r.service || ""))
+        hoaHong += amount;
     });
 
-    const attendanceFines = employee.attendanceRecords.reduce((s, r) => s + (r.fine || 0), 0);
-    halfDayDeduction = employee.attendanceRecords.reduce((s, r) => s + (r.halfDayDeduction || 0), 0);
-    const checkedOutRecords = employee.attendanceRecords.filter(
+    const attendanceFines = monthAttendance.reduce((s, r) => s + (r.fine || 0), 0);
+    const halfDayDeduction = monthAttendance.reduce((s, r) => s + (r.halfDayDeduction || 0), 0);
+    const checkedOutRecords = monthAttendance.filter(
       (r) => r.outTime && r.outTime !== "-" && r.outTime !== "Quên checkout"
     );
     const workDays = checkedOutRecords.length;
     const workDates = checkedOutRecords.map((r) => r.date).sort();
 
-    const baseSalary = employee.baseSalary || 0;
-    const bhxh = Math.round(baseSalary * 0.08);
-    const bhyt = Math.round(baseSalary * 0.015);
-    const bhtn = Math.round(baseSalary * 0.01);
-    const thueTNCN = Math.round((baseSalary - bhxh - bhyt - bhtn) * 0.05);
-    const finalSalary = baseSalary - salaryAdvances + totalBonus - (manualFines + attendanceFines + halfDayDeduction + bhxh + bhyt + bhtn + thueTNCN);
+    // Tách lương: >= 8tr → lương CB = tổng - 2tr, phụ cấp 2tr
+    const totalSalary = employee.baseSalary || 0;
+    const THRESHOLD = 8_000_000;
+    const insuranceSalary = totalSalary >= THRESHOLD ? totalSalary - 2_000_000 : totalSalary;
+    const chuyenCan = totalSalary >= THRESHOLD ? 1_000_000 : 0;
+    const anTrua    = totalSalary >= THRESHOLD ?   500_000 : 0;
+    const hoTroKhac = totalSalary >= THRESHOLD ?   500_000 : 0;
+
+    const bhxh = Math.round(insuranceSalary * 0.08);
+    const bhyt = Math.round(insuranceSalary * 0.015);
+    const bhtn = Math.round(insuranceSalary * 0.01);
+    const totalIncome = insuranceSalary + chuyenCan + anTrua + hoTroKhac + hoaHong;
+    const finalSalary = totalIncome - salaryAdvances - manualFines - attendanceFines - halfDayDeduction - bhxh - bhyt - bhtn;
 
     const data = {
       employeeCode: employee.employeeCode,
       name: employee.name,
       role: employee.role,
       monthYear,
-      baseSalary,
-      totalBonus,
+      baseSalary: insuranceSalary,
+      chuyenCan,
+      anTrua,
+      hoTroKhac,
+      hoaHong,
+      insuranceSalary,
       workDays,
       workDates,
-      thueTNCN,
       halfDayDeduction,
       otherDeduction: manualFines + attendanceFines,
       finalSalary,
@@ -152,54 +175,69 @@ export const downloadSalarySummary = async (req: Request, res: Response) => {
       orderBy: { name: "asc" },
     });
 
-    const employeeData = employees.map((emp) => {
-      let chuyenCan = 0, anTrua = 0, hoTroKhac = 0, hoaHong = 0;
-      let tamUng = 0, manualFines = 0;
+    const [smm, syyyy] = monthYear.split('/');
+    const THRESHOLD = 8_000_000;
 
-      emp.salesRecords.forEach((r) => {
+    const employeeData = employees.map((emp) => {
+      // Lọc theo tháng
+      const monthAtt = emp.attendanceRecords.filter((r) => {
+        const parts = r.date ? r.date.split('/') : [];
+        return parts.length === 3 && parts[1] === smm && parts[2] === syyyy;
+      });
+      const monthSales = emp.salesRecords.filter((r) => {
+        if (!r.createdAt) return true;
+        const d = new Date(r.createdAt);
+        return d.getMonth() + 1 === parseInt(smm) && d.getFullYear() === parseInt(syyyy);
+      });
+
+      let hoaHong = 0, tamUng = 0, manualFines = 0;
+      monthSales.forEach((r) => {
         const amount = Number(r.profit) || 0;
         if (r.service === "Phạt") manualFines += Math.abs(amount);
         else if (r.service === "Tạm ứng") tamUng += Math.abs(amount);
-        else if (r.service === "Chuyên cần") chuyenCan += amount;
-        else if (r.service === "Ăn trưa") anTrua += amount;
-        else if (r.service === "Hỗ trợ khác") hoTroKhac += amount;
-        else hoaHong += amount;
+        else if (!["Chuyên cần", "Ăn trưa", "Hỗ trợ khác"].includes(r.service || ""))
+          hoaHong += amount;
       });
 
-      const attendanceFines = emp.attendanceRecords.reduce((s, r) => s + (r.fine || 0), 0);
-      const halfDayDeduction = emp.attendanceRecords.reduce((s, r) => s + (r.halfDayDeduction || 0), 0);
-      const workDays = emp.attendanceRecords.filter(
+      const attendanceFines = monthAtt.reduce((s, r) => s + (r.fine || 0), 0);
+      const halfDayDeduction = monthAtt.reduce((s, r) => s + (r.halfDayDeduction || 0), 0);
+      const workDays = monthAtt.filter(
         (r) => r.outTime && r.outTime !== "-" && r.outTime !== "Quên checkout"
       ).length;
 
-      const base = emp.baseSalary || 0;
-      const totalBonus = chuyenCan + anTrua + hoTroKhac + hoaHong;
-      const totalSalary = base + totalBonus;
+      // Tách lương theo mốc
+      const totalSalaryBrutto = emp.baseSalary || 0;
+      const ins = totalSalaryBrutto >= THRESHOLD ? totalSalaryBrutto - 2_000_000 : totalSalaryBrutto;
+      const cc  = totalSalaryBrutto >= THRESHOLD ? 1_000_000 : 0;
+      const at  = totalSalaryBrutto >= THRESHOLD ?   500_000 : 0;
+      const htk = totalSalaryBrutto >= THRESHOLD ?   500_000 : 0;
+      const totalBonus = cc + at + htk + hoaHong;
+      const totalSalary = ins + totalBonus;
 
-      const bhxhCty  = Math.round(base * 0.175);
-      const bhytCty  = Math.round(base * 0.03);
-      const bhtnCty  = Math.round(base * 0.01);
+      const bhxhCty  = Math.round(ins * 0.175);
+      const bhytCty  = Math.round(ins * 0.03);
+      const bhtnCty  = Math.round(ins * 0.01);
       const totalCty = bhxhCty + bhytCty + bhtnCty;
 
-      const bhxhNld  = Math.round(base * 0.08);
-      const bhytNld  = Math.round(base * 0.015);
-      const bhtnNld  = Math.round(base * 0.01);
+      const bhxhNld  = Math.round(ins * 0.08);
+      const bhytNld  = Math.round(ins * 0.015);
+      const bhtnNld  = Math.round(ins * 0.01);
       const totalNld = bhxhNld + bhytNld + bhtnNld;
 
-      const finalSalary = base - tamUng + totalBonus - (manualFines + attendanceFines + halfDayDeduction + bhxhNld + bhytNld + bhtnNld);
+      const finalSalary = totalSalary - tamUng - manualFines - attendanceFines - halfDayDeduction - bhxhNld - bhytNld - bhtnNld;
 
       return {
         name: emp.name,
         role: emp.role || "",
-        baseSalary: base,
-        chuyenCan,
-        anTrua,
-        hoTroKhac,
+        baseSalary: ins,
+        chuyenCan: cc,
+        anTrua: at,
+        hoTroKhac: htk,
         hoaHong,
         totalBonus,
         workDays,
         totalSalary,
-        insuranceSalary: base,
+        insuranceSalary: ins,
         bhxhCty, bhytCty, bhtnCty, totalCty,
         bhxhNld, bhytNld, bhtnNld, totalNld,
         tamUng,
@@ -265,43 +303,62 @@ export const downloadSalarySummaryExcel = async (req: Request, res: Response) =>
       orderBy: { name: "asc" },
     });
 
-    const employeeData = employees.map((emp) => {
-      let chuyenCan = 0, anTrua = 0, hoTroKhac = 0, hoaHong = 0;
-      let tamUng = 0, manualFines = 0;
+    const [xmm, xyyyy] = monthYear.split('/');
+    const XTHRESHOLD = 8_000_000;
 
-      emp.salesRecords.forEach((r) => {
+    const employeeData = employees.map((emp) => {
+      const xMonthAtt = emp.attendanceRecords.filter((r) => {
+        const parts = r.date ? r.date.split('/') : [];
+        return parts.length === 3 && parts[1] === xmm && parts[2] === xyyyy;
+      });
+      const xMonthSales = emp.salesRecords.filter((r) => {
+        if (!r.createdAt) return true;
+        const d = new Date(r.createdAt);
+        return d.getMonth() + 1 === parseInt(xmm) && d.getFullYear() === parseInt(xyyyy);
+      });
+
+      let hoaHong = 0, tamUng = 0, manualFines = 0;
+      xMonthSales.forEach((r) => {
         const amount = Number(r.profit) || 0;
         if (r.service === "Phạt") manualFines += Math.abs(amount);
         else if (r.service === "Tạm ứng") tamUng += Math.abs(amount);
-        else if (r.service === "Chuyên cần") chuyenCan += amount;
-        else if (r.service === "Ăn trưa") anTrua += amount;
-        else if (r.service === "Hỗ trợ khác") hoTroKhac += amount;
-        else hoaHong += amount;
+        else if (!["Chuyên cần", "Ăn trưa", "Hỗ trợ khác"].includes(r.service || ""))
+          hoaHong += amount;
       });
 
-      const attendanceFines = emp.attendanceRecords.reduce((s, r) => s + (r.fine || 0), 0);
-      const halfDayDeduction = emp.attendanceRecords.reduce((s, r) => s + (r.halfDayDeduction || 0), 0);
-      const workDays = emp.attendanceRecords.filter(
+      const attendanceFines = xMonthAtt.reduce((s, r) => s + (r.fine || 0), 0);
+      const halfDayDeduction = xMonthAtt.reduce((s, r) => s + (r.halfDayDeduction || 0), 0);
+      const workDays = xMonthAtt.filter(
         (r) => r.outTime && r.outTime !== "-" && r.outTime !== "Quên checkout"
       ).length;
 
-      const base = emp.baseSalary || 0;
-      const totalBonus = chuyenCan + anTrua + hoTroKhac + hoaHong;
-      const totalSalary = base + totalBonus;
+      const totalSalaryBrutto = emp.baseSalary || 0;
+      const ins = totalSalaryBrutto >= XTHRESHOLD ? totalSalaryBrutto - 2_000_000 : totalSalaryBrutto;
+      const cc  = totalSalaryBrutto >= XTHRESHOLD ? 1_000_000 : 0;
+      const at  = totalSalaryBrutto >= XTHRESHOLD ?   500_000 : 0;
+      const htk = totalSalaryBrutto >= XTHRESHOLD ?   500_000 : 0;
+
+      const bhxh = Math.round(ins * 0.08);
+      const bhyt = Math.round(ins * 0.015);
+      const bhtn = Math.round(ins * 0.01);
+      const totalIncome = ins + cc + at + htk + hoaHong;
+      const finalSalary = totalIncome - tamUng - manualFines - attendanceFines - halfDayDeduction - bhxh - bhyt - bhtn;
 
       return {
+        employeeCode: emp.employeeCode || "",
         name: emp.name,
         role: emp.role || "",
-        baseSalary: base, // Python sẽ tự động tách giảm xuống với những ai >= 6tr
-        chuyenCan,
-        anTrua,
-        hoTroKhac,
+        baseSalary: ins,
+        chuyenCan: cc,
+        anTrua: at,
+        hoTroKhac: htk,
         hoaHong,
-        totalBonus,
+        insuranceSalary: ins,
         workDays,
-        totalSalary,
         tamUng,
         halfDayDeduction,
+        otherDeduction: manualFines + attendanceFines,
+        finalSalary,
       };
     });
 
@@ -315,8 +372,7 @@ export const downloadSalarySummaryExcel = async (req: Request, res: Response) =>
 
     const pythonCmd = process.platform === "win32" ? "python" : "python3";
     try {
-      // Gọi lệnh: python gen_salary.py excel input.json output.xlsx
-      execSync(`${pythonCmd} "${scriptPath}" excel "${tmpJson}" "${tmpXlsx}"`, {
+      execSync(`${pythonCmd} "${scriptPath}" slips "${tmpJson}" "${tmpXlsx}"`, {
         encoding: "utf8",
         timeout: 30000,
       });
