@@ -283,110 +283,108 @@ export const downloadSalarySummary = async (req: Request, res: Response) => {
 // ==========================================
 // 1c. TẢI BẢNG LƯƠNG TỔNG EXCEL (MỚI THÊM)
 // ==========================================
+// Helper: tính data lương theo tháng cho từng nhân viên
+function buildEmployeePayrollData(employees: any[], monthYear: string, threshold = 8_000_000) {
+  const [mm, yyyy] = monthYear.split('/');
+  return employees.map((emp) => {
+    const monthAtt = emp.attendanceRecords.filter((r: any) => {
+      const parts = r.date ? r.date.split('/') : [];
+      return parts.length === 3 && parts[1] === mm && parts[2] === yyyy;
+    });
+    const monthSales = emp.salesRecords.filter((r: any) => {
+      if (!r.createdAt) return true;
+      const d = new Date(r.createdAt);
+      return d.getMonth() + 1 === parseInt(mm) && d.getFullYear() === parseInt(yyyy);
+    });
+
+    let hoaHong = 0, tamUng = 0, manualFines = 0;
+    monthSales.forEach((r: any) => {
+      const amount = Number(r.profit) || 0;
+      if (r.service === "Phạt") manualFines += Math.abs(amount);
+      else if (r.service === "Tạm ứng") tamUng += Math.abs(amount);
+      else if (!["Chuyên cần", "Ăn trưa", "Hỗ trợ khác"].includes(r.service || ""))
+        hoaHong += amount;
+    });
+
+    const attendanceFines = monthAtt.reduce((s: number, r: any) => s + (r.fine || 0), 0);
+    const halfDayDeduction = monthAtt.reduce((s: number, r: any) => s + (r.halfDayDeduction || 0), 0);
+    const workDays = monthAtt.filter(
+      (r: any) => r.outTime && r.outTime !== "-" && r.outTime !== "Quên checkout"
+    ).length;
+
+    const totalSalaryBrutto = emp.baseSalary || 0;
+    const ins = totalSalaryBrutto >= threshold ? totalSalaryBrutto - 2_000_000 : totalSalaryBrutto;
+    const cc  = totalSalaryBrutto >= threshold ? 1_000_000 : 0;
+    const at  = totalSalaryBrutto >= threshold ?   500_000 : 0;
+    const htk = totalSalaryBrutto >= threshold ?   500_000 : 0;
+    const totalBonus = cc + at + htk + hoaHong;
+    const totalSalary = ins + totalBonus;
+
+    const bhxhCty  = Math.round(ins * 0.175);
+    const bhytCty  = Math.round(ins * 0.03);
+    const bhtnCty  = Math.round(ins * 0.01);
+    const totalCty = bhxhCty + bhytCty + bhtnCty;
+    const bhxhNld  = Math.round(ins * 0.08);
+    const bhytNld  = Math.round(ins * 0.015);
+    const bhtnNld  = Math.round(ins * 0.01);
+    const totalNld = bhxhNld + bhytNld + bhtnNld;
+
+    const finalSalary = totalSalary - tamUng - manualFines - attendanceFines - halfDayDeduction - bhxhNld - bhytNld - bhtnNld;
+
+    return {
+      employeeCode: emp.employeeCode || "",
+      name: emp.name,
+      role: emp.role || "",
+      baseSalary: ins,
+      chuyenCan: cc,
+      anTrua: at,
+      hoTroKhac: htk,
+      hoaHong,
+      totalBonus,
+      workDays,
+      totalSalary,
+      insuranceSalary: ins,
+      bhxhCty, bhytCty, bhtnCty, totalCty,
+      bhxhNld, bhytNld, bhtnNld, totalNld,
+      tamUng,
+      halfDayDeduction,
+      otherDeduction: manualFines + attendanceFines,
+      finalSalary,
+    };
+  });
+}
+
+// ==========================================
+// 1c. TẢI BẢNG LƯƠNG TỔNG EXCEL
+// ==========================================
 export const downloadSalarySummaryExcel = async (req: Request, res: Response) => {
   let tmpJson: string | null = null;
   let tmpXlsx: string | null = null;
-
   try {
     const { monthYear } = req.params as { monthYear: string };
-
     let scriptPath = path.join(process.cwd(), "src/scripts/gen_salary.py");
-    if (!fs.existsSync(scriptPath)) {
-      scriptPath = path.join(process.cwd(), "scripts/gen_salary.py");
-    }
-    if (!fs.existsSync(scriptPath)) {
-      return res.status(500).json({ error: "Không tìm thấy file Python generator" });
-    }
+    if (!fs.existsSync(scriptPath)) scriptPath = path.join(process.cwd(), "scripts/gen_salary.py");
+    if (!fs.existsSync(scriptPath)) return res.status(500).json({ error: "Không tìm thấy file Python generator" });
 
     const employees = await prisma.employee.findMany({
       include: { salesRecords: true, attendanceRecords: true },
       orderBy: { name: "asc" },
     });
 
-    const [xmm, xyyyy] = monthYear.split('/');
-    const XTHRESHOLD = 8_000_000;
-
-    const employeeData = employees.map((emp) => {
-      const xMonthAtt = emp.attendanceRecords.filter((r) => {
-        const parts = r.date ? r.date.split('/') : [];
-        return parts.length === 3 && parts[1] === xmm && parts[2] === xyyyy;
-      });
-      const xMonthSales = emp.salesRecords.filter((r) => {
-        if (!r.createdAt) return true;
-        const d = new Date(r.createdAt);
-        return d.getMonth() + 1 === parseInt(xmm) && d.getFullYear() === parseInt(xyyyy);
-      });
-
-      let hoaHong = 0, tamUng = 0, manualFines = 0;
-      xMonthSales.forEach((r) => {
-        const amount = Number(r.profit) || 0;
-        if (r.service === "Phạt") manualFines += Math.abs(amount);
-        else if (r.service === "Tạm ứng") tamUng += Math.abs(amount);
-        else if (!["Chuyên cần", "Ăn trưa", "Hỗ trợ khác"].includes(r.service || ""))
-          hoaHong += amount;
-      });
-
-      const attendanceFines = xMonthAtt.reduce((s, r) => s + (r.fine || 0), 0);
-      const halfDayDeduction = xMonthAtt.reduce((s, r) => s + (r.halfDayDeduction || 0), 0);
-      const workDays = xMonthAtt.filter(
-        (r) => r.outTime && r.outTime !== "-" && r.outTime !== "Quên checkout"
-      ).length;
-
-      const totalSalaryBrutto = emp.baseSalary || 0;
-      const ins = totalSalaryBrutto >= XTHRESHOLD ? totalSalaryBrutto - 2_000_000 : totalSalaryBrutto;
-      const cc  = totalSalaryBrutto >= XTHRESHOLD ? 1_000_000 : 0;
-      const at  = totalSalaryBrutto >= XTHRESHOLD ?   500_000 : 0;
-      const htk = totalSalaryBrutto >= XTHRESHOLD ?   500_000 : 0;
-
-      const bhxh = Math.round(ins * 0.08);
-      const bhyt = Math.round(ins * 0.015);
-      const bhtn = Math.round(ins * 0.01);
-      const totalIncome = ins + cc + at + htk + hoaHong;
-      const finalSalary = totalIncome - tamUng - manualFines - attendanceFines - halfDayDeduction - bhxh - bhyt - bhtn;
-
-      return {
-        employeeCode: emp.employeeCode || "",
-        name: emp.name,
-        role: emp.role || "",
-        baseSalary: ins,
-        chuyenCan: cc,
-        anTrua: at,
-        hoTroKhac: htk,
-        hoaHong,
-        insuranceSalary: ins,
-        workDays,
-        tamUng,
-        halfDayDeduction,
-        otherDeduction: manualFines + attendanceFines,
-        finalSalary,
-      };
-    });
-
-    const summaryData = { monthYear, employees: employeeData };
-
+    const summaryData = { monthYear, employees: buildEmployeePayrollData(employees, monthYear) };
     const tmpDir = os.tmpdir();
     const ts = Date.now();
-    tmpJson = path.join(tmpDir, `salary_summary_${ts}.json`);
-    tmpXlsx = path.join(tmpDir, `salary_summary_${ts}.xlsx`);
+    tmpJson = path.join(tmpDir, `salary_excel_${ts}.json`);
+    tmpXlsx = path.join(tmpDir, `salary_excel_${ts}.xlsx`);
     fs.writeFileSync(tmpJson, JSON.stringify(summaryData, null, 2), "utf8");
 
     const pythonCmd = process.platform === "win32" ? "python" : "python3";
-    try {
-      execSync(`${pythonCmd} "${scriptPath}" slips "${tmpJson}" "${tmpXlsx}"`, {
-        encoding: "utf8",
-        timeout: 30000,
-      });
-    } catch (pyError: any) {
-      throw new Error("Python failed: " + (pyError.stderr || pyError.message));
-    }
+    execSync(`${pythonCmd} "${scriptPath}" excel "${tmpJson}" "${tmpXlsx}"`, { encoding: "utf8", timeout: 30000 });
 
-    const safeMonth = monthYear.replace("/", "_");
-    const filename = `BangLuong_${safeMonth}.xlsx`;
-    
+    const filename = `BangLuong_${monthYear.replace("/", "_")}.xlsx`;
     res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
     res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
     res.send(fs.readFileSync(tmpXlsx));
-
     if (tmpJson && fs.existsSync(tmpJson)) fs.unlinkSync(tmpJson);
     if (tmpXlsx && fs.existsSync(tmpXlsx)) fs.unlinkSync(tmpXlsx);
   } catch (error) {
@@ -394,6 +392,47 @@ export const downloadSalarySummaryExcel = async (req: Request, res: Response) =>
     if (tmpXlsx && fs.existsSync(tmpXlsx)) fs.unlinkSync(tmpXlsx);
     console.error("Lỗi tạo bảng lương tổng Excel:", error);
     res.status(500).json({ error: "Lỗi tạo bảng lương tổng Excel" });
+  }
+};
+
+// ==========================================
+// 1d. TẢI PHIẾU LƯƠNG CÁ NHÂN EXCEL (mỗi người 1 sheet)
+// ==========================================
+export const downloadSalarySlipsExcel = async (req: Request, res: Response) => {
+  let tmpJson: string | null = null;
+  let tmpXlsx: string | null = null;
+  try {
+    const { monthYear } = req.params as { monthYear: string };
+    let scriptPath = path.join(process.cwd(), "src/scripts/gen_salary.py");
+    if (!fs.existsSync(scriptPath)) scriptPath = path.join(process.cwd(), "scripts/gen_salary.py");
+    if (!fs.existsSync(scriptPath)) return res.status(500).json({ error: "Không tìm thấy file Python generator" });
+
+    const employees = await prisma.employee.findMany({
+      include: { salesRecords: true, attendanceRecords: true },
+      orderBy: { name: "asc" },
+    });
+
+    const summaryData = { monthYear, employees: buildEmployeePayrollData(employees, monthYear) };
+    const tmpDir = os.tmpdir();
+    const ts = Date.now();
+    tmpJson = path.join(tmpDir, `salary_slips_${ts}.json`);
+    tmpXlsx = path.join(tmpDir, `salary_slips_${ts}.xlsx`);
+    fs.writeFileSync(tmpJson, JSON.stringify(summaryData, null, 2), "utf8");
+
+    const pythonCmd = process.platform === "win32" ? "python" : "python3";
+    execSync(`${pythonCmd} "${scriptPath}" slips "${tmpJson}" "${tmpXlsx}"`, { encoding: "utf8", timeout: 30000 });
+
+    const filename = `PhieuLuong_${monthYear.replace("/", "_")}.xlsx`;
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    res.send(fs.readFileSync(tmpXlsx));
+    if (tmpJson && fs.existsSync(tmpJson)) fs.unlinkSync(tmpJson);
+    if (tmpXlsx && fs.existsSync(tmpXlsx)) fs.unlinkSync(tmpXlsx);
+  } catch (error) {
+    if (tmpJson && fs.existsSync(tmpJson)) fs.unlinkSync(tmpJson);
+    if (tmpXlsx && fs.existsSync(tmpXlsx)) fs.unlinkSync(tmpXlsx);
+    console.error("Lỗi tạo phiếu lương Excel:", error);
+    res.status(500).json({ error: "Lỗi tạo phiếu lương Excel" });
   }
 };
 

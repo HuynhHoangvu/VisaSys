@@ -19,8 +19,9 @@ import {
   checkOutEmployee, 
   downloadSalarySlip, 
   downloadSalarySummary, 
-  downloadSalarySummaryExcel, // BỔ SUNG HÀM MỚI Ở ĐÂY
-  getLeaveRequestsByEmployee 
+  downloadSalarySummaryExcel,
+  downloadSalarySlipsExcel,
+  getLeaveRequestsByEmployee
 } from "../controllers/hr.controller.js";
 
 const router = Router();
@@ -31,6 +32,7 @@ router.get("/salary/slip/:employeeId/:monthYear", downloadSalarySlip);
 router.get("/salary/summary/:monthYear", downloadSalarySummary);
 
 router.get("/salary/summary-excel/:monthYear", downloadSalarySummaryExcel);
+router.get("/salary/slips-excel/:monthYear", downloadSalarySlipsExcel);
 
 router.get("/salary/history", getSalaryHistory);
 

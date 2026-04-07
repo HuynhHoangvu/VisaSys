@@ -526,6 +526,233 @@ def generate_summary(data, output_path):
 
 
 # ══════════════════════════════════════════════════════════════
+#  HỖ TRỢ: Thêm sheet phiếu lương cá nhân cho từng nhân viên
+# ══════════════════════════════════════════════════════════════
+def _add_slip_sheets(wb, employees, month_text):
+    """Thêm sheet phiếu lương cá nhân cho từng nhân viên vào workbook."""
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+
+    ORANGE  = "FFA500"
+    BLUE    = "1a56db"
+    LGRAY   = "F5F5F5"
+    _thin   = Side(style='thin')
+
+    def bd():
+        return Border(left=_thin, right=_thin, top=_thin, bottom=_thin)
+
+    def sc(ws, cell_ref, value='', bold=False, size=10, h='left', v='center',
+           fill=None, bdr=False, wrap=False, color='000000', num_fmt=None):
+        c = ws[cell_ref]
+        c.value = value
+        c.font = Font(name='Arial', bold=bold, size=size, color=color)
+        c.alignment = Alignment(horizontal=h, vertical=v, wrap_text=wrap)
+        if fill:
+            c.fill = PatternFill("solid", fgColor=fill)
+        if bdr:
+            c.border = bd()
+        if num_fmt:
+            c.number_format = num_fmt
+        return c
+
+    def merge(ws, rng, value='', bold=False, size=10, h='left', v='center',
+              fill=None, bdr=False, wrap=False, color='000000', num_fmt=None):
+        ws.merge_cells(rng)
+        tl = rng.split(':')[0]
+        return sc(ws, tl, value, bold, size, h, v, fill, bdr, wrap, color, num_fmt)
+
+    for emp in employees:
+        # Ten sheet = ho ten (gioi han 31 ky tu, bo ky tu dac biet)
+        raw_name = emp.get('name', 'NV')
+        sheet_name = raw_name.strip()[:28]
+        for ch in r'\/*?[]':
+            sheet_name = sheet_name.replace(ch, '')
+        ws = wb.create_sheet(title=sheet_name)
+
+        base  = emp.get('baseSalary', 0) or 0
+        cc    = emp.get('chuyenCan', 0) or 0
+        at    = emp.get('anTrua', 0) or 0
+        htk   = emp.get('hoTroKhac', 0) or 0
+        hh    = emp.get('hoaHong', 0) or 0
+        ins   = emp.get('insuranceSalary', base) or base
+        bhxh  = round(ins * 0.08)
+        bhyt  = round(ins * 0.015)
+        bhtn  = round(ins * 0.01)
+        half  = emp.get('halfDayDeduction', 0) or 0
+        other = emp.get('otherDeduction', 0) or 0
+        tu    = emp.get('tamUng', 0) or 0
+        final = emp.get('finalSalary', 0) or 0
+        wdays = emp.get('workDays', 0) or 0
+        total_in  = base + cc + at + htk + hh
+        total_bh  = bhxh + bhyt + bhtn
+        total_out = total_bh + half + other + tu
+
+        # ── HEADER CONG TY (rows 1-3) ──
+        merge(ws, 'A1:G1', 'Cong ty TNHH Fly Visa', bold=True, size=11)
+        merge(ws, 'A2:G2', 'MST: 0316444315', size=9)
+        merge(ws, 'A3:G3', 'DC: 219A Duong No Trang Long, Phuong Binh Thanh, TP.HCM', size=9)
+
+        # row 4 trong
+        ws.row_dimensions[4].height = 6
+
+        # ── TIEU DE (rows 5-6) ──
+        merge(ws, 'A5:G5', 'PHIEU LUONG', bold=True, size=14, h='center')
+        merge(ws, 'A6:G6', month_text, bold=True, size=12, h='center')
+
+        ws.row_dimensions[5].height = 20
+        ws.row_dimensions[6].height = 18
+
+        # row 7 trong
+        ws.row_dimensions[7].height = 4
+
+        # ── THONG TIN NHAN VIEN (rows 8-10) ──
+        sc(ws, 'A8', 'Ma Nhan Vien', bold=True, size=9, bdr=True, fill=LGRAY)
+        merge(ws, 'B8:D8', emp.get('employeeCode', ''), size=9, bdr=True)
+        sc(ws, 'E8', 'Luong thuc te', bold=True, size=9, bdr=True, fill=LGRAY)
+        merge(ws, 'F8:G8', final, size=10, bold=True, h='right', bdr=True, num_fmt='#,##0')
+
+        sc(ws, 'A9', 'Ho Va Ten', bold=True, size=9, bdr=True, fill=LGRAY)
+        merge(ws, 'B9:D9', emp.get('name', ''), size=9, bold=True, bdr=True)
+        sc(ws, 'E9', 'Ngay cong di lam', bold=True, size=9, bdr=True, fill=LGRAY)
+        merge(ws, 'F9:G9', wdays, size=10, bold=True, h='right', bdr=True)
+
+        sc(ws, 'A10', 'Chuc Danh', bold=True, size=9, bdr=True, fill=LGRAY)
+        merge(ws, 'B10:G10', emp.get('role', ''), size=9, bdr=True)
+
+        ws.row_dimensions[8].height = 16
+        ws.row_dimensions[9].height = 16
+        ws.row_dimensions[10].height = 16
+
+        # row 11 trong
+        ws.row_dimensions[11].height = 4
+
+        # ── HEADER BANG THU NHAP / KHAU TRU (row 12) ──
+        sc(ws, 'A12', 'STT',               bold=True, size=8, h='center', fill=ORANGE, bdr=True)
+        sc(ws, 'B12', 'Cac Khoan Thu Nhap',bold=True, size=8, h='center', fill=ORANGE, bdr=True)
+        sc(ws, 'C12', '',                  bold=True, size=8, fill=ORANGE, bdr=True)
+        sc(ws, 'D12', 'STT',               bold=True, size=8, h='center', fill=ORANGE, bdr=True)
+        merge(ws, 'E12:F12', 'Cac Khoan Tru Vao Luong', bold=True, size=8, h='center', fill=ORANGE, bdr=True)
+        sc(ws, 'G12', 'So tien',           bold=True, size=8, h='center', fill=ORANGE, bdr=True)
+        ws.row_dimensions[12].height = 16
+
+        # ── DATA ROWS (13-20) ──
+        def dr(ws, row, s1, l1, v1, s2, l2, v2):
+            # Cot A: STT thu nhap
+            sc(ws, f'A{row}', s1, size=8, h='center', bdr=True)
+            # Cot B: Ten khoan thu nhap (khong merge voi C)
+            sc(ws, f'B{row}', l1, size=8, bdr=True)
+            # Cot C: Gia tri thu nhap
+            c_in = ws[f'C{row}']
+            c_in.value = v1 if (v1 != '' and v1 != 0) else None
+            c_in.font = Font(name='Arial', size=8)
+            c_in.alignment = Alignment(horizontal='right', vertical='center')
+            c_in.border = bd()
+            if isinstance(v1, (int, float)) and v1:
+                c_in.number_format = '#,##0'
+            elif isinstance(v1, str) and v1:
+                c_in.value = v1
+            # Cot D: STT khau tru
+            sc(ws, f'D{row}', s2, size=8, h='center', bdr=True)
+            # Cot E+F merge: Ten khoan khau tru
+            merge(ws, f'E{row}:F{row}', l2, size=8, bdr=True, wrap=True)
+            # Cot G: Gia tri khau tru
+            c_out = ws[f'G{row}']
+            c_out.value = v2 if (v2 != '' and v2 != 0) else None
+            c_out.font = Font(name='Arial', size=8)
+            c_out.alignment = Alignment(horizontal='right', vertical='center')
+            c_out.border = bd()
+            if isinstance(v2, (int, float)) and v2:
+                c_out.number_format = '#,##0'
+            elif isinstance(v2, str) and v2:
+                c_out.value = v2
+            ws.row_dimensions[row].height = 15
+
+        dr(ws, 13, '1',   'Luong co ban',        base, '1',   'Bao Hiem Bat Buoc',            '............')
+        dr(ws, 14, '2',   'Phu Cap:',             '............', '1,1', 'Bao hiem xa hoi (8%)', bhxh)
+        dr(ws, 15, '2,1', 'Chuyen can',           cc,   '1,2', 'Bao hiem y te (1,5%)',         bhyt)
+        dr(ws, 16, '2,2', 'An trua',              at,   '1,3', 'Bao hiem that nghiep (1%)',    bhtn)
+        dr(ws, 17, '2,3', 'Ho tro khac',          htk,  '2',   'Tong BH NLD dong',             total_bh)
+        dr(ws, 18, '2,4', 'Hoa hong / Thuong',    hh,   '3',   '1/2 ngay cong',                half)
+        dr(ws, 19, '',    '',                      '',   '4',   'Tam ung',                      tu)
+        dr(ws, 20, '',    '',                      '',   '5',   'Khac (phat + di tre)',         other)
+
+        # ── DONG TONG (row 21) ──
+        merge(ws, 'A21:B21', 'Tong Cong', bold=True, size=9, fill=ORANGE, bdr=True)
+        c21 = ws['C21']
+        c21.value = total_in
+        c21.font = Font(name='Arial', bold=True, size=9)
+        c21.alignment = Alignment(horizontal='right', vertical='center')
+        c21.fill = PatternFill("solid", fgColor=ORANGE)
+        c21.border = bd()
+        c21.number_format = '#,##0'
+
+        merge(ws, 'D21:E21', 'Tong Cong', bold=True, size=9, fill=ORANGE, bdr=True)
+        ws.merge_cells('F21:F21')
+        f21 = ws['F21']
+        f21.fill = PatternFill("solid", fgColor=ORANGE)
+        f21.border = bd()
+        g21 = ws['G21']
+        g21.value = total_out
+        g21.font = Font(name='Arial', bold=True, size=9)
+        g21.alignment = Alignment(horizontal='right', vertical='center')
+        g21.fill = PatternFill("solid", fgColor=ORANGE)
+        g21.border = bd()
+        g21.number_format = '#,##0'
+        ws.row_dimensions[21].height = 16
+
+        # row 22 trong
+        ws.row_dimensions[22].height = 6
+
+        # ── TONG THUC NHAN (row 23) ──
+        ws.merge_cells('A23:E23')
+        a23 = ws['A23']
+        a23.value = 'Tong So Tien Luong Thuc Nhan'
+        a23.font = Font(name='Arial', bold=True, size=11)
+        a23.alignment = Alignment(horizontal='left', vertical='center')
+        a23.border = Border(left=Side(style='medium'), top=Side(style='medium'),
+                            bottom=Side(style='medium'))
+
+        ws.merge_cells('F23:G23')
+        g23 = ws['F23']
+        g23.value = final
+        g23.font = Font(name='Arial', bold=True, size=12, color=BLUE)
+        g23.alignment = Alignment(horizontal='right', vertical='center')
+        g23.number_format = '#,##0'
+        g23.border = Border(right=Side(style='medium'), top=Side(style='medium'),
+                            bottom=Side(style='medium'))
+        ws.row_dimensions[23].height = 20
+
+        # row 24 trong
+        ws.row_dimensions[24].height = 6
+
+        # ── BANG CHU (row 25) ──
+        sc(ws, 'A25', 'Bang chu:', bold=True, size=9, bdr=True)
+        merge(ws, 'B25:G25', '', size=9, bdr=True)
+        ws.row_dimensions[25].height = 20
+
+        # rows 26-27 trong
+        ws.row_dimensions[26].height = 8
+
+        # ── CHU KY (rows 27-30) ──
+        merge(ws, 'A27:C27', 'Nguoi lap phieu', bold=True, size=9, h='center')
+        merge(ws, 'E27:G27', 'Nguoi nhan tien', bold=True, size=9, h='center')
+        merge(ws, 'A28:C28', '(Ky va ghi ro ho ten)', size=8, h='center', color='666666')
+        merge(ws, 'E28:G28', '(Ky va ghi ro ho ten)', size=8, h='center', color='666666')
+        for r in range(29, 33):
+            ws.row_dimensions[r].height = 14
+
+        # ── DO RONG COT ──
+        ws.column_dimensions['A'].width = 6
+        ws.column_dimensions['B'].width = 22
+        ws.column_dimensions['C'].width = 14
+        ws.column_dimensions['D'].width = 6
+        ws.column_dimensions['E'].width = 22
+        ws.column_dimensions['F'].width = 4
+        ws.column_dimensions['G'].width = 14
+
+        ws.sheet_view.showGridLines = False
+
+
+# ══════════════════════════════════════════════════════════════
 #  BANG LUONG TONG — EXCEL (openpyxl)
 # ══════════════════════════════════════════════════════════════
 def generate_summary_excel(data, output_path):
@@ -759,6 +986,9 @@ def generate_summary_excel(data, output_path):
     # Freeze header
     ws.freeze_panes = f'A{DS}'
 
+    # ── THEM SHEET PHIEU LUONG CA NHAN CHO TUNG NHAN VIEN ──
+    _add_slip_sheets(wb, employees, month_text)
+
     wb.save(output_path)
 
 
@@ -768,7 +998,6 @@ def generate_summary_excel(data, output_path):
 def generate_slips_excel(data, output_path):
     try:
         from openpyxl import Workbook
-        from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
     except ImportError:
         raise Exception("Thieu thu vien: pip install openpyxl")
 
@@ -779,226 +1008,11 @@ def generate_slips_excel(data, output_path):
     wb = Workbook()
     wb.remove(wb.active)  # xoa sheet mac dinh
 
-    ORANGE  = "FFA500"
-    BLUE    = "1a56db"
-    LGRAY   = "F5F5F5"
-    _thin   = Side(style='thin')
-
-    def bd():
-        return Border(left=_thin, right=_thin, top=_thin, bottom=_thin)
-
-    def sc(ws, cell_ref, value='', bold=False, size=10, h='left', v='center',
-           fill=None, bdr=False, wrap=False, color='000000', num_fmt=None):
-        c = ws[cell_ref]
-        c.value = value
-        c.font = Font(name='Arial', bold=bold, size=size, color=color)
-        c.alignment = Alignment(horizontal=h, vertical=v, wrap_text=wrap)
-        if fill:
-            c.fill = PatternFill("solid", fgColor=fill)
-        if bdr:
-            c.border = bd()
-        if num_fmt:
-            c.number_format = num_fmt
-        return c
-
-    def merge(ws, rng, value='', bold=False, size=10, h='left', v='center',
-              fill=None, bdr=False, wrap=False, color='000000', num_fmt=None):
-        ws.merge_cells(rng)
-        tl = rng.split(':')[0]
-        return sc(ws, tl, value, bold, size, h, v, fill, bdr, wrap, color, num_fmt)
-
-    for emp in employees:
-        # Ten sheet = ho ten (gioi han 31 ky tu, bo ky tu dac biet)
-        raw_name = emp.get('name', 'NV')
-        sheet_name = raw_name.strip()[:28]
-        for ch in r'\/*?[]':
-            sheet_name = sheet_name.replace(ch, '')
-        ws = wb.create_sheet(title=sheet_name)
-
-        base  = emp.get('baseSalary', 0) or 0
-        cc    = emp.get('chuyenCan', 0) or 0
-        at    = emp.get('anTrua', 0) or 0
-        htk   = emp.get('hoTroKhac', 0) or 0
-        hh    = emp.get('hoaHong', 0) or 0
-        ins   = emp.get('insuranceSalary', base) or base
-        bhxh  = round(ins * 0.08)
-        bhyt  = round(ins * 0.015)
-        bhtn  = round(ins * 0.01)
-        half  = emp.get('halfDayDeduction', 0) or 0
-        other = emp.get('otherDeduction', 0) or 0
-        tu    = emp.get('tamUng', 0) or 0
-        final = emp.get('finalSalary', 0) or 0
-        wdays = emp.get('workDays', 0) or 0
-        total_in  = base + cc + at + htk + hh
-        total_bh  = bhxh + bhyt + bhtn
-        total_out = total_bh + half + other + tu
-
-        # ── HEADER CONG TY (rows 1-3) ──
-        merge(ws, 'A1:G1', 'Cong ty TNHH Fly Visa', bold=True, size=11)
-        merge(ws, 'A2:G2', 'MST: 0316444315', size=9)
-        merge(ws, 'A3:G3', 'DC: 219A Duong No Trang Long, Phuong Binh Thanh, TP.HCM', size=9)
-
-        # row 4 trong
-        ws.row_dimensions[4].height = 6
-
-        # ── TIEU DE (rows 5-6) ──
-        merge(ws, 'A5:G5', 'PHIEU LUONG', bold=True, size=14, h='center')
-        merge(ws, 'A6:G6', month_text, bold=True, size=12, h='center')
-
-        ws.row_dimensions[5].height = 20
-        ws.row_dimensions[6].height = 18
-
-        # row 7 trong
-        ws.row_dimensions[7].height = 4
-
-        # ── THONG TIN NHAN VIEN (rows 8-10) ──
-        sc(ws, 'A8', 'Ma Nhan Vien', bold=True, size=9, bdr=True, fill=LGRAY)
-        merge(ws, 'B8:D8', emp.get('employeeCode', ''), size=9, bdr=True)
-        sc(ws, 'E8', 'Luong thuc te', bold=True, size=9, bdr=True, fill=LGRAY)
-        merge(ws, 'F8:G8', final, size=10, bold=True, h='right', bdr=True, num_fmt='#,##0')
-
-        sc(ws, 'A9', 'Ho Va Ten', bold=True, size=9, bdr=True, fill=LGRAY)
-        merge(ws, 'B9:D9', emp.get('name', ''), size=9, bold=True, bdr=True)
-        sc(ws, 'E9', 'Ngay cong di lam', bold=True, size=9, bdr=True, fill=LGRAY)
-        merge(ws, 'F9:G9', wdays, size=10, bold=True, h='right', bdr=True)
-
-        sc(ws, 'A10', 'Chuc Danh', bold=True, size=9, bdr=True, fill=LGRAY)
-        merge(ws, 'B10:G10', emp.get('role', ''), size=9, bdr=True)
-
-        ws.row_dimensions[8].height = 16
-        ws.row_dimensions[9].height = 16
-        ws.row_dimensions[10].height = 16
-
-        # row 11 trong
-        ws.row_dimensions[11].height = 4
-
-        # ── HEADER BANG THU NHAP / KHAU TRU (row 12) ──
-        sc(ws, 'A12', 'STT',               bold=True, size=8, h='center', fill=ORANGE, bdr=True)
-        sc(ws, 'B12', 'Cac Khoan Thu Nhap',bold=True, size=8, h='center', fill=ORANGE, bdr=True)
-        sc(ws, 'C12', '',                  bold=True, size=8, fill=ORANGE, bdr=True)
-        sc(ws, 'D12', 'STT',               bold=True, size=8, h='center', fill=ORANGE, bdr=True)
-        merge(ws, 'E12:F12', 'Cac Khoan Tru Vao Luong', bold=True, size=8, h='center', fill=ORANGE, bdr=True)
-        sc(ws, 'G12', 'So tien',           bold=True, size=8, h='center', fill=ORANGE, bdr=True)
-        ws.row_dimensions[12].height = 16
-
-        # ── DATA ROWS (13-20) ──
-        def dr(ws, row, s1, l1, v1, s2, l2, v2):
-            # Cot A: STT thu nhap
-            sc(ws, f'A{row}', s1, size=8, h='center', bdr=True)
-            # Cot B: Ten khoan thu nhap (khong merge voi C)
-            sc(ws, f'B{row}', l1, size=8, bdr=True)
-            # Cot C: Gia tri thu nhap
-            c_in = ws[f'C{row}']
-            c_in.value = v1 if (v1 != '' and v1 != 0) else None
-            c_in.font = Font(name='Arial', size=8)
-            c_in.alignment = Alignment(horizontal='right', vertical='center')
-            c_in.border = bd()
-            if isinstance(v1, (int, float)) and v1:
-                c_in.number_format = '#,##0'
-            elif isinstance(v1, str) and v1:
-                c_in.value = v1
-            # Cot D: STT khau tru
-            sc(ws, f'D{row}', s2, size=8, h='center', bdr=True)
-            # Cot E+F merge: Ten khoan khau tru
-            merge(ws, f'E{row}:F{row}', l2, size=8, bdr=True, wrap=True)
-            # Cot G: Gia tri khau tru
-            c_out = ws[f'G{row}']
-            c_out.value = v2 if (v2 != '' and v2 != 0) else None
-            c_out.font = Font(name='Arial', size=8)
-            c_out.alignment = Alignment(horizontal='right', vertical='center')
-            c_out.border = bd()
-            if isinstance(v2, (int, float)) and v2:
-                c_out.number_format = '#,##0'
-            elif isinstance(v2, str) and v2:
-                c_out.value = v2
-            ws.row_dimensions[row].height = 15
-
-        dr(ws, 13, '1',   'Luong co ban',        base, '1',   'Bao Hiem Bat Buoc',            '............')
-        dr(ws, 14, '2',   'Phu Cap:',             '............', '1,1', 'Bao hiem xa hoi (8%)', bhxh)
-        dr(ws, 15, '2,1', 'Chuyen can',           cc,   '1,2', 'Bao hiem y te (1,5%)',         bhyt)
-        dr(ws, 16, '2,2', 'An trua',              at,   '1,3', 'Bao hiem that nghiep (1%)',    bhtn)
-        dr(ws, 17, '2,3', 'Ho tro khac',          htk,  '2',   'Tong BH NLD dong',             total_bh)
-        dr(ws, 18, '2,4', 'Hoa hong / Thuong',    hh,   '3',   '1/2 ngay cong',                half)
-        dr(ws, 19, '',    '',                      '',   '4',   'Tam ung',                      tu)
-        dr(ws, 20, '',    '',                      '',   '5',   'Khac (phat + di tre)',         other)
-
-        # ── DONG TONG (row 21) ──
-        merge(ws, 'A21:B21', 'Tong Cong', bold=True, size=9, fill=ORANGE, bdr=True)
-        c21 = ws['C21']
-        c21.value = total_in
-        c21.font = Font(name='Arial', bold=True, size=9)
-        c21.alignment = Alignment(horizontal='right', vertical='center')
-        c21.fill = PatternFill("solid", fgColor=ORANGE)
-        c21.border = bd()
-        c21.number_format = '#,##0'
-
-        merge(ws, 'D21:E21', 'Tong Cong', bold=True, size=9, fill=ORANGE, bdr=True)
-        ws.merge_cells('F21:F21')
-        f21 = ws['F21']
-        f21.fill = PatternFill("solid", fgColor=ORANGE)
-        f21.border = bd()
-        g21 = ws['G21']
-        g21.value = total_out
-        g21.font = Font(name='Arial', bold=True, size=9)
-        g21.alignment = Alignment(horizontal='right', vertical='center')
-        g21.fill = PatternFill("solid", fgColor=ORANGE)
-        g21.border = bd()
-        g21.number_format = '#,##0'
-        ws.row_dimensions[21].height = 16
-
-        # row 22 trong
-        ws.row_dimensions[22].height = 6
-
-        # ── TONG THUC NHAN (row 23) ──
-        ws.merge_cells('A23:E23')
-        a23 = ws['A23']
-        a23.value = 'Tong So Tien Luong Thuc Nhan'
-        a23.font = Font(name='Arial', bold=True, size=11)
-        a23.alignment = Alignment(horizontal='left', vertical='center')
-        a23.border = Border(left=Side(style='medium'), top=Side(style='medium'),
-                            bottom=Side(style='medium'))
-
-        ws.merge_cells('F23:G23')
-        g23 = ws['F23']
-        g23.value = final
-        g23.font = Font(name='Arial', bold=True, size=12, color=BLUE)
-        g23.alignment = Alignment(horizontal='right', vertical='center')
-        g23.number_format = '#,##0'
-        g23.border = Border(right=Side(style='medium'), top=Side(style='medium'),
-                            bottom=Side(style='medium'))
-        ws.row_dimensions[23].height = 20
-
-        # row 24 trong
-        ws.row_dimensions[24].height = 6
-
-        # ── BANG CHU (row 25) ──
-        sc(ws, 'A25', 'Bang chu:', bold=True, size=9, bdr=True)
-        merge(ws, 'B25:G25', '', size=9, bdr=True)
-        ws.row_dimensions[25].height = 20
-
-        # rows 26-27 trong
-        ws.row_dimensions[26].height = 8
-
-        # ── CHU KY (rows 27-30) ──
-        merge(ws, 'A27:C27', 'Nguoi lap phieu', bold=True, size=9, h='center')
-        merge(ws, 'E27:G27', 'Nguoi nhan tien', bold=True, size=9, h='center')
-        merge(ws, 'A28:C28', '(Ky va ghi ro ho ten)', size=8, h='center', color='666666')
-        merge(ws, 'E28:G28', '(Ky va ghi ro ho ten)', size=8, h='center', color='666666')
-        for r in range(29, 33):
-            ws.row_dimensions[r].height = 14
-
-        # ── DO RONG COT ──
-        ws.column_dimensions['A'].width = 6
-        ws.column_dimensions['B'].width = 22
-        ws.column_dimensions['C'].width = 14
-        ws.column_dimensions['D'].width = 6
-        ws.column_dimensions['E'].width = 22
-        ws.column_dimensions['F'].width = 4
-        ws.column_dimensions['G'].width = 14
-
-        ws.sheet_view.showGridLines = False
+    # Sử dụng hàm chung để thêm sheets phiếu lương
+    _add_slip_sheets(wb, employees, month_text)
 
     wb.save(output_path)
+
 
 
 # ══════════════════════════════════════════════════════════════
