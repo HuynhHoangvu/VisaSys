@@ -210,6 +210,120 @@ export const downloadSalarySlip = async (req: Request, res: Response) => {
 };
 
 // ==========================================
+// 1a-DEBUG: Test lấy dữ liệu tính lương (JSON - không PDF)
+// ==========================================
+export const testSalaryCalculation = async (req: Request, res: Response) => {
+  try {
+    const { employeeId, monthYear } = req.params as { employeeId: string; monthYear: string };
+
+    const employee = await prisma.employee.findUnique({
+      where: { id: employeeId },
+      include: { salesRecords: true, attendanceRecords: true },
+    });
+    if (!employee) return res.status(404).json({ error: "Không tìm thấy nhân viên" });
+
+    // Lọc theo tháng (monthYear = "MM/YYYY")
+    const [mm, yyyy] = monthYear.split('/');
+    const monthAttendance = employee.attendanceRecords.filter((r) => {
+      const parts = r.date ? r.date.split('/') : [];
+      return parts.length === 3 && parts[1] === mm && parts[2] === yyyy;
+    });
+    const monthSales = employee.salesRecords.filter((r) => {
+      if (!r.createdAt) return true;
+      const d = new Date(r.createdAt);
+      return d.getMonth() + 1 === parseInt(mm) && d.getFullYear() === parseInt(yyyy);
+    });
+
+    // Tách lương: >= 8tr → lương CB = tổng - 2tr, phụ cấp 2tr
+    const totalSalary = employee.baseSalary || 0;
+    const THRESHOLD = 8_000_000;
+    const insuranceSalary = totalSalary >= THRESHOLD ? totalSalary - 2_000_000 : totalSalary;
+    const chuyenCan = totalSalary >= THRESHOLD ? 1_000_000 : 0;
+    const anTrua    = totalSalary >= THRESHOLD ?   500_000 : 0;
+    const hoTroKhac = totalSalary >= THRESHOLD ?   500_000 : 0;
+
+    let hoaHong = 0, manualFines = 0, salaryAdvances = 0;
+    monthSales.forEach((r) => {
+      const amount = Number(r.profit) || 0;
+      if (r.service === "Phạt") manualFines += Math.abs(amount);
+      else if (r.service === "Tạm ứng") salaryAdvances += Math.abs(amount);
+      else if (!["Chuyên cần", "Ăn trưa", "Hỗ trợ khác"].includes(r.service || ""))
+        hoaHong += amount;
+    });
+
+    const attendanceFines = monthAttendance.reduce((s, r) => s + (r.fine || 0), 0);
+    
+    // Tính trừ lương vắng không phép (1 ngày đầy đủ)
+    const fullDayAbsenceDeduction = monthAttendance.reduce((s, r) => {
+      if (r.status === "Vắng không phép") {
+        return s + Math.round(insuranceSalary / 21); // 1 ngày lương
+      }
+      return s;
+    }, 0);
+    
+    // Tính trừ lương nửa ngày
+    const halfDayDeduction = monthAttendance.reduce((s, r) => s + (r.halfDayDeduction || 0), 0);
+    
+    // Tổng trừ lương (cả ngày + nửa ngày)
+    const totalAbsenceDeduction = fullDayAbsenceDeduction + halfDayDeduction;
+    const checkedOutRecords = monthAttendance.filter(
+      (r) => r.outTime && r.outTime !== "-" && r.outTime !== "Quên checkout"
+    );
+    const workDays = checkedOutRecords.length;
+    const workDates = checkedOutRecords.map((r) => r.date).sort();
+
+    const bhxh = Math.round(insuranceSalary * 0.08);
+    const bhyt = Math.round(insuranceSalary * 0.015);
+    const bhtn = Math.round(insuranceSalary * 0.01);
+    const bhxhCty = Math.round(insuranceSalary * 0.175);
+    const bhytCty = Math.round(insuranceSalary * 0.03);
+    const bhtnCty = Math.round(insuranceSalary * 0.01);
+    const totalIncome = insuranceSalary + chuyenCan + anTrua + hoTroKhac + hoaHong;
+    const finalSalary = totalIncome - salaryAdvances - manualFines - attendanceFines - totalAbsenceDeduction - bhxh - bhyt - bhtn;
+
+    // Trả về JSON để debug
+    res.json({
+      employeeCode: employee.employeeCode,
+      name: employee.name,
+      monthYear,
+      debug: {
+        monthAttendanceCount: monthAttendance.length,
+        monthAttendanceRecords: monthAttendance.map(r => ({
+          date: r.date,
+          status: r.status,
+          fine: r.fine,
+          halfDayDeduction: r.halfDayDeduction,
+        })),
+        monthSalesCount: monthSales.length,
+      },
+      calculation: {
+        baseSalary: employee.baseSalary,
+        insuranceSalary,
+        chuyenCan,
+        anTrua,
+        hoTroKhac,
+        hoaHong,
+        totalIncome,
+        workDays,
+        attendanceFines,
+        fullDayAbsenceDeduction,
+        halfDayDeduction,
+        totalAbsenceDeduction,
+        manualFines,
+        salaryAdvances,
+        bhxh,
+        bhyt,
+        bhtn,
+        finalSalary,
+      },
+    });
+  } catch (error) {
+    console.error("Lỗi test tính lương:", error);
+    res.status(500).json({ error: "Lỗi test tính lương" });
+  }
+};
+
+// ==========================================
 // 1b. TẢI BẢNG LƯƠNG TỔNG PDF
 // ==========================================
 export const downloadSalarySummary = async (req: Request, res: Response) => {

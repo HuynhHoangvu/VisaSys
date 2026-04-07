@@ -21,13 +21,15 @@ import {
   downloadSalarySummary, 
   downloadSalarySummaryExcel,
   downloadSalarySlipsExcel,
-  getLeaveRequestsByEmployee
+  getLeaveRequestsByEmployee,
+  testSalaryCalculation
 } from "../controllers/hr.controller.js";
 
 const router = Router();
 
 // 1. API Chốt Lương
 router.post("/salary/finalize", finalizeMonthSalary);
+router.get("/salary/test/:employeeId/:monthYear", testSalaryCalculation);  // DEBUG: Test tính lương
 router.get("/salary/slip/:employeeId/:monthYear", downloadSalarySlip);
 router.get("/salary/summary/:monthYear", downloadSalarySummary);
 
