@@ -520,6 +520,118 @@ def generate_summary(data, output_path):
 
 
 # ══════════════════════════════════════════════════════════════
+#  HỖ TRỢ: Thêm sheet chi tiết lịch sử
+# ══════════════════════════════════════════════════════════════
+def _add_history_sheet(wb, employees, month_text):
+    """Thêm sheet chi tiết lịch sử (vắng, đi trễ, phạt, ứng lương) cho tất cả nhân viên."""
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+    
+    ws = wb.create_sheet("Chi tiet lich su")
+    
+    ORANGE      = "FFA500"
+    LGRAY       = "D3D3D3"
+    RED_LIGHT   = "FFE6E6"
+    
+    _thin = Side(style='thin')
+    def bd(left=_thin, right=_thin, top=_thin, bottom=_thin):
+        return Border(left=left, right=right, top=top, bottom=bottom)
+    
+    def sc(cell_obj, text, size=9, bold=False, h='center', v='center', fill=None, bdr=True):
+        cell_obj.value = text
+        cell_obj.font = Font(name='Arial', size=size, bold=bold)
+        cell_obj.alignment = Alignment(horizontal=h, vertical=v)
+        if fill:
+            cell_obj.fill = PatternFill("solid", fgColor=fill)
+        if bdr:
+            cell_obj.border = bd()
+    
+    # Header
+    r = 1
+    sc(ws[f'A{r}'], 'STT', bold=True, fill=ORANGE)
+    sc(ws[f'B{r}'], 'Ma NV', bold=True, fill=ORANGE)
+    sc(ws[f'C{r}'], 'Ho va ten', bold=True, fill=ORANGE)
+    sc(ws[f'D{r}'], 'Ngay', bold=True, fill=ORANGE)
+    sc(ws[f'E{r}'], 'Loai', bold=True, fill=ORANGE)
+    sc(ws[f'F{r}'], 'Chi tiet', bold=True, fill=ORANGE)
+    sc(ws[f'G{r}'], 'So tien', bold=True, fill=ORANGE)
+    
+    ws.row_dimensions[r].height = 16
+    
+    # Data rows
+    row = 2
+    stt = 0
+    
+    for emp in employees:
+        emp_code = emp.get('employeeCode', '')
+        emp_name = emp.get('name', '')
+        
+        # Vắng không phép
+        for record in emp.get('absenceRecords', []):
+            stt += 1
+            sc(ws[f'A{row}'], stt, size=8, h='center')
+            sc(ws[f'B{row}'], emp_code, size=8, h='center')
+            sc(ws[f'C{row}'], emp_name, size=8, h='left', fill=RED_LIGHT)
+            sc(ws[f'D{row}'], record.get('date', ''), size=8, h='center', fill=RED_LIGHT)
+            sc(ws[f'E{row}'], 'Vắng cả ngày', size=8, h='left', fill=RED_LIGHT)
+            sc(ws[f'F{row}'], record.get('status', 'Vắng không phép'), size=8, h='left', fill=RED_LIGHT)
+            sc(ws[f'G{row}'], record.get('amount', 0), size=8, h='right')
+            ws[f'G{row}'].number_format = '#,##0'
+            ws.row_dimensions[row].height = 12
+            row += 1
+        
+        # Phạt đi trễ
+        for record in emp.get('fineRecords', []):
+            stt += 1
+            sc(ws[f'A{row}'], stt, size=8, h='center')
+            sc(ws[f'B{row}'], emp_code, size=8, h='center')
+            sc(ws[f'C{row}'], emp_name, size=8, h='left')
+            sc(ws[f'D{row}'], record.get('date', ''), size=8, h='center')
+            sc(ws[f'E{row}'], 'Phạt đi trễ', size=8, h='left')
+            sc(ws[f'F{row}'], record.get('status', 'Đi muộn'), size=8, h='left')
+            sc(ws[f'G{row}'], record.get('amount', 0), size=8, h='right')
+            ws[f'G{row}'].number_format = '#,##0'
+            ws.row_dimensions[row].height = 12
+            row += 1
+        
+        # Nửa ngày công / đi trễ
+        for record in emp.get('lateRecords', []):
+            stt += 1
+            sc(ws[f'A{row}'], stt, size=8, h='center')
+            sc(ws[f'B{row}'], emp_code, size=8, h='center')
+            sc(ws[f'C{row}'], emp_name, size=8, h='left')
+            sc(ws[f'D{row}'], record.get('date', ''), size=8, h='center')
+            sc(ws[f'E{row}'], 'Nửa ngày công', size=8, h='left')
+            sc(ws[f'F{row}'], record.get('status', 'Đi trễ/Về sớm'), size=8, h='left')
+            sc(ws[f'G{row}'], record.get('amount', 0), size=8, h='right')
+            ws[f'G{row}'].number_format = '#,##0'
+            ws.row_dimensions[row].height = 12
+            row += 1
+        
+        # Ứng lương
+        for record in emp.get('advanceRecords', []):
+            stt += 1
+            sc(ws[f'A{row}'], stt, size=8, h='center')
+            sc(ws[f'B{row}'], emp_code, size=8, h='center')
+            sc(ws[f'C{row}'], emp_name, size=8, h='left')
+            sc(ws[f'D{row}'], record.get('date', ''), size=8, h='center')
+            sc(ws[f'E{row}'], 'Ứng lương', size=8, h='left')
+            sc(ws[f'F{row}'], record.get('note', ''), size=8, h='left')
+            sc(ws[f'G{row}'], record.get('amount', 0), size=8, h='right')
+            ws[f'G{row}'].number_format = '#,##0'
+            ws.row_dimensions[row].height = 12
+            row += 1
+    
+    # Column widths
+    ws.column_dimensions['A'].width = 5
+    ws.column_dimensions['B'].width = 10
+    ws.column_dimensions['C'].width = 20
+    ws.column_dimensions['D'].width = 12
+    ws.column_dimensions['E'].width = 15
+    ws.column_dimensions['F'].width = 25
+    ws.column_dimensions['G'].width = 12
+
+
+# ══════════════════════════════════════════════════════════════
 #  HỖ TRỢ: Thêm sheet phiếu lương cá nhân cho từng nhân viên
 # ══════════════════════════════════════════════════════════════
 def _add_slip_sheets(wb, employees, month_text):
@@ -1102,6 +1214,9 @@ def generate_summary_excel(data, output_path):
 
     # Freeze header
     ws.freeze_panes = f'A{DS}'
+
+    # ── THEM SHEET CHI TIET LICH SU ──
+    _add_history_sheet(wb, employees, month_text)
 
     # ── THEM SHEET PHIEU LUONG CA NHAN CHO TUNG NHAN VIEN ──
     _add_slip_sheets(wb, employees, month_text)
