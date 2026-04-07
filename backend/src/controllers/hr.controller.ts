@@ -66,12 +66,46 @@ export const downloadSalarySlip = async (req: Request, res: Response) => {
     });
 
     const attendanceFines = monthAttendance.reduce((s, r) => s + (r.fine || 0), 0);
+    
+    // Tính trừ lương vắng không phép (1 ngày đầy đủ)
+    const fullDayAbsenceDeduction = monthAttendance.reduce((s, r) => {
+      if (r.status === "Vắng không phép") {
+        return s + Math.round(insuranceSalary / 21); // 1 ngày lương
+      }
+      return s;
+    }, 0);
+    
+    // Tính trừ lương nửa ngày
     const halfDayDeduction = monthAttendance.reduce((s, r) => s + (r.halfDayDeduction || 0), 0);
+    
+    // Tổng trừ lương (cả ngày + nửa ngày)
+    const totalAbsenceDeduction = fullDayAbsenceDeduction + halfDayDeduction;
     const checkedOutRecords = monthAttendance.filter(
       (r) => r.outTime && r.outTime !== "-" && r.outTime !== "Quên checkout"
     );
     const workDays = checkedOutRecords.length;
     const workDates = checkedOutRecords.map((r) => r.date).sort();
+    
+    // Chi tiết các ngày đi trễ (halfDayDeduction > 0)
+    const lateRecords = monthAttendance.filter((r) => (r.halfDayDeduction || 0) > 0).map((r) => ({
+      date: r.date,
+      amount: r.halfDayDeduction,
+      status: r.status,
+    }));
+    
+    // Chi tiết các lần ứng lương (tạm ứng)
+    const advanceRecords = monthSales.filter((r) => r.service === "Tạm ứng").map((r) => ({
+      date: r.createdAt ? new Date(r.createdAt).toLocaleDateString('vi-VN') : '',
+      amount: Math.abs(Number(r.profit) || 0),
+      note: r.note || '',
+    }));
+    
+    // Chi tiết các ngày vắng không phép (cả ngày)
+    const absenceRecords = monthAttendance.filter((r) => r.status === "Vắng không phép").map((r) => ({
+      date: r.date,
+      amount: Math.round(insuranceSalary / 21),  // 1 ngày lương
+      status: r.status,
+    }));
 
     // Tách lương: >= 8tr → lương CB = tổng - 2tr, phụ cấp 2tr
     const totalSalary = employee.baseSalary || 0;
@@ -84,8 +118,11 @@ export const downloadSalarySlip = async (req: Request, res: Response) => {
     const bhxh = Math.round(insuranceSalary * 0.08);
     const bhyt = Math.round(insuranceSalary * 0.015);
     const bhtn = Math.round(insuranceSalary * 0.01);
+    const bhxhCty = Math.round(insuranceSalary * 0.175);
+    const bhytCty = Math.round(insuranceSalary * 0.03);
+    const bhtnCty = Math.round(insuranceSalary * 0.01);
     const totalIncome = insuranceSalary + chuyenCan + anTrua + hoTroKhac + hoaHong;
-    const finalSalary = totalIncome - salaryAdvances - manualFines - attendanceFines - halfDayDeduction - bhxh - bhyt - bhtn;
+    const finalSalary = totalIncome - salaryAdvances - manualFines - attendanceFines - totalAbsenceDeduction - bhxh - bhyt - bhtn;
 
     const data = {
       employeeCode: employee.employeeCode,
@@ -101,9 +138,19 @@ export const downloadSalarySlip = async (req: Request, res: Response) => {
       workDays,
       workDates,
       tamUng: salaryAdvances,
+      fullDayAbsenceDeduction,
       halfDayDeduction,
       otherDeduction: manualFines + attendanceFines,
+      bhxhCty,
+      bhytCty,
+      bhtnCty,
+      bhxhNld: bhxh,
+      bhytNld: bhyt,
+      bhtnNld: bhtn,
       finalSalary,
+      lateRecords,
+      advanceRecords,
+      absenceRecords,
     };
 
     const tmpDir = os.tmpdir();
@@ -313,8 +360,40 @@ function buildEmployeePayrollData(employees: any[], monthYear: string, threshold
       (r: any) => r.outTime && r.outTime !== "-" && r.outTime !== "Quên checkout"
     ).length;
 
+    // Chi tiết các ngày đi trễ (halfDayDeduction > 0)
+    const lateRecords = monthAtt.filter((r: any) => (r.halfDayDeduction || 0) > 0).map((r: any) => ({
+      date: r.date,
+      amount: r.halfDayDeduction,
+      status: r.status,
+    }));
+    
+    // Chi tiết các lần ứng lương (tạm ứng)
+    const advanceRecords = monthSales.filter((r: any) => r.service === "Tạm ứng").map((r: any) => ({
+      date: r.createdAt ? new Date(r.createdAt).toLocaleDateString('vi-VN') : '',
+      amount: Math.abs(Number(r.profit) || 0),
+      note: r.note || '',
+    }));
+    
+    // Chi tiết các ngày vắng không phép (cả ngày)
+    const absenceRecords = monthAtt.filter((r: any) => r.status === "Vắng không phép").map((r: any) => ({
+      date: r.date,
+      amount: Math.round(ins / 21),  // 1 ngày lương
+      status: r.status,
+    }));
+
     const totalSalaryBrutto = emp.baseSalary || 0;
     const ins = totalSalaryBrutto >= threshold ? totalSalaryBrutto - 2_000_000 : totalSalaryBrutto;
+    
+    // Tính trừ lương vắng không phép (1 ngày đầy đủ)
+    const fullDayAbsenceDeduction = monthAtt.reduce((s: number, r: any) => {
+      if (r.status === "Vắng không phép") {
+        return s + Math.round(ins / 21); // 1 ngày lương
+      }
+      return s;
+    }, 0);
+    
+    // Tổng trừ lương (cả ngày + nửa ngày)
+    const totalAbsenceDeduction = fullDayAbsenceDeduction + halfDayDeduction;
     const cc  = totalSalaryBrutto >= threshold ? 1_000_000 : 0;
     const at  = totalSalaryBrutto >= threshold ?   500_000 : 0;
     const htk = totalSalaryBrutto >= threshold ?   500_000 : 0;
@@ -330,7 +409,7 @@ function buildEmployeePayrollData(employees: any[], monthYear: string, threshold
     const bhtnNld  = Math.round(ins * 0.01);
     const totalNld = bhxhNld + bhytNld + bhtnNld;
 
-    const finalSalary = totalSalary - tamUng - manualFines - attendanceFines - halfDayDeduction - bhxhNld - bhytNld - bhtnNld;
+    const finalSalary = totalSalary - tamUng - manualFines - attendanceFines - totalAbsenceDeduction - bhxhNld - bhytNld - bhtnNld;
 
     return {
       employeeCode: emp.employeeCode || "",
@@ -348,9 +427,13 @@ function buildEmployeePayrollData(employees: any[], monthYear: string, threshold
       bhxhCty, bhytCty, bhtnCty, totalCty,
       bhxhNld, bhytNld, bhtnNld, totalNld,
       tamUng,
+      fullDayAbsenceDeduction,
       halfDayDeduction,
       otherDeduction: manualFines + attendanceFines,
       finalSalary,
+      lateRecords,
+      advanceRecords,
+      absenceRecords,
     };
   });
 }

@@ -574,16 +574,29 @@ def _add_slip_sheets(wb, employees, month_text):
         htk   = emp.get('hoTroKhac', 0) or 0
         hh    = emp.get('hoaHong', 0) or 0
         ins   = emp.get('insuranceSalary', base) or base
-        bhxh  = round(ins * 0.08)
-        bhyt  = round(ins * 0.015)
-        bhtn  = round(ins * 0.01)
-        half  = emp.get('halfDayDeduction', 0) or 0
+        
+        # BH DN (công ty đóng): 17.5%, 3%, 1%
+        bhxh_cty = emp.get('bhxhCty', 0) or 0
+        bhyt_cty = emp.get('bhytCty', 0) or 0
+        bhtn_cty = emp.get('bhtnCty', 0) or 0
+        total_bh_cty = bhxh_cty + bhyt_cty + bhtn_cty
+        
+        # BH NLD (nhân viên đóng): 8%, 1.5%, 1%
+        bhxh = emp.get('bhxhNld', 0) or round(ins * 0.08)
+        bhyt = emp.get('bhytNld', 0) or round(ins * 0.015)
+        bhtn = emp.get('bhtnNld', 0) or round(ins * 0.01)
+        
+        full_day_abs = emp.get('fullDayAbsenceDeduction', 0) or 0  # Vắng cả ngày
+        half = emp.get('halfDayDeduction', 0) or 0                  # Vắng nửa ngày
         other = emp.get('otherDeduction', 0) or 0
         tu    = emp.get('tamUng', 0) or 0
         wdays = emp.get('workDays', 0) or 0
         total_in  = base + cc + at + htk + hh
         total_bh  = bhxh + bhyt + bhtn
-        total_out = total_bh + half + other + tu
+        # Tổng lương thực tế = tổng thu nhập × ngày công / 21
+        total_salary_tt = round(total_in * wdays / 21) if wdays > 0 else total_in
+        # Tổng trừ = BH NLD + vắng cả ngày + vắng nửa ngày + ứng lương + phạt khác
+        total_out = total_bh + full_day_abs + half + tu + other
         # Lấy thực lĩnh từ backend (đã tính sẵn)
         final = emp.get('finalSalary', 0) or 0
 
@@ -623,19 +636,85 @@ def _add_slip_sheets(wb, employees, month_text):
         ws.row_dimensions[9].height = 16
         ws.row_dimensions[10].height = 16
 
-        # row 11 trong
-        ws.row_dimensions[11].height = 4
+        # ── CHI TIẾT CÁC NGÀY ĐI TRỄ (nếu có) ──
+        late_records = emp.get('lateRecords', [])
+        advance_records = emp.get('advanceRecords', [])
+        absence_records = emp.get('absenceRecords', [])
+        
+        current_row = 11
+        
+        # Chi tiết các ngày vắng cả ngày
+        if absence_records:
+            ws.row_dimensions[current_row].height = 4
+            current_row += 1
+            
+            merge(ws, f'A{current_row}:G{current_row}', 'Chi tiết các ngày vắng không phép (cả ngày)', 
+                  bold=True, size=8, h='left', fill='FFE6E6', bdr=True)  # Màu đỏ nhạt
+            ws.row_dimensions[current_row].height = 14
+            current_row += 1
+            
+            for absence in absence_records:
+                date_str = absence.get('date', '')
+                amount = absence.get('amount', 0)
+                merge(ws, f'A{current_row}:G{current_row}', 
+                      f"{date_str} - Vắng không phép - Trừ: {amount:,.0f}đ (1 ngày)", 
+                      size=8, h='left', bdr=True)
+                ws.row_dimensions[current_row].height = 12
+                current_row += 1
+        
+        if late_records:
+            ws.row_dimensions[current_row].height = 4
+            current_row += 1
+            
+            merge(ws, f'A{current_row}:G{current_row}', 'Chi tiết các ngày đi trễ / nửa ngày công', 
+                  bold=True, size=8, h='left', fill=LT_ORANGE, bdr=True)
+            ws.row_dimensions[current_row].height = 14
+            current_row += 1
+            
+            for late in late_records:
+                date_str = late.get('date', '')
+                amount = late.get('amount', 0)
+                status = late.get('status', '')
+                merge(ws, f'A{current_row}:G{current_row}', 
+                      f"{date_str} - {status} - Trừ: {amount:,.0f}đ", 
+                      size=8, h='left', bdr=True)
+                ws.row_dimensions[current_row].height = 12
+                current_row += 1
 
-        # ── HEADER BANG THU NHAP / KHAU TRU (row 12) ──
-        sc(ws, 'A12', 'STT',               bold=True, size=8, h='center', fill=ORANGE, bdr=True)
-        sc(ws, 'B12', 'Cac Khoan Thu Nhap',bold=True, size=8, h='center', fill=ORANGE, bdr=True)
-        sc(ws, 'C12', '',                  bold=True, size=8, fill=ORANGE, bdr=True)
-        sc(ws, 'D12', 'STT',               bold=True, size=8, h='center', fill=ORANGE, bdr=True)
-        merge(ws, 'E12:F12', 'Cac Khoan Tru Vao Luong', bold=True, size=8, h='center', fill=ORANGE, bdr=True)
-        sc(ws, 'G12', 'So tien',           bold=True, size=8, h='center', fill=ORANGE, bdr=True)
-        ws.row_dimensions[12].height = 16
+        if advance_records:
+            ws.row_dimensions[current_row].height = 4
+            current_row += 1
+            
+            merge(ws, f'A{current_row}:G{current_row}', 'Chi tiết các lần ứng lương', 
+                  bold=True, size=8, h='left', fill=LT_ORANGE, bdr=True)
+            ws.row_dimensions[current_row].height = 14
+            current_row += 1
+            
+            for adv in advance_records:
+                date_str = adv.get('date', '')
+                amount = adv.get('amount', 0)
+                note = adv.get('note', '')
+                note_text = f' - {note}' if note else ''
+                merge(ws, f'A{current_row}:G{current_row}', 
+                      f"{date_str} - {amount:,.0f}đ{note_text}", 
+                      size=8, h='left', bdr=True)
+                ws.row_dimensions[current_row].height = 12
+                current_row += 1
+        
+        # ── HEADER BANG THU NHAP / KHAU TRU (row after details) ──
+        row_header = current_row + 2
+        ws.row_dimensions[current_row].height = 4
+        ws.row_dimensions[current_row + 1].height = 4
+        # ── HEADER BANG THU NHAP / KHAU TRU ──
+        sc(ws, f'A{row_header}', 'STT',               bold=True, size=8, h='center', fill=ORANGE, bdr=True)
+        sc(ws, f'B{row_header}', 'Cac Khoan Thu Nhap',bold=True, size=8, h='center', fill=ORANGE, bdr=True)
+        sc(ws, f'C{row_header}', '',                  bold=True, size=8, fill=ORANGE, bdr=True)
+        sc(ws, f'D{row_header}', 'STT',               bold=True, size=8, h='center', fill=ORANGE, bdr=True)
+        merge(ws, f'E{row_header}:F{row_header}', 'Cac Khoan Tru Vao Luong', bold=True, size=8, h='center', fill=ORANGE, bdr=True)
+        sc(ws, f'G{row_header}', 'So tien',           bold=True, size=8, h='center', fill=ORANGE, bdr=True)
+        ws.row_dimensions[row_header].height = 16
 
-        # ── DATA ROWS (13-20) ──
+        # ── DATA ROWS ──
         def dr(ws, row, s1, l1, v1, s2, l2, v2):
             # Cot A: STT thu nhap
             sc(ws, f'A{row}', s1, size=8, h='center', bdr=True)
@@ -673,78 +752,96 @@ def _add_slip_sheets(wb, employees, month_text):
             c_out.border = bd()
             ws.row_dimensions[row].height = 15
 
-        dr(ws, 13, '1',   'Luong co ban',        base, '1',   'Bao Hiem Bat Buoc',            '............')
-        dr(ws, 14, '2',   'Phu Cap:',             '............', '1,1', 'Bao hiem xa hoi (8%)', bhxh)
-        dr(ws, 15, '2,1', 'Chuyen can',           cc,   '1,2', 'Bao hiem y te (1,5%)',         bhyt)
-        dr(ws, 16, '2,2', 'An trua',              at,   '1,3', 'Bao hiem that nghiep (1%)',    bhtn)
-        dr(ws, 17, '2,3', 'Ho tro khac',          htk,  '2',   'Tong BH NLD dong',             total_bh)
-        dr(ws, 18, '2,4', 'Hoa hong / Thuong',    hh,   '3',   'Tru 1/2 ngay cong',            half)
-        dr(ws, 19, '',    '',                      '',   '4',   'Tam ung',                      tu)
-        dr(ws, 20, '',    '',                      '',   '5',   'Khac (phat + di tre)',         other)
+        # ── CALCULATE DATA ROWS ──
+        start_data_row = row_header + 1
+        dr(ws, start_data_row,     '1',   'Luong co ban',        base, '1',   'Chi phi Bao Hiem (DN)',        '............')
+        dr(ws, start_data_row + 1, '2',   'Phu Cap:',             '............', '1,1', 'BHXH (17,5%)',           bhxh_cty)
+        dr(ws, start_data_row + 2, '2,1', 'Chuyen can',           cc,   '1,2', 'BHYT (3%)',                bhyt_cty)
+        dr(ws, start_data_row + 3, '2,2', 'An trua',              at,   '1,3', 'BHTN (1%)',               bhtn_cty)
+        dr(ws, start_data_row + 4, '2,3', 'Ho tro khac',          htk,  '1,4', 'Tong Chi phi DN',         total_bh_cty)
+        dr(ws, start_data_row + 5, '2,4', 'Hoa hong / Thuong',    hh,   '2',   'Trich vao Luong (NLD)',    '............')
+        dr(ws, start_data_row + 6, '',    '',                      '',   '2,1', 'BHXH (8%)',               bhxh)
+        dr(ws, start_data_row + 7, '',    '',                      '',   '2,2', 'BHYT (1,5%)',             bhyt)
+        dr(ws, start_data_row + 8, '',    '',                      '',   '2,3', 'BHTN (1%)',               bhtn)
+        dr(ws, start_data_row + 9, '',    'Tong Thu Nhap',        total_in, '2,4', 'Tong Trich vao',       total_bh)
+        dr(ws, start_data_row + 10, '',    'Tong Luong TT',        total_salary_tt, '3', 'Vang ca ngay',        full_day_abs)
+        dr(ws, start_data_row + 11, '',    '',                      '',   '3,1', 'Vang 1/2 ngay',          half)
+        dr(ws, start_data_row + 12, '',    '',                      '',   '4',   'Tam ung',                 tu)
+        dr(ws, start_data_row + 13, '',    '',                      '',   '5',   'Khac (phat + di tre)',    other)
 
-        # ── DONG TONG (row 21) ──
-        merge(ws, 'A21:B21', 'Tong Cong', bold=True, size=9, fill=ORANGE, bdr=True)
-        c21 = ws['C21']
-        c21.value = total_in
-        c21.font = Font(name='Arial', bold=True, size=9)
-        c21.alignment = Alignment(horizontal='right', vertical='center')
-        c21.fill = PatternFill("solid", fgColor=ORANGE)
-        c21.border = bd()
-        c21.number_format = '#,##0'
+        # ── DONG TONG ──
+        row_dong_tong = start_data_row + 14
+        merge(ws, f'A{row_dong_tong}:B{row_dong_tong}', 'Tong Cong', bold=True, size=9, fill=ORANGE, bdr=True)
+        c_dt = ws[f'C{row_dong_tong}']
+        c_dt.value = total_in
+        c_dt.font = Font(name='Arial', bold=True, size=9)
+        c_dt.alignment = Alignment(horizontal='right', vertical='center')
+        c_dt.fill = PatternFill("solid", fgColor=ORANGE)
+        c_dt.border = bd()
+        c_dt.number_format = '#,##0'
 
-        merge(ws, 'D21:E21', 'Tong Cong', bold=True, size=9, fill=ORANGE, bdr=True)
-        ws.merge_cells('F21:F21')
-        f21 = ws['F21']
-        f21.fill = PatternFill("solid", fgColor=ORANGE)
-        f21.border = bd()
-        g21 = ws['G21']
-        g21.value = total_out
-        g21.font = Font(name='Arial', bold=True, size=9)
-        g21.alignment = Alignment(horizontal='right', vertical='center')
-        g21.fill = PatternFill("solid", fgColor=ORANGE)
-        g21.border = bd()
-        g21.number_format = '#,##0'
-        ws.row_dimensions[21].height = 16
+        merge(ws, f'D{row_dong_tong}:E{row_dong_tong}', 'Tong Cong', bold=True, size=9, fill=ORANGE, bdr=True)
+        ws.merge_cells(f'F{row_dong_tong}:F{row_dong_tong}')
+        f_dt = ws[f'F{row_dong_tong}']
+        f_dt.fill = PatternFill("solid", fgColor=ORANGE)
+        f_dt.border = bd()
+        g_dt = ws[f'G{row_dong_tong}']
+        g_dt.value = total_out
+        g_dt.font = Font(name='Arial', bold=True, size=9)
+        g_dt.alignment = Alignment(horizontal='right', vertical='center')
+        g_dt.fill = PatternFill("solid", fgColor=ORANGE)
+        g_dt.border = bd()
+        g_dt.number_format = '#,##0'
+        ws.row_dimensions[row_dong_tong].height = 16
 
-        # row 22 trong
-        ws.row_dimensions[22].height = 6
+        # row trong
+        row_sp = row_dong_tong + 1
+        ws.row_dimensions[row_sp].height = 6
 
-        # ── TONG THUC NHAN (row 23) ──
-        ws.merge_cells('A23:E23')
-        a23 = ws['A23']
-        a23.value = 'Tong So Tien Luong Thuc Nhan'
-        a23.font = Font(name='Arial', bold=True, size=11)
-        a23.alignment = Alignment(horizontal='left', vertical='center')
-        a23.border = Border(left=Side(style='medium'), top=Side(style='medium'),
+        # ── TONG THUC NHAN ──
+        row_tong_thuc = row_sp + 1
+        ws.merge_cells(f'A{row_tong_thuc}:E{row_tong_thuc}')
+        a_tt = ws[f'A{row_tong_thuc}']
+        a_tt.value = 'Tong So Tien Luong Thuc Nhan'
+        a_tt.font = Font(name='Arial', bold=True, size=11)
+        a_tt.alignment = Alignment(horizontal='left', vertical='center')
+        a_tt.border = Border(left=Side(style='medium'), top=Side(style='medium'),
                             bottom=Side(style='medium'))
 
-        ws.merge_cells('F23:G23')
-        g23 = ws['F23']
-        g23.value = final
-        g23.font = Font(name='Arial', bold=True, size=12, color=BLUE)
-        g23.alignment = Alignment(horizontal='right', vertical='center')
-        g23.number_format = '#,##0'
-        g23.border = Border(right=Side(style='medium'), top=Side(style='medium'),
+        ws.merge_cells(f'F{row_tong_thuc}:G{row_tong_thuc}')
+        g_tt = ws[f'F{row_tong_thuc}']
+        g_tt.value = final
+        g_tt.font = Font(name='Arial', bold=True, size=12, color=BLUE)
+        g_tt.alignment = Alignment(horizontal='right', vertical='center')
+        g_tt.number_format = '#,##0'
+        g_tt.border = Border(right=Side(style='medium'), top=Side(style='medium'),
                             bottom=Side(style='medium'))
-        ws.row_dimensions[23].height = 20
+        ws.row_dimensions[row_tong_thuc].height = 20
 
-        # row 24 trong
-        ws.row_dimensions[24].height = 6
+        # row trong
+        row_sp2 = row_tong_thuc + 1
+        ws.row_dimensions[row_sp2].height = 6
 
-        # ── BANG CHU (row 25) ──
-        sc(ws, 'A25', 'Bang chu:', bold=True, size=9, bdr=True)
-        merge(ws, 'B25:G25', '', size=9, bdr=True)
-        ws.row_dimensions[25].height = 20
+        # ── BANG CHU ──
+        row_bang_chu = row_sp2 + 1
+        sc(ws, f'A{row_bang_chu}', 'Bang chu:', bold=True, size=9, bdr=True)
+        merge(ws, f'B{row_bang_chu}:G{row_bang_chu}', '', size=9, bdr=True)
+        ws.row_dimensions[row_bang_chu].height = 20
 
-        # rows 26-27 trong
-        ws.row_dimensions[26].height = 8
+        # row trong
+        row_sp3 = row_bang_chu + 1
+        ws.row_dimensions[row_sp3].height = 8
 
-        # ── CHU KY (rows 27-30) ──
-        merge(ws, 'A27:C27', 'Nguoi lap phieu', bold=True, size=9, h='center')
-        merge(ws, 'E27:G27', 'Nguoi nhan tien', bold=True, size=9, h='center')
-        merge(ws, 'A28:C28', '(Ky va ghi ro ho ten)', size=8, h='center', color='666666')
-        merge(ws, 'E28:G28', '(Ky va ghi ro ho ten)', size=8, h='center', color='666666')
-        for r in range(29, 33):
+        # ── CHU KY ──
+        row_chu_ky_header = row_sp3 + 1
+        merge(ws, f'A{row_chu_ky_header}:C{row_chu_ky_header}', 'Nguoi lap phieu', bold=True, size=9, h='center')
+        merge(ws, f'E{row_chu_ky_header}:G{row_chu_ky_header}', 'Nguoi nhan tien', bold=True, size=9, h='center')
+        
+        row_chu_ky_name = row_chu_ky_header + 1
+        merge(ws, f'A{row_chu_ky_name}:C{row_chu_ky_name}', '(Ky va ghi ro ho ten)', size=8, h='center', color='666666')
+        merge(ws, f'E{row_chu_ky_name}:G{row_chu_ky_name}', '(Ky va ghi ro ho ten)', size=8, h='center', color='666666')
+        
+        for r in range(row_chu_ky_name + 1, row_chu_ky_name + 5):
             ws.row_dimensions[r].height = 14
 
         # ── DO RONG COT ──
