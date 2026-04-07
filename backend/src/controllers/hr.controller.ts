@@ -56,6 +56,14 @@ export const downloadSalarySlip = async (req: Request, res: Response) => {
       return d.getMonth() + 1 === parseInt(mm) && d.getFullYear() === parseInt(yyyy);
     });
 
+    // Tách lương: >= 8tr → lương CB = tổng - 2tr, phụ cấp 2tr
+    const totalSalary = employee.baseSalary || 0;
+    const THRESHOLD = 8_000_000;
+    const insuranceSalary = totalSalary >= THRESHOLD ? totalSalary - 2_000_000 : totalSalary;
+    const chuyenCan = totalSalary >= THRESHOLD ? 1_000_000 : 0;
+    const anTrua    = totalSalary >= THRESHOLD ?   500_000 : 0;
+    const hoTroKhac = totalSalary >= THRESHOLD ?   500_000 : 0;
+
     let hoaHong = 0, manualFines = 0, salaryAdvances = 0;
     monthSales.forEach((r) => {
       const amount = Number(r.profit) || 0;
@@ -113,14 +121,6 @@ export const downloadSalarySlip = async (req: Request, res: Response) => {
       amount: Math.round(insuranceSalary / 21),  // 1 ngày lương
       status: r.status,
     }));
-
-    // Tách lương: >= 8tr → lương CB = tổng - 2tr, phụ cấp 2tr
-    const totalSalary = employee.baseSalary || 0;
-    const THRESHOLD = 8_000_000;
-    const insuranceSalary = totalSalary >= THRESHOLD ? totalSalary - 2_000_000 : totalSalary;
-    const chuyenCan = totalSalary >= THRESHOLD ? 1_000_000 : 0;
-    const anTrua    = totalSalary >= THRESHOLD ?   500_000 : 0;
-    const hoTroKhac = totalSalary >= THRESHOLD ?   500_000 : 0;
 
     const bhxh = Math.round(insuranceSalary * 0.08);
     const bhyt = Math.round(insuranceSalary * 0.015);
@@ -363,6 +363,13 @@ function buildEmployeePayrollData(employees: any[], monthYear: string, threshold
         hoaHong += amount;
     });
 
+    // Tính insuranceSalary TRƯỚC khi dùng nó
+    const totalSalaryBrutto = emp.baseSalary || 0;
+    const ins = totalSalaryBrutto >= threshold ? totalSalaryBrutto - 2_000_000 : totalSalaryBrutto;
+    const cc  = totalSalaryBrutto >= threshold ? 1_000_000 : 0;
+    const at  = totalSalaryBrutto >= threshold ?   500_000 : 0;
+    const htk = totalSalaryBrutto >= threshold ?   500_000 : 0;
+
     const attendanceFines = monthAtt.reduce((s: number, r: any) => s + (r.fine || 0), 0);
     const halfDayDeduction = monthAtt.reduce((s: number, r: any) => s + (r.halfDayDeduction || 0), 0);
     const workDays = monthAtt.filter(
@@ -396,9 +403,6 @@ function buildEmployeePayrollData(employees: any[], monthYear: string, threshold
       amount: Math.round(ins / 21),  // 1 ngày lương
       status: r.status,
     }));
-
-    const totalSalaryBrutto = emp.baseSalary || 0;
-    const ins = totalSalaryBrutto >= threshold ? totalSalaryBrutto - 2_000_000 : totalSalaryBrutto;
     
     // Tính trừ lương vắng không phép (1 ngày đầy đủ)
     const fullDayAbsenceDeduction = monthAtt.reduce((s: number, r: any) => {
@@ -407,12 +411,8 @@ function buildEmployeePayrollData(employees: any[], monthYear: string, threshold
       }
       return s;
     }, 0);
-    
     // Tổng trừ lương (cả ngày + nửa ngày)
     const totalAbsenceDeduction = fullDayAbsenceDeduction + halfDayDeduction;
-    const cc  = totalSalaryBrutto >= threshold ? 1_000_000 : 0;
-    const at  = totalSalaryBrutto >= threshold ?   500_000 : 0;
-    const htk = totalSalaryBrutto >= threshold ?   500_000 : 0;
     const totalBonus = cc + at + htk + hoaHong;
     const totalSalary = ins + totalBonus;
 
