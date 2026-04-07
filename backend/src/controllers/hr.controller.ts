@@ -100,6 +100,7 @@ export const downloadSalarySlip = async (req: Request, res: Response) => {
       insuranceSalary,
       workDays,
       workDates,
+      tamUng: salaryAdvances,
       halfDayDeduction,
       otherDeduction: manualFines + attendanceFines,
       finalSalary,

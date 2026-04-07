@@ -584,8 +584,8 @@ def _add_slip_sheets(wb, employees, month_text):
         total_in  = base + cc + at + htk + hh
         total_bh  = bhxh + bhyt + bhtn
         total_out = total_bh + half + other + tu
-        # Thực lĩnh = tổng thu nhập - bảo hiểm NLD - tạm ứng - trừ nửa ngày - phạt (manual + vắng mặt)
-        final = total_in - total_bh - tu - half - other
+        # Lấy thực lĩnh từ backend (đã tính sẵn)
+        final = emp.get('finalSalary', 0) or 0
 
         # ── HEADER CONG TY (rows 1-3) ──
         merge(ws, 'A1:G1', 'Cong ty TNHH Fly Visa', bold=True, size=11)
