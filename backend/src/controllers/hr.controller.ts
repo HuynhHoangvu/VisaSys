@@ -945,17 +945,22 @@ export const updateLeaveRequestStatus = async (req: Request, res: Response) => {
     }
 
     if (status === "Đã duyệt" && leaveRequest.status !== "Đã duyệt") {
-      if (leaveRequest.type === "Xin phép nghỉ") {
-        const start = new Date(leaveRequest.startDate);
-        const end = new Date(leaveRequest.endDate);
-
-        const diffTime = Math.abs(end.getTime() - start.getTime());
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-
+      if (leaveRequest.type === "Xin phép nghỉ" || leaveRequest.type === "Nửa ngày") {
         const baseSalary = leaveRequest.employee.baseSalary;
         const standardWorkDays = 22;
         const dailyWage = Math.round((baseSalary || 0) / standardWorkDays);
-        const totalDeduction = dailyWage * diffDays;
+
+        let diffDays: number;
+        if (leaveRequest.type === "Nửa ngày") {
+          diffDays = 0.5;
+        } else {
+          const start = new Date(leaveRequest.startDate);
+          const end = new Date(leaveRequest.endDate);
+          const diffTime = Math.abs(end.getTime() - start.getTime());
+          diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+        }
+
+        const totalDeduction = Math.round(dailyWage * diffDays);
 
         await prisma.salesRecord.create({
           data: {

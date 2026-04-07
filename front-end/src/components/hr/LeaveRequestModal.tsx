@@ -102,9 +102,10 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({
               onChange={(e) => setType(e.target.value)}
             >
               <option value="">-- Chọn loại --</option>
-              <option value="Vô trễ">Vô trễ (Đi muộn)</option>{" "}
+              <option value="Vô trễ">Vô trễ (Đi muộn)</option>
               <option value="Về sớm">Về Sớm</option>
-              <option value="Xin phép nghỉ">Xin phép nghỉ</option>
+              <option value="Nửa ngày">Nửa ngày (0.5 ngày)</option>
+              <option value="Xin phép nghỉ">Xin phép nghỉ (nguyên ngày)</option>
             </Select>
           </div>
 
