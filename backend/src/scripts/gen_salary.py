@@ -523,7 +523,7 @@ def generate_summary(data, output_path):
 #  HỖ TRỢ: Thêm sheet chi tiết lịch sử
 # ══════════════════════════════════════════════════════════════
 def _add_history_sheet(wb, employees, month_text):
-    """Thêm sheet chi tiết lịch sử (vắng, đi trễ, phạt, ứng lương) cho tất cả nhân viên."""
+    """Thêm sheet chi tiết lịch sử (thưởng + trừ) cho tất cả nhân viên."""
     from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
     
     ws = wb.create_sheet("Chi tiet lich su")
@@ -531,6 +531,7 @@ def _add_history_sheet(wb, employees, month_text):
     ORANGE      = "FFA500"
     LGRAY       = "D3D3D3"
     RED_LIGHT   = "FFE6E6"
+    GREEN_LIGHT = "E6F4E6"  # Xanh nhạt cho khoản cộng
     
     _thin = Side(style='thin')
     def bd(left=_thin, right=_thin, top=_thin, bottom=_thin):
@@ -551,9 +552,10 @@ def _add_history_sheet(wb, employees, month_text):
     sc(ws[f'B{r}'], 'Ma NV', bold=True, fill=ORANGE)
     sc(ws[f'C{r}'], 'Ho va ten', bold=True, fill=ORANGE)
     sc(ws[f'D{r}'], 'Ngay', bold=True, fill=ORANGE)
-    sc(ws[f'E{r}'], 'Loai', bold=True, fill=ORANGE)
-    sc(ws[f'F{r}'], 'Chi tiet', bold=True, fill=ORANGE)
-    sc(ws[f'G{r}'], 'So tien', bold=True, fill=ORANGE)
+    sc(ws[f'E{r}'], 'Loai giao dich', bold=True, fill=ORANGE)
+    sc(ws[f'F{r}'], 'Kiểu', bold=True, fill=ORANGE)
+    sc(ws[f'G{r}'], 'Chi tiet', bold=True, fill=ORANGE)
+    sc(ws[f'H{r}'], 'So tien', bold=True, fill=ORANGE)
     
     ws.row_dimensions[r].height = 16
     
@@ -565,17 +567,36 @@ def _add_history_sheet(wb, employees, month_text):
         emp_code = emp.get('employeeCode', '')
         emp_name = emp.get('name', '')
         
+        # ── KHOẢN CỘNG: HoaHong ──
+        hh = emp.get('hoaHong', 0) or 0
+        if hh > 0:
+            stt += 1
+            sc(ws[f'A{row}'], stt, size=8, h='center', fill=GREEN_LIGHT)
+            sc(ws[f'B{row}'], emp_code, size=8, h='center', fill=GREEN_LIGHT)
+            sc(ws[f'C{row}'], emp_name, size=8, h='left', fill=GREEN_LIGHT)
+            sc(ws[f'D{row}'], '', size=8, h='center', fill=GREEN_LIGHT)
+            sc(ws[f'E{row}'], 'Hoa hồng/Thưởng', size=8, h='left', fill=GREEN_LIGHT, bold=True)
+            sc(ws[f'F{row}'], 'CỘNG', size=8, h='center', fill=GREEN_LIGHT, bold=True)
+            sc(ws[f'G{row}'], 'Hoàn thành KPI/Doanh số', size=8, h='left', fill=GREEN_LIGHT)
+            sc(ws[f'H{row}'], hh, size=8, h='right', fill=GREEN_LIGHT)
+            ws[f'H{row}'].number_format = '#,##0'
+            ws.row_dimensions[row].height = 12
+            row += 1
+        
+        # ── KHOẢN TRỪ ──
+        
         # Vắng không phép
         for record in emp.get('absenceRecords', []):
             stt += 1
-            sc(ws[f'A{row}'], stt, size=8, h='center')
-            sc(ws[f'B{row}'], emp_code, size=8, h='center')
+            sc(ws[f'A{row}'], stt, size=8, h='center', fill=RED_LIGHT)
+            sc(ws[f'B{row}'], emp_code, size=8, h='center', fill=RED_LIGHT)
             sc(ws[f'C{row}'], emp_name, size=8, h='left', fill=RED_LIGHT)
             sc(ws[f'D{row}'], record.get('date', ''), size=8, h='center', fill=RED_LIGHT)
             sc(ws[f'E{row}'], 'Vắng cả ngày', size=8, h='left', fill=RED_LIGHT)
-            sc(ws[f'F{row}'], record.get('status', 'Vắng không phép'), size=8, h='left', fill=RED_LIGHT)
-            sc(ws[f'G{row}'], record.get('amount', 0), size=8, h='right')
-            ws[f'G{row}'].number_format = '#,##0'
+            sc(ws[f'F{row}'], 'TRỪ', size=8, h='center', fill=RED_LIGHT, bold=True)
+            sc(ws[f'G{row}'], record.get('status', 'Vắng không phép'), size=8, h='left', fill=RED_LIGHT)
+            sc(ws[f'H{row}'], record.get('amount', 0), size=8, h='right', fill=RED_LIGHT)
+            ws[f'H{row}'].number_format = '#,##0'
             ws.row_dimensions[row].height = 12
             row += 1
         
@@ -587,9 +608,10 @@ def _add_history_sheet(wb, employees, month_text):
             sc(ws[f'C{row}'], emp_name, size=8, h='left')
             sc(ws[f'D{row}'], record.get('date', ''), size=8, h='center')
             sc(ws[f'E{row}'], 'Phạt đi trễ', size=8, h='left')
-            sc(ws[f'F{row}'], record.get('status', 'Đi muộn'), size=8, h='left')
-            sc(ws[f'G{row}'], record.get('amount', 0), size=8, h='right')
-            ws[f'G{row}'].number_format = '#,##0'
+            sc(ws[f'F{row}'], 'TRỪ', size=8, h='center', bold=True)
+            sc(ws[f'G{row}'], record.get('status', 'Đi muộn'), size=8, h='left')
+            sc(ws[f'H{row}'], record.get('amount', 0), size=8, h='right')
+            ws[f'H{row}'].number_format = '#,##0'
             ws.row_dimensions[row].height = 12
             row += 1
         
@@ -601,9 +623,26 @@ def _add_history_sheet(wb, employees, month_text):
             sc(ws[f'C{row}'], emp_name, size=8, h='left')
             sc(ws[f'D{row}'], record.get('date', ''), size=8, h='center')
             sc(ws[f'E{row}'], 'Nửa ngày công', size=8, h='left')
-            sc(ws[f'F{row}'], record.get('status', 'Đi trễ/Về sớm'), size=8, h='left')
-            sc(ws[f'G{row}'], record.get('amount', 0), size=8, h='right')
-            ws[f'G{row}'].number_format = '#,##0'
+            sc(ws[f'F{row}'], 'TRỪ', size=8, h='center', bold=True)
+            sc(ws[f'G{row}'], record.get('status', 'Đi trễ/Về sớm'), size=8, h='left')
+            sc(ws[f'H{row}'], record.get('amount', 0), size=8, h='right')
+            ws[f'H{row}'].number_format = '#,##0'
+            ws.row_dimensions[row].height = 12
+            row += 1
+        
+        # Phạt khác
+        mf = emp.get('manualFines', 0) or 0
+        if mf > 0:
+            stt += 1
+            sc(ws[f'A{row}'], stt, size=8, h='center')
+            sc(ws[f'B{row}'], emp_code, size=8, h='center')
+            sc(ws[f'C{row}'], emp_name, size=8, h='left')
+            sc(ws[f'D{row}'], '', size=8, h='center')
+            sc(ws[f'E{row}'], 'Phạt khác', size=8, h='left', bold=True)
+            sc(ws[f'F{row}'], 'TRỪ', size=8, h='center', bold=True)
+            sc(ws[f'G{row}'], 'Phạt theo quy định công ty', size=8, h='left')
+            sc(ws[f'H{row}'], mf, size=8, h='right')
+            ws[f'H{row}'].number_format = '#,##0'
             ws.row_dimensions[row].height = 12
             row += 1
         
@@ -615,9 +654,10 @@ def _add_history_sheet(wb, employees, month_text):
             sc(ws[f'C{row}'], emp_name, size=8, h='left')
             sc(ws[f'D{row}'], record.get('date', ''), size=8, h='center')
             sc(ws[f'E{row}'], 'Ứng lương', size=8, h='left')
-            sc(ws[f'F{row}'], record.get('note', ''), size=8, h='left')
-            sc(ws[f'G{row}'], record.get('amount', 0), size=8, h='right')
-            ws[f'G{row}'].number_format = '#,##0'
+            sc(ws[f'F{row}'], 'TRỪ', size=8, h='center', bold=True)
+            sc(ws[f'G{row}'], record.get('note', ''), size=8, h='left')
+            sc(ws[f'H{row}'], record.get('amount', 0), size=8, h='right')
+            ws[f'H{row}'].number_format = '#,##0'
             ws.row_dimensions[row].height = 12
             row += 1
     
@@ -626,9 +666,10 @@ def _add_history_sheet(wb, employees, month_text):
     ws.column_dimensions['B'].width = 10
     ws.column_dimensions['C'].width = 20
     ws.column_dimensions['D'].width = 12
-    ws.column_dimensions['E'].width = 15
-    ws.column_dimensions['F'].width = 25
-    ws.column_dimensions['G'].width = 12
+    ws.column_dimensions['E'].width = 18
+    ws.column_dimensions['F'].width = 8
+    ws.column_dimensions['G'].width = 30
+    ws.column_dimensions['H'].width = 12
 
 
 # ══════════════════════════════════════════════════════════════
