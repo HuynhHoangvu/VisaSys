@@ -350,8 +350,6 @@ def generate_summary(data, output_path):
         cp("Luong co ban", bold=True),
         cp("Phu cap", bold=True), cp(""), cp(""), cp(""),   # 4 cot phu cap
         cp("Tong thu nhap", bold=True),
-        cp("Ngay cong TT", bold=True),
-        cp("Tong luong TT", bold=True),
         cp("Luong dong BH", bold=True),
         cp("Cac khoan trich chi phi DN", bold=True), cp(""), cp(""), cp(""),  # 4 cot cty
         cp("Cac khoan trich vao luong", bold=True), cp(""), cp(""), cp(""),  # 4 cot NLD
@@ -373,7 +371,7 @@ def generate_summary(data, output_path):
         cp(""), cp(""), cp(""), cp(""),
     ]
 
-    # Col widths — 24 cot, tong = 0.970W (< 1.0 de tranh tran)
+    # Col widths — 22 cot, tong = 0.970W (< 1.0 de tranh tran)
     cws = [
         W*0.020,  # STT
         W*0.100,  # Ho ten
@@ -384,8 +382,6 @@ def generate_summary(data, output_path):
         W*0.035,  # Ho tro khac
         W*0.038,  # Hoa hong
         W*0.055,  # Tong thu nhap
-        W*0.028,  # Ngay cong
-        W*0.050,  # Tong luong TT
         W*0.045,  # Luong dong BH
         W*0.038,  # BHXH cty (17.5%)
         W*0.030,  # BHYT cty (3%)
@@ -433,7 +429,7 @@ def generate_summary(data, output_path):
             p(emp.get('name', ''), size=fs),
             p(emp.get('role', ''), size=fs, align=1),
             cv(base), cv(cc), cv(at), cv(htk), cv(hh),
-            cv(tong_tn), cp(str(ngay), align=1), cv(luong_tt),
+            cv(tong_tn),
             cv(ins),
             cv(bx_c), cv(by_c), cv(bt_c), cv(t_cty),
             cv(bx_n), cv(by_n), cv(bt_n), cv(t_nld),
@@ -449,7 +445,7 @@ def generate_summary(data, output_path):
     total_row = [
         cp("TONG", bold=True, align=1), cp(""), cp(""),
         tv(tot_base), tv(tot_cc), tv(tot_at), tv(tot_htk), tv(tot_hh),
-        tv(tot_thu), tv(tot_ngay), tv(tot_luong_tt),
+        tv(tot_thu),
         tv(tot_ins),
         tv(tot_bhxh_cty), tv(tot_bhyt_cty), tv(tot_bhtn_cty), tv(tot_cty),
         tv(tot_bhxh_nld), tv(tot_bhyt_nld), tv(tot_bhtn_nld), tv(tot_nld),
@@ -466,22 +462,20 @@ def generate_summary(data, output_path):
         # Khung chung
         ('BOX', (0, 0), (-1, -1), 1, colors.black),
         ('GRID', (0, 0), (-1, -1), 0.3, colors.grey),
-        # Merge header hang 1: STT, Ho ten, Chuc vu, Luong CB, Tong TN, Ngay cong, Tong luong TT, Luong BH
+        # Merge header hang 1: STT, Ho ten, Chuc vu, Luong CB, Tong TN, Luong BH
         ('SPAN', (0, 0), (0, 1)),   # STT
         ('SPAN', (1, 0), (1, 1)),   # Ho ten
         ('SPAN', (2, 0), (2, 1)),   # Chuc vu
         ('SPAN', (3, 0), (3, 1)),   # Luong CB
         ('SPAN', (4, 0), (7, 0)),   # Phu cap (4 cot)
         ('SPAN', (8, 0), (8, 1)),   # Tong thu nhap
-        ('SPAN', (9, 0), (9, 1)),   # Ngay cong
-        ('SPAN', (10, 0), (10, 1)), # Tong luong TT
-        ('SPAN', (11, 0), (11, 1)), # Luong dong BH
-        ('SPAN', (12, 0), (15, 0)), # Chi phi DN (4 cot)
-        ('SPAN', (16, 0), (19, 0)), # Trich vao luong (4 cot)
-        ('SPAN', (20, 0), (20, 1)), # Tam ung
-        ('SPAN', (21, 0), (21, 1)), # Tru di tre
-        ('SPAN', (22, 0), (22, 1)), # Thuc linh
-        ('SPAN', (23, 0), (23, 1)), # Ghi chu
+        ('SPAN', (9, 0), (9, 1)),   # Luong dong BH
+        ('SPAN', (10, 0), (13, 0)), # Chi phi DN (4 cot)
+        ('SPAN', (14, 0), (17, 0)), # Trich vao luong (4 cot)
+        ('SPAN', (18, 0), (18, 1)), # Tam ung
+        ('SPAN', (19, 0), (19, 1)), # Tru di tre
+        ('SPAN', (20, 0), (20, 1)), # Thuc linh
+        ('SPAN', (21, 0), (21, 1)), # Ghi chu
         # Merge dong TONG: STT + Ho ten + Chuc vu
         ('SPAN', (0, n_data - 1), (2, n_data - 1)),
         # Mau header
@@ -588,13 +582,14 @@ def _add_slip_sheets(wb, employees, month_text):
         
         full_day_abs = emp.get('fullDayAbsenceDeduction', 0) or 0  # Vắng cả ngày
         half = emp.get('halfDayDeduction', 0) or 0                  # Vắng nửa ngày
-        other = emp.get('otherDeduction', 0) or 0
+        att_fine = emp.get('attendanceFines', 0) or 0              # Phạt đi trễ
+        manual_fine = emp.get('manualFines', 0) or 0              # Phạt khác
         tu    = emp.get('tamUng', 0) or 0
         wdays = emp.get('workDays', 0) or 0
         total_in  = base + cc + at + htk + hh
         total_bh  = bhxh + bhyt + bhtn
-        # Tổng trừ = BH NLD + vắng cả ngày + vắng nửa ngày + ứng lương + phạt khác
-        total_out = total_bh + full_day_abs + half + tu + other
+        # Tổng trừ = BH NLD + vắng cả ngày + vắng nửa ngày + ứng lương + phạt
+        total_out = total_bh + full_day_abs + half + tu + att_fine + manual_fine
         # Lấy thực lĩnh từ backend (đã tính sẵn)
         final = emp.get('finalSalary', 0) or 0
 
@@ -638,6 +633,7 @@ def _add_slip_sheets(wb, employees, month_text):
         late_records = emp.get('lateRecords', [])
         advance_records = emp.get('advanceRecords', [])
         absence_records = emp.get('absenceRecords', [])
+        fine_records = emp.get('fineRecords', [])
         
         current_row = 11
         
@@ -656,6 +652,26 @@ def _add_slip_sheets(wb, employees, month_text):
                 amount = absence.get('amount', 0)
                 merge(ws, f'A{current_row}:G{current_row}', 
                       f"{date_str} - Vắng không phép - Trừ: {amount:,.0f}đ (1 ngày)", 
+                      size=8, h='left', bdr=True)
+                ws.row_dimensions[current_row].height = 12
+                current_row += 1
+        
+        # Chi tiết phạt đi trễ
+        if fine_records:
+            ws.row_dimensions[current_row].height = 4
+            current_row += 1
+            
+            merge(ws, f'A{current_row}:G{current_row}', 'Chi tiết phạt đi trễ', 
+                  bold=True, size=8, h='left', fill='FFF4E6', bdr=True)  # Màu cam nhạt
+            ws.row_dimensions[current_row].height = 14
+            current_row += 1
+            
+            for fine in fine_records:
+                date_str = fine.get('date', '')
+                amount = fine.get('amount', 0)
+                status = fine.get('status', '')
+                merge(ws, f'A{current_row}:G{current_row}', 
+                      f"{date_str} - {status} - Phạt: {amount:,.0f}đ", 
                       size=8, h='left', bdr=True)
                 ws.row_dimensions[current_row].height = 12
                 current_row += 1
@@ -764,11 +780,12 @@ def _add_slip_sheets(wb, employees, month_text):
         dr(ws, start_data_row + 9, '',    'Tong Thu Nhap',        total_in, '2,4', 'Tong Trich vao',       total_bh)
         dr(ws, start_data_row + 10, '',    '',                      '',   '3', 'Vang ca ngay',        full_day_abs)
         dr(ws, start_data_row + 11, '',    '',                      '',   '3,1', 'Vang 1/2 ngay',          half)
-        dr(ws, start_data_row + 12, '',    '',                      '',   '4',   'Tam ung',                 tu)
-        dr(ws, start_data_row + 13, '',    '',                      '',   '5',   'Khac (phat + di tre)',    other)
+        dr(ws, start_data_row + 12, '',    '',                      '',   '3,2', 'Phat di tre',            att_fine)
+        dr(ws, start_data_row + 13, '',    '',                      '',   '3,3', 'Phat khac',              manual_fine)
+        dr(ws, start_data_row + 14, '',    '',                      '',   '4',   'Tam ung',                 tu)
 
         # ── DONG TONG ──
-        row_dong_tong = start_data_row + 14
+        row_dong_tong = start_data_row + 15
         merge(ws, f'A{row_dong_tong}:B{row_dong_tong}', 'Tong Cong', bold=True, size=9, fill=ORANGE, bdr=True)
         c_dt = ws[f'C{row_dong_tong}']
         c_dt.value = total_in
@@ -934,7 +951,7 @@ def generate_summary_excel(data, output_path):
     # Merge header row 1
     for rng in ['A8:A9','B8:B9','C8:C9','D8:D9',
                 'E8:H8',                           # Phu cap
-                'I8:I9','J8:J9','K8:K9','L8:L9',
+                'I8:I9','L8:L9',
                 'M8:P8',                           # Chi phi DN
                 'Q8:T8',                           # Trich vao luong
                 'U8:U9','V8:V9','W8:W9','X8:X9']:
@@ -943,7 +960,7 @@ def generate_summary_excel(data, output_path):
     h1_vals = {
         'A': 'STT', 'B': 'Ho va ten', 'C': 'Chuc vu', 'D': 'Luong co ban',
         'E': 'Phu cap',
-        'I': 'Tong thu nhap', 'J': 'Ngay cong TT', 'K': 'Tong luong TT',
+        'I': 'Tong thu nhap',
         'L': 'Luong dong BH',
         'M': 'Cac khoan trich chi phi DN',
         'Q': 'Cac khoan trich vao luong',
@@ -992,9 +1009,9 @@ def generate_summary_excel(data, output_path):
             'F': at_ if at_ else None,
             'G': htk if htk else None,
             'H': hh  if hh  else None,
-            'J': ngay,  # Luôn gán giá trị ngày công (kể cả 0)
             'U': tu,    # Luôn gán giá trị tạm ứng
             'V': hd,    # Luôn gán giá trị trừ nửa ngày
+            'W': emp.get('finalSalary', 0) or 0,  # Thuc linh (từ backend)
             'X': ngay,
         }
         for c, val in raw.items():
@@ -1003,7 +1020,7 @@ def generate_summary_excel(data, output_path):
             cell.fill = PatternFill("solid", fgColor=fill_c)
             cell.border = bd()
             cell.font = Font(name='Arial', size=8)
-            if c in ('A', 'J', 'X'):
+            if c in ('A', 'X'):
                 cell.alignment = Alignment(horizontal='center', vertical='center')
             elif c in ('B', 'C'):
                 cell.alignment = Alignment(horizontal='left', vertical='center')
@@ -1015,7 +1032,6 @@ def generate_summary_excel(data, output_path):
         # Cong thuc Excel tu tinh
         formulas = {
             'I': f'=D{r}+IF(E{r}="",0,E{r})+IF(F{r}="",0,F{r})+IF(G{r}="",0,G{r})+IF(H{r}="",0,H{r})',
-            'K': f'=IF(J{r}=0,0,ROUND(I{r}*J{r}/21,0))',
             'L': f'=D{r}',
             'M': f'=ROUND(L{r}*17.5%,0)',
             'N': f'=ROUND(L{r}*3%,0)',
@@ -1025,7 +1041,6 @@ def generate_summary_excel(data, output_path):
             'R': f'=ROUND(L{r}*1.5%,0)',
             'S': f'=ROUND(L{r}*1%,0)',
             'T': f'=Q{r}+R{r}+S{r}',
-            'W': f'=K{r}-T{r}-IF(U{r}="",0,U{r})-IF(V{r}="",0,V{r})',
         }
         for c, formula in formulas.items():
             cell = ws[f'{c}{r}']

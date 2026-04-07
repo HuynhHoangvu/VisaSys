@@ -93,6 +93,13 @@ export const downloadSalarySlip = async (req: Request, res: Response) => {
       status: r.status,
     }));
     
+    // Chi tiết phạt đi trễ (fine > 0)
+    const fineRecords = monthAttendance.filter((r) => (r.fine || 0) > 0).map((r) => ({
+      date: r.date,
+      amount: r.fine,
+      status: r.status,
+    }));
+    
     // Chi tiết các lần ứng lương (tạm ứng)
     const advanceRecords = monthSales.filter((r) => r.service === "Tạm ứng").map((r) => ({
       date: r.createdAt ? new Date(r.createdAt).toLocaleDateString('vi-VN') : '',
@@ -140,7 +147,8 @@ export const downloadSalarySlip = async (req: Request, res: Response) => {
       tamUng: salaryAdvances,
       fullDayAbsenceDeduction,
       halfDayDeduction,
-      otherDeduction: manualFines + attendanceFines,
+      attendanceFines,
+      manualFines,
       bhxhCty,
       bhytCty,
       bhtnCty,
@@ -149,6 +157,7 @@ export const downloadSalarySlip = async (req: Request, res: Response) => {
       bhtnNld: bhtn,
       finalSalary,
       lateRecords,
+      fineRecords,
       advanceRecords,
       absenceRecords,
     };
@@ -367,6 +376,13 @@ function buildEmployeePayrollData(employees: any[], monthYear: string, threshold
       status: r.status,
     }));
     
+    // Chi tiết phạt đi trễ (fine > 0)
+    const fineRecords = monthAtt.filter((r: any) => (r.fine || 0) > 0).map((r: any) => ({
+      date: r.date,
+      amount: r.fine,
+      status: r.status,
+    }));
+    
     // Chi tiết các lần ứng lương (tạm ứng)
     const advanceRecords = monthSales.filter((r: any) => r.service === "Tạm ứng").map((r: any) => ({
       date: r.createdAt ? new Date(r.createdAt).toLocaleDateString('vi-VN') : '',
@@ -429,9 +445,11 @@ function buildEmployeePayrollData(employees: any[], monthYear: string, threshold
       tamUng,
       fullDayAbsenceDeduction,
       halfDayDeduction,
-      otherDeduction: manualFines + attendanceFines,
+      attendanceFines,
+      manualFines,
       finalSalary,
       lateRecords,
+      fineRecords,
       advanceRecords,
       absenceRecords,
     };
