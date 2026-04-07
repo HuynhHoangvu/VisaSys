@@ -580,11 +580,12 @@ def _add_slip_sheets(wb, employees, month_text):
         half  = emp.get('halfDayDeduction', 0) or 0
         other = emp.get('otherDeduction', 0) or 0
         tu    = emp.get('tamUng', 0) or 0
-        final = emp.get('finalSalary', 0) or 0
         wdays = emp.get('workDays', 0) or 0
         total_in  = base + cc + at + htk + hh
         total_bh  = bhxh + bhyt + bhtn
         total_out = total_bh + half + other + tu
+        # Thực lĩnh = tổng thu nhập - bảo hiểm NLD - tạm ứng - trừ nửa ngày - phạt (manual + vắng mặt)
+        final = total_in - total_bh - tu - half - other
 
         # ── HEADER CONG TY (rows 1-3) ──
         merge(ws, 'A1:G1', 'Cong ty TNHH Fly Visa', bold=True, size=11)
@@ -642,28 +643,34 @@ def _add_slip_sheets(wb, employees, month_text):
             sc(ws, f'B{row}', l1, size=8, bdr=True)
             # Cot C: Gia tri thu nhap
             c_in = ws[f'C{row}']
-            c_in.value = v1 if (v1 != '' and v1 != 0) else None
-            c_in.font = Font(name='Arial', size=8)
-            c_in.alignment = Alignment(horizontal='right', vertical='center')
-            c_in.border = bd()
-            if isinstance(v1, (int, float)) and v1:
+            # Luôn hiển thị giá trị, kể cả khi là 0
+            if isinstance(v1, (int, float)):
+                c_in.value = v1
                 c_in.number_format = '#,##0'
             elif isinstance(v1, str) and v1:
                 c_in.value = v1
+            else:
+                c_in.value = None
+            c_in.font = Font(name='Arial', size=8)
+            c_in.alignment = Alignment(horizontal='right', vertical='center')
+            c_in.border = bd()
             # Cot D: STT khau tru
             sc(ws, f'D{row}', s2, size=8, h='center', bdr=True)
             # Cot E+F merge: Ten khoan khau tru
             merge(ws, f'E{row}:F{row}', l2, size=8, bdr=True, wrap=True)
             # Cot G: Gia tri khau tru
             c_out = ws[f'G{row}']
-            c_out.value = v2 if (v2 != '' and v2 != 0) else None
-            c_out.font = Font(name='Arial', size=8)
-            c_out.alignment = Alignment(horizontal='right', vertical='center')
-            c_out.border = bd()
-            if isinstance(v2, (int, float)) and v2:
+            # Luôn hiển thị giá trị, kể cả khi là 0 (để rõ: không trừ gì)
+            if isinstance(v2, (int, float)):
+                c_out.value = v2
                 c_out.number_format = '#,##0'
             elif isinstance(v2, str) and v2:
                 c_out.value = v2
+            else:
+                c_out.value = None
+            c_out.font = Font(name='Arial', size=8)
+            c_out.alignment = Alignment(horizontal='right', vertical='center')
+            c_out.border = bd()
             ws.row_dimensions[row].height = 15
 
         dr(ws, 13, '1',   'Luong co ban',        base, '1',   'Bao Hiem Bat Buoc',            '............')
@@ -671,7 +678,7 @@ def _add_slip_sheets(wb, employees, month_text):
         dr(ws, 15, '2,1', 'Chuyen can',           cc,   '1,2', 'Bao hiem y te (1,5%)',         bhyt)
         dr(ws, 16, '2,2', 'An trua',              at,   '1,3', 'Bao hiem that nghiep (1%)',    bhtn)
         dr(ws, 17, '2,3', 'Ho tro khac',          htk,  '2',   'Tong BH NLD dong',             total_bh)
-        dr(ws, 18, '2,4', 'Hoa hong / Thuong',    hh,   '3',   '1/2 ngay cong',                half)
+        dr(ws, 18, '2,4', 'Hoa hong / Thuong',    hh,   '3',   'Tru 1/2 ngay cong',            half)
         dr(ws, 19, '',    '',                      '',   '4',   'Tam ung',                      tu)
         dr(ws, 20, '',    '',                      '',   '5',   'Khac (phat + di tre)',         other)
 
