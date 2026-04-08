@@ -157,9 +157,18 @@ model SalaryHistory {
   totalDeduction  Float    // Tổng tiền phạt + đi muộn + tạm ứng
   finalSalary     Float    // Tiền lương thực nhận cuối cùng
 
+  // Breakdown chi tiết để hiển thị lên bảng lịch sử
+  hoaHong                 Float @default(0)
+  tamUng                  Float @default(0)
+  manualFines             Float @default(0)
+  attendanceFines         Float @default(0)
+  halfDayDeduction        Float @default(0)
+  fullDayAbsenceDeduction Float @default(0)
+  workDays                Int   @default(0)
+  workDates               String[] @default([]) // Danh sách ngày đi làm: ["01/02/2026", ...]
+
   employeeId      String
   employee        Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-
   createdAt       DateTime @default(now())
 }
 model LeaveRequest {

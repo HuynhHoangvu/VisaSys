@@ -6,6 +6,7 @@
     "target": "ES2023",
     "strict": false,
     "esModuleInterop": true,
-    "noImplicitAny": false
+    "noImplicitAny": false,
+    "lib": ["ESNext", "DOM"]
   }
 }

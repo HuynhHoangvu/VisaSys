@@ -237,6 +237,14 @@ export const SalaryHistoryScalarFieldEnum = {
   totalBonus: 'totalBonus',
   totalDeduction: 'totalDeduction',
   finalSalary: 'finalSalary',
+  hoaHong: 'hoaHong',
+  tamUng: 'tamUng',
+  manualFines: 'manualFines',
+  attendanceFines: 'attendanceFines',
+  halfDayDeduction: 'halfDayDeduction',
+  fullDayAbsenceDeduction: 'fullDayAbsenceDeduction',
+  workDays: 'workDays',
+  workDates: 'workDates',
   employeeId: 'employeeId',
   createdAt: 'createdAt'
 } as const

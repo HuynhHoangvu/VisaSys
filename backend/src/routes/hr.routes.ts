@@ -16,15 +16,18 @@ import {
   updateLeaveRequestStatus, 
   updateEmployee, 
   penalizeForgotCheckout, 
-  checkOutEmployee, 
-  downloadSalarySlip, 
-  downloadSalarySummary, 
+  checkOutEmployee,
+  getLeaveRequestsByEmployee, 
+  
+} from "../controllers/hr.controller.js";
+import {
+  downloadSalarySlip,
+  downloadSalarySummary,
   downloadSalarySummaryExcel,
   downloadSalarySlipsExcel,
-  getLeaveRequestsByEmployee,
   testSalaryCalculation,
   getSalaryBreakdown
-} from "../controllers/hr.controller.js";
+} from "../controllers/salarySlip.controller.js";
 
 const router = Router();
 

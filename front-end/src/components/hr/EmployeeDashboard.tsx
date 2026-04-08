@@ -35,7 +35,9 @@ interface EmployeeDashboardProps {
   currentUser: AuthUser | null;
 }
 
-const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ currentUser }) => {
+const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
+  currentUser,
+}) => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [selectedEmpId, setSelectedEmpId] = useState<string | null>(null);
@@ -159,7 +161,7 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ currentUser }) =>
     const currentTimeStr = now.toLocaleTimeString("vi-VN", {
       hour: "2-digit",
       minute: "2-digit",
-    });
+    } as Intl.DateTimeFormatOptions);
     const isLate = now.getHours() * 60 + now.getMinutes() > 520;
     const status: AttendanceStatus = isLate ? "Đi muộn" : "Đúng giờ";
     const fine = isLate
@@ -270,6 +272,7 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ currentUser }) =>
       alert("Lỗi khi cập nhật bộ phận!" + error);
     }
   };
+
   // --- TẢI BẢNG LƯƠNG TỔNG EXCEL ---
   const handleDownloadSummaryExcel = async (monthYear: string) => {
     try {
@@ -288,6 +291,7 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ currentUser }) =>
       alert("Lỗi tải bảng lương tổng Excel: " + error);
     }
   };
+
   const handleDeleteDepartment = async (id: string) => {
     if (!canDeletePersonnel)
       return alert("Chỉ Giám đốc mới có quyền xóa phòng ban!");
@@ -312,23 +316,58 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ currentUser }) =>
   const [salaryHistories, setSalaryHistories] = useState<SalaryHistory[]>([]);
   const [expandedMonths, setExpandedMonths] = useState<string[]>([]);
   type EmployeeBreakdown = {
-    name: string; employeeCode: string; role: string;
-    hoaHong: number; tamUng: number; manualFines: number;
-    attendanceFines: number; halfDayDeduction: number; fullDayAbsenceDeduction: number;
-    totalBonus: number; finalSalary: number;
+    name: string;
+    employeeCode: string;
+    role: string;
+    hoaHong: number;
+    tamUng: number;
+    manualFines: number;
+    attendanceFines: number;
+    halfDayDeduction: number;
+    fullDayAbsenceDeduction: number;
+    totalBonus: number;
+    finalSalary: number;
+    workDays: number; // ĐÃ THÊM
+    workDates: string[]; // ĐÃ THÊM
   };
-  const [breakdownData, setBreakdownData] = useState<Record<string, EmployeeBreakdown[]>>({});
+  const [breakdownData, setBreakdownData] = useState<
+    Record<string, EmployeeBreakdown[]>
+  >({});
   const [loadingBreakdown, setLoadingBreakdown] = useState<string | null>(null);
-  const [expandedBreakdown, setExpandedBreakdown] = useState<string | null>(null);
+  const [expandedBreakdown, setExpandedBreakdown] = useState<string | null>(
+    null,
+  );
+
+  // STATE ĐỂ SỔ RA DANH SÁCH NGÀY LÀM
+  const [expandedWorkDates, setExpandedWorkDates] = useState<Set<string>>(
+    new Set(),
+  );
+
+  const toggleWorkDates = (key: string) => {
+    setExpandedWorkDates((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  };
 
   const fetchBreakdown = async (monthYear: string) => {
-    if (breakdownData[monthYear]) { setExpandedBreakdown(monthYear); return; }
+    if (breakdownData[monthYear]) {
+      setExpandedBreakdown(monthYear);
+      return;
+    }
     setLoadingBreakdown(monthYear);
     try {
-      const res = await fetch(`${API_URL}/api/hr/salary/breakdown/${encodeURIComponent(monthYear)}`);
+      const res = await fetch(
+        `${API_URL}/api/hr/salary/breakdown/${encodeURIComponent(monthYear)}`,
+      );
       if (res.ok) {
         const data = await res.json();
-        setBreakdownData(prev => ({ ...prev, [monthYear]: data }));
+        setBreakdownData((prev) => ({ ...prev, [monthYear]: data }));
         setExpandedBreakdown(monthYear);
       }
     } catch (e) {
@@ -365,6 +404,7 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ currentUser }) =>
     if (!finalizeMonth.trim()) return alert("Vui lòng nhập tháng chốt lương!");
     setIsFinalizing(true);
     try {
+      // Lưu ý: Nếu có xác thực Token, nhớ add Authorization vào headers nhé
       const response = await fetch(`${API_URL}/api/hr/salary/finalize`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -404,22 +444,7 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ currentUser }) =>
     }
   };
 
-  // --- TẢI BẢNG LƯƠNG TỔNG PDF ---
-  const handleDownloadSummary = async (monthYear: string) => {
-    try {
-      const url = `${API_URL}/api/hr/salary/summary/${encodeURIComponent(monthYear)}`;
-      const res = await fetch(url);
-      if (!res.ok) throw new Error("Lỗi tải bảng lương tổng");
-      const blob = await res.blob();
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = `BangLuong_${monthYear.replace("/", "_")}.pdf`;
-      link.click();
-      URL.revokeObjectURL(link.href);
-    } catch (error) {
-      alert("Lỗi tải bảng lương tổng: " + error);
-    }
-  };
+
 
   // --- STATE QUẢN LÝ NGHỈ PHÉP ---
   const [showLeaveManagerModal, setShowLeaveManagerModal] = useState(false);
@@ -937,29 +962,6 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ currentUser }) =>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleDownloadSummary(monthYear);
-                        }}
-                        className="inline-flex items-center gap-1.5 px-2 py-1.5 sm:px-3 sm:py-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-xs font-bold transition-colors shadow-sm"
-                        title="Tải bảng lương tổng"
-                      >
-                        <svg
-                          className="w-3.5 h-3.5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                          />
-                        </svg>
-                        Bảng tổng
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
                           handleDownloadSummaryExcel(monthYear);
                         }}
                         className="inline-flex items-center gap-1.5 px-2 py-1.5 sm:px-3 sm:py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-bold transition-colors shadow-sm"
@@ -981,7 +983,10 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ currentUser }) =>
                         Excel
                       </button>
                       <button
-                        onClick={(e) => { e.stopPropagation(); fetchBreakdown(monthYear); }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          fetchBreakdown(monthYear);
+                        }}
                         className="inline-flex items-center gap-1.5 px-2 py-1.5 sm:px-3 sm:py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-bold transition-colors shadow-sm"
                         title="Xem chi tiết thưởng/phạt"
                       >
@@ -1003,42 +1008,134 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ currentUser }) =>
                     </div>
                   </div>
 
-                  {expandedBreakdown === monthYear && breakdownData[monthYear] && (
-                    <div className="overflow-x-auto custom-scrollbar border-t-2 border-purple-200 w-full bg-purple-50">
-                      <div className="px-4 py-2 text-xs font-bold text-purple-700 uppercase tracking-wide">Chi tiết thưởng / phạt tháng {monthYear}</div>
-                      <table className="w-full min-w-[800px] text-xs text-left text-gray-600">
-                        <thead className="bg-purple-100 text-purple-800 uppercase">
-                          <tr>
-                            <th className="px-3 py-2 font-bold">Nhân viên</th>
-                            <th className="px-3 py-2 font-bold text-green-700 text-right">Hoa hồng</th>
-                            <th className="px-3 py-2 font-bold text-red-600 text-right">Tạm ứng</th>
-                            <th className="px-3 py-2 font-bold text-red-600 text-right">Phạt (đơn nghỉ)</th>
-                            <th className="px-3 py-2 font-bold text-red-600 text-right">Phạt đi trễ</th>
-                            <th className="px-3 py-2 font-bold text-red-600 text-right">Nửa ngày</th>
-                            <th className="px-3 py-2 font-bold text-red-600 text-right">Vắng cả ngày</th>
-                            <th className="px-3 py-2 font-bold text-blue-700 text-right">Thực nhận</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-purple-100">
-                          {breakdownData[monthYear].map((emp, i) => {
-                            const fmt = (n: number) => new Intl.NumberFormat("vi-VN").format(n);
-                            return (
-                              <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-purple-50"}>
-                                <td className="px-3 py-2 font-medium">{emp.name}</td>
-                                <td className="px-3 py-2 text-right text-green-700">{emp.hoaHong ? `+${fmt(emp.hoaHong)}` : "-"}</td>
-                                <td className="px-3 py-2 text-right text-red-600">{emp.tamUng ? `-${fmt(emp.tamUng)}` : "-"}</td>
-                                <td className="px-3 py-2 text-right text-red-600">{emp.manualFines ? `-${fmt(emp.manualFines)}` : "-"}</td>
-                                <td className="px-3 py-2 text-right text-red-600">{emp.attendanceFines ? `-${fmt(emp.attendanceFines)}` : "-"}</td>
-                                <td className="px-3 py-2 text-right text-red-600">{emp.halfDayDeduction ? `-${fmt(emp.halfDayDeduction)}` : "-"}</td>
-                                <td className="px-3 py-2 text-right text-red-600">{emp.fullDayAbsenceDeduction ? `-${fmt(emp.fullDayAbsenceDeduction)}` : "-"}</td>
-                                <td className="px-3 py-2 text-right font-bold text-blue-700">{fmt(emp.finalSalary)}đ</td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
+                  {expandedBreakdown === monthYear &&
+                    breakdownData[monthYear] && (
+                      <div className="overflow-x-auto custom-scrollbar border-t-2 border-purple-200 w-full bg-purple-50">
+                        <div className="px-4 py-2 text-xs font-bold text-purple-700 uppercase tracking-wide">
+                          Chi tiết thưởng / phạt tháng {monthYear}
+                        </div>
+                        <table className="w-full min-w-[900px] text-xs text-left text-gray-600">
+                          <thead className="bg-purple-100 text-purple-800 uppercase">
+                            <tr>
+                              <th className="px-3 py-2 font-bold">Nhân viên</th>
+                              {/* --- ĐÂY LÀ CỘT NGÀY ĐI LÀM --- */}
+                              <th className="px-3 py-2 font-bold text-center">
+                                Ngày đi làm
+                              </th>
+                              <th className="px-3 py-2 font-bold text-green-700 text-right">
+                                Hoa hồng
+                              </th>
+                              <th className="px-3 py-2 font-bold text-red-600 text-right">
+                                Tạm ứng
+                              </th>
+                              <th className="px-3 py-2 font-bold text-red-600 text-right">
+                                Phạt (đơn nghỉ)
+                              </th>
+                              <th className="px-3 py-2 font-bold text-red-600 text-right">
+                                Phạt đi trễ
+                              </th>
+                              <th className="px-3 py-2 font-bold text-red-600 text-right">
+                                Nửa ngày
+                              </th>
+                              <th className="px-3 py-2 font-bold text-red-600 text-right">
+                                Vắng cả ngày
+                              </th>
+                              <th className="px-3 py-2 font-bold text-blue-700 text-right">
+                                Thực nhận
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-purple-100">
+                            {breakdownData[monthYear].map((emp, i) => {
+                              const fmt = (n: number) =>
+                                new Intl.NumberFormat("vi-VN").format(n);
+                              const dateKey = `${monthYear}-${emp.employeeCode}`;
+                              const showDates = expandedWorkDates.has(dateKey);
+                              return (
+                                <React.Fragment key={i}>
+                                  <tr
+                                    className={
+                                      i % 2 === 0 ? "bg-white" : "bg-purple-50"
+                                    }
+                                  >
+                                    <td className="px-3 py-2 font-medium">
+                                      {emp.name}
+                                    </td>
+
+                                    {/* --- NÚT BẤM SỔ XUỐNG DANH SÁCH NGÀY CHẤM CÔNG --- */}
+                                    <td className="px-3 py-2 text-center">
+                                      <button
+                                        onClick={() => toggleWorkDates(dateKey)}
+                                        className="text-xs font-bold text-purple-700 bg-purple-100 hover:bg-purple-200 px-2 py-0.5 rounded-full transition-colors shadow-sm"
+                                      >
+                                        {emp.workDays || 0} ngày{" "}
+                                        {showDates ? "▲" : "▼"}
+                                      </button>
+                                    </td>
+
+                                    <td className="px-3 py-2 text-right text-green-700">
+                                      {emp.hoaHong
+                                        ? `+${fmt(emp.hoaHong)}`
+                                        : "-"}
+                                    </td>
+                                    <td className="px-3 py-2 text-right text-red-600">
+                                      {emp.tamUng ? `-${fmt(emp.tamUng)}` : "-"}
+                                    </td>
+                                    <td className="px-3 py-2 text-right text-red-600">
+                                      {emp.manualFines
+                                        ? `-${fmt(emp.manualFines)}`
+                                        : "-"}
+                                    </td>
+                                    <td className="px-3 py-2 text-right text-red-600">
+                                      {emp.attendanceFines
+                                        ? `-${fmt(emp.attendanceFines)}`
+                                        : "-"}
+                                    </td>
+                                    <td className="px-3 py-2 text-right text-red-600">
+                                      {emp.halfDayDeduction
+                                        ? `-${fmt(emp.halfDayDeduction)}`
+                                        : "-"}
+                                    </td>
+                                    <td className="px-3 py-2 text-right text-red-600">
+                                      {emp.fullDayAbsenceDeduction
+                                        ? `-${fmt(emp.fullDayAbsenceDeduction)}`
+                                        : "-"}
+                                    </td>
+                                    <td className="px-3 py-2 text-right font-bold text-blue-700">
+                                      {fmt(emp.finalSalary)}đ
+                                    </td>
+                                  </tr>
+
+                                  {/* --- VÙNG HIỂN THỊ CÁC NGÀY ĐI LÀM (ẨN/HIỆN KHI CLICK VÀO NÚT BÊN TRÊN) --- */}
+                                  {showDates && emp.workDates?.length > 0 && (
+                                    <tr className="bg-purple-50/50">
+                                      <td
+                                        colSpan={9}
+                                        className="px-4 py-2 border-b border-purple-100"
+                                      >
+                                        <div className="flex flex-wrap gap-1.5">
+                                          <span className="text-xs font-semibold text-gray-500 mr-2 flex items-center">
+                                            Lịch sử Check-out:
+                                          </span>
+                                          {emp.workDates.map((d, di) => (
+                                            <span
+                                              key={di}
+                                              className="text-xs font-medium bg-white border border-purple-200 text-purple-700 px-2 py-0.5 rounded shadow-sm"
+                                            >
+                                              {d}
+                                            </span>
+                                          ))}
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  )}
+                                </React.Fragment>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
 
                   {isExpanded && (
                     <div className="overflow-x-auto custom-scrollbar border-t border-blue-100 w-full">
@@ -1400,6 +1497,6 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ currentUser }) =>
       </Modal>
     </div>
   );
-};;
+};
 
 export default EmployeeDashboard;

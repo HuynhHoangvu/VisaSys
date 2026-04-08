@@ -24,4 +24,4 @@ RUN npm run build && npx prisma generate
 EXPOSE 3001
 
 # Dùng CMD để Railway có thể ghi đè nếu cần
-CMD ["npm", "start"]
+CMD npx prisma db push && npm start

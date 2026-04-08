@@ -31,6 +31,13 @@ export type SalaryHistoryAvgAggregateOutputType = {
   totalBonus: number | null
   totalDeduction: number | null
   finalSalary: number | null
+  hoaHong: number | null
+  tamUng: number | null
+  manualFines: number | null
+  attendanceFines: number | null
+  halfDayDeduction: number | null
+  fullDayAbsenceDeduction: number | null
+  workDays: number | null
 }
 
 export type SalaryHistorySumAggregateOutputType = {
@@ -38,6 +45,13 @@ export type SalaryHistorySumAggregateOutputType = {
   totalBonus: number | null
   totalDeduction: number | null
   finalSalary: number | null
+  hoaHong: number | null
+  tamUng: number | null
+  manualFines: number | null
+  attendanceFines: number | null
+  halfDayDeduction: number | null
+  fullDayAbsenceDeduction: number | null
+  workDays: number | null
 }
 
 export type SalaryHistoryMinAggregateOutputType = {
@@ -47,6 +61,13 @@ export type SalaryHistoryMinAggregateOutputType = {
   totalBonus: number | null
   totalDeduction: number | null
   finalSalary: number | null
+  hoaHong: number | null
+  tamUng: number | null
+  manualFines: number | null
+  attendanceFines: number | null
+  halfDayDeduction: number | null
+  fullDayAbsenceDeduction: number | null
+  workDays: number | null
   employeeId: string | null
   createdAt: Date | null
 }
@@ -58,6 +79,13 @@ export type SalaryHistoryMaxAggregateOutputType = {
   totalBonus: number | null
   totalDeduction: number | null
   finalSalary: number | null
+  hoaHong: number | null
+  tamUng: number | null
+  manualFines: number | null
+  attendanceFines: number | null
+  halfDayDeduction: number | null
+  fullDayAbsenceDeduction: number | null
+  workDays: number | null
   employeeId: string | null
   createdAt: Date | null
 }
@@ -69,6 +97,14 @@ export type SalaryHistoryCountAggregateOutputType = {
   totalBonus: number
   totalDeduction: number
   finalSalary: number
+  hoaHong: number
+  tamUng: number
+  manualFines: number
+  attendanceFines: number
+  halfDayDeduction: number
+  fullDayAbsenceDeduction: number
+  workDays: number
+  workDates: number
   employeeId: number
   createdAt: number
   _all: number
@@ -80,6 +116,13 @@ export type SalaryHistoryAvgAggregateInputType = {
   totalBonus?: true
   totalDeduction?: true
   finalSalary?: true
+  hoaHong?: true
+  tamUng?: true
+  manualFines?: true
+  attendanceFines?: true
+  halfDayDeduction?: true
+  fullDayAbsenceDeduction?: true
+  workDays?: true
 }
 
 export type SalaryHistorySumAggregateInputType = {
@@ -87,6 +130,13 @@ export type SalaryHistorySumAggregateInputType = {
   totalBonus?: true
   totalDeduction?: true
   finalSalary?: true
+  hoaHong?: true
+  tamUng?: true
+  manualFines?: true
+  attendanceFines?: true
+  halfDayDeduction?: true
+  fullDayAbsenceDeduction?: true
+  workDays?: true
 }
 
 export type SalaryHistoryMinAggregateInputType = {
@@ -96,6 +146,13 @@ export type SalaryHistoryMinAggregateInputType = {
   totalBonus?: true
   totalDeduction?: true
   finalSalary?: true
+  hoaHong?: true
+  tamUng?: true
+  manualFines?: true
+  attendanceFines?: true
+  halfDayDeduction?: true
+  fullDayAbsenceDeduction?: true
+  workDays?: true
   employeeId?: true
   createdAt?: true
 }
@@ -107,6 +164,13 @@ export type SalaryHistoryMaxAggregateInputType = {
   totalBonus?: true
   totalDeduction?: true
   finalSalary?: true
+  hoaHong?: true
+  tamUng?: true
+  manualFines?: true
+  attendanceFines?: true
+  halfDayDeduction?: true
+  fullDayAbsenceDeduction?: true
+  workDays?: true
   employeeId?: true
   createdAt?: true
 }
@@ -118,6 +182,14 @@ export type SalaryHistoryCountAggregateInputType = {
   totalBonus?: true
   totalDeduction?: true
   finalSalary?: true
+  hoaHong?: true
+  tamUng?: true
+  manualFines?: true
+  attendanceFines?: true
+  halfDayDeduction?: true
+  fullDayAbsenceDeduction?: true
+  workDays?: true
+  workDates?: true
   employeeId?: true
   createdAt?: true
   _all?: true
@@ -216,6 +288,14 @@ export type SalaryHistoryGroupByOutputType = {
   totalBonus: number
   totalDeduction: number
   finalSalary: number
+  hoaHong: number
+  tamUng: number
+  manualFines: number
+  attendanceFines: number
+  halfDayDeduction: number
+  fullDayAbsenceDeduction: number
+  workDays: number
+  workDates: string[]
   employeeId: string
   createdAt: Date
   _count: SalaryHistoryCountAggregateOutputType | null
@@ -250,6 +330,14 @@ export type SalaryHistoryWhereInput = {
   totalBonus?: Prisma.FloatFilter<"SalaryHistory"> | number
   totalDeduction?: Prisma.FloatFilter<"SalaryHistory"> | number
   finalSalary?: Prisma.FloatFilter<"SalaryHistory"> | number
+  hoaHong?: Prisma.FloatFilter<"SalaryHistory"> | number
+  tamUng?: Prisma.FloatFilter<"SalaryHistory"> | number
+  manualFines?: Prisma.FloatFilter<"SalaryHistory"> | number
+  attendanceFines?: Prisma.FloatFilter<"SalaryHistory"> | number
+  halfDayDeduction?: Prisma.FloatFilter<"SalaryHistory"> | number
+  fullDayAbsenceDeduction?: Prisma.FloatFilter<"SalaryHistory"> | number
+  workDays?: Prisma.IntFilter<"SalaryHistory"> | number
+  workDates?: Prisma.StringNullableListFilter<"SalaryHistory">
   employeeId?: Prisma.StringFilter<"SalaryHistory"> | string
   createdAt?: Prisma.DateTimeFilter<"SalaryHistory"> | Date | string
   employee?: Prisma.XOR<Prisma.EmployeeScalarRelationFilter, Prisma.EmployeeWhereInput>
@@ -262,6 +350,14 @@ export type SalaryHistoryOrderByWithRelationInput = {
   totalBonus?: Prisma.SortOrder
   totalDeduction?: Prisma.SortOrder
   finalSalary?: Prisma.SortOrder
+  hoaHong?: Prisma.SortOrder
+  tamUng?: Prisma.SortOrder
+  manualFines?: Prisma.SortOrder
+  attendanceFines?: Prisma.SortOrder
+  halfDayDeduction?: Prisma.SortOrder
+  fullDayAbsenceDeduction?: Prisma.SortOrder
+  workDays?: Prisma.SortOrder
+  workDates?: Prisma.SortOrder
   employeeId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   employee?: Prisma.EmployeeOrderByWithRelationInput
@@ -277,6 +373,14 @@ export type SalaryHistoryWhereUniqueInput = Prisma.AtLeast<{
   totalBonus?: Prisma.FloatFilter<"SalaryHistory"> | number
   totalDeduction?: Prisma.FloatFilter<"SalaryHistory"> | number
   finalSalary?: Prisma.FloatFilter<"SalaryHistory"> | number
+  hoaHong?: Prisma.FloatFilter<"SalaryHistory"> | number
+  tamUng?: Prisma.FloatFilter<"SalaryHistory"> | number
+  manualFines?: Prisma.FloatFilter<"SalaryHistory"> | number
+  attendanceFines?: Prisma.FloatFilter<"SalaryHistory"> | number
+  halfDayDeduction?: Prisma.FloatFilter<"SalaryHistory"> | number
+  fullDayAbsenceDeduction?: Prisma.FloatFilter<"SalaryHistory"> | number
+  workDays?: Prisma.IntFilter<"SalaryHistory"> | number
+  workDates?: Prisma.StringNullableListFilter<"SalaryHistory">
   employeeId?: Prisma.StringFilter<"SalaryHistory"> | string
   createdAt?: Prisma.DateTimeFilter<"SalaryHistory"> | Date | string
   employee?: Prisma.XOR<Prisma.EmployeeScalarRelationFilter, Prisma.EmployeeWhereInput>
@@ -289,6 +393,14 @@ export type SalaryHistoryOrderByWithAggregationInput = {
   totalBonus?: Prisma.SortOrder
   totalDeduction?: Prisma.SortOrder
   finalSalary?: Prisma.SortOrder
+  hoaHong?: Prisma.SortOrder
+  tamUng?: Prisma.SortOrder
+  manualFines?: Prisma.SortOrder
+  attendanceFines?: Prisma.SortOrder
+  halfDayDeduction?: Prisma.SortOrder
+  fullDayAbsenceDeduction?: Prisma.SortOrder
+  workDays?: Prisma.SortOrder
+  workDates?: Prisma.SortOrder
   employeeId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   _count?: Prisma.SalaryHistoryCountOrderByAggregateInput
@@ -308,6 +420,14 @@ export type SalaryHistoryScalarWhereWithAggregatesInput = {
   totalBonus?: Prisma.FloatWithAggregatesFilter<"SalaryHistory"> | number
   totalDeduction?: Prisma.FloatWithAggregatesFilter<"SalaryHistory"> | number
   finalSalary?: Prisma.FloatWithAggregatesFilter<"SalaryHistory"> | number
+  hoaHong?: Prisma.FloatWithAggregatesFilter<"SalaryHistory"> | number
+  tamUng?: Prisma.FloatWithAggregatesFilter<"SalaryHistory"> | number
+  manualFines?: Prisma.FloatWithAggregatesFilter<"SalaryHistory"> | number
+  attendanceFines?: Prisma.FloatWithAggregatesFilter<"SalaryHistory"> | number
+  halfDayDeduction?: Prisma.FloatWithAggregatesFilter<"SalaryHistory"> | number
+  fullDayAbsenceDeduction?: Prisma.FloatWithAggregatesFilter<"SalaryHistory"> | number
+  workDays?: Prisma.IntWithAggregatesFilter<"SalaryHistory"> | number
+  workDates?: Prisma.StringNullableListFilter<"SalaryHistory">
   employeeId?: Prisma.StringWithAggregatesFilter<"SalaryHistory"> | string
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"SalaryHistory"> | Date | string
 }
@@ -319,6 +439,14 @@ export type SalaryHistoryCreateInput = {
   totalBonus: number
   totalDeduction: number
   finalSalary: number
+  hoaHong?: number
+  tamUng?: number
+  manualFines?: number
+  attendanceFines?: number
+  halfDayDeduction?: number
+  fullDayAbsenceDeduction?: number
+  workDays?: number
+  workDates?: Prisma.SalaryHistoryCreateworkDatesInput | string[]
   createdAt?: Date | string
   employee: Prisma.EmployeeCreateNestedOneWithoutSalaryHistoriesInput
 }
@@ -330,6 +458,14 @@ export type SalaryHistoryUncheckedCreateInput = {
   totalBonus: number
   totalDeduction: number
   finalSalary: number
+  hoaHong?: number
+  tamUng?: number
+  manualFines?: number
+  attendanceFines?: number
+  halfDayDeduction?: number
+  fullDayAbsenceDeduction?: number
+  workDays?: number
+  workDates?: Prisma.SalaryHistoryCreateworkDatesInput | string[]
   employeeId: string
   createdAt?: Date | string
 }
@@ -341,6 +477,14 @@ export type SalaryHistoryUpdateInput = {
   totalBonus?: Prisma.FloatFieldUpdateOperationsInput | number
   totalDeduction?: Prisma.FloatFieldUpdateOperationsInput | number
   finalSalary?: Prisma.FloatFieldUpdateOperationsInput | number
+  hoaHong?: Prisma.FloatFieldUpdateOperationsInput | number
+  tamUng?: Prisma.FloatFieldUpdateOperationsInput | number
+  manualFines?: Prisma.FloatFieldUpdateOperationsInput | number
+  attendanceFines?: Prisma.FloatFieldUpdateOperationsInput | number
+  halfDayDeduction?: Prisma.FloatFieldUpdateOperationsInput | number
+  fullDayAbsenceDeduction?: Prisma.FloatFieldUpdateOperationsInput | number
+  workDays?: Prisma.IntFieldUpdateOperationsInput | number
+  workDates?: Prisma.SalaryHistoryUpdateworkDatesInput | string[]
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   employee?: Prisma.EmployeeUpdateOneRequiredWithoutSalaryHistoriesNestedInput
 }
@@ -352,6 +496,14 @@ export type SalaryHistoryUncheckedUpdateInput = {
   totalBonus?: Prisma.FloatFieldUpdateOperationsInput | number
   totalDeduction?: Prisma.FloatFieldUpdateOperationsInput | number
   finalSalary?: Prisma.FloatFieldUpdateOperationsInput | number
+  hoaHong?: Prisma.FloatFieldUpdateOperationsInput | number
+  tamUng?: Prisma.FloatFieldUpdateOperationsInput | number
+  manualFines?: Prisma.FloatFieldUpdateOperationsInput | number
+  attendanceFines?: Prisma.FloatFieldUpdateOperationsInput | number
+  halfDayDeduction?: Prisma.FloatFieldUpdateOperationsInput | number
+  fullDayAbsenceDeduction?: Prisma.FloatFieldUpdateOperationsInput | number
+  workDays?: Prisma.IntFieldUpdateOperationsInput | number
+  workDates?: Prisma.SalaryHistoryUpdateworkDatesInput | string[]
   employeeId?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -363,6 +515,14 @@ export type SalaryHistoryCreateManyInput = {
   totalBonus: number
   totalDeduction: number
   finalSalary: number
+  hoaHong?: number
+  tamUng?: number
+  manualFines?: number
+  attendanceFines?: number
+  halfDayDeduction?: number
+  fullDayAbsenceDeduction?: number
+  workDays?: number
+  workDates?: Prisma.SalaryHistoryCreateworkDatesInput | string[]
   employeeId: string
   createdAt?: Date | string
 }
@@ -374,6 +534,14 @@ export type SalaryHistoryUpdateManyMutationInput = {
   totalBonus?: Prisma.FloatFieldUpdateOperationsInput | number
   totalDeduction?: Prisma.FloatFieldUpdateOperationsInput | number
   finalSalary?: Prisma.FloatFieldUpdateOperationsInput | number
+  hoaHong?: Prisma.FloatFieldUpdateOperationsInput | number
+  tamUng?: Prisma.FloatFieldUpdateOperationsInput | number
+  manualFines?: Prisma.FloatFieldUpdateOperationsInput | number
+  attendanceFines?: Prisma.FloatFieldUpdateOperationsInput | number
+  halfDayDeduction?: Prisma.FloatFieldUpdateOperationsInput | number
+  fullDayAbsenceDeduction?: Prisma.FloatFieldUpdateOperationsInput | number
+  workDays?: Prisma.IntFieldUpdateOperationsInput | number
+  workDates?: Prisma.SalaryHistoryUpdateworkDatesInput | string[]
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -384,6 +552,14 @@ export type SalaryHistoryUncheckedUpdateManyInput = {
   totalBonus?: Prisma.FloatFieldUpdateOperationsInput | number
   totalDeduction?: Prisma.FloatFieldUpdateOperationsInput | number
   finalSalary?: Prisma.FloatFieldUpdateOperationsInput | number
+  hoaHong?: Prisma.FloatFieldUpdateOperationsInput | number
+  tamUng?: Prisma.FloatFieldUpdateOperationsInput | number
+  manualFines?: Prisma.FloatFieldUpdateOperationsInput | number
+  attendanceFines?: Prisma.FloatFieldUpdateOperationsInput | number
+  halfDayDeduction?: Prisma.FloatFieldUpdateOperationsInput | number
+  fullDayAbsenceDeduction?: Prisma.FloatFieldUpdateOperationsInput | number
+  workDays?: Prisma.IntFieldUpdateOperationsInput | number
+  workDates?: Prisma.SalaryHistoryUpdateworkDatesInput | string[]
   employeeId?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -405,6 +581,14 @@ export type SalaryHistoryCountOrderByAggregateInput = {
   totalBonus?: Prisma.SortOrder
   totalDeduction?: Prisma.SortOrder
   finalSalary?: Prisma.SortOrder
+  hoaHong?: Prisma.SortOrder
+  tamUng?: Prisma.SortOrder
+  manualFines?: Prisma.SortOrder
+  attendanceFines?: Prisma.SortOrder
+  halfDayDeduction?: Prisma.SortOrder
+  fullDayAbsenceDeduction?: Prisma.SortOrder
+  workDays?: Prisma.SortOrder
+  workDates?: Prisma.SortOrder
   employeeId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
@@ -414,6 +598,13 @@ export type SalaryHistoryAvgOrderByAggregateInput = {
   totalBonus?: Prisma.SortOrder
   totalDeduction?: Prisma.SortOrder
   finalSalary?: Prisma.SortOrder
+  hoaHong?: Prisma.SortOrder
+  tamUng?: Prisma.SortOrder
+  manualFines?: Prisma.SortOrder
+  attendanceFines?: Prisma.SortOrder
+  halfDayDeduction?: Prisma.SortOrder
+  fullDayAbsenceDeduction?: Prisma.SortOrder
+  workDays?: Prisma.SortOrder
 }
 
 export type SalaryHistoryMaxOrderByAggregateInput = {
@@ -423,6 +614,13 @@ export type SalaryHistoryMaxOrderByAggregateInput = {
   totalBonus?: Prisma.SortOrder
   totalDeduction?: Prisma.SortOrder
   finalSalary?: Prisma.SortOrder
+  hoaHong?: Prisma.SortOrder
+  tamUng?: Prisma.SortOrder
+  manualFines?: Prisma.SortOrder
+  attendanceFines?: Prisma.SortOrder
+  halfDayDeduction?: Prisma.SortOrder
+  fullDayAbsenceDeduction?: Prisma.SortOrder
+  workDays?: Prisma.SortOrder
   employeeId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
@@ -434,6 +632,13 @@ export type SalaryHistoryMinOrderByAggregateInput = {
   totalBonus?: Prisma.SortOrder
   totalDeduction?: Prisma.SortOrder
   finalSalary?: Prisma.SortOrder
+  hoaHong?: Prisma.SortOrder
+  tamUng?: Prisma.SortOrder
+  manualFines?: Prisma.SortOrder
+  attendanceFines?: Prisma.SortOrder
+  halfDayDeduction?: Prisma.SortOrder
+  fullDayAbsenceDeduction?: Prisma.SortOrder
+  workDays?: Prisma.SortOrder
   employeeId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
@@ -443,6 +648,13 @@ export type SalaryHistorySumOrderByAggregateInput = {
   totalBonus?: Prisma.SortOrder
   totalDeduction?: Prisma.SortOrder
   finalSalary?: Prisma.SortOrder
+  hoaHong?: Prisma.SortOrder
+  tamUng?: Prisma.SortOrder
+  manualFines?: Prisma.SortOrder
+  attendanceFines?: Prisma.SortOrder
+  halfDayDeduction?: Prisma.SortOrder
+  fullDayAbsenceDeduction?: Prisma.SortOrder
+  workDays?: Prisma.SortOrder
 }
 
 export type SalaryHistoryCreateNestedManyWithoutEmployeeInput = {
@@ -487,6 +699,15 @@ export type SalaryHistoryUncheckedUpdateManyWithoutEmployeeNestedInput = {
   deleteMany?: Prisma.SalaryHistoryScalarWhereInput | Prisma.SalaryHistoryScalarWhereInput[]
 }
 
+export type SalaryHistoryCreateworkDatesInput = {
+  set: string[]
+}
+
+export type SalaryHistoryUpdateworkDatesInput = {
+  set?: string[]
+  push?: string | string[]
+}
+
 export type SalaryHistoryCreateWithoutEmployeeInput = {
   id?: string
   monthYear: string
@@ -494,6 +715,14 @@ export type SalaryHistoryCreateWithoutEmployeeInput = {
   totalBonus: number
   totalDeduction: number
   finalSalary: number
+  hoaHong?: number
+  tamUng?: number
+  manualFines?: number
+  attendanceFines?: number
+  halfDayDeduction?: number
+  fullDayAbsenceDeduction?: number
+  workDays?: number
+  workDates?: Prisma.SalaryHistoryCreateworkDatesInput | string[]
   createdAt?: Date | string
 }
 
@@ -504,6 +733,14 @@ export type SalaryHistoryUncheckedCreateWithoutEmployeeInput = {
   totalBonus: number
   totalDeduction: number
   finalSalary: number
+  hoaHong?: number
+  tamUng?: number
+  manualFines?: number
+  attendanceFines?: number
+  halfDayDeduction?: number
+  fullDayAbsenceDeduction?: number
+  workDays?: number
+  workDates?: Prisma.SalaryHistoryCreateworkDatesInput | string[]
   createdAt?: Date | string
 }
 
@@ -543,6 +780,14 @@ export type SalaryHistoryScalarWhereInput = {
   totalBonus?: Prisma.FloatFilter<"SalaryHistory"> | number
   totalDeduction?: Prisma.FloatFilter<"SalaryHistory"> | number
   finalSalary?: Prisma.FloatFilter<"SalaryHistory"> | number
+  hoaHong?: Prisma.FloatFilter<"SalaryHistory"> | number
+  tamUng?: Prisma.FloatFilter<"SalaryHistory"> | number
+  manualFines?: Prisma.FloatFilter<"SalaryHistory"> | number
+  attendanceFines?: Prisma.FloatFilter<"SalaryHistory"> | number
+  halfDayDeduction?: Prisma.FloatFilter<"SalaryHistory"> | number
+  fullDayAbsenceDeduction?: Prisma.FloatFilter<"SalaryHistory"> | number
+  workDays?: Prisma.IntFilter<"SalaryHistory"> | number
+  workDates?: Prisma.StringNullableListFilter<"SalaryHistory">
   employeeId?: Prisma.StringFilter<"SalaryHistory"> | string
   createdAt?: Prisma.DateTimeFilter<"SalaryHistory"> | Date | string
 }
@@ -554,6 +799,14 @@ export type SalaryHistoryCreateManyEmployeeInput = {
   totalBonus: number
   totalDeduction: number
   finalSalary: number
+  hoaHong?: number
+  tamUng?: number
+  manualFines?: number
+  attendanceFines?: number
+  halfDayDeduction?: number
+  fullDayAbsenceDeduction?: number
+  workDays?: number
+  workDates?: Prisma.SalaryHistoryCreateworkDatesInput | string[]
   createdAt?: Date | string
 }
 
@@ -564,6 +817,14 @@ export type SalaryHistoryUpdateWithoutEmployeeInput = {
   totalBonus?: Prisma.FloatFieldUpdateOperationsInput | number
   totalDeduction?: Prisma.FloatFieldUpdateOperationsInput | number
   finalSalary?: Prisma.FloatFieldUpdateOperationsInput | number
+  hoaHong?: Prisma.FloatFieldUpdateOperationsInput | number
+  tamUng?: Prisma.FloatFieldUpdateOperationsInput | number
+  manualFines?: Prisma.FloatFieldUpdateOperationsInput | number
+  attendanceFines?: Prisma.FloatFieldUpdateOperationsInput | number
+  halfDayDeduction?: Prisma.FloatFieldUpdateOperationsInput | number
+  fullDayAbsenceDeduction?: Prisma.FloatFieldUpdateOperationsInput | number
+  workDays?: Prisma.IntFieldUpdateOperationsInput | number
+  workDates?: Prisma.SalaryHistoryUpdateworkDatesInput | string[]
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -574,6 +835,14 @@ export type SalaryHistoryUncheckedUpdateWithoutEmployeeInput = {
   totalBonus?: Prisma.FloatFieldUpdateOperationsInput | number
   totalDeduction?: Prisma.FloatFieldUpdateOperationsInput | number
   finalSalary?: Prisma.FloatFieldUpdateOperationsInput | number
+  hoaHong?: Prisma.FloatFieldUpdateOperationsInput | number
+  tamUng?: Prisma.FloatFieldUpdateOperationsInput | number
+  manualFines?: Prisma.FloatFieldUpdateOperationsInput | number
+  attendanceFines?: Prisma.FloatFieldUpdateOperationsInput | number
+  halfDayDeduction?: Prisma.FloatFieldUpdateOperationsInput | number
+  fullDayAbsenceDeduction?: Prisma.FloatFieldUpdateOperationsInput | number
+  workDays?: Prisma.IntFieldUpdateOperationsInput | number
+  workDates?: Prisma.SalaryHistoryUpdateworkDatesInput | string[]
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -584,6 +853,14 @@ export type SalaryHistoryUncheckedUpdateManyWithoutEmployeeInput = {
   totalBonus?: Prisma.FloatFieldUpdateOperationsInput | number
   totalDeduction?: Prisma.FloatFieldUpdateOperationsInput | number
   finalSalary?: Prisma.FloatFieldUpdateOperationsInput | number
+  hoaHong?: Prisma.FloatFieldUpdateOperationsInput | number
+  tamUng?: Prisma.FloatFieldUpdateOperationsInput | number
+  manualFines?: Prisma.FloatFieldUpdateOperationsInput | number
+  attendanceFines?: Prisma.FloatFieldUpdateOperationsInput | number
+  halfDayDeduction?: Prisma.FloatFieldUpdateOperationsInput | number
+  fullDayAbsenceDeduction?: Prisma.FloatFieldUpdateOperationsInput | number
+  workDays?: Prisma.IntFieldUpdateOperationsInput | number
+  workDates?: Prisma.SalaryHistoryUpdateworkDatesInput | string[]
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -596,6 +873,14 @@ export type SalaryHistorySelect<ExtArgs extends runtime.Types.Extensions.Interna
   totalBonus?: boolean
   totalDeduction?: boolean
   finalSalary?: boolean
+  hoaHong?: boolean
+  tamUng?: boolean
+  manualFines?: boolean
+  attendanceFines?: boolean
+  halfDayDeduction?: boolean
+  fullDayAbsenceDeduction?: boolean
+  workDays?: boolean
+  workDates?: boolean
   employeeId?: boolean
   createdAt?: boolean
   employee?: boolean | Prisma.EmployeeDefaultArgs<ExtArgs>
@@ -608,6 +893,14 @@ export type SalaryHistorySelectCreateManyAndReturn<ExtArgs extends runtime.Types
   totalBonus?: boolean
   totalDeduction?: boolean
   finalSalary?: boolean
+  hoaHong?: boolean
+  tamUng?: boolean
+  manualFines?: boolean
+  attendanceFines?: boolean
+  halfDayDeduction?: boolean
+  fullDayAbsenceDeduction?: boolean
+  workDays?: boolean
+  workDates?: boolean
   employeeId?: boolean
   createdAt?: boolean
   employee?: boolean | Prisma.EmployeeDefaultArgs<ExtArgs>
@@ -620,6 +913,14 @@ export type SalaryHistorySelectUpdateManyAndReturn<ExtArgs extends runtime.Types
   totalBonus?: boolean
   totalDeduction?: boolean
   finalSalary?: boolean
+  hoaHong?: boolean
+  tamUng?: boolean
+  manualFines?: boolean
+  attendanceFines?: boolean
+  halfDayDeduction?: boolean
+  fullDayAbsenceDeduction?: boolean
+  workDays?: boolean
+  workDates?: boolean
   employeeId?: boolean
   createdAt?: boolean
   employee?: boolean | Prisma.EmployeeDefaultArgs<ExtArgs>
@@ -632,11 +933,19 @@ export type SalaryHistorySelectScalar = {
   totalBonus?: boolean
   totalDeduction?: boolean
   finalSalary?: boolean
+  hoaHong?: boolean
+  tamUng?: boolean
+  manualFines?: boolean
+  attendanceFines?: boolean
+  halfDayDeduction?: boolean
+  fullDayAbsenceDeduction?: boolean
+  workDays?: boolean
+  workDates?: boolean
   employeeId?: boolean
   createdAt?: boolean
 }
 
-export type SalaryHistoryOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "monthYear" | "baseSalary" | "totalBonus" | "totalDeduction" | "finalSalary" | "employeeId" | "createdAt", ExtArgs["result"]["salaryHistory"]>
+export type SalaryHistoryOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "monthYear" | "baseSalary" | "totalBonus" | "totalDeduction" | "finalSalary" | "hoaHong" | "tamUng" | "manualFines" | "attendanceFines" | "halfDayDeduction" | "fullDayAbsenceDeduction" | "workDays" | "workDates" | "employeeId" | "createdAt", ExtArgs["result"]["salaryHistory"]>
 export type SalaryHistoryInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   employee?: boolean | Prisma.EmployeeDefaultArgs<ExtArgs>
 }
@@ -659,6 +968,14 @@ export type $SalaryHistoryPayload<ExtArgs extends runtime.Types.Extensions.Inter
     totalBonus: number
     totalDeduction: number
     finalSalary: number
+    hoaHong: number
+    tamUng: number
+    manualFines: number
+    attendanceFines: number
+    halfDayDeduction: number
+    fullDayAbsenceDeduction: number
+    workDays: number
+    workDates: string[]
     employeeId: string
     createdAt: Date
   }, ExtArgs["result"]["salaryHistory"]>
@@ -1091,6 +1408,14 @@ export interface SalaryHistoryFieldRefs {
   readonly totalBonus: Prisma.FieldRef<"SalaryHistory", 'Float'>
   readonly totalDeduction: Prisma.FieldRef<"SalaryHistory", 'Float'>
   readonly finalSalary: Prisma.FieldRef<"SalaryHistory", 'Float'>
+  readonly hoaHong: Prisma.FieldRef<"SalaryHistory", 'Float'>
+  readonly tamUng: Prisma.FieldRef<"SalaryHistory", 'Float'>
+  readonly manualFines: Prisma.FieldRef<"SalaryHistory", 'Float'>
+  readonly attendanceFines: Prisma.FieldRef<"SalaryHistory", 'Float'>
+  readonly halfDayDeduction: Prisma.FieldRef<"SalaryHistory", 'Float'>
+  readonly fullDayAbsenceDeduction: Prisma.FieldRef<"SalaryHistory", 'Float'>
+  readonly workDays: Prisma.FieldRef<"SalaryHistory", 'Int'>
+  readonly workDates: Prisma.FieldRef<"SalaryHistory", 'String[]'>
   readonly employeeId: Prisma.FieldRef<"SalaryHistory", 'String'>
   readonly createdAt: Prisma.FieldRef<"SalaryHistory", 'DateTime'>
 }
