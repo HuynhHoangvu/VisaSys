@@ -1,7 +1,9 @@
 import { Request, Response } from "express";
 import { prisma } from "../../lib/prisma.js";
 
-// Lấy dữ liệu KPI theo tuần
+/**
+ * Get weekly KPI data for the specified week.
+ */
 export const getWeeklyKPI = async (req: Request, res: Response) => {
   try {
     const { weekLabel } = req.query;
@@ -14,14 +16,16 @@ export const getWeeklyKPI = async (req: Request, res: Response) => {
       where: { weekLabel },
     });
 
-    // Nếu có dữ liệu thì trả về, chưa có thì trả về null (Frontend sẽ tự lấy data mặc định)
+    // Return data if available, otherwise null so frontend can use fallback defaults.
     res.json(kpiData ? kpiData.data : null);
   } catch (error) {
     res.status(500).json({ error: "Lỗi lấy dữ liệu KPI" });
   }
 };
 
-// Lưu hoặc cập nhật dữ liệu KPI theo tuần (Upsert)
+/**
+ * Create or update weekly KPI data using upsert.
+ */
 export const updateWeeklyKPI = async (req: Request, res: Response) => {
   try {
     const { weekLabel, data } = req.body;
@@ -30,7 +34,7 @@ export const updateWeeklyKPI = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Thiếu dữ liệu" });
     }
 
-    // Upsert: Có rồi thì update, chưa có thì create
+    // Upsert: update existing record if it exists, otherwise create a new one.
     const updatedKPI = await prisma.weeklyKPI.upsert({
       where: { weekLabel },
       update: { data },

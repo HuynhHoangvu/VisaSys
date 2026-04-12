@@ -1,14 +1,15 @@
 import React, { useState } from "react";
-import { Card, Avatar, Button, Modal, TextInput, Select } from "flowbite-react";
+import { Card, Button, Modal, TextInput, Select } from "flowbite-react";
 import {
   type Employee,
   type AuthUser,
   type LeaveRequestData,
 } from "../../types";
+import { FaceAvatar } from "../ui/FaceAvatar";
 import LeaveRequestModal from "./LeaveRequestModal";
 // TODO: Đảm bảo bạn đã tạo file socket.ts và import đúng đường dẫn.
 // Nếu bạn chưa dùng thư viện socket.io-client ở Frontend, bạn có thể comment dòng này lại.
-import  socket  from "../../services/socket";
+import socket from "../../services/socket";
 import LeaveHistoryModal from "./Leavehistorymodal";
 
 interface EmployeeDetailProps {
@@ -42,7 +43,9 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
     currentUser?.role.toLowerCase().includes("admin") ||
     currentUser?.role.toLowerCase().includes("phó giám đốc");
 
-  const isTruongPhong = currentUser?.role.toLowerCase().includes("trưởng phòng");
+  const isTruongPhong = currentUser?.role
+    .toLowerCase()
+    .includes("trưởng phòng");
   const isSameDepartment = currentUser?.department === employee.department;
   const canAdjustBonus = isDirector || (isTruongPhong && isSameDepartment);
 
@@ -191,17 +194,11 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
       {/* HEADER */}
       <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-200 gap-4">
         <div className="flex items-center gap-3 sm:gap-4 w-full xl:w-auto">
-          <Avatar
-            size="lg"
-            rounded
-            placeholderInitials={employee.name.charAt(0)}
-            className="bg-orange-400 text-white shrink-0 hidden sm:block"
-          />
-          <Avatar
-            size="md"
-            rounded
-            placeholderInitials={employee.name.charAt(0)}
-            className="bg-orange-400 text-white shrink-0 sm:hidden"
+          <FaceAvatar
+            name={employee.name || employee.employeeCode || "user"}
+            size={64}
+            showInitial={true}
+            className="rounded-full shrink-0 sm:hidden"
           />
           <div className="min-w-0">
             <h2 className="text-xl sm:text-2xl font-bold text-gray-800 truncate">

@@ -1,42 +1,9 @@
 import multer from "multer";
-import { Storage } from "@google-cloud/storage";
-import path from "path";
 import fs from "fs";
 import os from "os";
+import { gcsBucket } from "../../config/googleStorage.js";
 
-// ==========================================
-// GOOGLE CLOUD STORAGE CONFIG
-// ==========================================
-let storage: Storage;
-
-// Đường dẫn file key trong container (do Docker mount vào khi chạy Local)
-const keyFilename = path.join(process.cwd(), "config", "google-key.json");
-
-if (fs.existsSync(keyFilename)) {
-  // Ưu tiên 1: Chạy Local với file cứng (Bất khả chiến bại trên Docker)
-  storage = new Storage({ 
-    keyFilename,
-    projectId: process.env.GCS_PROJECT_ID 
-  });
-  console.log("✅ GCS: Kết nối thành công bằng file google-key.json");
-} else if (process.env.GCS_PRIVATE_KEY) {
-  // Ưu tiên 2: Chạy Railway/Production bằng biến môi trường lẻ
-  storage = new Storage({
-    projectId: process.env.GCS_PROJECT_ID,
-    credentials: {
-      client_email: process.env.GCS_CLIENT_EMAIL,
-      // Xử lý triệt để lỗi xuống dòng \n trên môi trường Linux/Docker
-      private_key: process.env.GCS_PRIVATE_KEY.split(String.raw`\n`).join('\n'),
-    },
-  });
-  console.log("✅ GCS: Kết nối thành công bằng Environment Variables");
-} else {
-  // Trường hợp dự phòng
-  storage = new Storage();
-  console.log("⚠️ GCS: Đang chạy ở chế độ mặc định (Chưa nhận được cấu hình)");
-}
-
-export const bucket = storage.bucket(process.env.GCS_BUCKET_NAME || "flyvisa-documents");
+export const bucket = gcsBucket;
 
 // ==========================================
 // CẤU HÌNH MULTER (LƯU TẠM VÀO DISK - hỗ trợ file lớn)

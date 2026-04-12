@@ -15,7 +15,7 @@ export const createActivity = async (req: Request, res: Response) => {
       },
     });
 
-    getIO().emit("data_changed"); // PHÁT TÍN HIỆU
+    getIO().emit("data_changed"); 
     res.status(201).json(newActivity);
   } catch (error) {
     console.error("Lỗi khi tạo Activity:", error);
@@ -32,7 +32,7 @@ export const updateActivity = async (req: Request, res: Response) => {
       data: { completed },
     });
 
-    getIO().emit("data_changed"); // PHÁT TÍN HIỆU
+    getIO().emit("data_changed");
     res.status(200).json(updatedActivity);
   } catch (error) {
     res.status(500).json({ error: "Lỗi cập nhật" });
@@ -44,7 +44,7 @@ export const deleteActivity = async (req: Request, res: Response) => {
     const { id } = req.params;
     await prisma.activity.delete({ where: { id: id as string } });
 
-    getIO().emit("data_changed"); // PHÁT TÍN HIỆU
+    getIO().emit("data_changed"); 
     res.status(200).json({ message: "Xóa thành công" });
   } catch (error) {
     res.status(500).json({ error: "Lỗi xóa" });

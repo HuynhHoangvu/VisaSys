@@ -8,10 +8,9 @@ import React, {
 import JSZip from "jszip";
 import { type AuthUser, type DocFolder, type DocFile } from "../../types";
 import { formatFileSize, formatUploadTime } from "../../utils/helpers";
-import { io } from "socket.io-client";
+import socket from "../../services/socket";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
-const socket = io(API_URL);
 
 interface DocumentDashboardProps {
   currentUser: AuthUser | null;
@@ -31,10 +30,9 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
     null,
   );
   const [isUploadingFolder, setIsUploadingFolder] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState({
-    current: 0,
-    total: 0,
-  });
+  const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
+  const [singleUploadProgress, setSingleUploadProgress] = useState({ current: 0, total: 0, name: "" });
+  const [downloadingFileIds, setDownloadingFileIds] = useState<Set<string>>(new Set());
 
   // State kéo thả
   const [isDraggingFile, setIsDraggingFile] = useState(false);
@@ -263,7 +261,12 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const filesToUpload = Array.from(e.target.files);
-      for (const file of filesToUpload) await processUploadFile(file);
+      setSingleUploadProgress({ current: 0, total: filesToUpload.length, name: "" });
+      for (let i = 0; i < filesToUpload.length; i++) {
+        setSingleUploadProgress({ current: i, total: filesToUpload.length, name: filesToUpload[i].name });
+        await processUploadFile(filesToUpload[i]);
+      }
+      setSingleUploadProgress({ current: 0, total: 0, name: "" });
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
@@ -589,8 +592,10 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
   const handleDownload = async (
     fileUrl: string | undefined,
     fileName: string,
+    fileId: string,
   ) => {
     if (!fileUrl) return alert("File không có đường dẫn!");
+    setDownloadingFileIds((prev) => new Set(prev).add(fileId));
     try {
       const fullUrl = fileUrl.startsWith("http")
         ? fileUrl
@@ -611,6 +616,12 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
       window.URL.revokeObjectURL(localUrl);
     } catch (error) {
       alert(`Đã xảy ra lỗi khi tải file xuống:\n${getErrorMessage(error)}`);
+    } finally {
+      setDownloadingFileIds((prev) => {
+        const next = new Set(prev);
+        next.delete(fileId);
+        return next;
+      });
     }
   };
 
@@ -739,22 +750,20 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
           </button>
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm"
+            disabled={singleUploadProgress.total > 0}
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm"
           >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
-              />
-            </svg>
-            Tải file lên
+            {singleUploadProgress.total > 0 ? (
+              <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+              </svg>
+            ) : (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+              </svg>
+            )}
+            {singleUploadProgress.total > 0 ? "Đang tải..." : "Tải file lên"}
           </button>
           <input
             type="file"
@@ -1245,24 +1254,22 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleDownload(file.fileUrl, file.name);
+                      handleDownload(file.fileUrl, file.name, file.id);
                     }}
-                    className="text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 p-1.5 rounded-md transition-colors cursor-pointer"
+                    disabled={downloadingFileIds.has(file.id)}
+                    className="text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 p-1.5 rounded-md transition-colors cursor-pointer disabled:opacity-50"
                     title="Tải xuống"
                   >
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                      />
-                    </svg>
+                    {downloadingFileIds.has(file.id) ? (
+                      <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                      </svg>
+                    ) : (
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                    )}
                   </button>
                 </div>
               </div>
@@ -1271,7 +1278,32 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
         </div>
       )}
 
-      {/* COMPONENT HIỂN THỊ TIẾN TRÌNH UPLOAD (SỬ DỤNG uploadProgress Ở ĐÂY ĐỂ FIX LỖI) */}
+      {/* Single file upload toast */}
+      {singleUploadProgress.total > 0 && (
+        <div className="fixed bottom-6 right-6 z-50 bg-white p-4 rounded-xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.2)] border border-blue-100 w-80">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-sm font-bold text-blue-700 flex items-center gap-2">
+              <svg className="w-4 h-4 animate-spin text-blue-500" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+              </svg>
+              Đang tải lên...
+            </span>
+            <span className="text-xs font-bold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full border border-gray-200">
+              {singleUploadProgress.current + 1} / {singleUploadProgress.total}
+            </span>
+          </div>
+          <p className="text-xs text-gray-500 truncate mb-2">{singleUploadProgress.name}</p>
+          <div className="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
+            <div
+              className="bg-blue-500 h-1.5 rounded-full transition-all duration-300"
+              style={{ width: `${((singleUploadProgress.current + 1) / singleUploadProgress.total) * 100}%` }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Folder upload progress toast */}
       {isUploadingFolder && uploadProgress.total > 0 && (
         <div className="fixed bottom-6 right-6 z-50 bg-white p-5 rounded-xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.2)] border border-blue-100 w-80 animate-fade-in">
           <div className="flex justify-between items-center mb-3">

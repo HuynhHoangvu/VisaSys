@@ -29,6 +29,7 @@ model Task {
   description    String?
   source         String?
   assignedTo     String
+
   
   visaType       String?
   passportNumber String?
@@ -47,7 +48,10 @@ model Task {
   processingColId String    @default("proc-col-1")
   commissionPaid Boolean @default(false)
   recruitmentStep String?
-  activities     Activity[] 
+  activities     Activity[]
+
+  @@index([assignedTo])
+  @@index([columnId])
 }
 
 model Activity {
@@ -107,6 +111,10 @@ model AttendanceRecord {
   employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
 
   createdAt  DateTime @default(now())
+
+  @@index([employeeId])
+  @@index([date])
+  @@index([employeeId, date])
 }
 model Notification {
   id        String   @id @default(uuid())
@@ -119,15 +127,18 @@ model Notification {
 }
 model SalesRecord {
   id         String   @id @default(uuid())
-  customer   String   
-  service    String 
-  profit     Float    
-  note       String? 
+  customer   String
+  service    String
+  profit     Float
+  note       String?
 
   employeeId String
   employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
 
   createdAt  DateTime @default(now())
+
+  @@index([employeeId])
+  @@index([createdAt])
 }
 model DocFolder {
   id        String    @id @default(uuid())
@@ -170,6 +181,10 @@ model SalaryHistory {
   employeeId      String
   employee        Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
   createdAt       DateTime @default(now())
+
+  @@index([employeeId])
+  @@index([monthYear])
+  @@index([employeeId, monthYear])
 }
 model LeaveRequest {
   id          String   @id @default(uuid())
@@ -183,6 +198,9 @@ model LeaveRequest {
   employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
 
   createdAt   DateTime @default(now())
+
+  @@index([employeeId])
+  @@index([status])
 }
 model ProcessedFolder {
   id        String   @id @default(uuid())

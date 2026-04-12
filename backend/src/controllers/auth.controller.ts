@@ -1,11 +1,20 @@
 // backend/src/controllers/auth.controller.ts
 import { Request, Response } from "express";
+import bcrypt from "bcryptjs";
 import { prisma } from "../../lib/prisma.js";
+
+/**
+ * Authenticate an employee session.
+ * Uses bcrypt to validate the submitted password against the saved hash.
+ */
 export const login = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
 
-    // Tìm employee theo email
+    if (!email || !password) {
+      return res.status(400).json({ error: "Email và mật khẩu không được để trống!" });
+    }
+
     const employee = await prisma.employee.findUnique({
       where: { email },
       include: { department: true }
@@ -15,12 +24,12 @@ export const login = async (req: Request, res: Response) => {
       return res.status(401).json({ error: "Email không tồn tại!" });
     }
 
-    // Kiểm tra password (trong thực tế nên dùng bcrypt)
-    if (employee.password !== password) {
+    // Compare password against the stored bcrypt hash for authentication
+    const isMatch = await bcrypt.compare(password, employee.password);
+    if (!isMatch) {
       return res.status(401).json({ error: "Mật khẩu không chính xác!" });
     }
 
-    // Tạo session (có thể dùng JWT)
     const userData = {
       id: employee.id,
       name: employee.name,
@@ -30,9 +39,7 @@ export const login = async (req: Request, res: Response) => {
       email: employee.email
     };
 
-    // Lưu session (nếu dùng express-session)
-    // @ts-ignore
-    req.session.user = userData;
+    (req.session as any).user = userData;
 
     res.json(userData);
   } catch (error) {
@@ -41,20 +48,25 @@ export const login = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * Terminate the current user session and clear the session cookie.
+ */
 export const logout = async (req: Request, res: Response) => {
-  // @ts-ignore
   req.session.destroy((err) => {
     if (err) {
       return res.status(500).json({ error: "Không thể đăng xuất" });
     }
-    res.clearCookie('connect.sid');
+    res.clearCookie("connect.sid");
     res.json({ message: "Đăng xuất thành công" });
   });
 };
 
+/**
+ * Return the authenticated user's session profile.
+ * If no session exists, respond with an unauthorized status.
+ */
 export const getCurrentUser = async (req: Request, res: Response) => {
-  // @ts-ignore
-  const user = req.session.user;
+  const user = (req.session as any).user;
   if (!user) {
     return res.status(401).json({ error: "Chưa đăng nhập" });
   }

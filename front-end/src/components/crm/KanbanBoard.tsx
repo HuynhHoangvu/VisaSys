@@ -15,7 +15,7 @@ import type {
   Column,
   Employee,
 } from "../../types";
-import { io } from "socket.io-client";
+import socket from "../../services/socket";
 import SearchFilterBar from "../filter/SearchFilterBar";
 
 interface KanbanBoardProps {
@@ -29,7 +29,6 @@ interface KanbanBoardProps {
 }
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
-const socket = io(API_URL);
 
 const KanbanBoard: React.FC<KanbanBoardProps> = ({
   onOpenActivityList,
@@ -769,22 +768,16 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                         {tasksToRender
                           .map((taskId) => boardData.tasks[taskId])
                           .filter(Boolean)
-                          .filter(
-                            (task) =>
-                              !hasActiveFilter ||
-                              filteredTaskIds.includes(task.id),
-                          )
                           .map((task, index) => {
                             const isAlerted = activeAlerts.includes(task.id);
+                            const isHidden = hasActiveFilter && !filteredTaskIds.includes(task.id);
 
                             return (
                               <Draggable
                                 key={task.id}
                                 draggableId={task.id}
                                 index={index}
-                                isDragDisabled={
-                                  hasActiveFilter || isMarketingDept
-                                }
+                                isDragDisabled={isHidden || isMarketingDept}
                               >
                                 {(provided, snapshot) => {
                                   const card = (
@@ -792,14 +785,20 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                                     ref={provided.innerRef}
                                     {...provided.draggableProps}
                                     {...provided.dragHandleProps}
-                                    onClick={() => onOpenDetail(task.id)}
-                                    className={`p-2 relative group select-none transition-colors duration-200 rounded-lg ${getCardStyle(
-                                      column.id,
-                                      snapshot.isDragging,
-                                      isAlerted,
-                                    )}`}
-                                    style={{ ...provided.draggableProps.style }}
+                                    onClick={() => !isHidden && onOpenDetail(task.id)}
+                                    className={`relative group select-none transition-colors duration-200 rounded-lg ${
+                                      isHidden
+                                        ? "pointer-events-none"
+                                        : `p-2 ${getCardStyle(column.id, snapshot.isDragging, isAlerted)}`
+                                    }`}
+                                    style={{
+                                      ...provided.draggableProps.style,
+                                      ...(isHidden && !snapshot.isDragging
+                                        ? { height: 0, overflow: "hidden", margin: 0, padding: 0 }
+                                        : {}),
+                                    }}
                                   >
+                                    {!isHidden && (<>
                                     {/* Alert badge */}
                                     {isAlerted && (
                                       <div className="absolute -top-2 -left-2 bg-red-500 text-white w-5 h-5 rounded-full flex items-center justify-center shadow-lg border-2 border-white z-10 animate-bounce">
@@ -1005,6 +1004,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                                         </button>
                                       </div>
                                     </div>
+                                    </>)}
                                   </div>
                                   );
                                   return snapshot.isDragging

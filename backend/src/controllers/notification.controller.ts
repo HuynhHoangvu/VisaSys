@@ -1,14 +1,14 @@
 import { Request, Response } from "express";
 import { prisma } from "../../lib/prisma.js";
 import { getIO } from "../socket.js";
-// 1. API Dành cho Sale: Lấy danh sách thông báo chưa đọc của mình
+// Sale endpoint: fetch unread notifications for the current sale user.
 export const getNotifications = async (req: Request, res: Response) => {
   try {
-    const { saleName } = req.params; // Lấy tên Sale từ URL
+    const { saleName } = req.params; // Read sale name from URL
     const notifs = await prisma.notification.findMany({
       where: { 
         receiver:  { has: saleName as string }, 
-        isRead: false // Chỉ lấy tin chưa đọc
+        isRead: false // Only fetch unread notifications
       },
       orderBy: { createdAt: 'desc' }
     });
@@ -18,13 +18,13 @@ export const getNotifications = async (req: Request, res: Response) => {
   }
 };
 
-// 2. API Dành cho Sếp: Bấm nút gửi lời nhắc
+// Manager endpoint: send a reminder notification.
 export const sendReminder = async (req: Request, res: Response) => {
     try {
         const { customerName, saleName, sender, customMessage, taskId } = req.body;
         
-        // THÊM DÒNG NÀY ĐỂ XEM DỮ LIỆU NHẬN VÀO
-        console.log("📩 Body nhận được:", req.body);
+        // Log incoming payload for debugging.
+        console.log("📩 Incoming payload:", req.body);
     
         const text = customMessage
             ? `Hồ sơ [${customerName}]: ${customMessage}`
@@ -43,13 +43,13 @@ export const sendReminder = async (req: Request, res: Response) => {
         res.status(201).json(newNotif);
 
     } catch (error) {
-        // THÊM LOG CHI TIẾT LỖI
-        console.error("❌ Lỗi sendReminder:", error);
+        // Log detailed error.
+        console.error("❌ sendReminder error:", error);
         res.status(500).json({ error: "Lỗi gửi thông báo nhắc nhở" });
     }
 };
 
-// 3. API Dành cho Sale: Đánh dấu đã đọc
+// Sale endpoint: mark notification as read.
 export const markAsRead = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;

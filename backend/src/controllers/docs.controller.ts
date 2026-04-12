@@ -1,19 +1,26 @@
 import { Request, Response } from "express";
 import { prisma } from "../../lib/prisma.js";
 import { getIO } from "../socket.js";
-import fs from "fs";
+import fsPromises from "fs/promises";
 import path from "path";
 import { bucket, uploadToGCS } from "../middlewares/upload.js"; 
 
-// ==========================================
-// XỬ LÝ THƯ MỤC
-// ==========================================
-export const getFolders = async (req: Request, res: Response) => {
+// Folder handling utilities.
+const deleteLocalFile = async (fileUrl: string) => {
+  if (!fileUrl.startsWith("/uploads")) return;
+  const filePath = path.join(process.cwd(), fileUrl);
+  try {
+    await fsPromises.unlink(filePath);
+  } catch {
+      }
+};
+
+export const getFolders = async (_req: Request, res: Response) => {
   try {
     const folders = await prisma.docFolder.findMany({ orderBy: { createdAt: "desc" } });
     res.json(folders);
   } catch (error) {
-    res.status(500).json({ error: "Lỗi lấy danh sách thư mục" });
+    res.status(500).json({ error: "Failed to load folder list" });
   }
 };
 
@@ -29,7 +36,7 @@ export const createFolder = async (req: Request, res: Response) => {
     getIO().emit("docs_changed");
     res.status(201).json(newFolder);
   } catch (error) {
-    res.status(500).json({ error: "Lỗi tạo thư mục" });
+    res.status(500).json({ error: "Failed to create folder" });
   }
 };
 
@@ -40,11 +47,9 @@ export const deleteFolder = async (req: Request, res: Response) => {
     
     for (const file of files) {
       if (file.cloudinaryPublicId) {
-        // Xóa trên Google Cloud
-        await bucket.file(file.cloudinaryPublicId).delete().catch(() => console.log("Không tìm thấy file trên GCS"));
-      } else if (file.fileUrl && file.fileUrl.startsWith("/uploads")) {
-        const filePath = path.join(process.cwd(), file.fileUrl);
-        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+        await bucket.file(file.cloudinaryPublicId).delete().catch(() => console.log("GCS file not found"));
+      } else if (file.fileUrl) {
+        await deleteLocalFile(file.fileUrl);
       }
     }
 
@@ -52,9 +57,9 @@ export const deleteFolder = async (req: Request, res: Response) => {
     await prisma.docFolder.delete({ where: { id } });
 
     getIO().emit("docs_changed");
-    res.json({ message: "Xóa thư mục thành công" });
+    res.json({ message: "Folder deleted successfully" });
   } catch (error) {
-    res.status(500).json({ error: "Lỗi xóa thư mục" });
+    res.status(500).json({ error: "Failed to delete folder" });
   }
 };
 
@@ -62,33 +67,31 @@ export const moveFolder = async (req: Request, res: Response) => {
   try {
     const id = req.params.id as string;
     const { parentId } = req.body;
-    if (id === parentId) return res.status(400).json({ error: "Không thể di chuyển thư mục vào chính nó" });
+    if (id === parentId) return res.status(400).json({ error: "Cannot move folder into itself" });
 
     const updatedFolder = await prisma.docFolder.update({ where: { id }, data: { parentId } });
     getIO().emit("docs_changed");
     res.json(updatedFolder);
   } catch (error) {
-    res.status(500).json({ error: "Lỗi khi di chuyển thư mục" });
+    res.status(500).json({ error: "Failed to move folder" });
   }
 };
 
-// ==========================================
-// XỬ LÝ FILE
-// ==========================================
-export const getFiles = async (req: Request, res: Response) => {
+// File handling utilities.
+export const getFiles = async (_req: Request, res: Response) => {
   try {
     const files = await prisma.docFile.findMany({ orderBy: { createdAt: "desc" } });
     res.json(files);
   } catch (error) {
-    res.status(500).json({ error: "Lỗi lấy danh sách file" });
+    res.status(500).json({ error: "Failed to load file list" });
   }
 };
 
 export const uploadFile = async (req: Request, res: Response) => {
   try {
-    if (!req.file) return res.status(400).json({ error: "Chưa chọn file" });
+    if (!req.file) return res.status(400).json({ error: "No file selected" });
 
-    const uploadedBy = (req.body.uploadedBy as string) || "Ẩn danh";
+    const uploadedBy = (req.body.uploadedBy as string) || "Anonymous";
     const size = (req.body.size as string) || "0 KB";
 
     let folderId: string | null = null;
@@ -100,7 +103,7 @@ export const uploadFile = async (req: Request, res: Response) => {
 
     const decodedName = Buffer.from(req.file.originalname, "latin1").toString("utf8");
     
-    // Dùng chung hàm helper GCS vừa tạo (Lưu vào thư mục 'documents' trên bucket)
+    // Use shared GCS helper and store the file in the 'documents' folder.
     const gcsResult = await uploadToGCS(req.file.path, "documents", decodedName);
 
     const newFile = await prisma.docFile.create({
@@ -109,7 +112,7 @@ export const uploadFile = async (req: Request, res: Response) => {
         size,
         uploadedBy,
         fileUrl: gcsResult.url,
-        cloudinaryPublicId: gcsResult.publicId, // Lưu path của GCS vào cột này
+        cloudinaryPublicId: gcsResult.publicId,
         folderId,
       },
     });
@@ -117,8 +120,8 @@ export const uploadFile = async (req: Request, res: Response) => {
     getIO().emit("docs_changed");
     res.status(201).json(newFile);
   } catch (error) {
-    console.error("Lỗi upload GCS:", error);
-    res.status(500).json({ error: "Lỗi hệ thống khi tải file lên Google Cloud" });
+    console.error("GCS upload error:", error);
+    res.status(500).json({ error: "Failed to upload file to Google Cloud" });
   }
 };
 
@@ -129,18 +132,17 @@ export const deleteFile = async (req: Request, res: Response) => {
     
     if (file) {
       if (file.cloudinaryPublicId) {
-        await bucket.file(file.cloudinaryPublicId).delete().catch(() => console.log("File không tồn tại trên GCS"));
-      } else if (file.fileUrl && file.fileUrl.startsWith("/uploads")) {
-        const filePath = path.join(process.cwd(), file.fileUrl);
-        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+        await bucket.file(file.cloudinaryPublicId).delete().catch(() => console.log("GCS file not found"));
+      } else if (file.fileUrl) {
+        await deleteLocalFile(file.fileUrl);
       }
     }
 
     await prisma.docFile.delete({ where: { id } });
     getIO().emit("docs_changed");
-    res.json({ message: "Xóa file thành công" });
+    res.json({ message: "File deleted successfully" });
   } catch (error) {
-    res.status(500).json({ error: "Lỗi xóa file" });
+    res.status(500).json({ error: "Failed to delete file" });
   }
 };
 
@@ -148,13 +150,13 @@ export const renameFile = async (req: Request, res: Response) => {
   try {
     const id = req.params.id as string;
     const { name } = req.body;
-    if (!name) return res.status(400).json({ error: "Tên file không được để trống" });
+    if (!name) return res.status(400).json({ error: "File name must not be empty" });
 
     const updatedFile = await prisma.docFile.update({ where: { id }, data: { name } });
     getIO().emit("docs_changed");
     res.json(updatedFile);
   } catch (error) {
-    res.status(500).json({ error: "Lỗi khi đổi tên file" });
+    res.status(500).json({ error: "Failed to rename file" });
   }
 };
 
@@ -171,7 +173,7 @@ export const moveFile = async (req: Request, res: Response) => {
     getIO().emit("docs_changed");
     res.json(updatedFile);
   } catch (error) {
-    res.status(500).json({ error: "Lỗi khi di chuyển file" });
+    res.status(500).json({ error: "Failed to move file" });
   }
 };
 

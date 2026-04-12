@@ -2,11 +2,20 @@ import { Request, Response } from "express";
 import { prisma } from "../../lib/prisma.js";
 import { getIO } from "../socket.js";
 import { bucket, uploadToGCS } from "../middlewares/upload.js"; 
-import fs from "fs";
+import fsPromises from "fs/promises";
 import path from "path";
 
-// --- XỬ LÝ THƯ MỤC ---
-export const getFolders = async (req: Request, res: Response) => {
+const deleteLocalFile = async (fileUrl: string) => {
+  if (!fileUrl.startsWith("/uploads")) return;
+  try {
+    await fsPromises.unlink(path.join(process.cwd(), fileUrl));
+  } catch {
+    // File does not exist — ignore.
+  }
+};
+
+// Processed document folder handling.
+export const getFolders = async (_req: Request, res: Response) => {
   try {
     const folders = await prisma.processedFolder.findMany({ orderBy: { createdAt: "desc" } });
     res.json(folders);
@@ -29,7 +38,7 @@ export const createFolder = async (req: Request, res: Response) => {
   }
 };
 
-// BỔ SUNG: Di chuyển thư mục
+// Add: move processed folder
 export const moveFolder = async (req: Request, res: Response) => {
   try {
     const id = req.params.id as string;
@@ -50,14 +59,12 @@ export const deleteFolder = async (req: Request, res: Response) => {
     const files = await prisma.processedFile.findMany({ where: { folderId: id } });
     
     for (const file of files) {
-      // Xóa trên GCS
+      // Delete from GCS
       if (file.cloudinaryPublicId) {
         await bucket.file(file.cloudinaryPublicId).delete().catch(() => console.log("Không tìm thấy trên GCS"));
       } 
-      // Xóa nếu lỡ có file local (đồng bộ với file doc)
-      else if (file.fileUrl?.startsWith("/uploads")) {
-        const filePath = path.join(process.cwd(), file.fileUrl);
-        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      else if (file.fileUrl) {
+        await deleteLocalFile(file.fileUrl);
       }
     }
 
@@ -70,8 +77,8 @@ export const deleteFolder = async (req: Request, res: Response) => {
   }
 };
 
-// --- XỬ LÝ FILE ---
-export const getFiles = async (req: Request, res: Response) => {
+// Processed file handling.
+export const getFiles = async (_req: Request, res: Response) => {
   try {
     const files = await prisma.processedFile.findMany({ orderBy: { createdAt: "desc" } });
     res.json(files);
@@ -93,7 +100,7 @@ export const uploadFile = async (req: Request, res: Response) => {
 
     const decodedName = Buffer.from(req.file.originalname, "latin1").toString("utf8");
 
-    // Upload vào folder riêng trên GCS để dễ quản lý
+    // Upload to a dedicated GCS folder for processed docs.
     const result = await uploadToGCS(req.file.path, "flyvisa-processed-docs", decodedName);
 
     const newFile = await prisma.processedFile.create({
@@ -115,7 +122,7 @@ export const uploadFile = async (req: Request, res: Response) => {
   }
 };
 
-// BỔ SUNG: Di chuyển file (Giống file doc)
+// Add: move processed file (same logic as doc files)
 export const moveFile = async (req: Request, res: Response) => {
   try {
     const id = req.params.id as string;
@@ -139,9 +146,8 @@ export const deleteFile = async (req: Request, res: Response) => {
     if (file) {
       if (file.cloudinaryPublicId) {
         await bucket.file(file.cloudinaryPublicId).delete().catch(() => console.log("Không thể xóa GCS file"));
-      } else if (file.fileUrl?.startsWith("/uploads")) {
-        const filePath = path.join(process.cwd(), file.fileUrl);
-        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      } else if (file.fileUrl) {
+        await deleteLocalFile(file.fileUrl);
       }
     }
 

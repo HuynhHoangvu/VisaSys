@@ -17,6 +17,7 @@
     "@tailwindcss/vite": "^4.2.1",
     "@types/jszip": "^3.4.0",
     "axios": "^1.13.6",
+    "facehash": "^0.1.0",
     "flowbite": "^4.0.1",
     "flowbite-react": "^0.12.17",
     "jszip": "^3.10.1",

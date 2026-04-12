@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { type AuthUser } from "../../types";
-import { io } from "socket.io-client";
+import socket from "../../services/socket";
+import { FaceAvatar } from "../ui/FaceAvatar";
 
 interface HeaderProps {
   currentUser: AuthUser;
@@ -17,7 +18,6 @@ interface NotificationItem {
 }
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
-const socket = io(API_URL);
 
 const Header: React.FC<HeaderProps> = ({ currentUser, onToggleSidebar }) => {
   const [showNotifs, setShowNotifs] = useState(false);
@@ -125,11 +125,23 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onToggleSidebar }) => {
         {/* TRÁI: TIÊU ĐỀ */}
         <div className="hidden lg:flex items-center gap-2">
           <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center">
-            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <svg
+              className="w-4 h-4 text-white"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
           </div>
-          <h2 className="text-base font-bold text-gray-800 whitespace-nowrap">Fly Visa System</h2>
+          <h2 className="text-base font-bold text-gray-800 whitespace-nowrap">
+            Fly Visa System
+          </h2>
         </div>
       </div>
 
@@ -181,10 +193,22 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onToggleSidebar }) => {
           </button>
         ) : (
           <div className="w-full flex items-center justify-center gap-2 text-gray-400 text-xs md:text-sm italic py-2">
-            <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+            <svg
+              className="w-4 h-4 shrink-0"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+              />
             </svg>
-            <span className="hidden sm:inline">Không có thông báo khẩn nào</span>
+            <span className="hidden sm:inline">
+              Không có thông báo khẩn nào
+            </span>
             <span className="sm:hidden">Không có thông báo</span>
           </div>
         )}
@@ -242,9 +266,15 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onToggleSidebar }) => {
 
         <button
           onClick={() => setShowUserMenu(!showUserMenu)}
-          className="w-8 h-8 md:w-10 md:h-10 bg-orange-100 text-orange-600 border border-orange-200 font-bold text-sm md:text-base rounded-full flex items-center justify-center shadow-sm uppercase hover:bg-orange-200 transition-colors outline-none focus:ring-2 focus:ring-orange-300"
+          className="w-8 h-8 md:w-10 md:h-10 rounded-full overflow-hidden border border-orange-200 bg-orange-100 shadow-sm hover:bg-orange-200 transition-colors outline-none focus:ring-2 focus:ring-orange-300"
+          aria-label="User avatar"
         >
-          {currentUser?.employeeCode?.substring(0, 2) || "AD"}
+          <FaceAvatar
+            name={currentUser?.name || currentUser?.employeeCode || "user"}
+            size={40}
+            showInitial={true}
+            color="#ffff"
+          />
         </button>
 
         {showUserMenu && (

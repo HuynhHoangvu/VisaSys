@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Card,
   Button,
-  Avatar,
   Badge,
   Modal,
   Select,
@@ -11,8 +10,9 @@ import {
   Progress,
 } from "flowbite-react";
 import type { AuthUser, Task } from "../../types";
-import { io } from "socket.io-client";
+import socket from "../../services/socket";
 import SearchFilterBar from "../filter/SearchFilterBar";
+import { FaceAvatar } from "../ui/FaceAvatar";
 
 interface BossDashboardProps {
   currentUser: AuthUser;
@@ -24,7 +24,6 @@ interface ProfileData extends Task {
 }
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
-const socket = io(API_URL);
 
 const BossDashboard: React.FC<BossDashboardProps> = ({ currentUser }) => {
   const [allProfiles, setAllProfiles] = useState<ProfileData[]>([]);
@@ -232,11 +231,6 @@ const BossDashboard: React.FC<BossDashboardProps> = ({ currentUser }) => {
     });
   };
 
-  const getEmployeeAvatar = (employeeName: string) => {
-    const employee = employees.find((e) => e.name === employeeName);
-    return employee?.name?.charAt(0) || employeeName?.charAt(0) || "?";
-  };
-
   if (isLoading) {
     return (
       <div className="flex-1 p-6 flex items-center justify-center">
@@ -377,13 +371,11 @@ const BossDashboard: React.FC<BossDashboardProps> = ({ currentUser }) => {
                       <td className="px-5 py-4 whitespace-nowrap">
                         {profile.assignedTo ? (
                           <div className="flex items-center gap-2">
-                            <Avatar
-                              size="sm"
-                              rounded
-                              placeholderInitials={getEmployeeAvatar(
-                                profile.assignedTo,
-                              )}
-                              className="bg-indigo-100 text-indigo-600"
+                            <FaceAvatar
+                              name={profile.assignedTo}
+                              size={32}
+                              showInitial={false}
+                              className="rounded-full"
                             />
                             <span className="font-bold text-gray-800">
                               {profile.assignedTo}

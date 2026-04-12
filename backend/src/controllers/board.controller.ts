@@ -1,22 +1,29 @@
 import { prisma } from "../../lib/prisma.js";
 import { Request, Response } from "express";
+/**
+ * Retrieve board structure and related task activity for the kanban view.
+ * The frontend expects a payload containing tasks, columns, and columnOrder.
+ */
 export const getBoardData = async (req: Request, res: Response) => {
   try {
-    // 1. Lấy toàn bộ Column, kèm theo Task bên trong, và Activity của từng Task
+    /**
+     * Load all board columns with their tasks and recent activities.
+     * The frontend expects tasks keyed by id and columns containing task order.
+     */
     const columnsData = await prisma.column.findMany({
       orderBy: { order: "asc" },
       include: {
         tasks: {
           include: {
             activities: {
-              orderBy: { createdAt: "desc" }, // Sắp xếp hoạt động mới nhất lên đầu
+              orderBy: { createdAt: "desc" }, 
             },
           },
         },
       },
     });
 
-    // 2. Chuyển đổi dữ liệu sang format Frontend cần
+    // Transform data to the frontend format.
     const tasks: Record<string, any> = {};
     const columns: Record<string, any> = {};
     const columnOrder: string[] = [];
@@ -34,12 +41,12 @@ export const getBoardData = async (req: Request, res: Response) => {
       col.tasks.forEach((task) => {
         tasks[task.id] = {
           ...task,
-          columnId: undefined, // Xóa trường này đi cho sạch data gửi về frontend
+          columnId: undefined, 
         };
       });
     });
 
-    // 3. Trả về kết quả
+    // Return the board payload.
     res.status(200).json({
       tasks,
       columns,

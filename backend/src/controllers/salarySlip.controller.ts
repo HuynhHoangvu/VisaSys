@@ -5,9 +5,15 @@ import os from "os";
 import { Request, Response } from "express";
 import { prisma } from "../../lib/prisma.js";
 import { getIO } from "../socket.js";
+import { calcBaseComponents, calcInsurance, calcFullSalary } from "../services/SalaryService.js";
+import { SALARY_THRESHOLD } from "../constants/index.js";
 
+/**
+ * Download a single employee salary slip as a PDF.
+ * This endpoint prefers finalized payroll history if available, and falls back to live salary calculation otherwise.
+ */
 // ==========================================
-// 1. TẢI PHIẾU LƯƠNG PDF
+// 1. DOWNLOAD SALARY SLIP PDF
 // ==========================================
 export const downloadSalarySlip = async (req: Request, res: Response) => {
   let tmpJson: string | null = null;
@@ -24,7 +30,7 @@ export const downloadSalarySlip = async (req: Request, res: Response) => {
       return res.status(500).json({ error: "Không tìm thấy file PDF generator" });
     }
 
-    // 1. ƯU TIÊN TÌM TRONG LỊCH SỬ CHỐT LƯƠNG
+    // 1. Prefer finalized payroll history when available
     const historyRecord = await prisma.salaryHistory.findFirst({
       where: { employeeId, monthYear },
       include: { employee: true }
@@ -33,12 +39,10 @@ export const downloadSalarySlip = async (req: Request, res: Response) => {
     let data: any = {};
 
     if (historyRecord) {
-      // NẾU THÁNG ĐÃ CHỐT: Bê y nguyên số liệu từ Lịch sử ra
+      // If the month is finalized: reuse snapshot data and recompute allowances via SalaryService
       const ins = historyRecord.baseSalary;
-      const threshold = 8_000_000;
-      const cc  = ins >= (threshold - 2_000_000) ? 1_000_000 : 0;
-      const at  = ins >= (threshold - 2_000_000) ?   500_000 : 0;
-      const htk = ins >= (threshold - 2_000_000) ?   500_000 : 0;
+      const { chuyenCan, anTrua, hoTroKhac } = calcBaseComponents(ins >= SALARY_THRESHOLD ? ins + 2_000_000 : ins);
+      const { bhxhNld, bhytNld, bhtnNld } = calcInsurance(ins);
 
       data = {
         employeeCode: historyRecord.employee?.employeeCode || "",
@@ -46,9 +50,9 @@ export const downloadSalarySlip = async (req: Request, res: Response) => {
         role: historyRecord.employee?.role || "",
         monthYear,
         baseSalary: ins,
-        chuyenCan: cc,
-        anTrua: at,
-        hoTroKhac: htk,
+        chuyenCan,
+        anTrua,
+        hoTroKhac,
         hoaHong: historyRecord.hoaHong || 0,
         insuranceSalary: ins,
         workDays: historyRecord.workDays || 0,
@@ -58,86 +62,58 @@ export const downloadSalarySlip = async (req: Request, res: Response) => {
         halfDayDeduction: historyRecord.halfDayDeduction || 0,
         attendanceFines: historyRecord.attendanceFines || 0,
         manualFines: historyRecord.manualFines || 0,
-        bhxhNld: Math.round(ins * 0.08),
-        bhytNld: Math.round(ins * 0.015),
-        bhtnNld: Math.round(ins * 0.01),
+        bhxhNld,
+        bhytNld,
+        bhtnNld,
         finalSalary: historyRecord.finalSalary || 0,
       };
     } else {
-      // NẾU THÁNG CHƯA CHỐT: Tính toán trực tiếp (Live)
+      // If not finalized: compute live salary figures from current records
+      const [mm, yyyy] = monthYear.split('/');
+      const monthStart = new Date(parseInt(yyyy), parseInt(mm) - 1, 1);
+      const monthEnd   = new Date(parseInt(yyyy), parseInt(mm), 1);
+
       const employee = await prisma.employee.findUnique({
         where: { id: employeeId },
-        include: { salesRecords: true, attendanceRecords: true },
+        include: {
+          attendanceRecords: {
+            where: { date: { contains: `/${mm}/${yyyy}` } }
+          },
+          salesRecords: {
+            where: { createdAt: { gte: monthStart, lt: monthEnd } }
+          }
+        }
       });
       if (!employee) return res.status(404).json({ error: "Không tìm thấy nhân viên" });
 
-      const [mm, yyyy] = monthYear.split('/');
-      const monthAttendance = employee.attendanceRecords.filter((r) => {
-        const parts = r.date ? r.date.split('/') : [];
-        return parts.length === 3 && parseInt(parts[1]) === parseInt(mm) && parseInt(parts[2]) === parseInt(yyyy);
-      });
-      const monthSales = employee.salesRecords.filter((r) => {
-        if (!r.createdAt) return true;
-        const d = new Date(r.createdAt);
-        return d.getMonth() + 1 === parseInt(mm) && d.getFullYear() === parseInt(yyyy);
-      });
-
-      const totalSalaryBrutto = employee.baseSalary || 0;
-      const THRESHOLD = 8_000_000;
-      const insuranceSalary = totalSalaryBrutto >= THRESHOLD ? totalSalaryBrutto - 2_000_000 : totalSalaryBrutto;
-      const chuyenCan = totalSalaryBrutto >= THRESHOLD ? 1_000_000 : 0;
-      const anTrua    = totalSalaryBrutto >= THRESHOLD ?   500_000 : 0;
-      const hoTroKhac = totalSalaryBrutto >= THRESHOLD ?   500_000 : 0;
-
-      let hoaHong = 0, manualFines = 0, salaryAdvances = 0;
-      monthSales.forEach((r) => {
-        const amount = Number(r.profit) || 0;
-        if (r.service === "Phạt") manualFines += Math.abs(amount);
-        else if (r.service === "Tạm ứng") salaryAdvances += Math.abs(amount);
-        else if (!["Chuyên cần", "Ăn trưa", "Hỗ trợ khác"].includes(r.service || ""))
-          hoaHong += amount;
-      });
-
-      const attendanceFines = monthAttendance.reduce((s, r) => s + (r.fine || 0), 0);
-      const fullDayAbsenceDeduction = monthAttendance.reduce((s, r) => {
-        if (r.status === "Vắng không phép") return s + Math.round(insuranceSalary / 21);
-        return s;
-      }, 0);
-      const halfDayDeduction = monthAttendance.reduce((s, r) => s + (r.halfDayDeduction || 0), 0);
-
-      const checkedOutRecords = monthAttendance.filter((r) => r.outTime && r.outTime !== "-" && r.outTime !== "Quên checkout");
-      const workDays = checkedOutRecords.length;
-      const workDates = checkedOutRecords.map((r) => r.date).sort();
-
-      const bhxh = Math.round(insuranceSalary * 0.08);
-      const bhyt = Math.round(insuranceSalary * 0.015);
-      const bhtn = Math.round(insuranceSalary * 0.01);
-      
-      const totalIncome = insuranceSalary + chuyenCan + anTrua + hoTroKhac + hoaHong;
-      const finalSalary = totalIncome - salaryAdvances - manualFines - attendanceFines - fullDayAbsenceDeduction - halfDayDeduction - bhxh - bhyt - bhtn;
+      const salary = calcFullSalary(
+        employee.baseSalary || 0,
+        employee.attendanceRecords,
+        employee.salesRecords
+      );
 
       data = {
         employeeCode: employee.employeeCode,
         name: employee.name,
         role: employee.role,
         monthYear,
-        baseSalary: insuranceSalary,
-        chuyenCan,
-        anTrua,
-        hoTroKhac,
-        hoaHong,
-        insuranceSalary,
-        workDays,
-        workDates,
-        tamUng: salaryAdvances,
-        fullDayAbsenceDeduction,
-        halfDayDeduction,
-        attendanceFines,
-        manualFines,
-        bhxhNld: bhxh,
-        bhytNld: bhyt,
-        bhtnNld: bhtn,
-        finalSalary,
+        baseSalary: salary.insuranceSalary,
+        chuyenCan: salary.chuyenCan,
+        anTrua: salary.anTrua,
+        hoTroKhac: salary.hoTroKhac,
+        hoaHong: salary.hoaHong,
+        insuranceSalary: salary.insuranceSalary,
+        workDays: salary.workDays,
+        workDates: salary.workDates,
+        tamUng: salary.tamUng,
+        fullDayAbsenceDeduction: salary.fullDayAbsenceDeduction,
+        halfDayDeduction: salary.halfDayDeduction,
+        attendanceFines: salary.attendanceFines,
+        manualFines: salary.manualFines,
+        bhxhNld: salary.bhxhNld,
+        bhytNld: salary.bhytNld,
+        bhtnNld: salary.bhtnNld,
+        finalSalary: salary.finalSalary,
       };
     }
 
@@ -170,8 +146,12 @@ export const downloadSalarySlip = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * Return debug payload for salary calculation.
+ * This endpoint is intended for development and validation of payroll computation logic.
+ */
 // ==========================================
-// 1a-DEBUG: Test lấy dữ liệu tính lương (JSON - không PDF)
+// 1a-DEBUG: Test salary calculation data (JSON only)
 // ==========================================
 export const testSalaryCalculation = async (req: Request, res: Response) => {
   try {
@@ -183,7 +163,7 @@ export const testSalaryCalculation = async (req: Request, res: Response) => {
     });
     if (!employee) return res.status(404).json({ error: "Không tìm thấy nhân viên" });
 
-    // Lọc theo tháng (monthYear = "MM/YYYY")
+    // Filter attendance and sales records by the requested payroll month
     const [mm, yyyy] = monthYear.split('/');
     const monthAttendance = employee.attendanceRecords.filter((r) => {
       const parts = r.date ? r.date.split('/') : [];
@@ -195,54 +175,9 @@ export const testSalaryCalculation = async (req: Request, res: Response) => {
       return d.getMonth() + 1 === parseInt(mm) && d.getFullYear() === parseInt(yyyy);
     });
 
-    // Tách lương: >= 8tr → lương CB = tổng - 2tr, phụ cấp 2tr
-    const totalSalary = employee.baseSalary || 0;
-    const THRESHOLD = 8_000_000;
-    const insuranceSalary = totalSalary >= THRESHOLD ? totalSalary - 2_000_000 : totalSalary;
-    const chuyenCan = totalSalary >= THRESHOLD ? 1_000_000 : 0;
-    const anTrua    = totalSalary >= THRESHOLD ?   500_000 : 0;
-    const hoTroKhac = totalSalary >= THRESHOLD ?   500_000 : 0;
+    const salary = calcFullSalary(employee.baseSalary || 0, monthAttendance, monthSales);
 
-    let hoaHong = 0, manualFines = 0, salaryAdvances = 0;
-    monthSales.forEach((r) => {
-      const amount = Number(r.profit) || 0;
-      if (r.service === "Phạt") manualFines += Math.abs(amount);
-      else if (r.service === "Tạm ứng") salaryAdvances += Math.abs(amount);
-      else if (!["Chuyên cần", "Ăn trưa", "Hỗ trợ khác"].includes(r.service || ""))
-        hoaHong += amount;
-    });
-
-    const attendanceFines = monthAttendance.reduce((s, r) => s + (r.fine || 0), 0);
-    
-    // Tính trừ lương vắng không phép (1 ngày đầy đủ)
-    const fullDayAbsenceDeduction = monthAttendance.reduce((s, r) => {
-      if (r.status === "Vắng không phép") {
-        return s + Math.round(insuranceSalary / 21); // 1 ngày lương
-      }
-      return s;
-    }, 0);
-    
-    // Tính trừ lương nửa ngày
-    const halfDayDeduction = monthAttendance.reduce((s, r) => s + (r.halfDayDeduction || 0), 0);
-    
-    // Tổng trừ lương (cả ngày + nửa ngày)
-    const totalAbsenceDeduction = fullDayAbsenceDeduction + halfDayDeduction;
-    const checkedOutRecords = monthAttendance.filter(
-      (r) => r.outTime && r.outTime !== "-" && r.outTime !== "Quên checkout"
-    );
-    const workDays = checkedOutRecords.length;
-    const workDates = checkedOutRecords.map((r) => r.date).sort();
-
-    const bhxh = Math.round(insuranceSalary * 0.08);
-    const bhyt = Math.round(insuranceSalary * 0.015);
-    const bhtn = Math.round(insuranceSalary * 0.01);
-    const bhxhCty = Math.round(insuranceSalary * 0.175);
-    const bhytCty = Math.round(insuranceSalary * 0.03);
-    const bhtnCty = Math.round(insuranceSalary * 0.01);
-    const totalIncome = insuranceSalary + chuyenCan + anTrua + hoTroKhac + hoaHong;
-    const finalSalary = totalIncome - salaryAdvances - manualFines - attendanceFines - totalAbsenceDeduction - bhxh - bhyt - bhtn;
-
-    // Trả về JSON để debug
+    // Return JSON payload for debugging
     res.json({
       employeeCode: employee.employeeCode,
       name: employee.name,
@@ -259,23 +194,23 @@ export const testSalaryCalculation = async (req: Request, res: Response) => {
       },
       calculation: {
         baseSalary: employee.baseSalary,
-        insuranceSalary,
-        chuyenCan,
-        anTrua,
-        hoTroKhac,
-        hoaHong,
-        totalIncome,
-        workDays,
-        attendanceFines,
-        fullDayAbsenceDeduction,
-        halfDayDeduction,
-        totalAbsenceDeduction,
-        manualFines,
-        salaryAdvances,
-        bhxh,
-        bhyt,
-        bhtn,
-        finalSalary,
+        insuranceSalary: salary.insuranceSalary,
+        chuyenCan: salary.chuyenCan,
+        anTrua: salary.anTrua,
+        hoTroKhac: salary.hoTroKhac,
+        hoaHong: salary.hoaHong,
+        totalIncome: salary.insuranceSalary + salary.chuyenCan + salary.anTrua + salary.hoTroKhac + salary.hoaHong,
+        workDays: salary.workDays,
+        attendanceFines: salary.attendanceFines,
+        fullDayAbsenceDeduction: salary.fullDayAbsenceDeduction,
+        halfDayDeduction: salary.halfDayDeduction,
+        totalAbsenceDeduction: salary.fullDayAbsenceDeduction + salary.halfDayDeduction,
+        manualFines: salary.manualFines,
+        salaryAdvances: salary.tamUng,
+        bhxhNld: salary.bhxhNld,
+        bhytNld: salary.bhytNld,
+        bhtnNld: salary.bhtnNld,
+        finalSalary: salary.finalSalary,
       },
     });
   } catch (error) {
@@ -284,8 +219,12 @@ export const testSalaryCalculation = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * Generate a PDF summary of the entire payroll for a payroll month.
+ * Uses live salary calculations for each employee and renders the result via Python.
+ */
 // ==========================================
-// 1b. TẢI BẢNG LƯƠNG TỔNG PDF
+// 1b. DOWNLOAD TOTAL PAYROLL PDF
 // ==========================================
 export const downloadSalarySummary = async (req: Request, res: Response) => {
   let tmpJson: string | null = null;
@@ -307,74 +246,34 @@ export const downloadSalarySummary = async (req: Request, res: Response) => {
       orderBy: { name: "asc" },
     });
 
-    const [smm, syyyy] = monthYear.split('/');
-    const THRESHOLD = 8_000_000;
-
     const employeeData = employees.map((emp) => {
-      // Lọc theo tháng
-      const monthAtt = emp.attendanceRecords.filter((r) => {
-        const parts = r.date ? r.date.split('/') : [];
-        return parts.length === 3 && parseInt(parts[1]) === parseInt(smm) && parseInt(parts[2]) === parseInt(syyyy);
-      });
-      const monthSales = emp.salesRecords.filter((r) => {
-        if (!r.createdAt) return true;
-        const d = new Date(r.createdAt);
-        return d.getMonth() + 1 === parseInt(smm) && d.getFullYear() === parseInt(syyyy);
-      });
-
-      let hoaHong = 0, tamUng = 0, manualFines = 0;
-      monthSales.forEach((r) => {
-        const amount = Number(r.profit) || 0;
-        if (r.service === "Phạt") manualFines += Math.abs(amount);
-        else if (r.service === "Tạm ứng") tamUng += Math.abs(amount);
-        else if (!["Chuyên cần", "Ăn trưa", "Hỗ trợ khác"].includes(r.service || ""))
-          hoaHong += amount;
-      });
-
-      const attendanceFines = monthAtt.reduce((s, r) => s + (r.fine || 0), 0);
-      const halfDayDeduction = monthAtt.reduce((s, r) => s + (r.halfDayDeduction || 0), 0);
-      const workDays = monthAtt.filter(
-        (r) => r.outTime && r.outTime !== "-" && r.outTime !== "Quên checkout"
-      ).length;
-
-      // Tách lương theo mốc
-      const totalSalaryBrutto = emp.baseSalary || 0;
-      const ins = totalSalaryBrutto >= THRESHOLD ? totalSalaryBrutto - 2_000_000 : totalSalaryBrutto;
-      const cc  = totalSalaryBrutto >= THRESHOLD ? 1_000_000 : 0;
-      const at  = totalSalaryBrutto >= THRESHOLD ?   500_000 : 0;
-      const htk = totalSalaryBrutto >= THRESHOLD ?   500_000 : 0;
-      const totalBonus = cc + at + htk + hoaHong;
+      const s = calcFullSalary(emp.baseSalary || 0, emp.attendanceRecords, emp.salesRecords);
+      const ins = s.insuranceSalary;
+      const totalBonus = s.chuyenCan + s.anTrua + s.hoTroKhac + s.hoaHong;
       const totalSalary = ins + totalBonus;
-
       const bhxhCty  = Math.round(ins * 0.175);
       const bhytCty  = Math.round(ins * 0.03);
       const bhtnCty  = Math.round(ins * 0.01);
       const totalCty = bhxhCty + bhytCty + bhtnCty;
-
-      const bhxhNld  = Math.round(ins * 0.08);
-      const bhytNld  = Math.round(ins * 0.015);
-      const bhtnNld  = Math.round(ins * 0.01);
-      const totalNld = bhxhNld + bhytNld + bhtnNld;
-
-      const finalSalary = totalSalary - tamUng - manualFines - attendanceFines - halfDayDeduction - bhxhNld - bhytNld - bhtnNld;
+      const totalNld = s.bhxhNld + s.bhytNld + s.bhtnNld;
 
       return {
         name: emp.name,
         role: emp.role || "",
         baseSalary: ins,
-        chuyenCan: cc,
-        anTrua: at,
-        hoTroKhac: htk,
-        hoaHong,
+        chuyenCan: s.chuyenCan,
+        anTrua: s.anTrua,
+        hoTroKhac: s.hoTroKhac,
+        hoaHong: s.hoaHong,
         totalBonus,
-        workDays,
+        workDays: s.workDays,
         totalSalary,
         insuranceSalary: ins,
         bhxhCty, bhytCty, bhtnCty, totalCty,
-        bhxhNld, bhytNld, bhtnNld, totalNld,
-        tamUng,
-        halfDayDeduction,
-        finalSalary,
+        bhxhNld: s.bhxhNld, bhytNld: s.bhytNld, bhtnNld: s.bhtnNld, totalNld,
+        tamUng: s.tamUng,
+        halfDayDeduction: s.halfDayDeduction,
+        finalSalary: s.finalSalary,
       };
     });
 
@@ -412,11 +311,15 @@ export const downloadSalarySummary = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * Build the monthly payroll payload for every employee.
+ * This helper consolidates raw attendance and sales records into the Excel/generation model.
+ */
 // ==========================================
-// 1c. TẢI BẢNG LƯƠNG TỔNG EXCEL (MỚI THÊM)
+// 1c. DOWNLOAD TOTAL PAYROLL EXCEL (NEW)
 // ==========================================
-// Helper: tính data lương theo tháng cho từng nhân viên
-function buildEmployeePayrollData(employees: any[], monthYear: string, threshold = 8_000_000) {
+// Helper: build monthly payroll data for each employee
+function buildEmployeePayrollData(employees: any[], monthYear: string) {
   const [mm, yyyy] = monthYear.split('/');
   console.log(`\n[buildPayroll] ===== Tháng: ${monthYear} (mm=${mm}, yyyy=${yyyy}) =====`);
   return employees.map((emp) => {
@@ -446,91 +349,55 @@ function buildEmployeePayrollData(employees: any[], monthYear: string, threshold
         hoaHong += amount;
     });
 
-    // Tính insuranceSalary TRƯỚC khi dùng nó
-    const totalSalaryBrutto = emp.baseSalary || 0;
-    const ins = totalSalaryBrutto >= threshold ? totalSalaryBrutto - 2_000_000 : totalSalaryBrutto;
-    const cc  = totalSalaryBrutto >= threshold ? 1_000_000 : 0;
-    const at  = totalSalaryBrutto >= threshold ?   500_000 : 0;
-    const htk = totalSalaryBrutto >= threshold ?   500_000 : 0;
-
-    const attendanceFines = monthAtt.reduce((s: number, r: any) => s + (r.fine || 0), 0);
-    const halfDayDeduction = monthAtt.reduce((s: number, r: any) => s + (r.halfDayDeduction || 0), 0);
-    const workDays = monthAtt.filter(
-      (r: any) => r.outTime && r.outTime !== "-" && r.outTime !== "Quên checkout"
-    ).length;
-
-    // Chi tiết các ngày đi trễ (halfDayDeduction > 0)
-    const lateRecords = monthAtt.filter((r: any) => (r.halfDayDeduction || 0) > 0).map((r: any) => ({
-      date: r.date,
-      amount: r.halfDayDeduction,
-      status: r.status,
-    }));
-    
-    // Chi tiết phạt đi trễ (fine > 0)
-    const fineRecords = monthAtt.filter((r: any) => (r.fine || 0) > 0).map((r: any) => ({
-      date: r.date,
-      amount: r.fine,
-      status: r.status,
-    }));
-    
-    // Chi tiết các lần ứng lương (tạm ứng)
-    const advanceRecords = monthSales.filter((r: any) => r.service === "Tạm ứng").map((r: any) => ({
-      date: r.createdAt ? new Date(r.createdAt).toLocaleDateString('vi-VN') : '',
-      amount: Math.abs(Number(r.profit) || 0),
-      note: r.note || '',
-    }));
-    
-    // Chi tiết các ngày vắng không phép (cả ngày)
-    const absenceRecords = monthAtt.filter((r: any) => r.status === "Vắng không phép").map((r: any) => ({
-      date: r.date,
-      amount: Math.round(ins / 21),  // 1 ngày lương
-      status: r.status,
-    }));
-    
-    // Tính trừ lương vắng không phép (1 ngày đầy đủ)
-    const fullDayAbsenceDeduction = monthAtt.reduce((s: number, r: any) => {
-      if (r.status === "Vắng không phép") {
-        return s + Math.round(ins / 21); // 1 ngày lương
-      }
-      return s;
-    }, 0);
-    // Tổng trừ lương (cả ngày + nửa ngày)
-    const totalAbsenceDeduction = fullDayAbsenceDeduction + halfDayDeduction;
-    const totalBonus = cc + at + htk + hoaHong;
+    const s = calcFullSalary(emp.baseSalary || 0, monthAtt, monthSales);
+    const ins = s.insuranceSalary;
+    const totalBonus = s.chuyenCan + s.anTrua + s.hoTroKhac + s.hoaHong;
     const totalSalary = ins + totalBonus;
+
 
     const bhxhCty  = Math.round(ins * 0.175);
     const bhytCty  = Math.round(ins * 0.03);
     const bhtnCty  = Math.round(ins * 0.01);
     const totalCty = bhxhCty + bhytCty + bhtnCty;
-    const bhxhNld  = Math.round(ins * 0.08);
-    const bhytNld  = Math.round(ins * 0.015);
-    const bhtnNld  = Math.round(ins * 0.01);
-    const totalNld = bhxhNld + bhytNld + bhtnNld;
+    const totalNld = s.bhxhNld + s.bhytNld + s.bhtnNld;
 
-    const finalSalary = totalSalary - tamUng - manualFines - attendanceFines - totalAbsenceDeduction - bhxhNld - bhytNld - bhtnNld;
+    // Build detail records for late arrivals, fines, advances, and absences
+    const lateRecords = monthAtt.filter((r: any) => (r.halfDayDeduction || 0) > 0).map((r: any) => ({
+      date: r.date, amount: r.halfDayDeduction, status: r.status,
+    }));
+    const fineRecords = monthAtt.filter((r: any) => (r.fine || 0) > 0).map((r: any) => ({
+      date: r.date, amount: r.fine, status: r.status,
+    }));
+    const advanceRecords = monthSales.filter((r: any) => r.service === "Tạm ứng").map((r: any) => ({
+      date: r.createdAt ? new Date(r.createdAt).toLocaleDateString('vi-VN') : '',
+      amount: Math.abs(Number(r.profit) || 0),
+      note: r.note || '',
+    }));
+    const absenceRecords = monthAtt.filter((r: any) => r.status === "Vắng không phép").map((r: any) => ({
+      date: r.date, amount: Math.round(ins / 21), status: r.status,
+    }));
 
     return {
       employeeCode: emp.employeeCode || "",
       name: emp.name,
       role: emp.role || "",
       baseSalary: ins,
-      chuyenCan: cc,
-      anTrua: at,
-      hoTroKhac: htk,
-      hoaHong,
+      chuyenCan: s.chuyenCan,
+      anTrua: s.anTrua,
+      hoTroKhac: s.hoTroKhac,
+      hoaHong: s.hoaHong,
       totalBonus,
-      workDays,
+      workDays: s.workDays,
       totalSalary,
       insuranceSalary: ins,
       bhxhCty, bhytCty, bhtnCty, totalCty,
-      bhxhNld, bhytNld, bhtnNld, totalNld,
-      tamUng,
-      fullDayAbsenceDeduction,
-      halfDayDeduction,
-      attendanceFines,
-      manualFines,
-      finalSalary,
+      bhxhNld: s.bhxhNld, bhytNld: s.bhytNld, bhtnNld: s.bhtnNld, totalNld,
+      tamUng: s.tamUng,
+      fullDayAbsenceDeduction: s.fullDayAbsenceDeduction,
+      halfDayDeduction: s.halfDayDeduction,
+      attendanceFines: s.attendanceFines,
+      manualFines: s.manualFines,
+      finalSalary: s.finalSalary,
       lateRecords,
       fineRecords,
       advanceRecords,
@@ -539,22 +406,26 @@ function buildEmployeePayrollData(employees: any[], monthYear: string, threshold
   });
 }
 
+/**
+ * Return a detailed JSON salary breakdown for the requested payroll month.
+ * If the month is finalized, the stored snapshot is used; otherwise the breakdown is computed live.
+ */
 // ==========================================
-// 1c. BREAKDOWN CHI TIẾT LƯƠNG THÁNG (JSON)
+// 1c. SALARY BREAKDOWN DETAIL (JSON)
 // ==========================================
 export const getSalaryBreakdown = async (req: Request, res: Response) => {
   try {
     const { monthYear } = req.params as { monthYear: string };
 
-    // 1. KIỂM TRA XEM THÁNG NÀY ĐÃ CHỐT CHƯA
-    // Đọc từ bảng SalaryHistory (Bảng lưu kết quả tĩnh)
+    // 1. Check whether this payroll month has been finalized
+    // Read finalized snapshot rows from SalaryHistory
     const historyRecords = await prisma.salaryHistory.findMany({
       where: { monthYear },
       include: { employee: { select: { name: true, employeeCode: true, role: true } } },
       orderBy: { employee: { name: "asc" } },
     });
 
-    // NẾU ĐÃ CHỐT RỒI -> Lấy số liệu tĩnh từ DB ra trả về (Vì data thô đã xóa)
+    // If finalized, return the stored snapshot because raw source data may have been purged
     if (historyRecords.length > 0) {
       const breakdown = historyRecords.map(h => ({
         name: h.employee?.name ?? "Nhân viên đã xóa",
@@ -574,13 +445,13 @@ export const getSalaryBreakdown = async (req: Request, res: Response) => {
       return res.json(breakdown);
     }
 
-    // 2. NẾU CHƯA CHỐT -> Tính toán Live từ DB
+    // 2. If not finalized, compute the breakdown live from raw records
     const employees = await prisma.employee.findMany({
       include: { salesRecords: true, attendanceRecords: true },
       orderBy: { name: "asc" },
     });
     
-    // Gọi hàm helper tính lương (hàm này ở trên phần code của bạn)
+    // Use the shared payroll helper defined above
     const breakdown = buildEmployeePayrollData(employees, monthYear);
     res.json(breakdown);
     
@@ -590,8 +461,12 @@ export const getSalaryBreakdown = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * Generate a total payroll Excel workbook for the requested month.
+ * The workbook uses either finalized payroll history or live payroll data as needed.
+ */
 // ==========================================
-// 1d. TẢI BẢNG LƯƠNG TỔNG EXCEL
+// 1d. DOWNLOAD TOTAL PAYROLL EXCEL
 // ==========================================
 export const downloadSalarySummaryExcel = async (req: Request, res: Response) => {
   let tmpJson: string | null = null;
@@ -604,43 +479,29 @@ export const downloadSalarySummaryExcel = async (req: Request, res: Response) =>
     if (!fs.existsSync(scriptPath)) scriptPath = path.join(process.cwd(), "scripts/gen_salary.py");
     if (!fs.existsSync(scriptPath)) return res.status(500).json({ error: "Không tìm thấy file Python generator" });
 
-    // 1. KIỂM TRA LỊCH SỬ CHỐT LƯƠNG
+    // 1. Check finalized payroll history
     const historyRecords = await prisma.salaryHistory.findMany({
       where: { monthYear },
       include: { employee: true },
       orderBy: { employee: { name: "asc" } },
     });
 
-    let employeeData = [];
+    let employeeData: any[] = [];
 
     if (historyRecords.length > 0) {
-      // THÁNG ĐÃ CHỐT: Lấy dữ liệu tĩnh từ DB để Python render
+      // Finalized month: use static snapshot data for Python rendering
       employeeData = historyRecords.map(h => {
-        // Tái tạo lại các hằng số bảo hiểm/phụ cấp để điền vào Excel
-        const threshold = 8_000_000;
-        // Do lúc chốt baseSalary lưu vào DB là lương đã trừ đi 2 triệu (nếu tổng > 8tr)
-        // Nên ta dùng lại đúng số đó làm ins
-        const ins = h.baseSalary; 
-        
-        // Suy ngược lại tổng lương ban đầu để gán phụ cấp
-        // (Nếu ins < threshold thì lương ban đầu chính là ins, nếu không thì là ins + 2_000_000)
-        // Tuy nhiên, cách an toàn nhất là cứ check nếu ins >= 6_000_000 (do đã trừ 2tr)
-        // Để đơn giản và khớp mẫu, ta gán cứng dựa vào mốc ins
-        const cc  = ins >= (threshold - 2_000_000) ? 1_000_000 : 0;
-        const at  = ins >= (threshold - 2_000_000) ?   500_000 : 0;
-        const htk = ins >= (threshold - 2_000_000) ?   500_000 : 0;
-
+        // In DB, baseSalary corresponds to insuranceSalary (after the threshold adjustment)
+        const ins = h.baseSalary;
+        const { chuyenCan: cc, anTrua: at, hoTroKhac: htk } = calcBaseComponents(ins >= (SALARY_THRESHOLD - 2_000_000) ? ins + 2_000_000 : ins);
+        const { bhxhNld, bhytNld, bhtnNld } = calcInsurance(ins);
         const bhxhCty  = Math.round(ins * 0.175);
         const bhytCty  = Math.round(ins * 0.03);
         const bhtnCty  = Math.round(ins * 0.01);
         const totalCty = bhxhCty + bhytCty + bhtnCty;
-
-        const bhxhNld  = Math.round(ins * 0.08);
-        const bhytNld  = Math.round(ins * 0.015);
-        const bhtnNld  = Math.round(ins * 0.01);
         const totalNld = bhxhNld + bhytNld + bhtnNld;
 
-        // Tổng thu nhập trước thuế/phạt
+        // Total pre-tax/pre-deduction income
         const totalSalary = ins + cc + at + htk + (h.hoaHong || 0);
 
         return {
@@ -648,8 +509,8 @@ export const downloadSalarySummaryExcel = async (req: Request, res: Response) =>
           name: h.employee?.name || "Nhân viên đã xóa",
           role: h.employee?.role || "",
           
-          // Các cột Excel cần
-          baseSalary: ins, // Gán ins vào baseSalary trên Excel
+          // Columns required for Excel export
+          baseSalary: ins, // Map computed insurance salary into Excel's baseSalary field
           chuyenCan: cc,
           anTrua: at,
           hoTroKhac: htk,
@@ -659,23 +520,23 @@ export const downloadSalarySummaryExcel = async (req: Request, res: Response) =>
           totalSalary: totalSalary,
           insuranceSalary: ins,
           
-          // Bảo hiểm
+          // Employer insurance contributions
           bhxhCty, bhytCty, bhtnCty, totalCty,
           bhxhNld, bhytNld, bhtnNld, totalNld,
           
-          // Phạt / Trừ
+          // Deductions / penalties
           tamUng: h.tamUng,
           halfDayDeduction: h.halfDayDeduction,
           attendanceFines: h.attendanceFines,
           manualFines: h.manualFines,
           fullDayAbsenceDeduction: h.fullDayAbsenceDeduction,
           
-          // Cột Thực Lĩnh
+          // Net pay column
           finalSalary: h.finalSalary,
         };
       });
     } else {
-      // THÁNG CHƯA CHỐT: Tính toán Live từ các bảng thô
+      // Not finalized: calculate live from raw tables
       const employees = await prisma.employee.findMany({
         include: { salesRecords: true, attendanceRecords: true },
         orderBy: { name: "asc" },
@@ -683,27 +544,27 @@ export const downloadSalarySummaryExcel = async (req: Request, res: Response) =>
       employeeData = buildEmployeePayrollData(employees, monthYear);
     }
 
-    // 2. CHUẨN BỊ DỮ LIỆU ĐẨY CHO PYTHON
+    // 2. Prepare payload for Python renderer
     const summaryData = { monthYear, employees: employeeData };
     const tmpDir = os.tmpdir();
     const ts = Date.now();
     tmpJson = path.join(tmpDir, `salary_excel_${ts}.json`);
     tmpXlsx = path.join(tmpDir, `salary_excel_${ts}.xlsx`);
     
-    // Ghi file JSON
+    // Write JSON payload file
     fs.writeFileSync(tmpJson, JSON.stringify(summaryData, null, 2), "utf8");
 
-    // 3. GỌI PYTHON ĐỂ VẼ EXCEL
+    // 3. Invoke Python to render Excel
     const pythonCmd = process.platform === "win32" ? "python" : "python3";
     execSync(`${pythonCmd} "${scriptPath}" excel "${tmpJson}" "${tmpXlsx}"`, { encoding: "utf8", timeout: 30000 });
 
-    // 4. TRẢ FILE VỀ CHO CLIENT
+    // 4. Return the generated file to the client
     const filename = `BangLuong_${monthYear.replace("/", "_")}.xlsx`;
     res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
     res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
     res.send(fs.readFileSync(tmpXlsx));
 
-    // Dọn rác
+    // Cleanup temporary files
     if (tmpJson && fs.existsSync(tmpJson)) fs.unlinkSync(tmpJson);
     if (tmpXlsx && fs.existsSync(tmpXlsx)) fs.unlinkSync(tmpXlsx);
 
@@ -715,8 +576,12 @@ export const downloadSalarySummaryExcel = async (req: Request, res: Response) =>
   }
 };
 
+/**
+ * Generate individual employee salary slip Excel workbook sheets for the requested payroll month.
+ * Each employee receives a dedicated sheet in the workbook.
+ */
 // ==========================================
-// 1d. TẢI PHIẾU LƯƠNG CÁ NHÂN EXCEL (mỗi người 1 sheet)
+// 1d. DOWNLOAD INDIVIDUAL SALARY SLIPS EXCEL (one sheet per employee)
 // ==========================================
 export const downloadSalarySlipsExcel = async (req: Request, res: Response) => {
   let tmpJson: string | null = null;

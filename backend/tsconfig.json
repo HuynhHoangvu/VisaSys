@@ -4,9 +4,9 @@
     "moduleResolution": "bundler",
     "outDir": "dist",
     "target": "ES2023",
-    "strict": false,
-    "esModuleInterop": true,
+    "strict": true,
     "noImplicitAny": false,
+    "esModuleInterop": true,
     "lib": ["ESNext", "DOM"]
   }
 }
