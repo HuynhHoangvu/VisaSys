@@ -28,7 +28,7 @@ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const BossDashboard: React.FC<BossDashboardProps> = ({ currentUser }) => {
   const [allProfiles, setAllProfiles] = useState<ProfileData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [employees, setEmployees] = useState<AuthUser[]>([]);
+
 
   // ==========================================
   // SEARCH & FILTER STATE
@@ -52,15 +52,7 @@ const BossDashboard: React.FC<BossDashboardProps> = ({ currentUser }) => {
   // ==========================================
   // FETCH
   // ==========================================
-  const fetchEmployees = useCallback(async () => {
-    try {
-      const res = await fetch(`${API_URL}/api/hr/employees`);
-      const data = await res.json();
-      setEmployees(data);
-    } catch (error) {
-      console.error("Lỗi lấy danh sách nhân viên:", error);
-    }
-  }, []);
+
 
   const fetchAllProfiles = useCallback(async (showSpinner = true) => {
     if (showSpinner) setIsLoading(true);
@@ -96,7 +88,7 @@ const BossDashboard: React.FC<BossDashboardProps> = ({ currentUser }) => {
   }, []);
 
   useEffect(() => {
-    fetchEmployees();
+
     fetchAllProfiles(true);
     socket.on("data_changed", () => fetchAllProfiles(false));
     const handleInstantRefresh = () => fetchAllProfiles(false);
@@ -105,7 +97,7 @@ const BossDashboard: React.FC<BossDashboardProps> = ({ currentUser }) => {
       socket.off("data_changed");
       window.removeEventListener("refreshBoard", handleInstantRefresh);
     };
-  }, [fetchEmployees, fetchAllProfiles]);
+  }, [fetchAllProfiles]);
 
   // ==========================================
   // BUILD FILTER OPTIONS TỪ DỮ LIỆU THỰC TẾ
