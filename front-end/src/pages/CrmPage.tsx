@@ -201,7 +201,7 @@ const CrmPage: React.FC = () => {
 
   return (
     <>
-      <div className="flex-1 h-full w-full overflow-hidden bg-gray-50/50">
+      <div className="flex-1 overflow-hidden">
         <KanbanBoard
           currentUser={currentUser}
           onOpenActivityList={(taskId) => { setActiveTaskId(taskId); setIsActivityListOpen(true); }}

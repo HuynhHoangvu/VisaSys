@@ -30,7 +30,7 @@ const ProcessingPage: React.FC = () => {
 
   return (
     <>
-      <div className="flex-1 p-3 md:p-6 overflow-hidden">
+      <div className="flex-1 overflow-hidden">
         <ProcessingBoard
           onOpenDetail={(taskId) => { setActiveTaskId(taskId); setIsDetailOpen(true); }}
           onOpenAttachments={(taskId) => { setActiveTaskId(taskId); setIsDocumentModalOpen(true); }}

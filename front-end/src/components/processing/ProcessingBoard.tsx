@@ -339,7 +339,7 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
   }
 
   return (
-    <div className="flex flex-col h-full w-full p-4 sm:p-6 bg-[#f8f9fa]">
+    <div className="flex flex-col h-full w-full px-4 py-4 sm:px-6 sm:py-6 bg-transparent">
       {/* HEADER */}
       <div className="mb-4 flex justify-between items-end shrink-0">
         <div>
@@ -405,7 +405,7 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
       {/* KANBAN VIEW */}
       {activeTab === "kanban" && (
         <DragDropContext onDragEnd={onDragEnd}>
-          <div className="flex h-full w-full space-x-4 overflow-x-auto pb-6 items-start">
+          <div className="flex h-full w-full space-x-4 overflow-x-auto pb-4 items-start custom-scrollbar">
             {PROC_COLUMNS.map(({ id: columnId }) => {
               const column = procColumns[columnId];
               const allTasks = column.taskIds
@@ -418,10 +418,10 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
               return (
                 <div
                   key={columnId}
-                  className="flex flex-col bg-gray-200/60 rounded-xl w-56 min-w-[14rem] max-h-full shrink-0 border border-gray-300 shadow-sm"
+                  className="flex flex-col bg-gray-100/50 rounded-xl w-64 min-w-[16rem] max-h-full shrink-0 border border-gray-200/50 shadow-sm"
                 >
                   {/* Column header */}
-                  <div className="p-3 flex justify-between items-center bg-gray-100 rounded-t-xl border-b border-gray-300">
+                  <div className="p-3 flex justify-between items-center bg-white/40 rounded-t-xl border-b border-gray-200/50">
                     <h3 className="font-bold text-gray-700 uppercase text-[12px] tracking-wide">
                       {PROC_COL_MAP[columnId].title}
                     </h3>

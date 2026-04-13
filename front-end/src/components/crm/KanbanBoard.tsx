@@ -509,7 +509,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
 
   return (
     <div
-      className="flex flex-col h-full w-full bg-[#f8f9fa] p-3 sm:p-6 overflow-hidden"
+      className="flex flex-col h-full w-full bg-transparent px-4 py-3 sm:px-6 sm:py-6 overflow-hidden"
       style={{ transform: "none" }}
     >
       <style>{`
@@ -737,7 +737,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
               return (
                 <div
                   key={column.id}
-                  className="flex flex-col bg-gray-100/50 rounded-xl w-[85vw] sm:w-52 min-w-[13rem] h-full shrink-0"
+                  className="flex flex-col bg-gray-100/50 rounded-xl w-[85vw] sm:w-64 min-w-[16rem] h-full shrink-0"
                 >
                   <div className="px-3 py-3 flex justify-between items-center shrink-0 border-b border-gray-200/50">
                     <h3 className="font-bold text-gray-600 uppercase text-[11px] tracking-wider">
