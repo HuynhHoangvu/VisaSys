@@ -1,8 +1,6 @@
-// src/controllers/task.controller.ts
 import { Request, Response } from "express";
 import { prisma } from "../../lib/prisma.js";
 import { getIO } from "../socket.js";
-// Create a new customer task.
 export const createTask = async (req: Request, res: Response) => {
   try {
     const { id, activities, columnId, processingColId, createdAt, ...taskData } = req.body;
@@ -17,18 +15,13 @@ export const createTask = async (req: Request, res: Response) => {
         createdAt: createdAt ? new Date(createdAt) : new Date(),
       },
     });
-
-    // Emit a real-time update.
     getIO().emit("data_changed");
-
     res.status(201).json(newTask);
   } catch (error) {
     console.error("Lỗi khi tạo Task:", error);
     res.status(500).json({ error: "Lỗi server khi tạo khách hàng mới" });
   }
 };
-
-// Update an existing customer task.
 export const updateTask = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -38,18 +31,13 @@ export const updateTask = async (req: Request, res: Response) => {
       where: { id: id as string },
       data: updateData,
     });
-
-    // Emit a real-time update.
     getIO().emit("data_changed");
-
     res.status(200).json(updatedTask);
   } catch (error) {
     console.error("Lỗi khi cập nhật Task:", error);
     res.status(500).json({ error: "Lỗi server khi cập nhật khách hàng" });
   }
 };
-
-// Delete a customer task.
 export const deleteTask = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -57,28 +45,19 @@ export const deleteTask = async (req: Request, res: Response) => {
     await prisma.task.delete({
       where: { id: id as string },
     });
-
-    // Emit a real-time update.
     getIO().emit("data_changed");
-
     res.status(200).json({ message: "Đã xóa khách hàng thành công" });
   } catch (error) {
     console.error("Lỗi khi xóa Task:", error);
     res.status(500).json({ error: "Lỗi server khi xóa khách hàng" });
   }
 };
-
-// Move a task to another Kanban column.
 export const moveTask = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { columnId } = req.body; 
-
-    // 1. Fetch the current task before moving to validate the transition.
     const oldTask = await prisma.task.findUnique({ where: { id: id as string } });
     if (!oldTask) return res.status(404).json({ error: "Không tìm thấy thẻ khách hàng" });
-
-    // 2. Update the task's column.
     const updatedTask = await prisma.task.update({
       where: { id: id as string },
       data: { columnId }, 
@@ -98,15 +77,12 @@ export const moveTask = async (req: Request, res: Response) => {
       });
 
       if (employee) {
-        // Mark commission as paid for this task.
          await prisma.task.update({
     where: { id: id as string },
     data: { commissionPaid: true }
   });
       }
     }
-
-    // 4. Notify clients to refresh board data.
     getIO().emit("data_changed");
     res.status(200).json(updatedTask);
   } catch (error) {
@@ -124,21 +100,16 @@ export const moveProcessingTask = async (req: Request, res: Response) => {
       where: { id: id as string },
       data: { processingColId },
     });
-
-    getIO().emit("data_changed"); // Notify other clients to refresh the board
+    getIO().emit("data_changed"); 
     res.json(updatedTask);
   } catch (error) {
     res.status(500).json({ error: "Lỗi khi chuyển cột xử lý" });
   }
 };
 
-// BO endpoint: send notification to sale user.
 export const sendNotification = async (req: Request, res: Response) => {
   try {
-    const { customerName, saleName, sender, customMessage, taskId } = req.body;
-
-      // Find the employee by sale name (or pass ID from frontend for reliability).
-      // Create the notification record in the DB
+    const { saleName, sender, customMessage, taskId } = req.body;
     const notif = await prisma.notification.create({
       data: {
         sender: sender,

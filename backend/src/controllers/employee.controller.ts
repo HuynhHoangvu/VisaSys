@@ -33,11 +33,10 @@ const generateEmployeeCode = async (): Promise<string> => {
 export const getEmployees = asyncHandler(async (_req: Request, res: Response) => {
   const todayStr = new Date().toLocaleDateString("vi-VN");
 
-  // Only load today's attendance record per employee to avoid N+1 unbounded reads.
   const employees = await prisma.employee.findMany({
     include: {
       department: true,
-      attendanceRecords: { where: { date: todayStr }, take: 1 },
+      attendanceRecords: { orderBy: { createdAt: "desc" } },
       salesRecords: { orderBy: { createdAt: "desc" }, take: 50 },
     },
     orderBy: { createdAt: "asc" },
@@ -53,12 +52,13 @@ export const getEmployees = asyncHandler(async (_req: Request, res: Response) =>
       baseSalary: emp.baseSalary,
       commissionRate: emp.commissionRate,
       department: emp.department?.name || "Chưa phân bổ / Khác",
-      todayStatus: emp.attendanceRecords[0]?.status ?? "Chưa Check-in",
+      todayStatus: emp.attendanceRecords.find(r => r.date === todayStr)?.status ?? "Chưa Check-in",
       attendanceRecords: emp.attendanceRecords,
       salesRecords: emp.salesRecords,
     }))
   );
 });
+
 
 export const createEmployee = asyncHandler(async (req: Request, res: Response) => {
   const { name, email, password, department, role, baseSalary } = req.body as {

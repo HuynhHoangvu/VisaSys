@@ -4,7 +4,6 @@ import path from "path";
 import os from "os";
 import { Request, Response } from "express";
 import { prisma } from "../../lib/prisma.js";
-import { getIO } from "../socket.js";
 import { calcBaseComponents, calcInsurance, calcFullSalary } from "../services/SalaryService.js";
 import { SALARY_THRESHOLD } from "../constants/index.js";
 
@@ -321,7 +320,6 @@ export const downloadSalarySummary = async (req: Request, res: Response) => {
 // Helper: build monthly payroll data for each employee
 function buildEmployeePayrollData(employees: any[], monthYear: string) {
   const [mm, yyyy] = monthYear.split('/');
-  console.log(`\n[buildPayroll] ===== Tháng: ${monthYear} (mm=${mm}, yyyy=${yyyy}) =====`);
   return employees.map((emp) => {
     const monthAtt = emp.attendanceRecords.filter((r: any) => {
       const parts = r.date ? r.date.split('/') : [];
@@ -332,13 +330,6 @@ function buildEmployeePayrollData(employees: any[], monthYear: string) {
       const d = new Date(r.createdAt);
       return d.getMonth() + 1 === parseInt(mm) && d.getFullYear() === parseInt(yyyy);
     });
-    console.log(`[buildPayroll] ${emp.name}: attendanceRecords tổng=${emp.attendanceRecords.length} lọc tháng=${monthAtt.length} | salesRecords tổng=${emp.salesRecords.length} lọc tháng=${monthSales.length}`);
-    if (emp.attendanceRecords.length > 0) {
-      console.log(`[buildPayroll]   Sample date: "${emp.attendanceRecords[0]?.date}" → parts[1]="${emp.attendanceRecords[0]?.date?.split('/')[1]}" vs mm="${mm}"`);
-    }
-    const tamUngRecords = monthSales.filter((r: any) => r.service === "Tạm ứng");
-    const phatRecords = monthSales.filter((r: any) => r.service === "Phạt");
-    console.log(`[buildPayroll]   tamUng=${tamUngRecords.length} records, phat=${phatRecords.length} records`);
 
     let hoaHong = 0, tamUng = 0, manualFines = 0;
     monthSales.forEach((r: any) => {

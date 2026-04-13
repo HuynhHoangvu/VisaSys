@@ -3,15 +3,13 @@ import { getFolders, createFolder, renameFile, renameFolder, deleteFolder, getFi
 import { uploadDoc } from "../middlewares/upload.js";
 
 const router = Router();
-
-// Routes Thư mục
+// Folders
 router.get("/folders", getFolders);
 router.post("/folders", createFolder);
 router.delete("/folders/:id", deleteFolder);
 router.put("/folders/:id/rename", renameFolder);
 router.put("/folders/:id/move", moveFolder);
-
-// Routes File (Gắn middleware uploadDoc.single("file") vào đây)
+// Files
 router.get("/files", getFiles);
 router.post("/files/upload", uploadDoc.single("file"), uploadFile);
 router.delete("/files/:id", deleteFile);
