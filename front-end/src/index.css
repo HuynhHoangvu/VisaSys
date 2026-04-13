@@ -8,6 +8,10 @@
 @source "../node_modules/flowbite-react";
 
 /* 3. KHAI BÁO MÀU CHỦ ĐẠO (TAILWIND V4) */
+html {
+  color-scheme: light;
+}
+
 @theme {
   --color-flygold: #F5A21B;
   /* Màu vàng cam của Fly Visa */
