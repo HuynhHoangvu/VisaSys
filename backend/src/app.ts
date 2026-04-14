@@ -18,6 +18,8 @@ import { FRONTEND_URL, SESSION_SECRET, isProduction } from "../config/env.js";
 
 const app = express();
 
+app.set("trust proxy", 1);
+
 app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
 
 const apiLimiter = rateLimit({
