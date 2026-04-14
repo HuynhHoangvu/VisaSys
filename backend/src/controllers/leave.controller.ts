@@ -93,7 +93,7 @@ export const updateLeaveRequestStatus = asyncHandler(async (req: Request, res: R
               Math.abs(
                 new Date(leaveRequest.endDate).getTime() - new Date(leaveRequest.startDate).getTime()
               ) / (1000 * 60 * 60 * 24)
-            );
+            ) + 1;
 
       const formatDateVN = (dStr: string) => {
         const [y, m, d] = dStr.split("-");
