@@ -9,7 +9,8 @@
   "scripts": {
     "dev": "nodemon ",
     "start": "npx tsx src/server.ts",
-    "build": "npx prisma generate"
+    "build": "npx prisma generate",
+    "seed": "npx tsx prisma/seed.ts"
   },
   "keywords": [],
   "author": "",
