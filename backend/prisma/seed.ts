@@ -1,8 +1,6 @@
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../generated/prisma/client";
 import { DATABASE_URL } from "../config/env.js";
-import bcrypt from "bcryptjs";
-
 if (!DATABASE_URL) {
   throw new Error("DATABASE_URL is not defined in environment variables.");
 }
@@ -25,9 +23,6 @@ async function main() {
     ],
   });
 
-  const hashAdmin = await bcrypt.hash("admin123", 10);
-  const hash123456 = await bcrypt.hash("123456", 10);
-
   await prisma.employee.createMany({
     data: [
       {
@@ -35,7 +30,7 @@ async function main() {
         employeeCode: "NV001",
         email: "admin@flyvisa.com",
         name: "Admin",
-        password: hashAdmin,
+        password: "admin123",
         role: "Giám đốc",
         baseSalary: 20000000,
         commissionRate: 0,
@@ -46,7 +41,7 @@ async function main() {
         employeeCode: "NV002",
         email: "sale1@flyvisa.com",
         name: "Nguyễn Văn A",
-        password: hash123456,
+        password: "123456",
         role: "Nhân viên",
         baseSalary: 8000000,
         commissionRate: 5,
@@ -57,7 +52,7 @@ async function main() {
         employeeCode: "NV003",
         email: "sale2@flyvisa.com",
         name: "Trần Thị B",
-        password: hash123456,
+        password: "123456",
         role: "Nhân viên",
         baseSalary: 8000000,
         commissionRate: 5,
@@ -68,7 +63,7 @@ async function main() {
         employeeCode: "NV004",
         email: "xulyhs@flyvisa.com",
         name: "Lê Văn C",
-        password: hash123456,
+        password: "123456",
         role: "Nhân viên",
         baseSalary: 9000000,
         commissionRate: 0,

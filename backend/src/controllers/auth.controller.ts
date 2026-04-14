@@ -1,6 +1,5 @@
 // backend/src/controllers/auth.controller.ts
 import { Request, Response } from "express";
-import bcrypt from "bcryptjs";
 import { prisma } from "../../lib/prisma.js";
 
 /**
@@ -24,9 +23,7 @@ export const login = async (req: Request, res: Response) => {
       return res.status(401).json({ error: "Email không tồn tại!" });
     }
 
-    // Compare password against the stored bcrypt hash for authentication
-    const isMatch = await bcrypt.compare(password, employee.password);
-    if (!isMatch) {
+    if (password !== employee.password) {
       return res.status(401).json({ error: "Mật khẩu không chính xác!" });
     }
 
