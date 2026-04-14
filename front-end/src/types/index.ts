@@ -118,7 +118,7 @@ export interface NewEmployeeData {
   baseSalary: number;
 }
 
-export type LeaveType = "Nghỉ ốm" | "Nghỉ phép năm" | "Việc cá nhân" | "Nghỉ không lương" | "Nghỉ thai sản";
+export type LeaveType = "Xin phép nghỉ" | "Nửa ngày" | "Vô trễ" | "Về sớm" | "Nghỉ ốm" | "Nghỉ việc riêng";
 
 export interface LeaveRequestData {
   type: LeaveType | string;

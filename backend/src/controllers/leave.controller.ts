@@ -35,7 +35,7 @@ export const createLeaveRequest = asyncHandler(async (req: Request, res: Respons
   await prisma.notification.create({
     data: {
       sender: emp.name,
-      message: `Nhân viên ${emp.name} (Phòng SALE) vừa gửi đơn xin ${type.toLowerCase()}.`,
+      message: `Nhân viên ${emp.name} (${emp.department?.name || "N/A"}) vừa gửi đơn xin ${type.toLowerCase()}.`,
       receiver: receivers,
     },
   });
@@ -80,7 +80,10 @@ export const updateLeaveRequestStatus = asyncHandler(async (req: Request, res: R
     return res.status(404).json({ error: "Không tìm thấy đơn xin nghỉ này!" });
   }
 
-  if (status === "Đã duyệt" && leaveRequest.status !== "Đã duyệt") {
+  const isApproved = status === "Đã duyệt" || status === "Duyệt";
+  const wasNotApproved = leaveRequest.status !== "Đã duyệt" && leaveRequest.status !== "Duyệt";
+
+  if (isApproved && wasNotApproved) {
     if (leaveRequest.type === "Xin phép nghỉ" || leaveRequest.type === "Nửa ngày") {
       const dailyWage = Math.round((leaveRequest.employee.baseSalary || 0) / STANDARD_WORK_DAYS);
       const diffDays =
@@ -92,13 +95,18 @@ export const updateLeaveRequestStatus = asyncHandler(async (req: Request, res: R
               ) / (1000 * 60 * 60 * 24)
             );
 
+      const formatDateVN = (dStr: string) => {
+        const [y, m, d] = dStr.split("-");
+        return `${d}/${m}/${y}`;
+      };
+
       await prisma.salesRecord.create({
         data: {
           employeeId: leaveRequest.employeeId,
           customer: SYSTEM_ACTOR,
           service: "Phạt",
           profit: -Math.round(dailyWage * diffDays),
-          note: `Trừ ${diffDays} ngày lương: Nghỉ phép từ ${leaveRequest.startDate} đến ${leaveRequest.endDate}`,
+          note: `Trừ ${diffDays} ngày lương: Nghỉ phép từ ${formatDateVN(leaveRequest.startDate)} đến ${formatDateVN(leaveRequest.endDate)}`,
           // Back-date to the leave start so it lands in the correct payroll month
           createdAt: new Date(leaveRequest.startDate),
         },

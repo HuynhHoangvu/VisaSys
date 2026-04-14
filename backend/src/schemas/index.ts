@@ -41,17 +41,17 @@ export const finalizeMonthSchema = z.object({
 });
 
 export const leaveRequestSchema = z.object({
-  type: z.enum(["Xin phép nghỉ", "Nửa ngày", "Nghỉ ốm", "Nghỉ việc riêng"], {
-    errorMap: () => ({ message: "Loại đơn không hợp lệ" })
+  type: z.enum(["Xin phép nghỉ", "Nửa ngày", "Nghỉ ốm", "Nghỉ việc riêng", "Vô trễ", "Về sớm"], {
+    error: "Loại đơn không hợp lệ"
   }),
-  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Ngày bắt đầu phải theo định dạng YYYY-MM-DD"),
-  endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Ngày kết thúc phải theo định dạng YYYY-MM-DD"),
+  startDate: z.string().min(1, "Ngày bắt đầu không được để trống"),
+  endDate: z.string().min(1, "Ngày kết thúc không được để trống"),
   reason: z.string().min(5, "Lý do phải có ít nhất 5 ký tự")
 });
 
 export const updateLeaveStatusSchema = z.object({
-  status: z.enum(["Đã duyệt", "Từ chối", "Chờ duyệt"], {
-    errorMap: () => ({ message: "Trạng thái không hợp lệ" })
+  status: z.enum(["Đã duyệt", "Từ chối", "Chờ duyệt", "Duyệt", "Không duyệt", "Đã hủy"], {
+    error: "Trạng thái không hợp lệ"
   })
 });
 
