@@ -65,7 +65,8 @@ export const ModelName = {
   LeaveRequest: 'LeaveRequest',
   ProcessedFolder: 'ProcessedFolder',
   ProcessedFile: 'ProcessedFile',
-  WeeklyKPI: 'WeeklyKPI'
+  WeeklyKPI: 'WeeklyKPI',
+  Workspace: 'Workspace'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -298,6 +299,17 @@ export const WeeklyKPIScalarFieldEnum = {
 } as const
 
 export type WeeklyKPIScalarFieldEnum = (typeof WeeklyKPIScalarFieldEnum)[keyof typeof WeeklyKPIScalarFieldEnum]
+
+
+export const WorkspaceScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  url: 'url',
+  employeeId: 'employeeId',
+  createdAt: 'createdAt'
+} as const
+
+export type WorkspaceScalarFieldEnum = (typeof WorkspaceScalarFieldEnum)[keyof typeof WorkspaceScalarFieldEnum]
 
 
 export const SortOrder = {

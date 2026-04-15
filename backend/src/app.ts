@@ -13,6 +13,7 @@ import taskRoutes from "./routes/task.routes.js";
 import docsRoutes from "./routes/docs.routes.js";
 import processedDocsRoutes from "./routes/processedDocs.routes.js";
 import kpiRoutes from "./routes/kpi.routes.js";
+import workspaceRoutes from "./routes/workspace.routes.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
 import { FRONTEND_URL, SESSION_SECRET, isProduction } from "../config/env.js";
 
@@ -78,6 +79,7 @@ app.use("/api/notifications",  notificationRoutes);
 app.use("/api/docs",           docsRoutes);
 app.use("/api/processed-docs", processedDocsRoutes);
 app.use("/api/kpi",            kpiRoutes);
+app.use("/api/workspaces",    workspaceRoutes);
 app.use("/uploads",            express.static(path.join(process.cwd(), "uploads")));
 
 app.get("/", (_req, res) => {

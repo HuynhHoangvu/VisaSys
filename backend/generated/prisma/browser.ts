@@ -92,3 +92,8 @@ export type ProcessedFile = Prisma.ProcessedFileModel
  * 
  */
 export type WeeklyKPI = Prisma.WeeklyKPIModel
+/**
+ * Model Workspace
+ * 
+ */
+export type Workspace = Prisma.WorkspaceModel

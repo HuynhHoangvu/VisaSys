@@ -94,7 +94,8 @@ model Employee {
 
   // [THÊM DÒNG NÀY]: 1 Nhân viên có nhiều lượt chấm công
   attendanceRecords AttendanceRecord[]
-  
+  workspaces        Workspace[]
+
   createdAt      DateTime   @default(now())
 }
 
@@ -227,4 +228,15 @@ model WeeklyKPI {
   weekLabel String   @unique // Chuỗi lưu tên tuần, ví dụ: "09/03/2026 – 15/03/2026"
   data      Json     // Lưu toàn bộ mảng các phòng ban và task bên trong
   updatedAt DateTime @updatedAt
+}
+
+model Workspace {
+  id         String   @id @default(uuid())
+  name       String
+  url        String?
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@index([employeeId])
 }

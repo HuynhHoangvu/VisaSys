@@ -265,6 +265,7 @@ export type EmployeeWhereInput = {
   leaveRequests?: Prisma.LeaveRequestListRelationFilter
   department?: Prisma.XOR<Prisma.DepartmentNullableScalarRelationFilter, Prisma.DepartmentWhereInput> | null
   attendanceRecords?: Prisma.AttendanceRecordListRelationFilter
+  workspaces?: Prisma.WorkspaceListRelationFilter
 }
 
 export type EmployeeOrderByWithRelationInput = {
@@ -283,6 +284,7 @@ export type EmployeeOrderByWithRelationInput = {
   leaveRequests?: Prisma.LeaveRequestOrderByRelationAggregateInput
   department?: Prisma.DepartmentOrderByWithRelationInput
   attendanceRecords?: Prisma.AttendanceRecordOrderByRelationAggregateInput
+  workspaces?: Prisma.WorkspaceOrderByRelationAggregateInput
 }
 
 export type EmployeeWhereUniqueInput = Prisma.AtLeast<{
@@ -304,6 +306,7 @@ export type EmployeeWhereUniqueInput = Prisma.AtLeast<{
   leaveRequests?: Prisma.LeaveRequestListRelationFilter
   department?: Prisma.XOR<Prisma.DepartmentNullableScalarRelationFilter, Prisma.DepartmentWhereInput> | null
   attendanceRecords?: Prisma.AttendanceRecordListRelationFilter
+  workspaces?: Prisma.WorkspaceListRelationFilter
 }, "id" | "employeeCode" | "email">
 
 export type EmployeeOrderByWithAggregationInput = {
@@ -355,6 +358,7 @@ export type EmployeeCreateInput = {
   leaveRequests?: Prisma.LeaveRequestCreateNestedManyWithoutEmployeeInput
   department?: Prisma.DepartmentCreateNestedOneWithoutEmployeesInput
   attendanceRecords?: Prisma.AttendanceRecordCreateNestedManyWithoutEmployeeInput
+  workspaces?: Prisma.WorkspaceCreateNestedManyWithoutEmployeeInput
 }
 
 export type EmployeeUncheckedCreateInput = {
@@ -372,6 +376,7 @@ export type EmployeeUncheckedCreateInput = {
   salaryHistories?: Prisma.SalaryHistoryUncheckedCreateNestedManyWithoutEmployeeInput
   leaveRequests?: Prisma.LeaveRequestUncheckedCreateNestedManyWithoutEmployeeInput
   attendanceRecords?: Prisma.AttendanceRecordUncheckedCreateNestedManyWithoutEmployeeInput
+  workspaces?: Prisma.WorkspaceUncheckedCreateNestedManyWithoutEmployeeInput
 }
 
 export type EmployeeUpdateInput = {
@@ -389,6 +394,7 @@ export type EmployeeUpdateInput = {
   leaveRequests?: Prisma.LeaveRequestUpdateManyWithoutEmployeeNestedInput
   department?: Prisma.DepartmentUpdateOneWithoutEmployeesNestedInput
   attendanceRecords?: Prisma.AttendanceRecordUpdateManyWithoutEmployeeNestedInput
+  workspaces?: Prisma.WorkspaceUpdateManyWithoutEmployeeNestedInput
 }
 
 export type EmployeeUncheckedUpdateInput = {
@@ -406,6 +412,7 @@ export type EmployeeUncheckedUpdateInput = {
   salaryHistories?: Prisma.SalaryHistoryUncheckedUpdateManyWithoutEmployeeNestedInput
   leaveRequests?: Prisma.LeaveRequestUncheckedUpdateManyWithoutEmployeeNestedInput
   attendanceRecords?: Prisma.AttendanceRecordUncheckedUpdateManyWithoutEmployeeNestedInput
+  workspaces?: Prisma.WorkspaceUncheckedUpdateManyWithoutEmployeeNestedInput
 }
 
 export type EmployeeCreateManyInput = {
@@ -616,6 +623,20 @@ export type EmployeeUpdateOneRequiredWithoutLeaveRequestsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.EmployeeUpdateToOneWithWhereWithoutLeaveRequestsInput, Prisma.EmployeeUpdateWithoutLeaveRequestsInput>, Prisma.EmployeeUncheckedUpdateWithoutLeaveRequestsInput>
 }
 
+export type EmployeeCreateNestedOneWithoutWorkspacesInput = {
+  create?: Prisma.XOR<Prisma.EmployeeCreateWithoutWorkspacesInput, Prisma.EmployeeUncheckedCreateWithoutWorkspacesInput>
+  connectOrCreate?: Prisma.EmployeeCreateOrConnectWithoutWorkspacesInput
+  connect?: Prisma.EmployeeWhereUniqueInput
+}
+
+export type EmployeeUpdateOneRequiredWithoutWorkspacesNestedInput = {
+  create?: Prisma.XOR<Prisma.EmployeeCreateWithoutWorkspacesInput, Prisma.EmployeeUncheckedCreateWithoutWorkspacesInput>
+  connectOrCreate?: Prisma.EmployeeCreateOrConnectWithoutWorkspacesInput
+  upsert?: Prisma.EmployeeUpsertWithoutWorkspacesInput
+  connect?: Prisma.EmployeeWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.EmployeeUpdateToOneWithWhereWithoutWorkspacesInput, Prisma.EmployeeUpdateWithoutWorkspacesInput>, Prisma.EmployeeUncheckedUpdateWithoutWorkspacesInput>
+}
+
 export type EmployeeCreateWithoutDepartmentInput = {
   id?: string
   employeeCode: string
@@ -630,6 +651,7 @@ export type EmployeeCreateWithoutDepartmentInput = {
   salaryHistories?: Prisma.SalaryHistoryCreateNestedManyWithoutEmployeeInput
   leaveRequests?: Prisma.LeaveRequestCreateNestedManyWithoutEmployeeInput
   attendanceRecords?: Prisma.AttendanceRecordCreateNestedManyWithoutEmployeeInput
+  workspaces?: Prisma.WorkspaceCreateNestedManyWithoutEmployeeInput
 }
 
 export type EmployeeUncheckedCreateWithoutDepartmentInput = {
@@ -646,6 +668,7 @@ export type EmployeeUncheckedCreateWithoutDepartmentInput = {
   salaryHistories?: Prisma.SalaryHistoryUncheckedCreateNestedManyWithoutEmployeeInput
   leaveRequests?: Prisma.LeaveRequestUncheckedCreateNestedManyWithoutEmployeeInput
   attendanceRecords?: Prisma.AttendanceRecordUncheckedCreateNestedManyWithoutEmployeeInput
+  workspaces?: Prisma.WorkspaceUncheckedCreateNestedManyWithoutEmployeeInput
 }
 
 export type EmployeeCreateOrConnectWithoutDepartmentInput = {
@@ -704,6 +727,7 @@ export type EmployeeCreateWithoutAttendanceRecordsInput = {
   salaryHistories?: Prisma.SalaryHistoryCreateNestedManyWithoutEmployeeInput
   leaveRequests?: Prisma.LeaveRequestCreateNestedManyWithoutEmployeeInput
   department?: Prisma.DepartmentCreateNestedOneWithoutEmployeesInput
+  workspaces?: Prisma.WorkspaceCreateNestedManyWithoutEmployeeInput
 }
 
 export type EmployeeUncheckedCreateWithoutAttendanceRecordsInput = {
@@ -720,6 +744,7 @@ export type EmployeeUncheckedCreateWithoutAttendanceRecordsInput = {
   salesRecords?: Prisma.SalesRecordUncheckedCreateNestedManyWithoutEmployeeInput
   salaryHistories?: Prisma.SalaryHistoryUncheckedCreateNestedManyWithoutEmployeeInput
   leaveRequests?: Prisma.LeaveRequestUncheckedCreateNestedManyWithoutEmployeeInput
+  workspaces?: Prisma.WorkspaceUncheckedCreateNestedManyWithoutEmployeeInput
 }
 
 export type EmployeeCreateOrConnectWithoutAttendanceRecordsInput = {
@@ -752,6 +777,7 @@ export type EmployeeUpdateWithoutAttendanceRecordsInput = {
   salaryHistories?: Prisma.SalaryHistoryUpdateManyWithoutEmployeeNestedInput
   leaveRequests?: Prisma.LeaveRequestUpdateManyWithoutEmployeeNestedInput
   department?: Prisma.DepartmentUpdateOneWithoutEmployeesNestedInput
+  workspaces?: Prisma.WorkspaceUpdateManyWithoutEmployeeNestedInput
 }
 
 export type EmployeeUncheckedUpdateWithoutAttendanceRecordsInput = {
@@ -768,6 +794,7 @@ export type EmployeeUncheckedUpdateWithoutAttendanceRecordsInput = {
   salesRecords?: Prisma.SalesRecordUncheckedUpdateManyWithoutEmployeeNestedInput
   salaryHistories?: Prisma.SalaryHistoryUncheckedUpdateManyWithoutEmployeeNestedInput
   leaveRequests?: Prisma.LeaveRequestUncheckedUpdateManyWithoutEmployeeNestedInput
+  workspaces?: Prisma.WorkspaceUncheckedUpdateManyWithoutEmployeeNestedInput
 }
 
 export type EmployeeCreateWithoutSalesRecordsInput = {
@@ -784,6 +811,7 @@ export type EmployeeCreateWithoutSalesRecordsInput = {
   leaveRequests?: Prisma.LeaveRequestCreateNestedManyWithoutEmployeeInput
   department?: Prisma.DepartmentCreateNestedOneWithoutEmployeesInput
   attendanceRecords?: Prisma.AttendanceRecordCreateNestedManyWithoutEmployeeInput
+  workspaces?: Prisma.WorkspaceCreateNestedManyWithoutEmployeeInput
 }
 
 export type EmployeeUncheckedCreateWithoutSalesRecordsInput = {
@@ -800,6 +828,7 @@ export type EmployeeUncheckedCreateWithoutSalesRecordsInput = {
   salaryHistories?: Prisma.SalaryHistoryUncheckedCreateNestedManyWithoutEmployeeInput
   leaveRequests?: Prisma.LeaveRequestUncheckedCreateNestedManyWithoutEmployeeInput
   attendanceRecords?: Prisma.AttendanceRecordUncheckedCreateNestedManyWithoutEmployeeInput
+  workspaces?: Prisma.WorkspaceUncheckedCreateNestedManyWithoutEmployeeInput
 }
 
 export type EmployeeCreateOrConnectWithoutSalesRecordsInput = {
@@ -832,6 +861,7 @@ export type EmployeeUpdateWithoutSalesRecordsInput = {
   leaveRequests?: Prisma.LeaveRequestUpdateManyWithoutEmployeeNestedInput
   department?: Prisma.DepartmentUpdateOneWithoutEmployeesNestedInput
   attendanceRecords?: Prisma.AttendanceRecordUpdateManyWithoutEmployeeNestedInput
+  workspaces?: Prisma.WorkspaceUpdateManyWithoutEmployeeNestedInput
 }
 
 export type EmployeeUncheckedUpdateWithoutSalesRecordsInput = {
@@ -848,6 +878,7 @@ export type EmployeeUncheckedUpdateWithoutSalesRecordsInput = {
   salaryHistories?: Prisma.SalaryHistoryUncheckedUpdateManyWithoutEmployeeNestedInput
   leaveRequests?: Prisma.LeaveRequestUncheckedUpdateManyWithoutEmployeeNestedInput
   attendanceRecords?: Prisma.AttendanceRecordUncheckedUpdateManyWithoutEmployeeNestedInput
+  workspaces?: Prisma.WorkspaceUncheckedUpdateManyWithoutEmployeeNestedInput
 }
 
 export type EmployeeCreateWithoutSalaryHistoriesInput = {
@@ -864,6 +895,7 @@ export type EmployeeCreateWithoutSalaryHistoriesInput = {
   leaveRequests?: Prisma.LeaveRequestCreateNestedManyWithoutEmployeeInput
   department?: Prisma.DepartmentCreateNestedOneWithoutEmployeesInput
   attendanceRecords?: Prisma.AttendanceRecordCreateNestedManyWithoutEmployeeInput
+  workspaces?: Prisma.WorkspaceCreateNestedManyWithoutEmployeeInput
 }
 
 export type EmployeeUncheckedCreateWithoutSalaryHistoriesInput = {
@@ -880,6 +912,7 @@ export type EmployeeUncheckedCreateWithoutSalaryHistoriesInput = {
   salesRecords?: Prisma.SalesRecordUncheckedCreateNestedManyWithoutEmployeeInput
   leaveRequests?: Prisma.LeaveRequestUncheckedCreateNestedManyWithoutEmployeeInput
   attendanceRecords?: Prisma.AttendanceRecordUncheckedCreateNestedManyWithoutEmployeeInput
+  workspaces?: Prisma.WorkspaceUncheckedCreateNestedManyWithoutEmployeeInput
 }
 
 export type EmployeeCreateOrConnectWithoutSalaryHistoriesInput = {
@@ -912,6 +945,7 @@ export type EmployeeUpdateWithoutSalaryHistoriesInput = {
   leaveRequests?: Prisma.LeaveRequestUpdateManyWithoutEmployeeNestedInput
   department?: Prisma.DepartmentUpdateOneWithoutEmployeesNestedInput
   attendanceRecords?: Prisma.AttendanceRecordUpdateManyWithoutEmployeeNestedInput
+  workspaces?: Prisma.WorkspaceUpdateManyWithoutEmployeeNestedInput
 }
 
 export type EmployeeUncheckedUpdateWithoutSalaryHistoriesInput = {
@@ -928,6 +962,7 @@ export type EmployeeUncheckedUpdateWithoutSalaryHistoriesInput = {
   salesRecords?: Prisma.SalesRecordUncheckedUpdateManyWithoutEmployeeNestedInput
   leaveRequests?: Prisma.LeaveRequestUncheckedUpdateManyWithoutEmployeeNestedInput
   attendanceRecords?: Prisma.AttendanceRecordUncheckedUpdateManyWithoutEmployeeNestedInput
+  workspaces?: Prisma.WorkspaceUncheckedUpdateManyWithoutEmployeeNestedInput
 }
 
 export type EmployeeCreateWithoutLeaveRequestsInput = {
@@ -944,6 +979,7 @@ export type EmployeeCreateWithoutLeaveRequestsInput = {
   salaryHistories?: Prisma.SalaryHistoryCreateNestedManyWithoutEmployeeInput
   department?: Prisma.DepartmentCreateNestedOneWithoutEmployeesInput
   attendanceRecords?: Prisma.AttendanceRecordCreateNestedManyWithoutEmployeeInput
+  workspaces?: Prisma.WorkspaceCreateNestedManyWithoutEmployeeInput
 }
 
 export type EmployeeUncheckedCreateWithoutLeaveRequestsInput = {
@@ -960,6 +996,7 @@ export type EmployeeUncheckedCreateWithoutLeaveRequestsInput = {
   salesRecords?: Prisma.SalesRecordUncheckedCreateNestedManyWithoutEmployeeInput
   salaryHistories?: Prisma.SalaryHistoryUncheckedCreateNestedManyWithoutEmployeeInput
   attendanceRecords?: Prisma.AttendanceRecordUncheckedCreateNestedManyWithoutEmployeeInput
+  workspaces?: Prisma.WorkspaceUncheckedCreateNestedManyWithoutEmployeeInput
 }
 
 export type EmployeeCreateOrConnectWithoutLeaveRequestsInput = {
@@ -992,6 +1029,7 @@ export type EmployeeUpdateWithoutLeaveRequestsInput = {
   salaryHistories?: Prisma.SalaryHistoryUpdateManyWithoutEmployeeNestedInput
   department?: Prisma.DepartmentUpdateOneWithoutEmployeesNestedInput
   attendanceRecords?: Prisma.AttendanceRecordUpdateManyWithoutEmployeeNestedInput
+  workspaces?: Prisma.WorkspaceUpdateManyWithoutEmployeeNestedInput
 }
 
 export type EmployeeUncheckedUpdateWithoutLeaveRequestsInput = {
@@ -1007,6 +1045,91 @@ export type EmployeeUncheckedUpdateWithoutLeaveRequestsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   salesRecords?: Prisma.SalesRecordUncheckedUpdateManyWithoutEmployeeNestedInput
   salaryHistories?: Prisma.SalaryHistoryUncheckedUpdateManyWithoutEmployeeNestedInput
+  attendanceRecords?: Prisma.AttendanceRecordUncheckedUpdateManyWithoutEmployeeNestedInput
+  workspaces?: Prisma.WorkspaceUncheckedUpdateManyWithoutEmployeeNestedInput
+}
+
+export type EmployeeCreateWithoutWorkspacesInput = {
+  id?: string
+  employeeCode: string
+  email: string
+  name: string
+  password: string
+  role: string
+  baseSalary?: number
+  commissionRate?: number
+  createdAt?: Date | string
+  salesRecords?: Prisma.SalesRecordCreateNestedManyWithoutEmployeeInput
+  salaryHistories?: Prisma.SalaryHistoryCreateNestedManyWithoutEmployeeInput
+  leaveRequests?: Prisma.LeaveRequestCreateNestedManyWithoutEmployeeInput
+  department?: Prisma.DepartmentCreateNestedOneWithoutEmployeesInput
+  attendanceRecords?: Prisma.AttendanceRecordCreateNestedManyWithoutEmployeeInput
+}
+
+export type EmployeeUncheckedCreateWithoutWorkspacesInput = {
+  id?: string
+  employeeCode: string
+  email: string
+  name: string
+  password: string
+  role: string
+  baseSalary?: number
+  commissionRate?: number
+  departmentId?: string | null
+  createdAt?: Date | string
+  salesRecords?: Prisma.SalesRecordUncheckedCreateNestedManyWithoutEmployeeInput
+  salaryHistories?: Prisma.SalaryHistoryUncheckedCreateNestedManyWithoutEmployeeInput
+  leaveRequests?: Prisma.LeaveRequestUncheckedCreateNestedManyWithoutEmployeeInput
+  attendanceRecords?: Prisma.AttendanceRecordUncheckedCreateNestedManyWithoutEmployeeInput
+}
+
+export type EmployeeCreateOrConnectWithoutWorkspacesInput = {
+  where: Prisma.EmployeeWhereUniqueInput
+  create: Prisma.XOR<Prisma.EmployeeCreateWithoutWorkspacesInput, Prisma.EmployeeUncheckedCreateWithoutWorkspacesInput>
+}
+
+export type EmployeeUpsertWithoutWorkspacesInput = {
+  update: Prisma.XOR<Prisma.EmployeeUpdateWithoutWorkspacesInput, Prisma.EmployeeUncheckedUpdateWithoutWorkspacesInput>
+  create: Prisma.XOR<Prisma.EmployeeCreateWithoutWorkspacesInput, Prisma.EmployeeUncheckedCreateWithoutWorkspacesInput>
+  where?: Prisma.EmployeeWhereInput
+}
+
+export type EmployeeUpdateToOneWithWhereWithoutWorkspacesInput = {
+  where?: Prisma.EmployeeWhereInput
+  data: Prisma.XOR<Prisma.EmployeeUpdateWithoutWorkspacesInput, Prisma.EmployeeUncheckedUpdateWithoutWorkspacesInput>
+}
+
+export type EmployeeUpdateWithoutWorkspacesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  employeeCode?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  password?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.StringFieldUpdateOperationsInput | string
+  baseSalary?: Prisma.FloatFieldUpdateOperationsInput | number
+  commissionRate?: Prisma.FloatFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  salesRecords?: Prisma.SalesRecordUpdateManyWithoutEmployeeNestedInput
+  salaryHistories?: Prisma.SalaryHistoryUpdateManyWithoutEmployeeNestedInput
+  leaveRequests?: Prisma.LeaveRequestUpdateManyWithoutEmployeeNestedInput
+  department?: Prisma.DepartmentUpdateOneWithoutEmployeesNestedInput
+  attendanceRecords?: Prisma.AttendanceRecordUpdateManyWithoutEmployeeNestedInput
+}
+
+export type EmployeeUncheckedUpdateWithoutWorkspacesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  employeeCode?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  password?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.StringFieldUpdateOperationsInput | string
+  baseSalary?: Prisma.FloatFieldUpdateOperationsInput | number
+  commissionRate?: Prisma.FloatFieldUpdateOperationsInput | number
+  departmentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  salesRecords?: Prisma.SalesRecordUncheckedUpdateManyWithoutEmployeeNestedInput
+  salaryHistories?: Prisma.SalaryHistoryUncheckedUpdateManyWithoutEmployeeNestedInput
+  leaveRequests?: Prisma.LeaveRequestUncheckedUpdateManyWithoutEmployeeNestedInput
   attendanceRecords?: Prisma.AttendanceRecordUncheckedUpdateManyWithoutEmployeeNestedInput
 }
 
@@ -1036,6 +1159,7 @@ export type EmployeeUpdateWithoutDepartmentInput = {
   salaryHistories?: Prisma.SalaryHistoryUpdateManyWithoutEmployeeNestedInput
   leaveRequests?: Prisma.LeaveRequestUpdateManyWithoutEmployeeNestedInput
   attendanceRecords?: Prisma.AttendanceRecordUpdateManyWithoutEmployeeNestedInput
+  workspaces?: Prisma.WorkspaceUpdateManyWithoutEmployeeNestedInput
 }
 
 export type EmployeeUncheckedUpdateWithoutDepartmentInput = {
@@ -1052,6 +1176,7 @@ export type EmployeeUncheckedUpdateWithoutDepartmentInput = {
   salaryHistories?: Prisma.SalaryHistoryUncheckedUpdateManyWithoutEmployeeNestedInput
   leaveRequests?: Prisma.LeaveRequestUncheckedUpdateManyWithoutEmployeeNestedInput
   attendanceRecords?: Prisma.AttendanceRecordUncheckedUpdateManyWithoutEmployeeNestedInput
+  workspaces?: Prisma.WorkspaceUncheckedUpdateManyWithoutEmployeeNestedInput
 }
 
 export type EmployeeUncheckedUpdateManyWithoutDepartmentInput = {
@@ -1076,6 +1201,7 @@ export type EmployeeCountOutputType = {
   salaryHistories: number
   leaveRequests: number
   attendanceRecords: number
+  workspaces: number
 }
 
 export type EmployeeCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1083,6 +1209,7 @@ export type EmployeeCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensio
   salaryHistories?: boolean | EmployeeCountOutputTypeCountSalaryHistoriesArgs
   leaveRequests?: boolean | EmployeeCountOutputTypeCountLeaveRequestsArgs
   attendanceRecords?: boolean | EmployeeCountOutputTypeCountAttendanceRecordsArgs
+  workspaces?: boolean | EmployeeCountOutputTypeCountWorkspacesArgs
 }
 
 /**
@@ -1123,6 +1250,13 @@ export type EmployeeCountOutputTypeCountAttendanceRecordsArgs<ExtArgs extends ru
   where?: Prisma.AttendanceRecordWhereInput
 }
 
+/**
+ * EmployeeCountOutputType without action
+ */
+export type EmployeeCountOutputTypeCountWorkspacesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.WorkspaceWhereInput
+}
+
 
 export type EmployeeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -1140,6 +1274,7 @@ export type EmployeeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   leaveRequests?: boolean | Prisma.Employee$leaveRequestsArgs<ExtArgs>
   department?: boolean | Prisma.Employee$departmentArgs<ExtArgs>
   attendanceRecords?: boolean | Prisma.Employee$attendanceRecordsArgs<ExtArgs>
+  workspaces?: boolean | Prisma.Employee$workspacesArgs<ExtArgs>
   _count?: boolean | Prisma.EmployeeCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["employee"]>
 
@@ -1191,6 +1326,7 @@ export type EmployeeInclude<ExtArgs extends runtime.Types.Extensions.InternalArg
   leaveRequests?: boolean | Prisma.Employee$leaveRequestsArgs<ExtArgs>
   department?: boolean | Prisma.Employee$departmentArgs<ExtArgs>
   attendanceRecords?: boolean | Prisma.Employee$attendanceRecordsArgs<ExtArgs>
+  workspaces?: boolean | Prisma.Employee$workspacesArgs<ExtArgs>
   _count?: boolean | Prisma.EmployeeCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type EmployeeIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1208,6 +1344,7 @@ export type $EmployeePayload<ExtArgs extends runtime.Types.Extensions.InternalAr
     leaveRequests: Prisma.$LeaveRequestPayload<ExtArgs>[]
     department: Prisma.$DepartmentPayload<ExtArgs> | null
     attendanceRecords: Prisma.$AttendanceRecordPayload<ExtArgs>[]
+    workspaces: Prisma.$WorkspacePayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1619,6 +1756,7 @@ export interface Prisma__EmployeeClient<T, Null = never, ExtArgs extends runtime
   leaveRequests<T extends Prisma.Employee$leaveRequestsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Employee$leaveRequestsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$LeaveRequestPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   department<T extends Prisma.Employee$departmentArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Employee$departmentArgs<ExtArgs>>): Prisma.Prisma__DepartmentClient<runtime.Types.Result.GetResult<Prisma.$DepartmentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   attendanceRecords<T extends Prisma.Employee$attendanceRecordsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Employee$attendanceRecordsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AttendanceRecordPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  workspaces<T extends Prisma.Employee$workspacesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Employee$workspacesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$WorkspacePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2166,6 +2304,30 @@ export type Employee$attendanceRecordsArgs<ExtArgs extends runtime.Types.Extensi
   take?: number
   skip?: number
   distinct?: Prisma.AttendanceRecordScalarFieldEnum | Prisma.AttendanceRecordScalarFieldEnum[]
+}
+
+/**
+ * Employee.workspaces
+ */
+export type Employee$workspacesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Workspace
+   */
+  select?: Prisma.WorkspaceSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Workspace
+   */
+  omit?: Prisma.WorkspaceOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.WorkspaceInclude<ExtArgs> | null
+  where?: Prisma.WorkspaceWhereInput
+  orderBy?: Prisma.WorkspaceOrderByWithRelationInput | Prisma.WorkspaceOrderByWithRelationInput[]
+  cursor?: Prisma.WorkspaceWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.WorkspaceScalarFieldEnum | Prisma.WorkspaceScalarFieldEnum[]
 }
 
 /**

@@ -1,33 +1,114 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { NavLink } from "react-router-dom";
 import { FaceAvatar } from "../ui/FaceAvatar";
 import type { SidebarProps, Workspace } from "../../types";
+import api from "../../services/api";
+
+type WsModalMode = "add" | "edit" | null;
 
 const Sidebar: React.FC<SidebarProps> = ({
   currentUser,
   isOpen = false,
   onClose,
 }) => {
-  const [workspaces, setWorkspaces] = useState<Workspace[]>([
-    { id: "ws-1", name: "Fly Visa" },
-  ]);
-  const [activeWorkspaceId, setActiveWorkspaceId] = useState<string>("ws-1");
+  const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
+  const [activeWorkspaceId, setActiveWorkspaceId] = useState<string>("");
 
-  const handleAddWorkspace = () => {
-    const newName = window.prompt(
-      "Nhập tên Doanh nghiệp / Group mới (VD: FlyLabour):",
-    );
-    if (!newName || newName.trim() === "") return;
-    const newUrl = window.prompt(
-      `Nhập URL trang web cho "${newName.trim()}" (bỏ trống nếu không có):\nVD: https://flylabour.up.railway.app/`,
-    );
-    const newWorkspace: Workspace = {
-      id: `ws-${Date.now()}`,
-      name: newName.trim(),
-      url: newUrl && newUrl.trim() !== "" ? newUrl.trim() : undefined,
-    };
-    setWorkspaces([...workspaces, newWorkspace]);
-    setActiveWorkspaceId(newWorkspace.id);
+  const [wsModal, setWsModal] = useState<WsModalMode>(null);
+  const [wsFormName, setWsFormName] = useState("");
+  const [wsFormUrl, setWsFormUrl] = useState("");
+  const [wsError, setWsError] = useState("");
+  const [wsSaving, setWsSaving] = useState(false);
+  const nameInputRef = useRef<HTMLInputElement>(null);
+
+  // Tải danh sách workspace từ backend khi mount
+  useEffect(() => {
+    api.get<Workspace[]>("/api/workspaces").then((res) => {
+      const list = res.data;
+      setWorkspaces(list);
+      if (list.length > 0) setActiveWorkspaceId(list[0].id);
+    }).catch(() => {
+      // Nếu lỗi (VD: chưa có ws nào), giữ list rỗng
+    });
+  }, []);
+
+  // Focus input khi mở modal
+  useEffect(() => {
+    if (wsModal) setTimeout(() => nameInputRef.current?.focus(), 50);
+  }, [wsModal]);
+
+  const openAddModal = () => {
+    setWsFormName("");
+    setWsFormUrl("");
+    setWsError("");
+    setWsModal("add");
+  };
+
+  const openEditModal = () => {
+    const ws = workspaces.find((w) => w.id === activeWorkspaceId);
+    if (!ws) return;
+    setWsFormName(ws.name);
+    setWsFormUrl(ws.url ?? "");
+    setWsError("");
+    setWsModal("edit");
+  };
+
+  const closeModal = () => setWsModal(null);
+
+  const handleSaveAdd = async () => {
+    const name = wsFormName.trim();
+    if (!name) { setWsError("Tên không được để trống."); return; }
+    setWsSaving(true);
+    try {
+      const res = await api.post<Workspace>("/api/workspaces", {
+        name,
+        url: wsFormUrl.trim() || undefined,
+      });
+      setWorkspaces((prev) => [...prev, res.data]);
+      setActiveWorkspaceId(res.data.id);
+      closeModal();
+    } catch (e) {
+      setWsError((e as { response?: { data?: { error?: string } } })?.response?.data?.error ?? "Lỗi khi tạo workspace");
+    } finally {
+      setWsSaving(false);
+    }
+  };
+
+  const handleSaveEdit = async () => {
+    const name = wsFormName.trim();
+    if (!name) { setWsError("Tên không được để trống."); return; }
+    setWsSaving(true);
+    try {
+      const res = await api.put<Workspace>(`/api/workspaces/${activeWorkspaceId}`, {
+        name,
+        url: wsFormUrl.trim() || undefined,
+      });
+      setWorkspaces((prev) => prev.map((w) => w.id === activeWorkspaceId ? res.data : w));
+      closeModal();
+    } catch (e) {
+      setWsError((e as { response?: { data?: { error?: string } } })?.response?.data?.error ?? "Lỗi khi cập nhật workspace");
+    } finally {
+      setWsSaving(false);
+    }
+  };
+
+  const handleDeleteActive = async () => {
+    if (workspaces.length <= 1) {
+      setWsError("Phải có ít nhất 1 không gian làm việc.");
+      return;
+    }
+    setWsSaving(true);
+    try {
+      await api.delete(`/api/workspaces/${activeWorkspaceId}`);
+      const remaining = workspaces.filter((w) => w.id !== activeWorkspaceId);
+      setWorkspaces(remaining);
+      setActiveWorkspaceId(remaining[0].id);
+      closeModal();
+    } catch (e) {
+      setWsError((e as { response?: { data?: { error?: string } } })?.response?.data?.error ?? "Lỗi khi xoá workspace");
+    } finally {
+      setWsSaving(false);
+    }
   };
 
   const handleWorkspaceChange = (wsId: string) => {
@@ -132,11 +213,11 @@ const Sidebar: React.FC<SidebarProps> = ({
           <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 px-1">
             Không gian làm việc
           </p>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <select
               value={activeWorkspaceId}
               onChange={(e) => handleWorkspaceChange(e.target.value)}
-              className="flex-1 bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 block w-full p-2 outline-none cursor-pointer"
+              className="flex-1 min-w-0 bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 p-2 outline-none cursor-pointer"
             >
               {workspaces.map((ws) => (
                 <option key={ws.id} value={ws.id}>
@@ -144,27 +225,111 @@ const Sidebar: React.FC<SidebarProps> = ({
                 </option>
               ))}
             </select>
+            {/* NÚT SỬA */}
             <button
-              onClick={handleAddWorkspace}
-              title="Thêm không gian làm việc mới"
-              className="w-9 h-9 flex items-center justify-center bg-gray-800 hover:bg-orange-500 border border-gray-700 hover:border-orange-500 rounded-lg transition-colors shrink-0"
+              onClick={openEditModal}
+              title="Sửa không gian làm việc"
+              className="w-8 h-8 flex items-center justify-center bg-gray-800 hover:bg-blue-600 border border-gray-700 hover:border-blue-500 rounded-lg transition-colors shrink-0"
             >
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 4v16m8-8H4"
-                />
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+            </button>
+            {/* NÚT THÊM */}
+            <button
+              onClick={openAddModal}
+              title="Thêm không gian làm việc mới"
+              className="w-8 h-8 flex items-center justify-center bg-gray-800 hover:bg-orange-500 border border-gray-700 hover:border-orange-500 rounded-lg transition-colors shrink-0"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
             </button>
           </div>
         </div>
+
+        {/* MODAL QUẢN LÝ WORKSPACE */}
+        {wsModal && (
+          <div className="absolute inset-0 z-60 flex items-start justify-center bg-black/60 backdrop-blur-sm pt-20">
+            <div className="w-[calc(100%-24px)] bg-gray-800 rounded-xl shadow-2xl border border-gray-700 p-4">
+              <h3 className="text-sm font-semibold text-gray-100 mb-3">
+                {wsModal === "add" ? "Thêm không gian làm việc" : "Sửa không gian làm việc"}
+              </h3>
+
+              <div className="space-y-2.5">
+                <div>
+                  <label className="text-[11px] text-gray-400 mb-1 block">Tên</label>
+                  <input
+                    ref={nameInputRef}
+                    type="text"
+                    value={wsFormName}
+                    onChange={(e) => { setWsFormName(e.target.value); setWsError(""); }}
+                    onKeyDown={(e) => e.key === "Enter" && (wsModal === "add" ? handleSaveAdd() : handleSaveEdit())}
+                    placeholder="VD: FlyLabour"
+                    className="w-full bg-gray-700 border border-gray-600 text-gray-100 text-sm rounded-lg px-3 py-2 outline-none focus:border-orange-500 placeholder-gray-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] text-gray-400 mb-1 block">
+                    Link website <span className="text-gray-600">(tuỳ chọn)</span>
+                  </label>
+                  <input
+                    type="url"
+                    value={wsFormUrl}
+                    onChange={(e) => setWsFormUrl(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && (wsModal === "add" ? handleSaveAdd() : handleSaveEdit())}
+                    placeholder="https://example.com"
+                    className="w-full bg-gray-700 border border-gray-600 text-gray-100 text-sm rounded-lg px-3 py-2 outline-none focus:border-orange-500 placeholder-gray-500"
+                  />
+                </div>
+                {wsError && (
+                  <p className="text-xs text-red-400">{wsError}</p>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2 mt-4">
+                {wsModal === "add" ? (
+                  <button
+                    onClick={handleSaveAdd}
+                    disabled={wsSaving}
+                    className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white text-sm font-medium py-2 rounded-lg transition-colors"
+                  >
+                    {wsSaving ? "Đang lưu..." : "Thêm"}
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      onClick={handleSaveEdit}
+                      disabled={wsSaving}
+                      className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white text-sm font-medium py-2 rounded-lg transition-colors"
+                    >
+                      {wsSaving ? "Đang lưu..." : "Lưu"}
+                    </button>
+                    <button
+                      onClick={handleDeleteActive}
+                      disabled={wsSaving}
+                      title="Xoá workspace này"
+                      className="w-9 h-9 flex items-center justify-center bg-red-600/20 hover:bg-red-600 disabled:opacity-50 border border-red-700/50 hover:border-red-600 text-red-400 hover:text-white rounded-lg transition-colors shrink-0"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </>
+                )}
+                <button
+                  onClick={closeModal}
+                  disabled={wsSaving}
+                  className="flex-1 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 text-gray-300 text-sm font-medium py-2 rounded-lg transition-colors"
+                >
+                  Huỷ
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* MENU ĐIỀU HƯỚNG CHÍNH */}
         <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto custom-scrollbar">
