@@ -1,12 +1,18 @@
 import { Request, Response } from "express";
 import { prisma } from "../../lib/prisma.js";
 
-const getEid = (req: Request): string =>
-  String((req.session as any).user?.id ?? "");
+// Lấy employeeId từ session (nếu có) hoặc từ query/body
+const getEid = (req: Request): string => {
+  const fromSession = (req.session as any).user?.id;
+  if (fromSession) return String(fromSession);
+  const fromQuery = req.query.employeeId ?? req.body?.employeeId;
+  return fromQuery ? String(fromQuery) : "";
+};
 
 export const getWorkspaces = async (req: Request, res: Response) => {
   try {
     const employeeId = getEid(req);
+    if (!employeeId) return res.json([]);
     const workspaces = await prisma.workspace.findMany({
       where: { employeeId },
       orderBy: { createdAt: "asc" },
@@ -21,7 +27,8 @@ export const getWorkspaces = async (req: Request, res: Response) => {
 export const createWorkspace = async (req: Request, res: Response) => {
   try {
     const employeeId = getEid(req);
-    const { name, url } = req.body as { name: string; url?: string };
+    if (!employeeId) return res.status(400).json({ error: "Thiếu thông tin người dùng" });
+    const { name, url } = req.body as { name: string; url?: string; employeeId?: string };
     if (!name?.trim()) {
       return res.status(400).json({ error: "Tên workspace không được để trống" });
     }
@@ -39,13 +46,14 @@ export const updateWorkspace = async (req: Request, res: Response) => {
   try {
     const employeeId = getEid(req);
     const id = String(req.params.id);
-    const { name, url } = req.body as { name: string; url?: string };
+    const { name, url } = req.body as { name: string; url?: string; employeeId?: string };
     if (!name?.trim()) {
       return res.status(400).json({ error: "Tên workspace không được để trống" });
     }
-    const existing = await prisma.workspace.findFirst({ where: { id, employeeId } });
-    if (!existing) return res.status(404).json({ error: "Không tìm thấy workspace" });
-
+    if (employeeId) {
+      const existing = await prisma.workspace.findFirst({ where: { id, employeeId } });
+      if (!existing) return res.status(404).json({ error: "Không tìm thấy workspace" });
+    }
     const ws = await prisma.workspace.update({
       where: { id },
       data: { name: name.trim(), url: url?.trim() || null },
@@ -61,10 +69,9 @@ export const deleteWorkspace = async (req: Request, res: Response) => {
   try {
     const employeeId = getEid(req);
     const id = String(req.params.id);
-    const existing = await prisma.workspace.findFirst({ where: { id, employeeId } });
-    if (!existing) return res.status(404).json({ error: "Không tìm thấy workspace" });
 
-    const count = await prisma.workspace.count({ where: { employeeId } });
+    const countWhere = employeeId ? { employeeId } : { id };
+    const count = await prisma.workspace.count({ where: countWhere });
     if (count <= 1) {
       return res.status(400).json({ error: "Phải có ít nhất 1 workspace" });
     }

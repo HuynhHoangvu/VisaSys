@@ -21,16 +21,17 @@ const Sidebar: React.FC<SidebarProps> = ({
   const [wsSaving, setWsSaving] = useState(false);
   const nameInputRef = useRef<HTMLInputElement>(null);
 
-  // Tải danh sách workspace từ backend khi mount
+  // Tải danh sách workspace từ backend — chờ có currentUser.id
   useEffect(() => {
-    api.get<Workspace[]>("/api/workspaces").then((res) => {
+    if (!currentUser?.id) return;
+    api.get<Workspace[]>("/api/workspaces", {
+      params: { employeeId: currentUser.id },
+    }).then((res) => {
       const list = res.data;
       setWorkspaces(list);
       if (list.length > 0) setActiveWorkspaceId(list[0].id);
-    }).catch(() => {
-      // Nếu lỗi (VD: chưa có ws nào), giữ list rỗng
-    });
-  }, []);
+    }).catch(() => {});
+  }, [currentUser?.id]);
 
   // Focus input khi mở modal
   useEffect(() => {
@@ -63,6 +64,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       const res = await api.post<Workspace>("/api/workspaces", {
         name,
         url: wsFormUrl.trim() || undefined,
+        employeeId: currentUser.id,
       });
       setWorkspaces((prev) => [...prev, res.data]);
       setActiveWorkspaceId(res.data.id);
@@ -82,6 +84,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       const res = await api.put<Workspace>(`/api/workspaces/${activeWorkspaceId}`, {
         name,
         url: wsFormUrl.trim() || undefined,
+        employeeId: currentUser.id,
       });
       setWorkspaces((prev) => prev.map((w) => w.id === activeWorkspaceId ? res.data : w));
       closeModal();
@@ -99,7 +102,9 @@ const Sidebar: React.FC<SidebarProps> = ({
     }
     setWsSaving(true);
     try {
-      await api.delete(`/api/workspaces/${activeWorkspaceId}`);
+      await api.delete(`/api/workspaces/${activeWorkspaceId}`, {
+        data: { employeeId: currentUser.id },
+      });
       const remaining = workspaces.filter((w) => w.id !== activeWorkspaceId);
       setWorkspaces(remaining);
       setActiveWorkspaceId(remaining[0].id);
