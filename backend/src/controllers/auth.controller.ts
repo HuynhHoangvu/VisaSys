@@ -69,3 +69,46 @@ export const getCurrentUser = async (req: Request, res: Response) => {
   }
   res.json(user);
 };
+
+/**
+ * Change password — verify old password then update to new one.
+ */
+export const changePassword = async (req: Request, res: Response) => {
+  try {
+    const { employeeCode, oldPassword, newPassword } = req.body as {
+      employeeCode: string;
+      oldPassword: string;
+      newPassword: string;
+    };
+
+    if (!employeeCode || !oldPassword || !newPassword) {
+      return res.status(400).json({ error: "Thiếu thông tin bắt buộc" });
+    }
+
+    const employee = await prisma.employee.findUnique({
+      where: { employeeCode },
+    });
+
+    if (!employee) {
+      return res.status(404).json({ error: "Không tìm thấy nhân viên" });
+    }
+
+    if (employee.password !== oldPassword) {
+      return res.status(400).json({ error: "Mật khẩu hiện tại không đúng" });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: "Mật khẩu mới phải có ít nhất 6 ký tự" });
+    }
+
+    await prisma.employee.update({
+      where: { employeeCode },
+      data: { password: newPassword },
+    });
+
+    res.json({ message: "Đổi mật khẩu thành công" });
+  } catch (error) {
+    console.error("Change password error:", error);
+    res.status(500).json({ error: "Lỗi server" });
+  }
+};
