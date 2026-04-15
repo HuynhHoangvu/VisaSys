@@ -29,7 +29,7 @@ services:
     environment:
       # Kết nối nội bộ giữa các container
       DATABASE_URL: "postgresql://admin:admin123@postgres:5432/crm_db?schema=public"
-      NODE_ENV: production
+      NODE_ENV: development
       PORT: 3001
     volumes:
       - ./backend/uploads:/app/uploads
