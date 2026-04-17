@@ -223,6 +223,12 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
     if (!todayRecord) return alert("Chưa check-in hôm nay!");
     if (todayRecord.outTime && todayRecord.outTime !== "-")
       return alert("Đã check-out rồi!");
+
+    const confirmed = window.confirm(
+      `Xác nhận check-out cho ${targetEmployee.name}?\n\nThao tác này không thể hoàn tác.`,
+    );
+    if (!confirmed) return;
+
     try {
       const res = await fetch(`${API_URL}/api/hr/employees/${empId}/checkout`, {
         method: "POST",

@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { prisma } from "../../lib/prisma.js";
 import { getIO } from "../socket.js";
 import { asyncHandler } from "../middlewares/asyncHandler.js";
-import { CHECKOUT_HOUR, SYSTEM_ACTOR } from "../constants/index.js";
+import { CHECKOUT_HOUR } from "../constants/index.js";
 
 /** Returns the number of weekdays (Mon–Fri) in a given month. Used to prorate daily wages. */
 export const getWorkDaysInMonth = (year: number, month: number): number => {
@@ -144,25 +144,12 @@ export const checkOutEmployee = asyncHandler(async (req: Request, res: Response)
     }
   }
 
-  // Wrap attendance update and penalty record in a single transaction
-  // so they either both succeed or both roll back.
-  await prisma.$transaction(async (tx) => {
-    await tx.attendanceRecord.update({
-      where: { id: todayRecord.id },
-      data: { outTime, status: newStatus, halfDayDeduction },
-    });
-
-    if (halfDayDeduction > 0) {
-      await tx.salesRecord.create({
-        data: {
-          employeeId: id,
-          customer: SYSTEM_ACTOR,
-          service: "Phạt",
-          profit: -halfDayDeduction,
-          note: `Về sớm lúc ${outTime} ngày ${todayStr} (chưa được duyệt phép)`,
-        },
-      });
-    }
+  // Chỉ cập nhật attendanceRecord — halfDayDeduction đã được tính
+  // trong salary.controller qua newHalfDay, không cần tạo salesRecord
+  // riêng để tránh bị trừ 2 lần khi chốt lương.
+  await prisma.attendanceRecord.update({
+    where: { id: todayRecord.id },
+    data: { outTime, status: newStatus, halfDayDeduction },
   });
 
   getIO().emit("data_changed");
@@ -199,8 +186,9 @@ export const runPenalizeForgotCheckout = async (): Promise<{ penalized: number }
 
   const workDays = getWorkDaysInMonth(now.getFullYear(), now.getMonth());
 
-  // Batch all updates and penalty inserts into one transaction
-  // to avoid partial state if something fails mid-loop.
+  // Chỉ cập nhật attendanceRecord — halfDayDeduction đã được tính
+  // trong salary.controller qua newHalfDay, không tạo salesRecord
+  // riêng để tránh bị trừ 2 lần khi chốt lương.
   await prisma.$transaction(async (tx) => {
     for (const record of forgotRecords) {
       const halfDayDeduction = Math.round((record.employee.baseSalary || 0) / workDays / 2);
@@ -208,16 +196,6 @@ export const runPenalizeForgotCheckout = async (): Promise<{ penalized: number }
       await tx.attendanceRecord.update({
         where: { id: record.id },
         data: { outTime: "Quên checkout", status: "Quên checkout", halfDayDeduction },
-      });
-
-      await tx.salesRecord.create({
-        data: {
-          employeeId: record.employeeId,
-          customer: SYSTEM_ACTOR,
-          service: "Phạt",
-          profit: -halfDayDeduction,
-          note: `Quên check-out ngày ${todayStr} — mất nửa ngày công`,
-        },
       });
     }
   });
