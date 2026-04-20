@@ -59,6 +59,28 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
 
   if (!task || !formData) return null;
 
+  const parseCustomerName = (content: string) => {
+    return content.split(" - ")[0] || content;
+  };
+
+  const parseCustomerVisaSuffix = (content: string) => {
+    const parts = content.split(" - ");
+    if (parts.length <= 1) return "";
+    return parts.slice(1).join(" - ");
+  };
+
+  const handleNameChange = (value: string) => {
+    setSaved(false);
+    setFormData((prev) => {
+      if (!prev) return null;
+      const suffix = parseCustomerVisaSuffix(prev.content || "");
+      return {
+        ...prev,
+        content: suffix ? `${value} - ${suffix}` : value,
+      };
+    });
+  };
+
   const handleChange = (field: keyof Task, value: string) => {
     setSaved(false);
     setFormData((prev) => {
@@ -214,9 +236,16 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
             {formData.content?.charAt(0) || "K"}
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-lg sm:text-2xl font-bold text-gray-800 truncate">
+            <input
+              type="text"
+              value={parseCustomerName(formData.content || "")}
+              onChange={(e) => handleNameChange(e.target.value)}
+              className="w-full bg-transparent text-lg sm:text-2xl font-bold text-gray-800 outline-none focus:ring-0 focus:border-transparent placeholder-gray-400 truncate"
+              placeholder="Nhập tên khách hàng"
+            />
+            <p className="text-sm text-gray-500 mt-1 truncate">
               {formData.content}
-            </h3>
+            </p>
             <div className="flex flex-col sm:flex-row sm:items-center gap-x-6 gap-y-1 mt-1">
               <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500 font-medium">
                 <span className="shrink-0">Phí:</span>
@@ -230,7 +259,9 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
               </div>
 
               <div className="flex items-center gap-1.5 text-xs sm:text-sm text-gray-600 font-medium mt-1 sm:mt-0">
-                <span className="text-orange-600 font-bold shrink-0">👤 Sale:</span>
+                <span className="text-orange-600 font-bold shrink-0">
+                  👤 Sale:
+                </span>
                 <select
                   value={formData.assignedTo || ""}
                   onChange={(e) => handleChange("assignedTo", e.target.value)}
@@ -321,7 +352,6 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
               <Select
                 sizing="sm"
                 value={isCustomVisa ? "Khác" : currentVisaType}
-                // SỬA Ở ĐÂY: Lưu trực tiếp giá trị e.target.value (kể cả là chữ "Khác")
                 onChange={(e) => handleChange("visaType", e.target.value)}
                 className="mt-1"
               >
