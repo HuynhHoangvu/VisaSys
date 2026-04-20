@@ -11,10 +11,7 @@ const getEid = (req: Request): string => {
 
 export const getWorkspaces = async (req: Request, res: Response) => {
   try {
-    const employeeId = getEid(req);
-    if (!employeeId) return res.json([]);
     const workspaces = await prisma.workspace.findMany({
-      where: { employeeId },
       orderBy: { createdAt: "asc" },
       select: { id: true, name: true, url: true },
     });
