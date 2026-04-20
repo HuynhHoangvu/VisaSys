@@ -1,5 +1,13 @@
 import React, { useState } from "react";
-import { BrowserRouter, Routes, Route, Navigate, Outlet, useNavigate, useLocation } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  Outlet,
+  useNavigate,
+  useLocation,
+} from "react-router-dom";
 import Sidebar from "./components/layout/Sidebar";
 import Header from "./components/layout/Header";
 import Login from "./components/auth/Login";
@@ -21,7 +29,10 @@ import type { AuthUser } from "./types";
 const PageWrapper: React.FC = () => {
   const { pathname } = useLocation();
   return (
-    <div key={pathname} className="flex-1 overflow-hidden flex flex-col relative z-0 page-fade-in">
+    <div
+      key={pathname}
+      className="flex-1 overflow-hidden flex flex-col relative z-0 page-fade-in"
+    >
       <Outlet />
     </div>
   );
@@ -29,7 +40,9 @@ const PageWrapper: React.FC = () => {
 
 // Layout chung: Sidebar + Header + nội dung trang (Outlet)
 const AppLayout: React.FC = () => {
-  const currentUser: AuthUser = JSON.parse(localStorage.getItem("flyvisa_user")!);
+  const currentUser: AuthUser = JSON.parse(
+    localStorage.getItem("flyvisa_user")!,
+  );
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   return (

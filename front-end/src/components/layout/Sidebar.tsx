@@ -24,13 +24,14 @@ const Sidebar: React.FC<SidebarProps> = ({
   // Tải danh sách workspace từ backend — chờ có currentUser.id
   useEffect(() => {
     if (!currentUser?.id) return;
-    api.get<Workspace[]>("/api/workspaces", {
-      params: { employeeId: currentUser.id },
-    }).then((res) => {
-      const list = res.data;
-      setWorkspaces(list);
-      if (list.length > 0) setActiveWorkspaceId(list[0].id);
-    }).catch(() => {});
+    api
+      .get<Workspace[]>("/api/workspaces")
+      .then((res) => {
+        const list = res.data;
+        setWorkspaces(list);
+        if (list.length > 0) setActiveWorkspaceId(list[0].id);
+      })
+      .catch(() => {});
   }, [currentUser?.id]);
 
   // Focus input khi mở modal
@@ -58,7 +59,10 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   const handleSaveAdd = async () => {
     const name = wsFormName.trim();
-    if (!name) { setWsError("Tên không được để trống."); return; }
+    if (!name) {
+      setWsError("Tên không được để trống.");
+      return;
+    }
     setWsSaving(true);
     try {
       const res = await api.post<Workspace>("/api/workspaces", {
@@ -70,7 +74,10 @@ const Sidebar: React.FC<SidebarProps> = ({
       setActiveWorkspaceId(res.data.id);
       closeModal();
     } catch (e) {
-      setWsError((e as { response?: { data?: { error?: string } } })?.response?.data?.error ?? "Lỗi khi tạo workspace");
+      setWsError(
+        (e as { response?: { data?: { error?: string } } })?.response?.data
+          ?.error ?? "Lỗi khi tạo workspace",
+      );
     } finally {
       setWsSaving(false);
     }
@@ -78,18 +85,29 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   const handleSaveEdit = async () => {
     const name = wsFormName.trim();
-    if (!name) { setWsError("Tên không được để trống."); return; }
+    if (!name) {
+      setWsError("Tên không được để trống.");
+      return;
+    }
     setWsSaving(true);
     try {
-      const res = await api.put<Workspace>(`/api/workspaces/${activeWorkspaceId}`, {
-        name,
-        url: wsFormUrl.trim() || undefined,
-        employeeId: currentUser.id,
-      });
-      setWorkspaces((prev) => prev.map((w) => w.id === activeWorkspaceId ? res.data : w));
+      const res = await api.put<Workspace>(
+        `/api/workspaces/${activeWorkspaceId}`,
+        {
+          name,
+          url: wsFormUrl.trim() || undefined,
+          employeeId: currentUser.id,
+        },
+      );
+      setWorkspaces((prev) =>
+        prev.map((w) => (w.id === activeWorkspaceId ? res.data : w)),
+      );
       closeModal();
     } catch (e) {
-      setWsError((e as { response?: { data?: { error?: string } } })?.response?.data?.error ?? "Lỗi khi cập nhật workspace");
+      setWsError(
+        (e as { response?: { data?: { error?: string } } })?.response?.data
+          ?.error ?? "Lỗi khi cập nhật workspace",
+      );
     } finally {
       setWsSaving(false);
     }
@@ -110,7 +128,10 @@ const Sidebar: React.FC<SidebarProps> = ({
       setActiveWorkspaceId(remaining[0].id);
       closeModal();
     } catch (e) {
-      setWsError((e as { response?: { data?: { error?: string } } })?.response?.data?.error ?? "Lỗi khi xoá workspace");
+      setWsError(
+        (e as { response?: { data?: { error?: string } } })?.response?.data
+          ?.error ?? "Lỗi khi xoá workspace",
+      );
     } finally {
       setWsSaving(false);
     }
@@ -236,9 +257,18 @@ const Sidebar: React.FC<SidebarProps> = ({
               title="Sửa không gian làm việc"
               className="w-8 h-8 flex items-center justify-center bg-gray-800 hover:bg-blue-600 border border-gray-700 hover:border-blue-500 rounded-lg transition-colors shrink-0"
             >
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              <svg
+                className="w-3.5 h-3.5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                />
               </svg>
             </button>
             {/* NÚT THÊM */}
@@ -247,8 +277,18 @@ const Sidebar: React.FC<SidebarProps> = ({
               title="Thêm không gian làm việc mới"
               className="w-8 h-8 flex items-center justify-center bg-gray-800 hover:bg-orange-500 border border-gray-700 hover:border-orange-500 rounded-lg transition-colors shrink-0"
             >
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              <svg
+                className="w-3.5 h-3.5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 4v16m8-8H4"
+                />
               </svg>
             </button>
           </div>
@@ -259,38 +299,50 @@ const Sidebar: React.FC<SidebarProps> = ({
           <div className="absolute inset-0 z-60 flex items-start justify-center bg-black/60 backdrop-blur-sm pt-20">
             <div className="w-[calc(100%-24px)] bg-gray-800 rounded-xl shadow-2xl border border-gray-700 p-4">
               <h3 className="text-sm font-semibold text-gray-100 mb-3">
-                {wsModal === "add" ? "Thêm không gian làm việc" : "Sửa không gian làm việc"}
+                {wsModal === "add"
+                  ? "Thêm không gian làm việc"
+                  : "Sửa không gian làm việc"}
               </h3>
 
               <div className="space-y-2.5">
                 <div>
-                  <label className="text-[11px] text-gray-400 mb-1 block">Tên</label>
+                  <label className="text-[11px] text-gray-400 mb-1 block">
+                    Tên
+                  </label>
                   <input
                     ref={nameInputRef}
                     type="text"
                     value={wsFormName}
-                    onChange={(e) => { setWsFormName(e.target.value); setWsError(""); }}
-                    onKeyDown={(e) => e.key === "Enter" && (wsModal === "add" ? handleSaveAdd() : handleSaveEdit())}
+                    onChange={(e) => {
+                      setWsFormName(e.target.value);
+                      setWsError("");
+                    }}
+                    onKeyDown={(e) =>
+                      e.key === "Enter" &&
+                      (wsModal === "add" ? handleSaveAdd() : handleSaveEdit())
+                    }
                     placeholder="VD: FlyLabour"
                     className="w-full bg-gray-700 border border-gray-600 text-gray-100 text-sm rounded-lg px-3 py-2 outline-none focus:border-orange-500 placeholder-gray-500"
                   />
                 </div>
                 <div>
                   <label className="text-[11px] text-gray-400 mb-1 block">
-                    Link website <span className="text-gray-600">(tuỳ chọn)</span>
+                    Link website{" "}
+                    <span className="text-gray-600">(tuỳ chọn)</span>
                   </label>
                   <input
                     type="url"
                     value={wsFormUrl}
                     onChange={(e) => setWsFormUrl(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && (wsModal === "add" ? handleSaveAdd() : handleSaveEdit())}
+                    onKeyDown={(e) =>
+                      e.key === "Enter" &&
+                      (wsModal === "add" ? handleSaveAdd() : handleSaveEdit())
+                    }
                     placeholder="https://example.com"
                     className="w-full bg-gray-700 border border-gray-600 text-gray-100 text-sm rounded-lg px-3 py-2 outline-none focus:border-orange-500 placeholder-gray-500"
                   />
                 </div>
-                {wsError && (
-                  <p className="text-xs text-red-400">{wsError}</p>
-                )}
+                {wsError && <p className="text-xs text-red-400">{wsError}</p>}
               </div>
 
               <div className="flex items-center gap-2 mt-4">
@@ -317,9 +369,18 @@ const Sidebar: React.FC<SidebarProps> = ({
                       title="Xoá workspace này"
                       className="w-9 h-9 flex items-center justify-center bg-red-600/20 hover:bg-red-600 disabled:opacity-50 border border-red-700/50 hover:border-red-600 text-red-400 hover:text-white rounded-lg transition-colors shrink-0"
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                        />
                       </svg>
                     </button>
                   </>
