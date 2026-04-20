@@ -169,15 +169,16 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
 
       setFormData((prev) => {
         if (!prev) return prev;
-        return {
+        const updated = {
           ...prev,
           activities: [savedActivity, ...(prev.activities || [])],
         };
+        if (onUpdateCustomer) onUpdateCustomer(updated);
+        return updated;
       });
 
       setNewNote("");
       clearFile();
-      window.dispatchEvent(new Event("refreshBoard"));
     } catch (error) {
       console.error(error);
       alert("Đã xảy ra lỗi khi gửi cập nhật!");
@@ -199,7 +200,6 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
 
       onUpdateCustomer(formData);
       setSaved(true);
-      window.dispatchEvent(new Event("refreshBoard"));
       setTimeout(() => setSaved(false), 6000);
     } catch (err) {
       alert("Lỗi lưu thông tin khách hàng" + (err as Error).message);
