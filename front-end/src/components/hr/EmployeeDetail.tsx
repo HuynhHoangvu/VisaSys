@@ -52,6 +52,7 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
   const [bonusAmount, setBonusAmount] = useState("");
   const [bonusNote, setBonusNote] = useState("");
   const [bonusType, setBonusType] = useState("Thưởng");
+  const [isBonusSaving, setIsBonusSaving] = useState(false);
 
   const todayStr = new Date().toLocaleDateString("vi-VN");
   const safeAttendanceRecords = employee.attendanceRecords || [];
@@ -133,6 +134,7 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
   };
 
   const handleAddManualBonus = async () => {
+    if (isBonusSaving) return;
     if (!bonusAmount || !bonusNote) return alert("Vui lòng nhập đủ thông tin!");
 
     let amount = Number(bonusAmount.replace(/\D/g, ""));
@@ -140,8 +142,9 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
       amount = -amount;
     }
 
+    setIsBonusSaving(true);
     try {
-      await fetch(`${API_URL}/api/hr/employees/${employee.id}/bonus`, {
+      const res = await fetch(`${API_URL}/api/hr/employees/${employee.id}/bonus`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -151,18 +154,18 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
           note: bonusNote,
         }),
       });
+      if (!res.ok) throw new Error("Lỗi server");
 
       setIsBonusModalOpen(false);
       setBonusAmount("");
       setBonusNote("");
 
-      // Load lại giao diện
-      window.dispatchEvent(new Event("refreshBoard"));
+      // Chỉ dùng socket để tránh emit 2 sự kiện cùng lúc gây re-render đôi
       if (socket) socket.emit("data_changed");
-
-      alert("Đã cập nhật điều chỉnh thành công!");
     } catch (error) {
       alert("Lỗi khi cập nhật! " + error);
+    } finally {
+      setIsBonusSaving(false);
     }
   };
 
@@ -433,7 +436,7 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
                   <th className="px-3 sm:px-4 py-2 sm:py-3 font-bold w-1/3">
                     Ghi chú
                   </th>
-                  <th className="px-3 sm:px-4 py-2 sm:py-3 text-right font-bold">
+                  <th className="px-3 sm:px-4 py-2 sm:py-3 text-right font-bold whitespace-nowrap">
                     Số tiền
                   </th>
                 </tr>
@@ -467,6 +470,14 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
                             sale.service
                           )}
                         </p>
+                        {sale.createdAt && (
+                          <p className="text-2xs text-gray-400 mt-0.5">
+                            {new Date(sale.createdAt).toLocaleDateString("vi-VN", {
+                              day: "2-digit", month: "2-digit", year: "numeric",
+                              hour: "2-digit", minute: "2-digit",
+                            })}
+                          </p>
+                        )}
                       </td>
                       <td className="px-3 sm:px-4 py-3 sm:py-4 text-[10px] sm:text-xs italic text-gray-600">
                         {sale.note || "Hệ thống tự động ghi nhận"}
@@ -550,10 +561,11 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
           </Button>
           <Button
             size="sm"
-            style={{ backgroundColor: "#4f46e5" }}
+            style={{ backgroundColor: "#4f46e5", opacity: isBonusSaving ? 0.6 : 1 }}
+            disabled={isBonusSaving}
             onClick={handleAddManualBonus}
           >
-            Lưu điều chỉnh
+            {isBonusSaving ? "Đang lưu..." : "Lưu điều chỉnh"}
           </Button>
         </div>
       </Modal>

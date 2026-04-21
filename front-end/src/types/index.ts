@@ -92,6 +92,7 @@ export interface SalesRecord {
   profit: number;
   date: string;
   note?: string;
+  createdAt?: string;
 }
 
 export interface Employee {

@@ -84,7 +84,42 @@ export const updateLeaveRequestStatus = asyncHandler(async (req: Request, res: R
   const wasNotApproved = leaveRequest.status !== "Đã duyệt" && leaveRequest.status !== "Duyệt";
 
   if (isApproved && wasNotApproved) {
-    if (leaveRequest.type === "Xin phép nghỉ" || leaveRequest.type === "Nửa ngày") {
+    const formatDateVN = (dStr: string) => {
+      const [y, m, d] = dStr.split("-");
+      return `${d}/${m}/${y}`;
+    };
+
+    // Tạo danh sách ngày trong khoảng (định dạng vi-VN dd/mm/yyyy)
+    // để tìm đúng attendanceRecord cần cập nhật.
+    const datesInRange: string[] = [];
+    const cur = new Date(leaveRequest.startDate);
+    const endD = new Date(leaveRequest.endDate);
+    while (cur <= endD) {
+      datesInRange.push(formatDateVN(cur.toISOString().slice(0, 10)));
+      cur.setDate(cur.getDate() + 1);
+    }
+
+    if (leaveRequest.type === "Vô trễ") {
+      // Xóa phạt đi muộn cho các ngày trong đơn
+      await prisma.attendanceRecord.updateMany({
+        where: {
+          employeeId: leaveRequest.employeeId,
+          date: { in: datesInRange },
+          fine: { gt: 0 },
+        },
+        data: { fine: 0, status: "Đi muộn (Có phép)" },
+      });
+    } else if (leaveRequest.type === "Về sớm") {
+      // Xóa trừ nửa ngày cho các ngày trong đơn
+      await prisma.attendanceRecord.updateMany({
+        where: {
+          employeeId: leaveRequest.employeeId,
+          date: { in: datesInRange },
+          halfDayDeduction: { gt: 0 },
+        },
+        data: { halfDayDeduction: 0, status: "Về sớm (Có phép)" },
+      });
+    } else if (leaveRequest.type === "Xin phép nghỉ" || leaveRequest.type === "Nửa ngày") {
       const dailyWage = Math.round((leaveRequest.employee.baseSalary || 0) / STANDARD_WORK_DAYS);
       const diffDays =
         leaveRequest.type === "Nửa ngày"
@@ -95,11 +130,6 @@ export const updateLeaveRequestStatus = asyncHandler(async (req: Request, res: R
               ) / (1000 * 60 * 60 * 24)
             ) + 1;
 
-      const formatDateVN = (dStr: string) => {
-        const [y, m, d] = dStr.split("-");
-        return `${d}/${m}/${y}`;
-      };
-
       await prisma.salesRecord.create({
         data: {
           employeeId: leaveRequest.employeeId,
@@ -107,7 +137,6 @@ export const updateLeaveRequestStatus = asyncHandler(async (req: Request, res: R
           service: "Phạt",
           profit: -Math.round(dailyWage * diffDays),
           note: `Trừ ${diffDays} ngày lương: Nghỉ phép từ ${formatDateVN(leaveRequest.startDate)} đến ${formatDateVN(leaveRequest.endDate)}`,
-          // Back-date to the leave start so it lands in the correct payroll month
           createdAt: new Date(leaveRequest.startDate),
         },
       });
