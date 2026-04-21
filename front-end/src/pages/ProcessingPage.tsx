@@ -44,6 +44,12 @@ const ProcessingPage: React.FC = () => {
         onClose={() => setIsDetailOpen(false)}
         task={activeTaskId ? boardData.tasks[activeTaskId] : null}
         currentUser={currentUser}
+        onUpdateCustomer={(updated) => {
+          setBoardData((prev) => ({
+            ...prev,
+            tasks: { ...prev.tasks, [updated.id]: updated },
+          }));
+        }}
       />
       <DocumentModal
         show={isDocumentModalOpen}

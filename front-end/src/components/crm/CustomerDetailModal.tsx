@@ -188,7 +188,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
   };
 
   const handleSave = async () => {
-    if (!onUpdateCustomer || !formData) return;
+    if (!formData) return;
     setIsSaving(true);
 
     try {
@@ -198,7 +198,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
         body: JSON.stringify(formData),
       });
 
-      onUpdateCustomer(formData);
+      if (onUpdateCustomer) onUpdateCustomer(formData);
       setSaved(true);
       setTimeout(() => setSaved(false), 6000);
     } catch (err) {
