@@ -10,6 +10,7 @@ import {
 } from "flowbite-react";
 import type { Task, CustomerDetailModalProps, Employee } from "../../types";
 import { VISA_SERVICES, CUSTOMER_SOURCES } from "../../utils/constants";
+import socket from "../../services/socket";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
@@ -199,6 +200,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
       });
 
       if (onUpdateCustomer) onUpdateCustomer(formData);
+      socket.emit("data_changed");
       setSaved(true);
       setTimeout(() => setSaved(false), 6000);
     } catch (err) {
