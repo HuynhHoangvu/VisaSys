@@ -35,6 +35,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
   currentUser,
 }) => {
   const [formData, setFormData] = useState<Task | null>(null);
+  const [localName, setLocalName] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [staffList, setStaffList] = useState<Employee[]>([]);
@@ -47,6 +48,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
 
   useEffect(() => {
     setFormData(task);
+    if (task) setLocalName(task.content?.split(" - ")[0] || "");
   }, [task]);
 
   useEffect(() => {
@@ -60,26 +62,10 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
 
   if (!task || !formData) return null;
 
-  const parseCustomerName = (content: string) => {
-    return content.split(" - ")[0] || content;
-  };
-
-  const parseCustomerVisaSuffix = (content: string) => {
-    const parts = content.split(" - ");
-    if (parts.length <= 1) return "";
-    return parts.slice(1).join(" - ");
-  };
 
   const handleNameChange = (value: string) => {
     setSaved(false);
-    setFormData((prev) => {
-      if (!prev) return null;
-      const suffix = parseCustomerVisaSuffix(prev.content || "");
-      return {
-        ...prev,
-        content: suffix ? `${value} - ${suffix}` : value,
-      };
-    });
+    setLocalName(value);
   };
 
   const handleChange = (field: keyof Task, value: string) => {
@@ -90,10 +76,8 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
 
       // Nếu đổi Visa Type thì cập nhật lại Tên Khách Hàng (content) và Tự động gợi ý Nhóm Hồ Sơ
       if (field === "visaType") {
-        // Không cập nhật content khi đang ở trạng thái tạm "Khác" (chưa nhập xong)
         if (value !== "Khác") {
-          const namePart = prev.content.split(" - ")[0];
-          updatedData.content = `${namePart} - ${value}`;
+          updatedData.content = `${localName} - ${value}`;
         }
 
         // Không tự động thay đổi checklistType khi chọn "Khác" — giữ nguyên để user tự chọn
@@ -193,13 +177,16 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
     setIsSaving(true);
 
     try {
+      const visaType = formData.visaType && formData.visaType !== "Khác" ? formData.visaType : "";
+      const composedContent = visaType ? `${localName} - ${visaType}` : localName;
+      const payload = { ...formData, content: composedContent };
       await fetch(`${API_URL}/api/tasks/${formData.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
 
-      if (onUpdateCustomer) onUpdateCustomer(formData);
+      if (onUpdateCustomer) onUpdateCustomer(payload);
       socket.emit("data_changed");
       setSaved(true);
       setTimeout(() => setSaved(false), 6000);
@@ -240,7 +227,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
           <div className="flex-1 min-w-0">
             <input
               type="text"
-              value={parseCustomerName(formData.content || "")}
+              value={localName}
               onChange={(e) => handleNameChange(e.target.value)}
               className="w-full bg-transparent text-lg sm:text-2xl font-bold text-gray-800 outline-none focus:ring-0 focus:border-transparent placeholder-gray-400 truncate"
               placeholder="Nhập tên khách hàng"
