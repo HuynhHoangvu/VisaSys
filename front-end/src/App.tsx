@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Toaster } from "react-hot-toast";
 import {
   BrowserRouter,
   Routes,
@@ -44,6 +45,21 @@ const AppLayout: React.FC = () => {
     localStorage.getItem("flyvisa_user")!,
   );
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(
+    () => localStorage.getItem("flyvisa_sidebar_collapsed") === "true",
+  );
+
+  const handleToggleSidebar = () => {
+    if (window.innerWidth >= 1024) {
+      setSidebarCollapsed((prev) => {
+        const next = !prev;
+        localStorage.setItem("flyvisa_sidebar_collapsed", String(next));
+        return next;
+      });
+    } else {
+      setIsSidebarOpen(true);
+    }
+  };
 
   return (
     <div className="flex h-screen w-full bg-gray-100 font-sans text-gray-900 overflow-hidden">
@@ -51,11 +67,19 @@ const AppLayout: React.FC = () => {
         currentUser={currentUser}
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
+        collapsed={sidebarCollapsed}
+        onToggleCollapse={() =>
+          setSidebarCollapsed((prev) => {
+            const next = !prev;
+            localStorage.setItem("flyvisa_sidebar_collapsed", String(next));
+            return next;
+          })
+        }
       />
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
         <Header
           currentUser={currentUser}
-          onToggleSidebar={() => setIsSidebarOpen(true)}
+          onToggleSidebar={handleToggleSidebar}
         />
         <PageWrapper />
       </main>
@@ -97,6 +121,7 @@ const isProcessingDept = (user: AuthUser) => {
 const App: React.FC = () => {
   return (
     <BrowserRouter>
+      <Toaster position="bottom-right" toastOptions={{ duration: 4000 }} />
       <Routes>
         {/* Route công khai */}
         <Route path="/login" element={<LoginPage />} />

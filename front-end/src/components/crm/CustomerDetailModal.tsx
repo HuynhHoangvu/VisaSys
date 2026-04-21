@@ -11,6 +11,7 @@ import {
 import type { Task, CustomerDetailModalProps, Employee } from "../../types";
 import { VISA_SERVICES, CUSTOMER_SOURCES } from "../../utils/constants";
 import socket from "../../services/socket";
+import toast from "react-hot-toast";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
@@ -37,7 +38,6 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
   const [formData, setFormData] = useState<Task | null>(null);
   const [localName, setLocalName] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
   const [staffList, setStaffList] = useState<Employee[]>([]);
 
   const [newNote, setNewNote] = useState("");
@@ -64,12 +64,10 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
 
 
   const handleNameChange = (value: string) => {
-    setSaved(false);
     setLocalName(value);
   };
 
   const handleChange = (field: keyof Task, value: string) => {
-    setSaved(false);
     setFormData((prev) => {
       if (!prev) return null;
       const updatedData = { ...prev, [field]: value };
@@ -166,7 +164,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
       clearFile();
     } catch (error) {
       console.error(error);
-      alert("Đã xảy ra lỗi khi gửi cập nhật!");
+      toast.error("Đã xảy ra lỗi khi gửi cập nhật!");
     } finally {
       setIsSubmittingNote(false);
     }
@@ -188,10 +186,9 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
 
       if (onUpdateCustomer) onUpdateCustomer(payload);
       socket.emit("data_changed");
-      setSaved(true);
-      setTimeout(() => setSaved(false), 6000);
+      toast.success("Đã lưu thông tin khách hàng");
     } catch (err) {
-      alert("Lỗi lưu thông tin khách hàng" + (err as Error).message);
+      toast.error("Lỗi lưu: " + (err as Error).message);
     } finally {
       setIsSaving(false);
     }
@@ -219,80 +216,70 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
       className="md:p-4"
       dismissible
     >
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between rounded-t border-b border-gray-200 p-4 sm:p-5 bg-gray-50 gap-3">
-        <div className="flex items-center gap-3 w-full">
-          <div className="w-12 h-12 sm:w-14 sm:h-14 shrink-0 bg-orange-400 text-white rounded-lg flex items-center justify-center text-xl sm:text-2xl font-bold shadow-sm">
-            {formData.content?.charAt(0) || "K"}
+      <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4 bg-white gap-4">
+        {/* Avatar + info */}
+        <div className="flex items-center gap-4 min-w-0 flex-1">
+          <div className="w-11 h-11 shrink-0 rounded-full bg-gradient-to-br from-orange-400 to-rose-500 flex items-center justify-center text-white text-lg font-bold shadow-sm select-none">
+            {localName?.charAt(0)?.toUpperCase() || "K"}
           </div>
-          <div className="flex-1 min-w-0">
+
+          <div className="min-w-0 flex-1">
             <input
               type="text"
               value={localName}
               onChange={(e) => handleNameChange(e.target.value)}
-              className="w-full bg-transparent text-lg sm:text-2xl font-bold text-gray-800 outline-none focus:ring-0 focus:border-transparent placeholder-gray-400 truncate"
+              className="w-full bg-transparent text-xl font-bold text-gray-800 outline-none border-b border-transparent hover:border-gray-200 focus:border-orange-400 transition-colors pb-0.5 placeholder-gray-400"
               placeholder="Nhập tên khách hàng"
             />
-            <p className="text-sm text-gray-500 mt-1 truncate">
-              {formData.content}
-            </p>
-            <div className="flex flex-col sm:flex-row sm:items-center gap-x-6 gap-y-1 mt-1">
-              <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500 font-medium">
-                <span className="shrink-0">Phí:</span>
+
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-1 mt-2">
+              <label className="flex items-center gap-1.5 text-xs text-gray-400 font-medium">
+                Phí:
                 <input
                   type="text"
                   value={formData.price || ""}
                   onChange={(e) => handleChange("price", e.target.value)}
-                  className="border-b border-dashed border-gray-300 bg-transparent p-0 font-bold text-gray-800 focus:ring-0 focus:border-orange-500 w-full sm:w-32 max-w-37.5"
-                  placeholder="Ví dụ: 50.000.000 đ"
+                  className="border-0 border-b border-dashed border-gray-300 bg-transparent p-0 text-xs font-bold text-gray-700 focus:ring-0 focus:border-orange-400 outline-none w-28"
+                  placeholder="50.000.000 đ"
                 />
-              </div>
+              </label>
 
-              <div className="flex items-center gap-1.5 text-xs sm:text-sm text-gray-600 font-medium mt-1 sm:mt-0">
-                <span className="text-orange-600 font-bold shrink-0">
-                  👤 Sale:
-                </span>
+              <label className="flex items-center gap-1.5 text-xs text-gray-400 font-medium">
+                Sale:
                 <select
                   value={formData.assignedTo || ""}
                   onChange={(e) => handleChange("assignedTo", e.target.value)}
-                  className="border-b border-dashed border-gray-300 bg-transparent p-0 font-semibold text-gray-800 focus:ring-0 focus:border-orange-500 outline-none cursor-pointer text-xs sm:text-sm"
+                  className="border-0 border-b border-dashed border-gray-300 bg-transparent p-0 text-xs font-semibold text-gray-700 focus:ring-0 focus:border-orange-400 outline-none cursor-pointer"
                 >
-                  <option value="">-- Chọn nhân viên --</option>
+                  <option value="">-- Chọn --</option>
                   {staffList.map((staff) => (
                     <option key={staff.id} value={staff.name}>
                       {staff.name} - {staff.employeeCode}
                     </option>
                   ))}
                 </select>
-              </div>
+              </label>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center justify-end w-full sm:w-auto gap-2 mt-2 sm:mt-0">
-          {saved && (
-            <span className="text-green-600 text-xs sm:text-sm font-medium animate-pulse hidden sm:inline">
-              ✓ Đã lưu
-            </span>
-          )}
+        {/* Actions */}
+        <div className="flex items-center gap-2 shrink-0">
           <Button
-            color={saved ? "gray" : "success"}
+            color="success"
             size="sm"
             onClick={handleSave}
             disabled={isSaving}
             className="whitespace-nowrap"
           >
             {isSaving ? <Spinner size="sm" className="mr-2" /> : null}
-            {isSaving ? "Đang lưu..." : saved ? "Đã lưu" : "Lưu thay đổi"}
+            {isSaving ? "Đang lưu..." : "Lưu thay đổi"}
           </Button>
           <button
             onClick={onClose}
-            className="p-1.5 text-gray-400 hover:bg-gray-200 rounded-lg transition-colors bg-gray-200 sm:bg-transparent"
+            className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
           >
-            <svg
-              className="h-5 w-5 sm:h-6 sm:w-6"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
+            <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
               <path
                 fillRule="evenodd"
                 d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"

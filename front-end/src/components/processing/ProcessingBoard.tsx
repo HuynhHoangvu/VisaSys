@@ -6,7 +6,8 @@ import {
   Draggable,
   type DropResult,
 } from "@hello-pangea/dnd";
-import { Progress, Spinner } from "flowbite-react";
+import { Progress } from "flowbite-react";
+import toast from "react-hot-toast";
 import type { AuthUser, BoardData, Column, Task } from "../../types";
 import socket from "../../services/socket";
 import SearchFilterBar from "../filter/SearchFilterBar";
@@ -93,7 +94,7 @@ const ColumnSelect: React.FC<ColumnSelectProps> = ({
         await moveTaskToColumn(taskId, e.target.value);
         onMoved();
       } catch {
-        alert("Lỗi khi chuyển cột xử lý!");
+        toast.error("Lỗi khi chuyển cột xử lý!");
       }
     }}
     onClick={(e) => e.stopPropagation()}
@@ -127,7 +128,13 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"kanban" | "table">("kanban");
 
+  const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+
+  useEffect(() => {
+    const t = setTimeout(() => setSearchQuery(searchInput), 300);
+    return () => clearTimeout(t);
+  }, [searchInput]);
   const [filterSale, setFilterSale] = useState("all");
   const [filterVisa, setFilterVisa] = useState("all");
   const [filterProgress, setFilterProgress] = useState("all");
@@ -225,14 +232,15 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
 
   const hasActiveFilter = useMemo(
     () =>
-      searchQuery !== "" ||
+      searchInput !== "" ||
       filterSale !== "all" ||
       filterVisa !== "all" ||
       filterProgress !== "all",
-    [searchQuery, filterSale, filterVisa, filterProgress],
+    [searchInput, filterSale, filterVisa, filterProgress],
   );
 
   const handleResetFilter = useCallback(() => {
+    setSearchInput("");
     setSearchQuery("");
     setFilterSale("all");
     setFilterVisa("all");
@@ -292,7 +300,7 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
       await moveTaskToColumn(draggableId, destination.droppableId);
     } catch {
       fetchBoardData(false);
-      alert("Lỗi khi chuyển cột xử lý!");
+      toast.error("Lỗi khi chuyển cột xử lý!");
     }
   };
 
@@ -301,7 +309,7 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
   // ==========================================
   const handlePingSale = async (task: Task, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!task.assignedTo) return alert("Hồ sơ này chưa có Sale phụ trách!");
+    if (!task.assignedTo) { toast.error("Hồ sơ này chưa có Sale phụ trách!"); return; }
 
     const customerName = task.content.split(" - ")[0];
     const reason = window.prompt(
@@ -321,9 +329,9 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
           taskId: task.id,
         }),
       });
-      alert(`Đã gửi yêu cầu bổ sung cho Sale: ${task.assignedTo}`);
+      toast.success(`Đã gửi yêu cầu bổ sung cho Sale: ${task.assignedTo}`);
     } catch {
-      alert("Lỗi gửi thông báo!");
+      toast.error("Lỗi gửi thông báo!");
     }
   };
 
@@ -332,8 +340,24 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
   // ==========================================
   if (isLoading || !boardData) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <Spinner size="xl" />
+      <div className="flex flex-col h-full w-full px-4 py-4 sm:px-6 sm:py-6 animate-pulse">
+        <div className="h-8 w-64 bg-gray-200 rounded mb-2" />
+        <div className="h-4 w-40 bg-gray-100 rounded mb-6" />
+        <div className="h-10 w-full bg-gray-100 rounded-lg mb-4" />
+        <div className="flex gap-4 flex-1 overflow-hidden">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="flex flex-col gap-3 min-w-[220px] w-56 shrink-0">
+              <div className="h-6 w-32 bg-gray-200 rounded" />
+              {[...Array(i === 0 ? 4 : i === 1 ? 3 : 2)].map((_, j) => (
+                <div key={j} className="bg-white rounded-xl p-4 shadow-sm space-y-2">
+                  <div className="h-4 w-3/4 bg-gray-200 rounded" />
+                  <div className="h-3 w-1/2 bg-gray-100 rounded" />
+                  <div className="h-2 w-full bg-gray-100 rounded-full" />
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -368,8 +392,8 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
       {/* FILTER BAR */}
       <SearchFilterBar
         searchPlaceholder="Tìm tên khách, loại visa, sale..."
-        searchValue={searchQuery}
-        onSearchChange={setSearchQuery}
+        searchValue={searchInput}
+        onSearchChange={setSearchInput}
         filters={[
           {
             key: "sale",

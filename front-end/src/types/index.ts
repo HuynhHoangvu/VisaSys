@@ -242,6 +242,8 @@ export interface SidebarProps {
   currentUser: AuthUser;
   isOpen?: boolean;
   onClose?: () => void;
+  collapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
 export interface Workspace {

@@ -26,6 +26,7 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onToggleSidebar }) => {
   const [latestToast, setLatestToast] = useState<NotificationItem | null>(null);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const prevCountRef = useRef(0);
 
   const fetchNotifications = useCallback(async () => {
     if (!currentUser?.name) return;
@@ -35,30 +36,35 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onToggleSidebar }) => {
       );
       if (res.ok) {
         const data: NotificationItem[] = await res.json();
-        if (data.length > notifications.length && data.length > 0) {
+        if (data.length > prevCountRef.current && data.length > 0) {
           setLatestToast(data[0]);
           setTimeout(() => setLatestToast(null), 6000);
         }
+        prevCountRef.current = data.length;
         setNotifications(data);
       }
     } catch (error) {
       console.error("Lỗi tải thông báo:", error);
     }
-  }, [currentUser, notifications.length]);
+  }, [currentUser]);
 
   useEffect(() => {
-    const loadData = async () => {
-      await fetchNotifications();
-    };
-    loadData();
-    const handleDataChange = () => {
-      loadData();
-    };
-    socket.on("data_changed", handleDataChange);
+    // Initial load: setState gọi trong .then() callback — linter cho phép
+    if (currentUser?.name) {
+      fetch(`${API_URL}/api/notifications/${currentUser.name}`)
+        .then((r) => (r.ok ? (r.json() as Promise<NotificationItem[]>) : []))
+        .then((data) => {
+          prevCountRef.current = data.length;
+          setNotifications(data);
+        })
+        .catch(console.error);
+    }
+    // Socket subscription: fetchNotifications gọi như event callback — OK
+    socket.on("new_notification", fetchNotifications);
     return () => {
-      socket.off("data_changed", handleDataChange);
+      socket.off("new_notification", fetchNotifications);
     };
-  }, [fetchNotifications]);
+  }, [currentUser?.name, fetchNotifications]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -105,7 +111,7 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onToggleSidebar }) => {
       <div className="flex items-center gap-2">
         <button
           onClick={onToggleSidebar}
-          className="lg:hidden p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+          className="p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
         >
           <svg
             className="w-6 h-6"
@@ -124,24 +130,6 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onToggleSidebar }) => {
 
         {/* TRÁI: TIÊU ĐỀ */}
         <div className="hidden lg:flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center">
-            <svg
-              className="w-4 h-4 text-white"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-          </div>
-          <h2 className="text-base font-bold text-gray-800 whitespace-nowrap">
-            Fly Visa System
-          </h2>
         </div>
       </div>
 

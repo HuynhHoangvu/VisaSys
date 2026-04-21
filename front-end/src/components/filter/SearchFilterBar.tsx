@@ -1,5 +1,3 @@
-// components/common/SearchFilterBar.tsx
-// Component tìm kiếm + filter dùng chung — có thể tái sử dụng ở KanbanBoard, ProcessingBoard, HRPage...
 import React from "react";
 
 export interface FilterOption {
