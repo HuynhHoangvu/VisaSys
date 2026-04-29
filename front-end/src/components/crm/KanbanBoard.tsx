@@ -47,6 +47,12 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
   const [isShowReport, setIsShowReport] = useState(false);
 
   const [viewMode, setViewMode] = useState<"board" | "table">("board");
+  // Thêm state để quản lý chế độ Group By
+  const [groupBy, setGroupBy] = useState<"none" | "staff">("none");
+  const [collapsedGroups, setCollapsedGroups] = useState<
+    Record<string, boolean>
+  >({});
+
   const [visibleLimits, setVisibleLimits] = useState<Record<string, number>>(
     {},
   );
@@ -268,6 +274,32 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
     ],
   );
 
+  // Lấy danh sách nhân viên đang có khách hàng (để render Swimlanes)
+  const activeStaffGroups = useMemo(() => {
+    if (groupBy !== "staff" || !boardData) return [];
+    const staffSet = new Set<string>();
+    boardData.columnOrder.forEach((colId) => {
+      getFilteredTaskIds(colId).forEach((taskId) => {
+        const task = boardData.tasks[taskId];
+        if (task) {
+          staffSet.add(task.assignedTo?.trim() || "Chưa giao");
+        }
+      });
+    });
+    return Array.from(staffSet).sort((a, b) => {
+      if (a === "Chưa giao") return 1;
+      if (b === "Chưa giao") return -1;
+      return a.localeCompare(b);
+    });
+  }, [groupBy, boardData, getFilteredTaskIds]);
+
+  const toggleGroupCollapse = (groupName: string) => {
+    setCollapsedGroups((prev) => ({
+      ...prev,
+      [groupName]: !prev[groupName],
+    }));
+  };
+
   const filteredTotal = useMemo(() => {
     if (!boardData) return 0;
     return boardData.columnOrder.reduce(
@@ -373,14 +405,21 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
   const onDragEnd = async (result: DropResult) => {
     const { destination, source, draggableId } = result;
     if (!destination || !boardData) return;
+
+    // Phân tách compound ID nếu đang bật Swimlanes (ví dụ: "col-1:::NguyenVanA" -> "col-1")
+    const realSourceColId = source.droppableId.split(":::")[0];
+    const realDestColId = destination.droppableId.split(":::")[0];
+
     if (
       destination.droppableId === source.droppableId &&
       destination.index === source.index
     )
       return;
 
-    const startCol = boardData.columns[source.droppableId];
-    const finishCol = boardData.columns[destination.droppableId];
+    const startCol = boardData.columns[realSourceColId];
+    const finishCol = boardData.columns[realDestColId];
+
+    if (!startCol || !finishCol) return;
 
     if (startCol === finishCol) {
       const newTaskIds = Array.from(startCol.taskIds);
@@ -412,8 +451,11 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
       await fetch(`${API_URL}/api/tasks/${draggableId}/move`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ columnId: destination.droppableId }),
+        body: JSON.stringify({ columnId: realDestColId }),
       });
+      // Lưu ý: Nếu user kéo thả giữa 2 swimlane nhân viên khác nhau,
+      // api /move hiện tại của anh có thể chưa hỗ trợ cập nhật trường 'assignedTo'.
+      // Cần gọi thêm API update nếu cần thiết ở đây.
     } catch (error) {
       fetchBoardData(false);
       console.error("Lỗi khi cập nhật vị trí thẻ:", error);
@@ -488,6 +530,234 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
     return baseClass;
   };
 
+  const renderCard = (
+    task: Task,
+    index: number,
+    column: Column,
+    isHidden: boolean,
+  ) => {
+    if (!boardData) return null;
+    const isAlerted = activeAlerts.includes(task.id);
+    return (
+      <Draggable
+        key={task.id}
+        draggableId={task.id}
+        index={index}
+        isDragDisabled={isHidden || isMarketingDept}
+      >
+        {(provided, snapshot) => {
+          const card = (
+            <div
+              ref={provided.innerRef}
+              {...provided.draggableProps}
+              {...provided.dragHandleProps}
+              onClick={() => !isHidden && onOpenDetail(task.id)}
+              className={`relative group select-none transition-colors duration-200 rounded-lg ${
+                isHidden
+                  ? "pointer-events-none"
+                  : `p-2 ${getCardStyle(column.id, snapshot.isDragging, isAlerted)}`
+              }`}
+              style={{
+                ...provided.draggableProps.style,
+                ...(isHidden && !snapshot.isDragging
+                  ? { height: 0, overflow: "hidden", margin: 0, padding: 0 }
+                  : {}),
+              }}
+            >
+              {!isHidden && (
+                <>
+                  {/* Alert badge */}
+                  {isAlerted && (
+                    <div className="absolute -top-2 -left-2 bg-red-500 text-white w-5 h-5 rounded-full flex items-center justify-center shadow-lg border-2 border-white z-10 animate-bounce">
+                      <svg
+                        className="w-3 h-3"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </div>
+                  )}
+
+                  {/* Delete button */}
+                  {!isMarketingDept && (
+                    <button
+                      onClick={(e) => handleDeleteClick(e, task.id)}
+                      className="absolute top-1 right-1 lg:opacity-0 lg:group-hover:opacity-100 opacity-100 p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                    >
+                      <svg
+                        className="w-3 h-3"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M6 18L18 6M6 6l12 12"
+                        />
+                      </svg>
+                    </button>
+                  )}
+
+                  {/* Row 1: Tên + NV */}
+                  <div className="flex justify-between items-start mb-1 pr-4 gap-1">
+                    <h4 className="font-bold text-gray-800 text-xs leading-tight min-w-0 flex-1">
+                      {task.content.split(" - ")[0]}
+                    </h4>
+                    {task.assignedTo && (
+                      <div className="flex items-center gap-1 shrink-0 ml-1">
+                        <div className="w-3.5 h-3.5 rounded-full bg-indigo-50 flex items-center justify-center text-[7px] font-bold text-indigo-600 border border-indigo-100 shrink-0">
+                          {task.assignedTo
+                            .trim()
+                            .split(" ")
+                            .pop()
+                            ?.charAt(0)
+                            .toUpperCase()}
+                        </div>
+                        <span className="text-[9px] text-gray-500 whitespace-nowrap">
+                          {task.assignedTo.trim().split(" ").pop()}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Row 2: SĐT + Visa tag + Job tag */}
+                  <div className="flex flex-wrap items-center gap-1 mb-2">
+                    <span className="text-[11px] font-bold text-gray-700 w-full">
+                      {task.phone}
+                    </span>
+                    {task.visaType && (
+                      <span className="text-[9px] bg-blue-50 text-blue-700 border border-blue-100 px-1.5 py-0.5 rounded font-semibold max-w-[90px] truncate">
+                        {task.visaType}
+                      </span>
+                    )}
+                    {task.jobType && (
+                      <span className="text-[9px] bg-emerald-50 text-emerald-700 border border-emerald-100 px-1.5 py-0.5 rounded font-semibold max-w-[90px] truncate">
+                        {task.jobType}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Row 3: Activities + Select cột + Icons */}
+                  <div className="flex justify-between items-center pt-1.5 border-t border-gray-100 gap-1">
+                    <div className="flex gap-1 items-center shrink-0">
+                      {task.activities && task.activities.length > 0 ? (
+                        <>
+                          {task.activities.slice(0, 1).map((act) => {
+                            const config = getActivityConfig(
+                              act.type,
+                              act.completed,
+                            );
+                            return (
+                              <div
+                                key={act.id}
+                                title={act.summary}
+                                onClick={(e) =>
+                                  handleActivityClick(e, task.id, act.id)
+                                }
+                                className={`w-5 h-5 rounded-full border ${config.border} ${config.color} flex items-center justify-center text-[9px] cursor-pointer hover:scale-110 transition-transform shrink-0`}
+                              >
+                                {config.icon}
+                              </div>
+                            );
+                          })}
+                          {task.activities.length > 1 && (
+                            <div className="w-5 h-5 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center text-[8px] font-bold text-gray-500 shrink-0">
+                              +{task.activities.length - 1}
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <span className="text-[9px] text-gray-300 italic">
+                          Trống
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-0.5 min-w-0">
+                      <select
+                        value={column.id}
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(e) =>
+                          handleStatusChange(task.id, column.id, e.target.value)
+                        }
+                        disabled={isMarketingDept}
+                        className="w-16 appearance-none bg-gray-50 border border-gray-200 text-gray-600 text-[9px] font-medium py-0.5 px-1 rounded cursor-pointer outline-none truncate disabled:opacity-50"
+                      >
+                        {boardData.columnOrder.map((colId) => (
+                          <option
+                            key={colId}
+                            value={colId}
+                            className="text-left"
+                          >
+                            {boardData.columns[colId].title}
+                          </option>
+                        ))}
+                      </select>
+
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onOpenAttachments(task.id);
+                        }}
+                        className="w-6 h-6 flex items-center justify-center rounded text-green-600 hover:bg-green-50 transition-colors shrink-0"
+                        title="Tệp đính kèm"
+                      >
+                        <svg
+                          className="w-3.5 h-3.5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2.5}
+                            d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
+                          />
+                        </svg>
+                      </button>
+
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onOpenActivityList(task.id);
+                        }}
+                        className="w-6 h-6 flex items-center justify-center rounded text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors shrink-0"
+                      >
+                        <svg
+                          className="w-3.5 h-3.5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          );
+          return snapshot.isDragging ? createPortal(card, document.body) : card;
+        }}
+      </Draggable>
+    );
+  };
+
   if (isLoading)
     return (
       <div className="flex items-center justify-center h-full">
@@ -535,6 +805,35 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full md:w-auto">
+          {/* Nút Nhóm Theo */}
+          {canSeeAll && viewMode === "board" && (
+            <button
+              onClick={() => setGroupBy(groupBy === "none" ? "staff" : "none")}
+              className={`flex-1 md:flex-none justify-center border text-sm font-semibold px-3 py-2 sm:px-4 rounded-lg transition-colors shadow-sm flex items-center gap-2 ${
+                groupBy === "staff"
+                  ? "bg-indigo-50 border-indigo-200 text-indigo-700 hover:bg-indigo-100"
+                  : "bg-white border-gray-300 hover:bg-gray-100 text-gray-700"
+              }`}
+            >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M4 6h16M4 12h16M4 18h7"
+                />
+              </svg>
+              <span className="hidden sm:inline">
+                {groupBy === "staff" ? "Bỏ Nhóm" : "Nhóm NV"}
+              </span>
+            </button>
+          )}
+
           <button
             onClick={() =>
               setViewMode(viewMode === "board" ? "table" : "board")
@@ -719,324 +1018,229 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
       {/* KANBAN BOARD */}
       {viewMode === "board" && (
         <DragDropContext onDragEnd={onDragEnd}>
-          <div className="flex-1 min-h-0 w-full flex space-x-4 overflow-x-auto pb-2 items-start custom-scrollbar">
-            {boardData.columnOrder.map((columnId) => {
-              const column = boardData.columns[columnId];
-              const filteredTaskIds = getFilteredTaskIds(columnId);
-              const allTasksInCol = column.taskIds
-                .map((id) => boardData.tasks[id])
-                .filter(Boolean);
+          <div className="flex-1 min-h-0 w-full overflow-y-auto custom-scrollbar">
+            {/* KIỂU XEM: KHÔNG NHÓM (Mặc định) */}
+            {groupBy === "none" ? (
+              <div className="flex space-x-4 pb-2 items-start h-full">
+                {boardData.columnOrder.map((columnId) => {
+                  const column = boardData.columns[columnId];
+                  const filteredTaskIds = getFilteredTaskIds(columnId);
+                  const allTasksInCol = column.taskIds
+                    .map((id) => boardData.tasks[id])
+                    .filter(Boolean);
 
-              if (filterColumn !== "all" && filterColumn !== columnId)
-                return null;
+                  if (filterColumn !== "all" && filterColumn !== columnId)
+                    return null;
 
-              const limit = visibleLimits[columnId] || DEFAULT_LIMIT;
-              const hasMore = column.taskIds.length > limit;
-              const tasksToRender = hasActiveFilter ? column.taskIds : column.taskIds.slice(0, limit);
+                  const limit = visibleLimits[columnId] || DEFAULT_LIMIT;
+                  const hasMore = column.taskIds.length > limit;
+                  const tasksToRender = hasActiveFilter
+                    ? column.taskIds
+                    : column.taskIds.slice(0, limit);
 
-              return (
-                <div
-                  key={column.id}
-                  className="flex flex-col bg-gray-100/50 rounded-xl w-[85vw] sm:w-64 min-w-[16rem] h-full shrink-0"
-                >
-                  <div className="px-3 py-3 flex justify-between items-center shrink-0 border-b border-gray-200/50">
-                    <h3 className="font-bold text-gray-600 uppercase text-[11px] tracking-wider">
-                      {column.title}
-                    </h3>
-                    <div className="flex items-center gap-1">
-                      {hasActiveFilter &&
-                        filteredTaskIds.length !== allTasksInCol.length && (
-                          <span className="text-orange-500 text-2xs font-bold">
-                            {filteredTaskIds.length}
+                  return (
+                    <div
+                      key={column.id}
+                      className="flex flex-col bg-gray-100/50 rounded-xl w-[85vw] sm:w-64 min-w-[16rem] h-full shrink-0"
+                    >
+                      <div className="px-3 py-3 flex justify-between items-center shrink-0 border-b border-gray-200/50">
+                        <h3 className="font-bold text-gray-600 uppercase text-[11px] tracking-wider">
+                          {column.title}
+                        </h3>
+                        <div className="flex items-center gap-1">
+                          {hasActiveFilter &&
+                            filteredTaskIds.length !== allTasksInCol.length && (
+                              <span className="text-orange-500 text-2xs font-bold">
+                                {filteredTaskIds.length}
+                              </span>
+                            )}
+                          <span className="bg-gray-200 text-gray-600 text-2xs font-bold px-2 py-0.5 rounded-full">
+                            {allTasksInCol.length}
                           </span>
-                        )}
-                      <span className="bg-gray-200 text-gray-600 text-2xs font-bold px-2 py-0.5 rounded-full">
-                        {allTasksInCol.length}
-                      </span>
-                    </div>
-                  </div>
+                        </div>
+                      </div>
 
-                  <Droppable droppableId={column.id}>
-                    {(provided, snapshot) => (
+                      <Droppable droppableId={column.id}>
+                        {(provided, snapshot) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.droppableProps}
+                            className={`flex-1 overflow-y-auto custom-scrollbar px-2 pt-2 pb-4 space-y-2 transition-colors duration-200 rounded-b-xl ${
+                              snapshot.isDraggingOver ? "bg-gray-200/50" : ""
+                            }`}
+                          >
+                            {tasksToRender
+                              .map((taskId) => boardData.tasks[taskId])
+                              .filter(Boolean)
+                              .map((task, index) => {
+                                const isHidden =
+                                  hasActiveFilter &&
+                                  !filteredTaskIds.includes(task.id);
+                                return renderCard(
+                                  task,
+                                  index,
+                                  column,
+                                  isHidden,
+                                );
+                              })}
+                            {provided.placeholder}
+
+                            {hasMore && !hasActiveFilter && (
+                              <button
+                                onClick={() => handleLoadMore(column.id)}
+                                className="w-full mt-2 py-3 sm:py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 font-semibold text-sm sm:text-xs rounded-lg transition-colors border border-blue-200 border-dashed"
+                              >
+                                Tải thêm ({column.taskIds.length - limit}) ↓
+                              </button>
+                            )}
+                            {hasActiveFilter &&
+                              filteredTaskIds.length === 0 &&
+                              allTasksInCol.length > 0 && (
+                                <div className="text-center py-4 text-gray-400 text-xs italic">
+                                  Không khớp bộ lọc
+                                </div>
+                              )}
+                          </div>
+                        )}
+                      </Droppable>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              /* KIỂU XEM: SWIMLANES (NHÓM THEO NHÂN VIÊN) */
+              <div className="flex flex-col space-y-4 pb-2 pr-2">
+                {activeStaffGroups.map((staffName) => {
+                  const isCollapsed = collapsedGroups[staffName];
+
+                  return (
+                    <div
+                      key={staffName}
+                      className="flex flex-col border border-gray-200 rounded-xl bg-white shadow-sm overflow-hidden"
+                    >
+                      {/* Swimlane Header */}
                       <div
-                        ref={provided.innerRef}
-                        {...provided.droppableProps}
-                        className={`flex-1 overflow-y-auto custom-scrollbar px-2 pt-2 pb-4 space-y-2 transition-colors duration-200 rounded-b-xl ${
-                          snapshot.isDraggingOver ? "bg-gray-200/50" : ""
-                        }`}
+                        onClick={() => toggleGroupCollapse(staffName)}
+                        className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-200 cursor-pointer hover:bg-gray-100 transition-colors"
                       >
-                        {tasksToRender
-                          .map((taskId) => boardData.tasks[taskId])
-                          .filter(Boolean)
-                          .map((task, index) => {
-                            const isAlerted = activeAlerts.includes(task.id);
-                            const isHidden = hasActiveFilter && !filteredTaskIds.includes(task.id);
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`transform transition-transform ${isCollapsed ? "-rotate-90" : "rotate-0"}`}
+                          >
+                            <svg
+                              className="w-5 h-5 text-gray-500"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                                d="M19 9l-7 7-7-7"
+                              />
+                            </svg>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center text-xs font-bold text-indigo-700">
+                              {staffName
+                                .split(" ")
+                                .pop()
+                                ?.charAt(0)
+                                .toUpperCase()}
+                            </div>
+                            <h3 className="font-bold text-gray-800 text-sm">
+                              {staffName}
+                            </h3>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Swimlane Content */}
+                      {!isCollapsed && (
+                        <div className="flex space-x-4 p-4 overflow-x-auto custom-scrollbar bg-gray-100/30">
+                          {boardData.columnOrder.map((columnId) => {
+                            const column = boardData.columns[columnId];
+                            const filteredTaskIds =
+                              getFilteredTaskIds(columnId);
+
+                            // Lọc thêm theo staff cho swimlane này
+                            const staffTaskIds = filteredTaskIds.filter(
+                              (taskId) => {
+                                const t = boardData.tasks[taskId];
+                                return (
+                                  (t?.assignedTo?.trim() || "Chưa giao") ===
+                                  staffName
+                                );
+                              },
+                            );
+
+                            if (
+                              filterColumn !== "all" &&
+                              filterColumn !== columnId
+                            )
+                              return null;
+
+                            // Droppable ID phải là duy nhất trên toàn cục (kết hợp Cột + Nhân viên)
+                            const compoundDroppableId = `${column.id}:::${staffName}`;
 
                             return (
-                              <Draggable
-                                key={task.id}
-                                draggableId={task.id}
-                                index={index}
-                                isDragDisabled={isHidden || isMarketingDept}
+                              <div
+                                key={compoundDroppableId}
+                                className="flex flex-col bg-gray-100/80 rounded-xl w-[85vw] sm:w-64 min-w-[16rem] h-full shrink-0 border border-gray-200/50"
                               >
-                                {(provided, snapshot) => {
-                                  const card = (
-                                  <div
-                                    ref={provided.innerRef}
-                                    {...provided.draggableProps}
-                                    {...provided.dragHandleProps}
-                                    onClick={() => !isHidden && onOpenDetail(task.id)}
-                                    className={`relative group select-none transition-colors duration-200 rounded-lg ${
-                                      isHidden
-                                        ? "pointer-events-none"
-                                        : `p-2 ${getCardStyle(column.id, snapshot.isDragging, isAlerted)}`
-                                    }`}
-                                    style={{
-                                      ...provided.draggableProps.style,
-                                      ...(isHidden && !snapshot.isDragging
-                                        ? { height: 0, overflow: "hidden", margin: 0, padding: 0 }
-                                        : {}),
-                                    }}
-                                  >
-                                    {!isHidden && (<>
-                                    {/* Alert badge */}
-                                    {isAlerted && (
-                                      <div className="absolute -top-2 -left-2 bg-red-500 text-white w-5 h-5 rounded-full flex items-center justify-center shadow-lg border-2 border-white z-10 animate-bounce">
-                                        <svg
-                                          className="w-3 h-3"
-                                          fill="currentColor"
-                                          viewBox="0 0 20 20"
-                                        >
-                                          <path
-                                            fillRule="evenodd"
-                                            d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                                            clipRule="evenodd"
-                                          />
-                                        </svg>
-                                      </div>
-                                    )}
+                                <div className="px-3 py-2 flex justify-between items-center shrink-0 border-b border-gray-200/50">
+                                  <h3 className="font-bold text-gray-600 uppercase text-[10px] tracking-wider">
+                                    {column.title}
+                                  </h3>
+                                  <span className="bg-white border border-gray-200 text-gray-600 text-2xs font-bold px-2 py-0.5 rounded-full">
+                                    {staffTaskIds.length}
+                                  </span>
+                                </div>
 
-                                    {/* Delete button */}
-                                    {!isMarketingDept && (
-                                      <button
-                                        onClick={(e) =>
-                                          handleDeleteClick(e, task.id)
-                                        }
-                                        className="absolute top-1 right-1 lg:opacity-0 lg:group-hover:opacity-100 opacity-100 p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                                      >
-                                        <svg
-                                          className="w-3 h-3"
-                                          fill="none"
-                                          stroke="currentColor"
-                                          viewBox="0 0 24 24"
-                                        >
-                                          <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M6 18L18 6M6 6l12 12"
-                                          />
-                                        </svg>
-                                      </button>
-                                    )}
-
-                                    {/* Row 1: Tên + NV */}
-                                    <div className="flex justify-between items-start mb-1 pr-4 gap-1">
-                                      <h4 className="font-bold text-gray-800 text-xs leading-tight min-w-0 flex-1">
-                                        {task.content.split(" - ")[0]}
-                                      </h4>
-                                      {task.assignedTo && (
-                                        <div className="flex items-center gap-1 shrink-0 ml-1">
-                                          <div className="w-3.5 h-3.5 rounded-full bg-indigo-50 flex items-center justify-center text-[7px] font-bold text-indigo-600 border border-indigo-100 shrink-0">
-                                            {task.assignedTo
-                                              .trim()
-                                              .split(" ")
-                                              .pop()
-                                              ?.charAt(0)
-                                              .toUpperCase()}
-                                          </div>
-                                          <span className="text-[9px] text-gray-500 whitespace-nowrap">
-                                            {task.assignedTo
-                                              .trim()
-                                              .split(" ")
-                                              .pop()}
-                                          </span>
+                                <Droppable droppableId={compoundDroppableId}>
+                                  {(provided, snapshot) => (
+                                    <div
+                                      ref={provided.innerRef}
+                                      {...provided.droppableProps}
+                                      className={`flex-1 overflow-y-auto custom-scrollbar px-2 pt-2 pb-4 space-y-2 transition-colors duration-200 rounded-b-xl min-h-[100px] ${
+                                        snapshot.isDraggingOver
+                                          ? "bg-indigo-50/50 ring-1 ring-inset ring-indigo-200"
+                                          : ""
+                                      }`}
+                                    >
+                                      {staffTaskIds
+                                        .map(
+                                          (taskId) => boardData.tasks[taskId],
+                                        )
+                                        .filter(Boolean)
+                                        .map((task, index) => {
+                                          return renderCard(
+                                            task,
+                                            index,
+                                            column,
+                                            false,
+                                          );
+                                        })}
+                                      {provided.placeholder}
+                                      {staffTaskIds.length === 0 && (
+                                        <div className="text-center py-6 text-gray-400 text-xs italic border-2 border-dashed border-gray-200 rounded-lg">
+                                          Kéo thả vào đây
                                         </div>
                                       )}
                                     </div>
-
-                                    {/* Row 2: SĐT + Visa tag + Job tag */}
-                                    <div className="flex flex-wrap items-center gap-1 mb-2">
-                                      <span className="text-[11px] font-bold text-gray-700 w-full">
-                                        {task.phone}
-                                      </span>
-                                      {task.visaType && (
-                                        <span className="text-[9px] bg-blue-50 text-blue-700 border border-blue-100 px-1.5 py-0.5 rounded font-semibold max-w-[90px] truncate">
-                                          {task.visaType}
-                                        </span>
-                                      )}
-                                      {task.jobType && (
-                                        <span className="text-[9px] bg-emerald-50 text-emerald-700 border border-emerald-100 px-1.5 py-0.5 rounded font-semibold max-w-[90px] truncate">
-                                          {task.jobType}
-                                        </span>
-                                      )}
-                                    </div>
-
-                                    {/* Row 3: Activities + Select cột + Icons */}
-                                    <div className="flex justify-between items-center pt-1.5 border-t border-gray-100 gap-1">
-                                      {/* Activities: tối đa 1 + badge +N */}
-                                      <div className="flex gap-1 items-center shrink-0">
-                                        {task.activities &&
-                                        task.activities.length > 0 ? (
-                                          <>
-                                            {task.activities
-                                              .slice(0, 1)
-                                              .map((act) => {
-                                                const config =
-                                                  getActivityConfig(
-                                                    act.type,
-                                                    act.completed,
-                                                  );
-                                                return (
-                                                  <div
-                                                    key={act.id}
-                                                    title={act.summary}
-                                                    onClick={(e) =>
-                                                      handleActivityClick(
-                                                        e,
-                                                        task.id,
-                                                        act.id,
-                                                      )
-                                                    }
-                                                    className={`w-5 h-5 rounded-full border ${config.border} ${config.color} flex items-center justify-center text-[9px] cursor-pointer hover:scale-110 transition-transform shrink-0`}
-                                                  >
-                                                    {config.icon}
-                                                  </div>
-                                                );
-                                              })}
-                                            {task.activities.length > 1 && (
-                                              <div className="w-5 h-5 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center text-[8px] font-bold text-gray-500 shrink-0">
-                                                +{task.activities.length - 1}
-                                              </div>
-                                            )}
-                                          </>
-                                        ) : (
-                                          <span className="text-[9px] text-gray-300 italic">
-                                            Trống
-                                          </span>
-                                        )}
-                                      </div>
-
-                                      {/* Select + Icons */}
-                                      <div className="flex items-center gap-0.5 min-w-0">
-                                        <select
-                                          value={column.id}
-                                          onMouseDown={(e) =>
-                                            e.stopPropagation()
-                                          }
-                                          onClick={(e) => e.stopPropagation()}
-                                          onChange={(e) =>
-                                            handleStatusChange(
-                                              task.id,
-                                              column.id,
-                                              e.target.value,
-                                            )
-                                          }
-                                          disabled={isMarketingDept}
-                                          className="w-16 appearance-none bg-gray-50 border border-gray-200 text-gray-600 text-[9px] font-medium py-0.5 px-1 rounded cursor-pointer outline-none truncate disabled:opacity-50"
-                                        >
-                                          {boardData.columnOrder.map(
-                                            (colId) => (
-                                              <option
-                                                key={colId}
-                                                value={colId}
-                                                className="text-left"
-                                              >
-                                                {boardData.columns[colId].title}
-                                              </option>
-                                            ),
-                                          )}
-                                        </select>
-
-                                        <button
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            onOpenAttachments(task.id);
-                                          }}
-                                          className="w-6 h-6 flex items-center justify-center rounded text-green-600 hover:bg-green-50 transition-colors shrink-0"
-                                          title="Tệp đính kèm"
-                                        >
-                                          <svg
-                                            className="w-3.5 h-3.5"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                          >
-                                            <path
-                                              strokeLinecap="round"
-                                              strokeLinejoin="round"
-                                              strokeWidth={2.5}
-                                              d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
-                                            />
-                                          </svg>
-                                        </button>
-
-                                        <button
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            onOpenActivityList(task.id);
-                                          }}
-                                          className="w-6 h-6 flex items-center justify-center rounded text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors shrink-0"
-                                        >
-                                          <svg
-                                            className="w-3.5 h-3.5"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                          >
-                                            <path
-                                              strokeLinecap="round"
-                                              strokeLinejoin="round"
-                                              strokeWidth={2}
-                                              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                                            />
-                                          </svg>
-                                        </button>
-                                      </div>
-                                    </div>
-                                    </>)}
-                                  </div>
-                                  );
-                                  return snapshot.isDragging
-                                    ? createPortal(card, document.body)
-                                    : card;
-                                }}
-                              </Draggable>
+                                  )}
+                                </Droppable>
+                              </div>
                             );
                           })}
-                        {provided.placeholder}
-
-                        {hasMore && !hasActiveFilter && (
-                          <button
-                            onClick={() => handleLoadMore(column.id)}
-                            className="w-full mt-2 py-3 sm:py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 font-semibold text-sm sm:text-xs rounded-lg transition-colors border border-blue-200 border-dashed"
-                          >
-                            Tải thêm ({column.taskIds.length - limit}) ↓
-                          </button>
-                        )}
-                        {hasActiveFilter &&
-                          filteredTaskIds.length === 0 &&
-                          allTasksInCol.length > 0 && (
-                            <div className="text-center py-4 text-gray-400 text-xs italic">
-                              Không khớp bộ lọc
-                            </div>
-                          )}
-                      </div>
-                    )}
-                  </Droppable>
-                </div>
-              );
-            })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </DragDropContext>
       )}

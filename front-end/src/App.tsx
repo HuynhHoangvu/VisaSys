@@ -92,7 +92,7 @@ const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const handleLoginSuccess = (user: AuthUser) => {
     localStorage.setItem("flyvisa_user", JSON.stringify(user));
-    navigate("/dashboard", { replace: true });
+    navigate(isTeacherDeptUser(user) ? "/hr" : "/dashboard", { replace: true });
   };
   return <Login onLoginSuccess={handleLoginSuccess} />;
 };
@@ -118,6 +118,18 @@ const isProcessingDept = (user: AuthUser) => {
   return (isBoss || isProcessingDeptUser) && !isManager;
 };
 
+const isTeacherDeptUser = (user: AuthUser) =>
+  user.department?.toLowerCase().includes("giáo viên");
+
+const isNotTeacherDeptUser = (user: AuthUser) => !isTeacherDeptUser(user);
+
+const DefaultRedirect: React.FC = () => {
+  const savedUser = localStorage.getItem("flyvisa_user");
+  if (!savedUser) return <Navigate to="/login" replace />;
+  const currentUser: AuthUser = JSON.parse(savedUser);
+  return <Navigate to={isTeacherDeptUser(currentUser) ? "/hr" : "/dashboard"} replace />;
+};
+
 const App: React.FC = () => {
   return (
     <BrowserRouter>
@@ -129,14 +141,16 @@ const App: React.FC = () => {
         {/* Routes yêu cầu đăng nhập */}
         <Route element={<PrivateRoute />}>
           <Route element={<AppLayout />}>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-            <Route path="/crm" element={<CrmPage />} />
-            <Route path="/kpi" element={<KpiPage />} />
-            <Route path="/documents" element={<DocumentsPage />} />
+            <Route path="/" element={<DefaultRedirect />} />
             <Route path="/hr" element={<HrPage />} />
-            <Route path="/services" element={<ServicesPage />} />
+            <Route element={<PrivateRoute requiredRole={isNotTeacherDeptUser} />}>
+              <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/crm" element={<CrmPage />} />
+              <Route path="/kpi" element={<KpiPage />} />
+              <Route path="/documents" element={<DocumentsPage />} />
+              <Route path="/services" element={<ServicesPage />} />
+            </Route>
 
             {/* Routes chỉ dành cho Boss / Manager */}
             <Route element={<PrivateRoute requiredRole={isBossOrManager} />}>
@@ -153,7 +167,7 @@ const App: React.FC = () => {
         </Route>
 
         {/* Fallback */}
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        <Route path="*" element={<DefaultRedirect />} />
       </Routes>
     </BrowserRouter>
   );

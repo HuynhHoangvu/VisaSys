@@ -6,6 +6,26 @@ import api from "../../services/api";
 
 type WsModalMode = "add" | "edit" | null;
 
+const normalizeUrl = (rawUrl?: string): string | null => {
+  if (!rawUrl?.trim()) return null;
+  const withProtocol = /^https?:\/\//i.test(rawUrl) ? rawUrl.trim() : `https://${rawUrl.trim()}`;
+  try {
+    return new URL(withProtocol).toString();
+  } catch {
+    return null;
+  }
+};
+
+const isSameWorkspaceUrl = (workspaceUrl: string, currentUrl: string): boolean => {
+  try {
+    const ws = new URL(workspaceUrl);
+    const cur = new URL(currentUrl);
+    return ws.origin === cur.origin && cur.pathname.startsWith(ws.pathname);
+  } catch {
+    return false;
+  }
+};
+
 // ── Tooltip wrapper hiện label khi sidebar thu gọn ──────────────────────────
 const NavItem: React.FC<{
   collapsed: boolean;
@@ -38,6 +58,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const [wsError, setWsError] = useState("");
   const [wsSaving, setWsSaving] = useState(false);
   const nameInputRef = useRef<HTMLInputElement>(null);
+  const workspacePrefKey = `flyvisa_active_workspace_${currentUser?.id ?? "unknown"}`;
 
   useEffect(() => {
     if (!currentUser?.id) return;
@@ -46,19 +67,38 @@ const Sidebar: React.FC<SidebarProps> = ({
       .then((res) => {
         const list = res.data;
         setWorkspaces(list);
-        if (list.length > 0) setActiveWorkspaceId(list[0].id);
+        if (list.length === 0) return;
+
+        const currentHref = window.location.href;
+        const matchedByUrl = list.find((ws) => {
+          const normalized = normalizeUrl(ws.url);
+          return normalized ? isSameWorkspaceUrl(normalized, currentHref) : false;
+        });
+        const savedWorkspaceId = localStorage.getItem(workspacePrefKey);
+        const matchedBySaved = list.find((ws) => ws.id === savedWorkspaceId);
+        const nextActive = matchedByUrl?.id || matchedBySaved?.id || list[0].id;
+        setActiveWorkspaceId(nextActive);
       })
       .catch(() => {});
-  }, [currentUser?.id]);
+  }, [currentUser?.id, workspacePrefKey]);
+
+  useEffect(() => {
+    if (!activeWorkspaceId) return;
+    localStorage.setItem(workspacePrefKey, activeWorkspaceId);
+  }, [activeWorkspaceId, workspacePrefKey]);
 
   useEffect(() => {
     if (wsModal) setTimeout(() => nameInputRef.current?.focus(), 50);
   }, [wsModal]);
 
+  const isTeacherDeptUser = currentUser.department?.toLowerCase().includes("giáo viên");
+
   const openAddModal = () => {
+    if (isTeacherDeptUser) return;
     setWsFormName(""); setWsFormUrl(""); setWsError(""); setWsModal("add");
   };
   const openEditModal = () => {
+    if (isTeacherDeptUser) return;
     const ws = workspaces.find((w) => w.id === activeWorkspaceId);
     if (!ws) return;
     setWsFormName(ws.name); setWsFormUrl(ws.url ?? ""); setWsError(""); setWsModal("edit");
@@ -112,8 +152,11 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   const handleWorkspaceChange = (wsId: string) => {
     const ws = workspaces.find((w) => w.id === wsId);
-    if (ws?.url) window.open(ws.url, "_blank", "noopener,noreferrer");
-    else setActiveWorkspaceId(wsId);
+    setActiveWorkspaceId(wsId);
+    const normalized = normalizeUrl(ws?.url);
+    if (normalized && !isSameWorkspaceUrl(normalized, window.location.href)) {
+      window.location.assign(normalized);
+    }
   };
 
   const handleNavClick = () => { if (onClose) onClose(); };
@@ -234,16 +277,20 @@ const Sidebar: React.FC<SidebarProps> = ({
                   <option key={ws.id} value={ws.id}>{ws.url ? `↗ ${ws.name}` : ws.name}</option>
                 ))}
               </select>
-              <button onClick={openEditModal} title="Sửa" className="w-8 h-8 flex items-center justify-center bg-gray-800 hover:bg-blue-600 border border-gray-700 hover:border-blue-500 rounded-lg transition-colors shrink-0">
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
-              </button>
-              <button onClick={openAddModal} title="Thêm" className="w-8 h-8 flex items-center justify-center bg-gray-800 hover:bg-orange-500 border border-gray-700 hover:border-orange-500 rounded-lg transition-colors shrink-0">
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-              </button>
+              {!isTeacherDeptUser && (
+                <>
+                  <button onClick={openEditModal} title="Sửa" className="w-8 h-8 flex items-center justify-center bg-gray-800 hover:bg-blue-600 border border-gray-700 hover:border-blue-500 rounded-lg transition-colors shrink-0">
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                  </button>
+                  <button onClick={openAddModal} title="Thêm" className="w-8 h-8 flex items-center justify-center bg-gray-800 hover:bg-orange-500 border border-gray-700 hover:border-orange-500 rounded-lg transition-colors shrink-0">
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                  </button>
+                </>
+              )}
             </div>
           </div>
         )}
@@ -303,14 +350,16 @@ const Sidebar: React.FC<SidebarProps> = ({
 
         {/* NAV CHÍNH */}
         <nav className={`flex-1 py-3 space-y-0.5 overflow-y-auto custom-scrollbar ${collapsed ? "px-2" : "px-3"}`}>
-          <NavItem collapsed={collapsed} label="Tổng quan">
-            <NavLink to="/dashboard" className={navLinkClass} onClick={handleNavClick}>
-              <Icon d={icons.dashboard} className={collapsed ? "" : "mr-3"} />
-              {!collapsed && "Tổng quan"}
-            </NavLink>
-          </NavItem>
+          {!isTeacherDeptUser && (
+            <NavItem collapsed={collapsed} label="Tổng quan">
+              <NavLink to="/dashboard" className={navLinkClass} onClick={handleNavClick}>
+                <Icon d={icons.dashboard} className={collapsed ? "" : "mr-3"} />
+                {!collapsed && "Tổng quan"}
+              </NavLink>
+            </NavItem>
+          )}
 
-          {canViewBossReport && (
+          {canViewBossReport && !isTeacherDeptUser && (
             <NavItem collapsed={collapsed} label="Báo cáo Giám đốc">
               <NavLink to="/boss" className={navLinkClass} onClick={handleNavClick}>
                 <Icon d={icons.boss} className={collapsed ? "text-red-400" : "mr-3 text-red-400"} />
@@ -320,28 +369,28 @@ const Sidebar: React.FC<SidebarProps> = ({
           )}
 
           {/* NHÓM: Kinh doanh */}
-          {!collapsed && (
+          {!collapsed && !isTeacherDeptUser && (
             <div className="pt-4 pb-1.5 px-1">
               <p className="text-[10px] font-bold text-gray-600 uppercase tracking-wider">Kinh doanh</p>
             </div>
           )}
-          {collapsed && <div className="my-2 border-t border-gray-700/50" />}
+          {collapsed && !isTeacherDeptUser && <div className="my-2 border-t border-gray-700/50" />}
 
-          <NavItem collapsed={collapsed} label="Quản lý Khách hàng">
+          {!isTeacherDeptUser && <NavItem collapsed={collapsed} label="Quản lý Khách hàng">
             <NavLink to="/crm" className={navLinkClass} onClick={handleNavClick}>
               <Icon d={icons.crm} className={collapsed ? "" : "mr-3"} />
               {!collapsed && "Quản lý Khách hàng"}
             </NavLink>
-          </NavItem>
+          </NavItem>}
 
-          <NavItem collapsed={collapsed} label="Giao việc tuần">
+          {!isTeacherDeptUser && <NavItem collapsed={collapsed} label="Giao việc tuần">
             <NavLink to="/kpi" className={navLinkClass} onClick={handleNavClick}>
               <Icon d={icons.kpi} className={collapsed ? "" : "mr-3"} />
               {!collapsed && "Giao việc tuần"}
             </NavLink>
-          </NavItem>
+          </NavItem>}
 
-          {canAccessProcessing && (
+          {canAccessProcessing && !isTeacherDeptUser && (
             <>
               {!collapsed && (
                 <div className="pt-4 pb-1.5 px-1">
@@ -374,19 +423,19 @@ const Sidebar: React.FC<SidebarProps> = ({
           )}
 
           {/* NHÓM: Quản trị */}
-          {!collapsed && (
+          {!collapsed && !isTeacherDeptUser && (
             <div className="pt-4 pb-1.5 px-1">
               <p className="text-[10px] font-bold text-gray-600 uppercase tracking-wider">Quản trị</p>
             </div>
           )}
-          {collapsed && <div className="my-2 border-t border-gray-700/50" />}
+          {collapsed && !isTeacherDeptUser && <div className="my-2 border-t border-gray-700/50" />}
 
-          <NavItem collapsed={collapsed} label="Tài liệu công ty">
+          {!isTeacherDeptUser && <NavItem collapsed={collapsed} label="Tài liệu công ty">
             <NavLink to="/documents" className={navLinkClass} onClick={handleNavClick}>
               <Icon d={icons.documents} className={collapsed ? "" : "mr-3"} />
               {!collapsed && "Tài liệu công ty"}
             </NavLink>
-          </NavItem>
+          </NavItem>}
 
           <NavItem collapsed={collapsed} label="Chấm công">
             <NavLink to="/hr" className={navLinkClass} onClick={handleNavClick}>
@@ -395,22 +444,24 @@ const Sidebar: React.FC<SidebarProps> = ({
             </NavLink>
           </NavItem>
 
-          <NavItem collapsed={collapsed} label="Bảng Giá Dịch Vụ">
+          {!isTeacherDeptUser && <NavItem collapsed={collapsed} label="Bảng Giá Dịch Vụ">
             <NavLink to="/services" className={navLinkClass} onClick={handleNavClick}>
               <Icon d={icons.services} className={collapsed ? "" : "mr-3"} />
               {!collapsed && "Bảng Giá Dịch Vụ"}
             </NavLink>
-          </NavItem>
+          </NavItem>}
         </nav>
 
         {/* BOTTOM: Settings + User */}
         <div className={`py-3 border-t border-gray-700/50 space-y-0.5 ${collapsed ? "px-2" : "px-3"}`}>
-          <NavItem collapsed={collapsed} label="Cài đặt">
-            <NavLink to="/settings" className={navLinkClass} onClick={handleNavClick}>
-              <Icon d={icons.settings} className={collapsed ? "" : "mr-3"} />
-              {!collapsed && "Cài đặt"}
-            </NavLink>
-          </NavItem>
+          {!isTeacherDeptUser && (
+            <NavItem collapsed={collapsed} label="Cài đặt">
+              <NavLink to="/settings" className={navLinkClass} onClick={handleNavClick}>
+                <Icon d={icons.settings} className={collapsed ? "" : "mr-3"} />
+                {!collapsed && "Cài đặt"}
+              </NavLink>
+            </NavItem>
+          )}
 
           {/* USER INFO */}
           <div className={`flex items-center mt-1 rounded-lg bg-gray-800/60 ${collapsed ? "justify-center p-2" : "gap-2.5 px-3 py-2"}`}>
