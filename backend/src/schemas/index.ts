@@ -33,9 +33,14 @@ export const updateEmployeeSchema = z.object({
 
 export const manualBonusSchema = z.object({
   customer: z.string().min(1, "Tên khách hàng không được để trống"),
-  service: z.string().min(1, "Loại dịch vụ không được để trống"),
+  service: z.enum([
+    "Thưởng hoa hồng",
+    "Thưởng khác",
+    "Phạt",
+    "Tạm ứng",
+  ], { message: "Chọn loại: Thưởng hoa hồng / Thưởng khác / Phạt / Tạm ứng" }),
   profit: z.union([z.string(), z.number()]).refine(v => !isNaN(Number(v)), "Số tiền không hợp lệ"),
-  note: z.string().optional()
+  note: z.string().optional(),
 });
 
 export const finalizeMonthSchema = z.object({

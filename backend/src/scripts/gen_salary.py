@@ -77,10 +77,19 @@ def generate(data, output_path):
     it = Table(info, colWidths=[W*0.2, W*0.3, W*0.25, W*0.25])
     it.setStyle(TableStyle([('BOX', (0, 0), (-1, -1), 0.5, colors.black), ('GRID', (0, 0), (-1, -1), 0.3, colors.grey), ('SPAN', (1, 2), (3, 2)), ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'), ('TOPPADDING', (0, 0), (-1, -1), 4), ('BOTTOMPADDING', (0, 0), (-1, -1), 4), ('LEFTPADDING', (0, 0), (-1, -1), 5)]))
     story.append(it)
+    work_dates = data.get('workDates') or []
+    if work_dates:
+        ds = ', '.join(str(x) for x in work_dates)
+        if len(ds) > 500:
+            ds = ds[:497] + '...'
+        story.append(Spacer(1, 2*mm))
+        story.append(pb("Chi tiet ngay di lam trong thang:", size=8, align=0))
+        story.append(p(ds, size=7, align=0))
     story.append(Spacer(1, 3*mm))
 
     # ---- ĐỒNG BỘ DỮ LIỆU ----
     base, cc, at, htk, hh = data.get('baseSalary', 0), data.get('chuyenCan', 0), data.get('anTrua', 0), data.get('hoTroKhac', 0), data.get('hoaHong', 0)
+    tk = data.get('thuongKhac', 0) or 0
     ins = data.get('insuranceSalary', base)
     
     # BH Doanh Nghiep
@@ -100,8 +109,9 @@ def generate(data, output_path):
     mf = data.get('manualFines', 0)
     tu = data.get('tamUng', 0)
     
+    # Hoa hồng ở cột thu nhập; thưởng khác bù trừ ở khối khoản trừ (không cộng vào Tong thu nhap)
     total_in = base + cc + at + htk + hh
-    total_out = total_bh + half + att_fine + full_day + mf + tu
+    total_out = total_bh + half + att_fine + full_day + mf + tu - tk
 
     def row(s1, l1, v1, s2='', l2='', v2=''):
         vv1 = fmt(v1) if isinstance(v1, (int, float)) and v1 else (str(v1) if v1 else '0')
@@ -116,7 +126,8 @@ def generate(data, output_path):
         row('2,1', 'Chuyen can', cc, '1,2', 'BHYT (3%)', bhyt_cty),
         row('2,2', 'An trua', at, '1,3', 'BHTN (1%)', bhtn_cty),
         row('2,3', 'Ho tro khac', htk, '1,4', 'Tong Chi phi DN', total_bh_cty),
-        row('2,4', 'Hoa hong / Thuong', hh, '2', 'Trich vao Luong (NLD)', '............'),
+        row('2,4', 'Hoa hong / Thuong KPI', hh, '2', 'Trich vao Luong (NLD)', '............'),
+        row('2,5', '', '', '2,5', 'Thuong khac (bu tru khoan tru)', -tk if tk else ''),
         row('', '', '', '2,1', 'BHXH (8%)', bhxh),
         row('', '', '', '2,2', 'BHYT (1,5%)', bhyt),
         row('', '', '', '2,3', 'BHTN (1%)', bhtn),
@@ -179,37 +190,50 @@ def generate_summary(data, output_path):
     fs = 7
     def cp(text, size=None, bold=False, align=1): return pb(text, size=size or fs, align=align) if bold else p(text, size=size or fs, align=align)
 
-    header1 = [cp("STT", bold=True), cp("Ho va ten", bold=True), cp("Chuc vu", bold=True), cp("Luong co ban", bold=True), cp("Phu cap", bold=True), cp(""), cp(""), cp(""), cp("Tong thu nhap", bold=True), cp("Luong dong BH", bold=True), cp("Cac khoan trich chi phi DN", bold=True), cp(""), cp(""), cp(""), cp("Cac khoan trich vao luong", bold=True), cp(""), cp(""), cp(""), cp("Tam ung", bold=True), cp("Tru tien di tre", bold=True), cp("Thuc linh", bold=True), cp("Ngay cong di lam", bold=True)]
-    header2 = [cp(""), cp(""), cp(""), cp(""), cp("Chuyen can", bold=True), cp("An trua", bold=True), cp("Ho tro khac", bold=True), cp("Hoa hong", bold=True), cp(""), cp(""), cp("BHXH\n(17,5%)", bold=True), cp("BHYT\n(3%)", bold=True), cp("BHTN\n(1%)", bold=True), cp("Tong", bold=True), cp("BHXH\n(8%)", bold=True), cp("BHYT\n(1,5%)", bold=True), cp("BHTN\n(1%)", bold=True), cp("Tong", bold=True), cp(""), cp(""), cp(""), cp("")]
-    cws = [W*0.020, W*0.100, W*0.045, W*0.055, W*0.038, W*0.035, W*0.035, W*0.038, W*0.055, W*0.045, W*0.038, W*0.030, W*0.030, W*0.038, W*0.035, W*0.030, W*0.030, W*0.035, W*0.037, W*0.038, W*0.060, W*0.025]
+    header1 = [cp("STT", bold=True), cp("Ho va ten", bold=True), cp("Chuc vu", bold=True), cp("Luong co ban", bold=True), cp("Phu cap", bold=True), cp(""), cp(""), cp(""), cp(""), cp("Tong thu nhap", bold=True), cp("Luong dong BH", bold=True), cp("Cac khoan trich chi phi DN", bold=True), cp(""), cp(""), cp(""), cp("Cac khoan trich vao luong", bold=True), cp(""), cp(""), cp(""), cp("Tam ung", bold=True), cp("Tong tru\n(phat & ung -\nthuong khac)", bold=True), cp("Thuc linh", bold=True), cp("Ngay cong", bold=True)]
+    header2 = [cp(""), cp(""), cp(""), cp(""), cp("Chuyen can", bold=True), cp("An trua", bold=True), cp("Ho tro khac", bold=True), cp("Hoa hong", bold=True), cp("-", bold=True), cp(""), cp(""), cp("BHXH\n(17,5%)", bold=True), cp("BHYT\n(3%)", bold=True), cp("BHTN\n(1%)", bold=True), cp("Tong", bold=True), cp("BHXH\n(8%)", bold=True), cp("BHYT\n(1,5%)", bold=True), cp("BHTN\n(1%)", bold=True), cp("Tong", bold=True), cp(""), cp(""), cp(""), cp("")]
+    cws = [W*0.056, W*0.086, W*0.042, W*0.05, W*0.032, W*0.03, W*0.03, W*0.032, W*0.032, W*0.048, W*0.04, W*0.032, W*0.026, W*0.026, W*0.032, W*0.029, W*0.024, W*0.024, W*0.029, W*0.031, W*0.031, W*0.05, W*0.125]
     table_rows = [header1, header2]
 
     for i, emp in enumerate(employees, start=1):
         def cv(v): return cp(fmt(v) if v else '0', align=2)
-        total_tru = (emp.get('halfDayDeduction', 0) or 0) + (emp.get('attendanceFines', 0) or 0) + (emp.get('fullDayAbsenceDeduction', 0) or 0) + (emp.get('manualFines', 0) or 0)
+        hh = emp.get('hoaHong', 0) or 0
+        thk = emp.get('thuongKhac', 0) or 0
+        phat_khau_tru = (
+            (emp.get('halfDayDeduction', 0) or 0)
+            + (emp.get('attendanceFines', 0) or 0)
+            + (emp.get('fullDayAbsenceDeduction', 0) or 0)
+            + (emp.get('manualFines', 0) or 0)
+            + (emp.get('tamUng', 0) or 0)
+        )
+        # Cột Hoa hồng chỉ HH; thưởng khác bù trừ trong cột Tổng trừ (không hiển thị ở cột phụ cấp I)
+        total_tru = phat_khau_tru - thk
         table_rows.append([
             cp(str(i), align=1), p(emp.get('name', ''), size=fs), p(emp.get('role', ''), size=fs, align=1),
-            cv(emp.get('baseSalary')), cv(emp.get('chuyenCan')), cv(emp.get('anTrua')), cv(emp.get('hoTroKhac')), cv(emp.get('hoaHong')), cv(emp.get('totalSalary')), cv(emp.get('insuranceSalary')),
+            cv(emp.get('baseSalary')), cv(emp.get('chuyenCan')), cv(emp.get('anTrua')), cv(emp.get('hoTroKhac')), cv(hh), cp('-', align=2), cv(emp.get('totalSalary')), cv(emp.get('insuranceSalary')),
             cv(emp.get('bhxhCty')), cv(emp.get('bhytCty')), cv(emp.get('bhtnCty')), cv(emp.get('totalCty')), cv(emp.get('bhxhNld')), cv(emp.get('bhytNld')), cv(emp.get('bhtnNld')), cv(emp.get('totalNld')),
-            cv(emp.get('tamUng')), cv(total_tru), cv(emp.get('finalSalary')), cp(str(emp.get('workDays', 0)), align=1)
+            cv(emp.get('tamUng')), cv(total_tru), cv(emp.get('finalSalary')), cp(str(emp.get('workDays', 0)), align=1),
         ])
 
     def total_field(field): return sum(e.get(field, 0) or 0 for e in employees)
     tot_base, tot_cc, tot_at, tot_htk, tot_hh = total_field('baseSalary'), total_field('chuyenCan'), total_field('anTrua'), total_field('hoTroKhac'), total_field('hoaHong')
+    tot_thk = total_field('thuongKhac')
     tot_hd = total_field('halfDayDeduction') + total_field('attendanceFines') + total_field('fullDayAbsenceDeduction') + total_field('manualFines')
-    
+    tot_tam = total_field('tamUng')
+    tot_tru_net = (tot_hd + tot_tam) - tot_thk
+
     def tv(v): return cp(fmt(v) if v else '0', bold=True, align=2)
-    table_rows.append([cp("TONG", bold=True, align=1), cp(""), cp(""), tv(tot_base), tv(tot_cc), tv(tot_at), tv(tot_htk), tv(tot_hh), tv(total_field('totalBonus') + tot_base), tv(total_field('insuranceSalary')), tv(total_field('bhxhCty')), tv(total_field('bhytCty')), tv(total_field('bhtnCty')), tv(total_field('totalCty')), tv(total_field('bhxhNld')), tv(total_field('bhytNld')), tv(total_field('bhtnNld')), tv(total_field('totalNld')), tv(total_field('tamUng')), tv(tot_hd), tv(total_field('finalSalary')), cp(str(int(total_field('workDays'))), align=1, bold=True)])
+    table_rows.append([cp("TONG", bold=True, align=1), cp(""), cp(""), tv(tot_base), tv(tot_cc), tv(tot_at), tv(tot_htk), tv(tot_hh), cp('-', bold=True, align=2), tv(total_field('totalBonus') + tot_base), tv(total_field('insuranceSalary')), tv(total_field('bhxhCty')), tv(total_field('bhytCty')), tv(total_field('bhtnCty')), tv(total_field('totalCty')), tv(total_field('bhxhNld')), tv(total_field('bhytNld')), tv(total_field('bhtnNld')), tv(total_field('totalNld')), tv(tot_tam), tv(tot_tru_net), tv(total_field('finalSalary')), cp(str(int(total_field('workDays'))), align=1, bold=True)])
 
     tbl = Table(table_rows, colWidths=cws, repeatRows=2)
     n_data = len(table_rows)
     tbl.setStyle(TableStyle([
         ('BOX', (0, 0), (-1, -1), 1, colors.black), ('GRID', (0, 0), (-1, -1), 0.3, colors.grey),
-        ('SPAN', (0, 0), (0, 1)), ('SPAN', (1, 0), (1, 1)), ('SPAN', (2, 0), (2, 1)), ('SPAN', (3, 0), (3, 1)), ('SPAN', (4, 0), (7, 0)), ('SPAN', (8, 0), (8, 1)), ('SPAN', (9, 0), (9, 1)), ('SPAN', (10, 0), (13, 0)), ('SPAN', (14, 0), (17, 0)), ('SPAN', (18, 0), (18, 1)), ('SPAN', (19, 0), (19, 1)), ('SPAN', (20, 0), (20, 1)), ('SPAN', (21, 0), (21, 1)), ('SPAN', (0, n_data - 1), (2, n_data - 1)),
+        ('SPAN', (0, 0), (0, 1)), ('SPAN', (1, 0), (1, 1)), ('SPAN', (2, 0), (2, 1)), ('SPAN', (3, 0), (3, 1)), ('SPAN', (4, 0), (8, 0)), ('SPAN', (9, 0), (9, 1)), ('SPAN', (10, 0), (10, 1)), ('SPAN', (11, 0), (14, 0)), ('SPAN', (15, 0), (18, 0)), ('SPAN', (19, 0), (19, 1)), ('SPAN', (20, 0), (20, 1)), ('SPAN', (21, 0), (21, 1)), ('SPAN', (22, 0), (22, 1)), ('SPAN', (0, n_data - 1), (2, n_data - 1)),
         ('BACKGROUND', (0, 0), (-1, 1), colors.HexColor('#FFA500')), ('BACKGROUND', (0, n_data - 1), (-1, n_data - 1), colors.HexColor('#FFA500')),
         *[('BACKGROUND', (0, r), (-1, r), colors.HexColor('#FFF3E0')) for r in range(2, n_data - 1) if (r - 2) % 2 == 1],
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'), ('ALIGN', (0, 0), (-1, -1), 'CENTER'), ('TOPPADDING', (0, 0), (-1, -1), 2), ('BOTTOMPADDING', (0, 0), (-1, -1), 2), ('LEFTPADDING', (0, 0), (-1, -1), 2), ('RIGHTPADDING', (0, 0), (-1, -1), 2),
-        ('LINEAFTER', (11, 0), (11, -1), 1, colors.black), ('LINEAFTER', (15, 0), (15, -1), 1, colors.black), ('LINEAFTER', (19, 0), (19, -1), 1, colors.black),
+        ('LINEAFTER', (8, 0), (8, -1), 1, colors.black), ('LINEAFTER', (14, 0), (14, -1), 1, colors.black), ('LINEAFTER', (19, 0), (19, -1), 1, colors.black),
     ]))
     story.append(tbl)
     story.append(Spacer(1, 8*mm))
@@ -247,12 +271,12 @@ def style_merge(ws, cell_range, value='', bold=False, size=10, h='left', v='cent
     if num_fmt: top_cell.number_format = num_fmt
     return top_cell
 
-def sc(ws, cell_ref, value='', bold=False, size=10, h='left', v='center', fill=None, num_fmt=None, color='000000', bdr=False):
+def sc(ws, cell_ref, value='', bold=False, size=10, h='left', v='center', fill=None, num_fmt=None, color='000000', bdr=False, wrap=False):
     from openpyxl.styles import Font, PatternFill, Alignment
     c = ws[cell_ref]
     c.value = value
     c.font = Font(name='Arial', bold=bold, size=size, color=color)
-    c.alignment = Alignment(horizontal=h, vertical=v)
+    c.alignment = Alignment(horizontal=h, vertical=v, wrap_text=wrap)
     if fill: c.fill = PatternFill("solid", fgColor=fill)
     if bdr: c.border = get_bd()
     if num_fmt: c.number_format = num_fmt
@@ -272,7 +296,14 @@ def _add_history_sheet(wb, employees, month_text):
         hh = emp.get('hoaHong', 0) or 0
         if hh > 0:
             stt += 1
-            for col, val, align in zip('ABCDEFGH', [stt, emp_code, emp_name, '', 'Hoa hồng/Thưởng', 'CỘNG', 'Hoàn thành KPI/Doanh số', hh], ['center','center','left','center','left','center','left','right']):
+            for col, val, align in zip('ABCDEFGH', [stt, emp_code, emp_name, '', 'Hoa hồng / Thưởng KPI', 'CỘNG', 'Doanh số & thưởng HH', hh], ['center','center','left','center','left','center','left','right']):
+                sc(ws, f'{col}{row}', val, size=8, h=align, fill=GREEN_LIGHT, bold=(col in 'EF'), bdr=True)
+            ws[f'H{row}'].number_format = '#,##0'
+            ws.row_dimensions[row].height = 12; row += 1
+        thk = emp.get('thuongKhac', 0) or 0
+        if thk > 0:
+            stt += 1
+            for col, val, align in zip('ABCDEFGH', [stt, emp_code, emp_name, '', 'Thưởng khác', 'CỘNG', 'Thưởng không gắn KPI (điều chỉnh)', thk], ['center','center','left','center','left','center','left','right']):
                 sc(ws, f'{col}{row}', val, size=8, h=align, fill=GREEN_LIGHT, bold=(col in 'EF'), bdr=True)
             ws[f'H{row}'].number_format = '#,##0'
             ws.row_dimensions[row].height = 12; row += 1
@@ -320,6 +351,7 @@ def _add_slip_sheets(wb, employees, month_text):
         at = emp.get('anTrua', 0) or 0
         htk = emp.get('hoTroKhac', 0) or 0
         hh = emp.get('hoaHong', 0) or 0
+        tk = emp.get('thuongKhac', 0) or 0
         ins = emp.get('insuranceSalary', base) or base
         
         bhxh_cty = emp.get('bhxhCty', 0) or 0
@@ -340,7 +372,7 @@ def _add_slip_sheets(wb, employees, month_text):
         
         total_in = base + cc + at + htk + hh
         total_bh = bhxh + bhyt + bhtn
-        total_out = total_bh + full_day_abs + half + tu + att_fine + manual_fine
+        total_out = total_bh + full_day_abs + half + tu + att_fine + manual_fine - tk
         final = emp.get('finalSalary', 0) or 0
 
         style_merge(ws, 'A1:G1', 'Cong ty TNHH Fly Visa', bold=True, size=11)
@@ -371,6 +403,15 @@ def _add_slip_sheets(wb, employees, month_text):
         for r in (8, 9, 10): ws.row_dimensions[r].height = 16
 
         current_row = 11
+        wdates_slip = emp.get('workDates') or []
+        if wdates_slip:
+            ds_slip = ', '.join(str(x) for x in wdates_slip)
+            if len(ds_slip) > 450:
+                ds_slip = ds_slip[:447] + '...'
+            style_merge(ws, f'A{current_row}:G{current_row}', f'Chi tiet ngay di lam: {ds_slip}', size=8)
+            ws.row_dimensions[current_row].height = 28
+            current_row += 1
+
         def render_detail_group(title, fill_color, records, fmt_str):
             nonlocal current_row
             if not records: return
@@ -412,18 +453,19 @@ def _add_slip_sheets(wb, employees, month_text):
         dr(start_data_row + 2, '2,1', 'Chuyen can',          cc,   '1,2', 'BHYT (3%)',                   bhyt_cty)
         dr(start_data_row + 3, '2,2', 'An trua',             at,   '1,3', 'BHTN (1%)',                   bhtn_cty)
         dr(start_data_row + 4, '2,3', 'Ho tro khac',         htk,  '1,4', 'Tong Chi phi DN',             total_bh_cty)
-        dr(start_data_row + 5, '2,4', 'Hoa hong / Thuong',   hh,   '2',   'Trich vao Luong (NLD)',       '............')
-        dr(start_data_row + 6, '',    '',                    '',   '2,1', 'BHXH (8%)',                   bhxh)
-        dr(start_data_row + 7, '',    '',                    '',   '2,2', 'BHYT (1,5%)',                 bhyt)
-        dr(start_data_row + 8, '',    '',                    '',   '2,3', 'BHTN (1%)',                   bhtn)
-        dr(start_data_row + 9, '',    'Tong Thu Nhap',       total_in, '2,4', 'Tong Trich vao',          total_bh)
-        dr(start_data_row + 10, '',   '',                    '',   '3', 'Vang ca ngay',                  full_day_abs)
-        dr(start_data_row + 11, '',   '',                    '',   '3,1', 'Vang 1/2 ngay',               half)
-        dr(start_data_row + 12, '',   '',                    '',   '3,2', 'Phat di tre',                 att_fine)
-        dr(start_data_row + 13, '',   '',                    '',   '3,3', 'Phat khac',                   manual_fine)
-        dr(start_data_row + 14, '',   '',                    '',   '4',   'Tam ung',                     tu)
+        dr(start_data_row + 5, '2,4', 'Hoa hong / Thuong KPI', hh, '2',   'Trich vao Luong (NLD)',       '............')
+        dr(start_data_row + 6, '2,5', '',                       '',   '2,5', 'Thuong khac (bu tru khoan tru)', -tk if tk else 0)
+        dr(start_data_row + 7, '',    '',                       '',   '2,1', 'BHXH (8%)',                   bhxh)
+        dr(start_data_row + 8, '',    '',                       '',   '2,2', 'BHYT (1,5%)',                 bhyt)
+        dr(start_data_row + 9, '',    '',                       '',   '2,3', 'BHTN (1%)',                   bhtn)
+        dr(start_data_row + 10, '',   'Tong Thu Nhap',          total_in, '2,4', 'Tong Trich vao',          total_bh)
+        dr(start_data_row + 11, '',   '',                       '',   '3', 'Vang ca ngay',                  full_day_abs)
+        dr(start_data_row + 12, '',   '',                       '',   '3,1', 'Vang 1/2 ngay',               half)
+        dr(start_data_row + 13, '',   '',                       '',   '3,2', 'Phat di tre',                 att_fine)
+        dr(start_data_row + 14, '',   '',                       '',   '3,3', 'Phat khac',                   manual_fine)
+        dr(start_data_row + 15, '',   '',                       '',   '4',   'Tam ung',                     tu)
 
-        row_dong_tong = start_data_row + 15
+        row_dong_tong = start_data_row + 16
         style_merge(ws, f'A{row_dong_tong}:B{row_dong_tong}', 'Tong Cong', bold=True, size=9, h='center', fill=ORANGE)
         sc(ws, f'C{row_dong_tong}', total_in, bold=True, size=9, h='right', fill=ORANGE, bdr=True, num_fmt='#,##0')
         style_merge(ws, f'D{row_dong_tong}:F{row_dong_tong}', 'Tong Cong', bold=True, size=9, h='center', fill=ORANGE)
@@ -470,14 +512,14 @@ def generate_summary_excel(data, output_path):
     ORANGE, LT_ORANGE, WHITE = "FFA500", "FFF3E0", "FFFFFF"
     NUM = '#,##0'
 
-    style_merge(ws, 'A1:V1', 'CONG TY TNHH FLY VISA', bold=True, size=11)
-    style_merge(ws, 'A2:V2', 'MST: 0316444315', size=9)
-    style_merge(ws, 'A3:V3', 'DC: 219A Duong No Trang Long, Phuong Binh Thanh, TP.HCM', size=9)
-    style_merge(ws, 'A5:V5', 'BANG LUONG NHAN VIEN', bold=True, size=14, h='center')
-    style_merge(ws, 'A6:V6', month_text, bold=True, size=12, h='center')
+    style_merge(ws, 'A1:W1', 'CONG TY TNHH FLY VISA', bold=True, size=11)
+    style_merge(ws, 'A2:W2', 'MST: 0316444315', size=9)
+    style_merge(ws, 'A3:W3', 'DC: 219A Duong No Trang Long, Phuong Binh Thanh, TP.HCM', size=9)
+    style_merge(ws, 'A5:W5', 'BANG LUONG NHAN VIEN', bold=True, size=14, h='center')
+    style_merge(ws, 'A6:W6', month_text, bold=True, size=12, h='center')
 
     for r in range(1, 7):
-        for c in range(1, 23): ws.cell(row=r, column=c).border = None
+        for c in range(1, 24): ws.cell(row=r, column=c).border = None
     ws.row_dimensions[5].height, ws.row_dimensions[6].height = 22, 18
 
     HR1, HR2, DS = 8, 9, 10
@@ -486,20 +528,20 @@ def generate_summary_excel(data, output_path):
     style_merge(ws, f'B{HR1}:B{HR2}', 'Ho va ten', bold=True, size=8, h='center', fill=ORANGE)
     style_merge(ws, f'C{HR1}:C{HR2}', 'Chuc vu', bold=True, size=8, h='center', fill=ORANGE)
     style_merge(ws, f'D{HR1}:D{HR2}', 'Luong co ban', bold=True, size=8, h='center', fill=ORANGE)
-    style_merge(ws, f'E{HR1}:H{HR1}', 'Phu cap', bold=True, size=8, h='center', fill=ORANGE)
-    style_merge(ws, f'I{HR1}:I{HR2}', 'Tong thu nhap', bold=True, size=8, h='center', fill=ORANGE)
-    style_merge(ws, f'J{HR1}:J{HR2}', 'Luong dong BH', bold=True, size=8, h='center', fill=ORANGE)
-    style_merge(ws, f'K{HR1}:N{HR1}', 'Cac khoan trich chi phi DN', bold=True, size=8, h='center', fill=ORANGE)
-    style_merge(ws, f'O{HR1}:R{HR1}', 'Cac khoan trich vao luong', bold=True, size=8, h='center', fill=ORANGE)
-    style_merge(ws, f'S{HR1}:S{HR2}', 'Tam ung', bold=True, size=8, h='center', fill=ORANGE)
-    style_merge(ws, f'T{HR1}:T{HR2}', 'Tong tru (di tre, vang...)', bold=True, size=8, h='center', fill=ORANGE)
-    style_merge(ws, f'U{HR1}:U{HR2}', 'Thuc linh', bold=True, size=8, h='center', fill=ORANGE)
-    style_merge(ws, f'V{HR1}:V{HR2}', 'Ngay cong di lam', bold=True, size=8, h='center', fill=ORANGE)
+    style_merge(ws, f'E{HR1}:I{HR1}', 'Phu cap', bold=True, size=8, h='center', fill=ORANGE)
+    style_merge(ws, f'J{HR1}:J{HR2}', 'Tong thu nhap', bold=True, size=8, h='center', fill=ORANGE)
+    style_merge(ws, f'K{HR1}:K{HR2}', 'Luong dong BH', bold=True, size=8, h='center', fill=ORANGE)
+    style_merge(ws, f'L{HR1}:O{HR1}', 'Cac khoan trich chi phi DN', bold=True, size=8, h='center', fill=ORANGE)
+    style_merge(ws, f'P{HR1}:S{HR1}', 'Cac khoan trich vao luong', bold=True, size=8, h='center', fill=ORANGE)
+    style_merge(ws, f'T{HR1}:T{HR2}', 'Tam ung', bold=True, size=8, h='center', fill=ORANGE)
+    style_merge(ws, f'U{HR1}:U{HR2}', 'Tong tru\n(phat & ung -\nthuong khac)', bold=True, size=8, h='center', fill=ORANGE)
+    style_merge(ws, f'V{HR1}:V{HR2}', 'Thuc linh', bold=True, size=8, h='center', fill=ORANGE)
+    style_merge(ws, f'W{HR1}:W{HR2}', 'Ngay cong', bold=True, size=8, h='center', fill=ORANGE)
 
     subs = {
-        'E': 'Chuyen can', 'F': 'An trua', 'G': 'Ho tro khac', 'H': 'Hoa hong',
-        'K': 'BHXH\n(17,5%)', 'L': 'BHYT\n(3%)', 'M': 'BHTN\n(1%)', 'N': 'Tong',
-        'O': 'BHXH\n(8%)', 'P': 'BHYT\n(1,5%)', 'Q': 'BHTN\n(1%)', 'R': 'Tong'
+        'E': 'Chuyen can', 'F': 'An trua', 'G': 'Ho tro khac', 'H': 'Hoa hong', 'I': '—',
+        'L': 'BHXH\n(17,5%)', 'M': 'BHYT\n(3%)', 'N': 'BHTN\n(1%)', 'O': 'Tong',
+        'P': 'BHXH\n(8%)', 'Q': 'BHYT\n(1,5%)', 'R': 'BHTN\n(1%)', 'S': 'Tong'
     }
     for col, text in subs.items():
         sc(ws, f'{col}{HR2}', text, bold=True, size=8, h='center', fill=ORANGE, bdr=True)
@@ -511,23 +553,31 @@ def generate_summary_excel(data, output_path):
         fill_c = LT_ORANGE if i % 2 == 0 else WHITE
 
         base, cc, at, htk, hh = emp.get('baseSalary', 0) or 0, emp.get('chuyenCan', 0) or 0, emp.get('anTrua', 0) or 0, emp.get('hoTroKhac', 0) or 0, emp.get('hoaHong', 0) or 0
+        thk = emp.get('thuongKhac', 0) or 0
         ngay, tu = emp.get('workDays', 0) or 0, emp.get('tamUng', 0) or 0
-        total_tru = (emp.get('halfDayDeduction', 0) or 0) + (emp.get('attendanceFines', 0) or 0) + (emp.get('fullDayAbsenceDeduction', 0) or 0) + (emp.get('manualFines', 0) or 0)
+        phat_khau_tru = (
+            (emp.get('halfDayDeduction', 0) or 0)
+            + (emp.get('attendanceFines', 0) or 0)
+            + (emp.get('fullDayAbsenceDeduction', 0) or 0)
+            + (emp.get('manualFines', 0) or 0)
+            + tu
+        )
+        total_tru = phat_khau_tru - thk
 
         data_map = {
             'A': (i, 'center'), 'B': (emp.get('name', ''), 'left'), 'C': (emp.get('role', ''), 'left'),
-            'D': (base, 'right'), 'E': (cc, 'right'), 'F': (at, 'right'), 'G': (htk, 'right'), 'H': (hh, 'right'),
-            'S': (tu, 'right'), 'T': (total_tru, 'right'), 'U': (emp.get('finalSalary', 0) or 0, 'right'), 'V': (ngay, 'center')
+            'D': (base, 'right'), 'E': (cc, 'right'), 'F': (at, 'right'), 'G': (htk, 'right'), 'H': (hh, 'right'), 'I': (0, 'right'),
+            'T': (tu, 'right'), 'U': (total_tru, 'right'), 'V': (emp.get('finalSalary', 0) or 0, 'right'), 'W': (ngay, 'center')
         }
 
         for col, (val, align) in data_map.items():
             c = sc(ws, f'{col}{r}', val if val else (0 if isinstance(val, (int,float)) else ''), h=align, fill=fill_c, bdr=True)
-            if isinstance(val, (int, float)) and col not in ('A', 'V'): c.number_format = NUM
+            if isinstance(val, (int, float)) and col not in ('A', 'W'): c.number_format = NUM
 
         formulas = {
-            'I': f'=SUM(D{r}:H{r})', 'J': f'=D{r}',
-            'K': f'=ROUND(J{r}*17.5%,0)', 'L': f'=ROUND(J{r}*3%,0)', 'M': f'=ROUND(J{r}*1%,0)', 'N': f'=SUM(K{r}:M{r})',
-            'O': f'=ROUND(J{r}*8%,0)', 'P': f'=ROUND(J{r}*1.5%,0)', 'Q': f'=ROUND(J{r}*1%,0)', 'R': f'=SUM(O{r}:Q{r})',
+            'J': f'=SUM(D{r}:H{r})+{int(round(thk))}', 'K': f'=D{r}',
+            'L': f'=ROUND(K{r}*17.5%,0)', 'M': f'=ROUND(K{r}*3%,0)', 'N': f'=ROUND(K{r}*1%,0)', 'O': f'=SUM(L{r}:N{r})',
+            'P': f'=ROUND(K{r}*8%,0)', 'Q': f'=ROUND(K{r}*1.5%,0)', 'R': f'=ROUND(K{r}*1%,0)', 'S': f'=SUM(P{r}:R{r})',
         }
         for col, f in formulas.items():
             c = sc(ws, f'{col}{r}', f, h='right', fill=fill_c, bdr=True)
@@ -536,14 +586,14 @@ def generate_summary_excel(data, output_path):
 
     TR = DS + len(employees)
     style_merge(ws, f'A{TR}:C{TR}', 'TONG CONG', bold=True, size=10, h='center', fill=ORANGE)
-    for c in "DEFGHIJKLMNOPQRSTU":
+    for c in "DEFGHIJKLMNOPQRSTUV":
         cell = sc(ws, f'{c}{TR}', f'=SUM({c}{DS}:{c}{TR-1})', bold=True, h='right', fill=ORANGE, bdr=True)
         cell.number_format = NUM
     
-    sc(ws, f'V{TR}', '', fill=ORANGE, bdr=True)
+    sc(ws, f'W{TR}', f'=SUM(W{DS}:W{TR-1})', bold=True, h='center', fill=ORANGE, bdr=True)
     ws.row_dimensions[TR].height = 18
 
-    widths = {'A': 5, 'B': 22, 'C': 12, 'D': 14, 'E': 12, 'F': 10, 'G': 12, 'H': 12, 'I': 14, 'J': 14, 'K': 12, 'L': 10, 'M': 10, 'N': 12, 'O': 10, 'P': 10, 'Q': 10, 'R': 12, 'S': 12, 'T': 12, 'U': 14, 'V': 10}
+    widths = {'A': 5, 'B': 22, 'C': 12, 'D': 14, 'E': 11, 'F': 10, 'G': 11, 'H': 11, 'I': 11, 'J': 13, 'K': 13, 'L': 11, 'M': 9, 'N': 9, 'O': 11, 'P': 9, 'Q': 9, 'R': 9, 'S': 11, 'T': 11, 'U': 13, 'V': 13, 'W': 10}
     for c, w in widths.items(): ws.column_dimensions[c].width = w
 
     ws.freeze_panes = f'A{DS}'

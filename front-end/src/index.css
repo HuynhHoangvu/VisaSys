@@ -8,6 +8,12 @@
 @source "../node_modules/flowbite-react";
 
 /* 3. KHAI BÁO MÀU CHỦ ĐẠO (TAILWIND V4) */
+html,
+body,
+#root {
+  overflow-x: hidden;
+}
+
 html {
   color-scheme: light;
 }

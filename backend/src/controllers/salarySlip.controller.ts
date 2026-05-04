@@ -6,6 +6,7 @@ import { Request, Response } from "express";
 import { prisma } from "../../lib/prisma.js";
 import { calcBaseComponents, calcInsurance, calcFullSalary } from "../services/SalaryService.js";
 import { SALARY_THRESHOLD } from "../constants/index.js";
+import { dedupeSalaryHistoryLatestPerEmployeeMonth } from "../utils/salaryHistoryDedupe.js";
 
 /**
  * Download a single employee salary slip as a PDF.
@@ -30,9 +31,9 @@ export const downloadSalarySlip = async (req: Request, res: Response) => {
     }
 
     // 1. Prefer finalized payroll history when available
-    const historyRecord = await prisma.salaryHistory.findFirst({
-      where: { employeeId, monthYear },
-      include: { employee: true }
+    const historyRecord = await prisma.salaryHistory.findUnique({
+      where: { employeeId_monthYear: { employeeId, monthYear } },
+      include: { employee: true },
     });
 
     let data: any = {};
@@ -53,8 +54,12 @@ export const downloadSalarySlip = async (req: Request, res: Response) => {
         anTrua,
         hoTroKhac,
         hoaHong: historyRecord.hoaHong || 0,
+        thuongKhac: historyRecord.thuongKhac || 0,
         insuranceSalary: ins,
-        workDays: historyRecord.workDays || 0,
+        workDays: Math.max(
+          historyRecord.workDays || 0,
+          (historyRecord.workDates && historyRecord.workDates.length) || 0,
+        ),
         workDates: historyRecord.workDates || [],
         tamUng: historyRecord.tamUng || 0,
         fullDayAbsenceDeduction: historyRecord.fullDayAbsenceDeduction || 0,
@@ -76,7 +81,12 @@ export const downloadSalarySlip = async (req: Request, res: Response) => {
         where: { id: employeeId },
         include: {
           attendanceRecords: {
-            where: { date: { contains: `/${mm}/${yyyy}` } }
+            where: {
+              OR: [
+                { date: { contains: `/${String(parseInt(mm, 10)).padStart(2, "0")}/${yyyy}` } },
+                { date: { contains: `/${parseInt(mm, 10)}/${yyyy}` } },
+              ],
+            },
           },
           salesRecords: {
             where: { createdAt: { gte: monthStart, lt: monthEnd } }
@@ -101,6 +111,7 @@ export const downloadSalarySlip = async (req: Request, res: Response) => {
         anTrua: salary.anTrua,
         hoTroKhac: salary.hoTroKhac,
         hoaHong: salary.hoaHong,
+        thuongKhac: salary.thuongKhac,
         insuranceSalary: salary.insuranceSalary,
         workDays: salary.workDays,
         workDates: salary.workDates,
@@ -198,7 +209,7 @@ export const testSalaryCalculation = async (req: Request, res: Response) => {
         anTrua: salary.anTrua,
         hoTroKhac: salary.hoTroKhac,
         hoaHong: salary.hoaHong,
-        totalIncome: salary.insuranceSalary + salary.chuyenCan + salary.anTrua + salary.hoTroKhac + salary.hoaHong,
+        totalIncome: salary.insuranceSalary + salary.chuyenCan + salary.anTrua + salary.hoTroKhac + salary.hoaHong + salary.thuongKhac,
         workDays: salary.workDays,
         attendanceFines: salary.attendanceFines,
         fullDayAbsenceDeduction: salary.fullDayAbsenceDeduction,
@@ -248,7 +259,7 @@ export const downloadSalarySummary = async (req: Request, res: Response) => {
     const employeeData = employees.map((emp) => {
       const s = calcFullSalary(emp.baseSalary || 0, emp.attendanceRecords, emp.salesRecords);
       const ins = s.insuranceSalary;
-      const totalBonus = s.chuyenCan + s.anTrua + s.hoTroKhac + s.hoaHong;
+      const totalBonus = s.chuyenCan + s.anTrua + s.hoTroKhac + s.hoaHong + s.thuongKhac;
       const totalSalary = ins + totalBonus;
       const bhxhCty  = Math.round(ins * 0.175);
       const bhytCty  = Math.round(ins * 0.03);
@@ -264,6 +275,7 @@ export const downloadSalarySummary = async (req: Request, res: Response) => {
         anTrua: s.anTrua,
         hoTroKhac: s.hoTroKhac,
         hoaHong: s.hoaHong,
+        thuongKhac: s.thuongKhac,
         totalBonus,
         workDays: s.workDays,
         totalSalary,
@@ -331,18 +343,9 @@ function buildEmployeePayrollData(employees: any[], monthYear: string) {
       return d.getMonth() + 1 === parseInt(mm) && d.getFullYear() === parseInt(yyyy);
     });
 
-    let hoaHong = 0, tamUng = 0, manualFines = 0;
-    monthSales.forEach((r: any) => {
-      const amount = Number(r.profit) || 0;
-      if (r.service === "Phạt") manualFines += Math.abs(amount);
-      else if (r.service === "Tạm ứng") tamUng += Math.abs(amount);
-      else if (!["Chuyên cần", "Ăn trưa", "Hỗ trợ khác"].includes(r.service || ""))
-        hoaHong += amount;
-    });
-
     const s = calcFullSalary(emp.baseSalary || 0, monthAtt, monthSales);
     const ins = s.insuranceSalary;
-    const totalBonus = s.chuyenCan + s.anTrua + s.hoTroKhac + s.hoaHong;
+    const totalBonus = s.chuyenCan + s.anTrua + s.hoTroKhac + s.hoaHong + s.thuongKhac;
     const totalSalary = ins + totalBonus;
 
 
@@ -377,8 +380,10 @@ function buildEmployeePayrollData(employees: any[], monthYear: string) {
       anTrua: s.anTrua,
       hoTroKhac: s.hoTroKhac,
       hoaHong: s.hoaHong,
+      thuongKhac: s.thuongKhac,
       totalBonus,
       workDays: s.workDays,
+      workDates: s.workDates ?? [],
       totalSalary,
       insuranceSalary: ins,
       bhxhCty, bhytCty, bhtnCty, totalCty,
@@ -410,11 +415,14 @@ export const getSalaryBreakdown = async (req: Request, res: Response) => {
 
     // 1. Check whether this payroll month has been finalized
     // Read finalized snapshot rows from SalaryHistory
-    const historyRecords = await prisma.salaryHistory.findMany({
+    const historyRows = await prisma.salaryHistory.findMany({
       where: { monthYear },
       include: { employee: { select: { name: true, employeeCode: true, role: true } } },
       orderBy: { employee: { name: "asc" } },
     });
+    const historyRecords = dedupeSalaryHistoryLatestPerEmployeeMonth(historyRows).sort((a, b) =>
+      (a.employee?.name || "").localeCompare(b.employee?.name || "", "vi"),
+    );
 
     // If finalized, return the stored snapshot because raw source data may have been purged
     if (historyRecords.length > 0) {
@@ -423,6 +431,7 @@ export const getSalaryBreakdown = async (req: Request, res: Response) => {
         employeeCode: h.employee?.employeeCode ?? "",
         role: h.employee?.role ?? "",
         hoaHong: h.hoaHong,
+        thuongKhac: h.thuongKhac ?? 0,
         tamUng: h.tamUng,
         manualFines: h.manualFines,
         attendanceFines: h.attendanceFines,
@@ -471,11 +480,14 @@ export const downloadSalarySummaryExcel = async (req: Request, res: Response) =>
     if (!fs.existsSync(scriptPath)) return res.status(500).json({ error: "Không tìm thấy file Python generator" });
 
     // 1. Check finalized payroll history
-    const historyRecords = await prisma.salaryHistory.findMany({
+    const historyRows = await prisma.salaryHistory.findMany({
       where: { monthYear },
       include: { employee: true },
       orderBy: { employee: { name: "asc" } },
     });
+    const historyRecords = dedupeSalaryHistoryLatestPerEmployeeMonth(historyRows).sort((a, b) =>
+      (a.employee?.name || "").localeCompare(b.employee?.name || "", "vi"),
+    );
 
     let employeeData: any[] = [];
 
@@ -493,7 +505,7 @@ export const downloadSalarySummaryExcel = async (req: Request, res: Response) =>
         const totalNld = bhxhNld + bhytNld + bhtnNld;
 
         // Total pre-tax/pre-deduction income
-        const totalSalary = ins + cc + at + htk + (h.hoaHong || 0);
+        const totalSalary = ins + cc + at + htk + (h.hoaHong || 0) + (h.thuongKhac || 0);
 
         return {
           employeeCode: h.employee?.employeeCode || "",
@@ -506,8 +518,10 @@ export const downloadSalarySummaryExcel = async (req: Request, res: Response) =>
           anTrua: at,
           hoTroKhac: htk,
           hoaHong: h.hoaHong,
+          thuongKhac: h.thuongKhac ?? 0,
           totalBonus: h.totalBonus,
           workDays: h.workDays,
+          workDates: h.workDates ?? [],
           totalSalary: totalSalary,
           insuranceSalary: ins,
           

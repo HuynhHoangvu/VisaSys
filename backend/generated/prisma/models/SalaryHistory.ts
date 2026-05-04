@@ -32,6 +32,7 @@ export type SalaryHistoryAvgAggregateOutputType = {
   totalDeduction: number | null
   finalSalary: number | null
   hoaHong: number | null
+  thuongKhac: number | null
   tamUng: number | null
   manualFines: number | null
   attendanceFines: number | null
@@ -46,6 +47,7 @@ export type SalaryHistorySumAggregateOutputType = {
   totalDeduction: number | null
   finalSalary: number | null
   hoaHong: number | null
+  thuongKhac: number | null
   tamUng: number | null
   manualFines: number | null
   attendanceFines: number | null
@@ -62,6 +64,7 @@ export type SalaryHistoryMinAggregateOutputType = {
   totalDeduction: number | null
   finalSalary: number | null
   hoaHong: number | null
+  thuongKhac: number | null
   tamUng: number | null
   manualFines: number | null
   attendanceFines: number | null
@@ -80,6 +83,7 @@ export type SalaryHistoryMaxAggregateOutputType = {
   totalDeduction: number | null
   finalSalary: number | null
   hoaHong: number | null
+  thuongKhac: number | null
   tamUng: number | null
   manualFines: number | null
   attendanceFines: number | null
@@ -98,6 +102,7 @@ export type SalaryHistoryCountAggregateOutputType = {
   totalDeduction: number
   finalSalary: number
   hoaHong: number
+  thuongKhac: number
   tamUng: number
   manualFines: number
   attendanceFines: number
@@ -117,6 +122,7 @@ export type SalaryHistoryAvgAggregateInputType = {
   totalDeduction?: true
   finalSalary?: true
   hoaHong?: true
+  thuongKhac?: true
   tamUng?: true
   manualFines?: true
   attendanceFines?: true
@@ -131,6 +137,7 @@ export type SalaryHistorySumAggregateInputType = {
   totalDeduction?: true
   finalSalary?: true
   hoaHong?: true
+  thuongKhac?: true
   tamUng?: true
   manualFines?: true
   attendanceFines?: true
@@ -147,6 +154,7 @@ export type SalaryHistoryMinAggregateInputType = {
   totalDeduction?: true
   finalSalary?: true
   hoaHong?: true
+  thuongKhac?: true
   tamUng?: true
   manualFines?: true
   attendanceFines?: true
@@ -165,6 +173,7 @@ export type SalaryHistoryMaxAggregateInputType = {
   totalDeduction?: true
   finalSalary?: true
   hoaHong?: true
+  thuongKhac?: true
   tamUng?: true
   manualFines?: true
   attendanceFines?: true
@@ -183,6 +192,7 @@ export type SalaryHistoryCountAggregateInputType = {
   totalDeduction?: true
   finalSalary?: true
   hoaHong?: true
+  thuongKhac?: true
   tamUng?: true
   manualFines?: true
   attendanceFines?: true
@@ -289,6 +299,7 @@ export type SalaryHistoryGroupByOutputType = {
   totalDeduction: number
   finalSalary: number
   hoaHong: number
+  thuongKhac: number
   tamUng: number
   manualFines: number
   attendanceFines: number
@@ -331,6 +342,7 @@ export type SalaryHistoryWhereInput = {
   totalDeduction?: Prisma.FloatFilter<"SalaryHistory"> | number
   finalSalary?: Prisma.FloatFilter<"SalaryHistory"> | number
   hoaHong?: Prisma.FloatFilter<"SalaryHistory"> | number
+  thuongKhac?: Prisma.FloatFilter<"SalaryHistory"> | number
   tamUng?: Prisma.FloatFilter<"SalaryHistory"> | number
   manualFines?: Prisma.FloatFilter<"SalaryHistory"> | number
   attendanceFines?: Prisma.FloatFilter<"SalaryHistory"> | number
@@ -351,6 +363,7 @@ export type SalaryHistoryOrderByWithRelationInput = {
   totalDeduction?: Prisma.SortOrder
   finalSalary?: Prisma.SortOrder
   hoaHong?: Prisma.SortOrder
+  thuongKhac?: Prisma.SortOrder
   tamUng?: Prisma.SortOrder
   manualFines?: Prisma.SortOrder
   attendanceFines?: Prisma.SortOrder
@@ -365,6 +378,7 @@ export type SalaryHistoryOrderByWithRelationInput = {
 
 export type SalaryHistoryWhereUniqueInput = Prisma.AtLeast<{
   id?: string
+  employeeId_monthYear?: Prisma.SalaryHistoryEmployeeIdMonthYearCompoundUniqueInput
   AND?: Prisma.SalaryHistoryWhereInput | Prisma.SalaryHistoryWhereInput[]
   OR?: Prisma.SalaryHistoryWhereInput[]
   NOT?: Prisma.SalaryHistoryWhereInput | Prisma.SalaryHistoryWhereInput[]
@@ -374,6 +388,7 @@ export type SalaryHistoryWhereUniqueInput = Prisma.AtLeast<{
   totalDeduction?: Prisma.FloatFilter<"SalaryHistory"> | number
   finalSalary?: Prisma.FloatFilter<"SalaryHistory"> | number
   hoaHong?: Prisma.FloatFilter<"SalaryHistory"> | number
+  thuongKhac?: Prisma.FloatFilter<"SalaryHistory"> | number
   tamUng?: Prisma.FloatFilter<"SalaryHistory"> | number
   manualFines?: Prisma.FloatFilter<"SalaryHistory"> | number
   attendanceFines?: Prisma.FloatFilter<"SalaryHistory"> | number
@@ -384,7 +399,7 @@ export type SalaryHistoryWhereUniqueInput = Prisma.AtLeast<{
   employeeId?: Prisma.StringFilter<"SalaryHistory"> | string
   createdAt?: Prisma.DateTimeFilter<"SalaryHistory"> | Date | string
   employee?: Prisma.XOR<Prisma.EmployeeScalarRelationFilter, Prisma.EmployeeWhereInput>
-}, "id">
+}, "id" | "employeeId_monthYear">
 
 export type SalaryHistoryOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
@@ -394,6 +409,7 @@ export type SalaryHistoryOrderByWithAggregationInput = {
   totalDeduction?: Prisma.SortOrder
   finalSalary?: Prisma.SortOrder
   hoaHong?: Prisma.SortOrder
+  thuongKhac?: Prisma.SortOrder
   tamUng?: Prisma.SortOrder
   manualFines?: Prisma.SortOrder
   attendanceFines?: Prisma.SortOrder
@@ -421,6 +437,7 @@ export type SalaryHistoryScalarWhereWithAggregatesInput = {
   totalDeduction?: Prisma.FloatWithAggregatesFilter<"SalaryHistory"> | number
   finalSalary?: Prisma.FloatWithAggregatesFilter<"SalaryHistory"> | number
   hoaHong?: Prisma.FloatWithAggregatesFilter<"SalaryHistory"> | number
+  thuongKhac?: Prisma.FloatWithAggregatesFilter<"SalaryHistory"> | number
   tamUng?: Prisma.FloatWithAggregatesFilter<"SalaryHistory"> | number
   manualFines?: Prisma.FloatWithAggregatesFilter<"SalaryHistory"> | number
   attendanceFines?: Prisma.FloatWithAggregatesFilter<"SalaryHistory"> | number
@@ -440,6 +457,7 @@ export type SalaryHistoryCreateInput = {
   totalDeduction: number
   finalSalary: number
   hoaHong?: number
+  thuongKhac?: number
   tamUng?: number
   manualFines?: number
   attendanceFines?: number
@@ -459,6 +477,7 @@ export type SalaryHistoryUncheckedCreateInput = {
   totalDeduction: number
   finalSalary: number
   hoaHong?: number
+  thuongKhac?: number
   tamUng?: number
   manualFines?: number
   attendanceFines?: number
@@ -478,6 +497,7 @@ export type SalaryHistoryUpdateInput = {
   totalDeduction?: Prisma.FloatFieldUpdateOperationsInput | number
   finalSalary?: Prisma.FloatFieldUpdateOperationsInput | number
   hoaHong?: Prisma.FloatFieldUpdateOperationsInput | number
+  thuongKhac?: Prisma.FloatFieldUpdateOperationsInput | number
   tamUng?: Prisma.FloatFieldUpdateOperationsInput | number
   manualFines?: Prisma.FloatFieldUpdateOperationsInput | number
   attendanceFines?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -497,6 +517,7 @@ export type SalaryHistoryUncheckedUpdateInput = {
   totalDeduction?: Prisma.FloatFieldUpdateOperationsInput | number
   finalSalary?: Prisma.FloatFieldUpdateOperationsInput | number
   hoaHong?: Prisma.FloatFieldUpdateOperationsInput | number
+  thuongKhac?: Prisma.FloatFieldUpdateOperationsInput | number
   tamUng?: Prisma.FloatFieldUpdateOperationsInput | number
   manualFines?: Prisma.FloatFieldUpdateOperationsInput | number
   attendanceFines?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -516,6 +537,7 @@ export type SalaryHistoryCreateManyInput = {
   totalDeduction: number
   finalSalary: number
   hoaHong?: number
+  thuongKhac?: number
   tamUng?: number
   manualFines?: number
   attendanceFines?: number
@@ -535,6 +557,7 @@ export type SalaryHistoryUpdateManyMutationInput = {
   totalDeduction?: Prisma.FloatFieldUpdateOperationsInput | number
   finalSalary?: Prisma.FloatFieldUpdateOperationsInput | number
   hoaHong?: Prisma.FloatFieldUpdateOperationsInput | number
+  thuongKhac?: Prisma.FloatFieldUpdateOperationsInput | number
   tamUng?: Prisma.FloatFieldUpdateOperationsInput | number
   manualFines?: Prisma.FloatFieldUpdateOperationsInput | number
   attendanceFines?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -553,6 +576,7 @@ export type SalaryHistoryUncheckedUpdateManyInput = {
   totalDeduction?: Prisma.FloatFieldUpdateOperationsInput | number
   finalSalary?: Prisma.FloatFieldUpdateOperationsInput | number
   hoaHong?: Prisma.FloatFieldUpdateOperationsInput | number
+  thuongKhac?: Prisma.FloatFieldUpdateOperationsInput | number
   tamUng?: Prisma.FloatFieldUpdateOperationsInput | number
   manualFines?: Prisma.FloatFieldUpdateOperationsInput | number
   attendanceFines?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -574,6 +598,11 @@ export type SalaryHistoryOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
 }
 
+export type SalaryHistoryEmployeeIdMonthYearCompoundUniqueInput = {
+  employeeId: string
+  monthYear: string
+}
+
 export type SalaryHistoryCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   monthYear?: Prisma.SortOrder
@@ -582,6 +611,7 @@ export type SalaryHistoryCountOrderByAggregateInput = {
   totalDeduction?: Prisma.SortOrder
   finalSalary?: Prisma.SortOrder
   hoaHong?: Prisma.SortOrder
+  thuongKhac?: Prisma.SortOrder
   tamUng?: Prisma.SortOrder
   manualFines?: Prisma.SortOrder
   attendanceFines?: Prisma.SortOrder
@@ -599,6 +629,7 @@ export type SalaryHistoryAvgOrderByAggregateInput = {
   totalDeduction?: Prisma.SortOrder
   finalSalary?: Prisma.SortOrder
   hoaHong?: Prisma.SortOrder
+  thuongKhac?: Prisma.SortOrder
   tamUng?: Prisma.SortOrder
   manualFines?: Prisma.SortOrder
   attendanceFines?: Prisma.SortOrder
@@ -615,6 +646,7 @@ export type SalaryHistoryMaxOrderByAggregateInput = {
   totalDeduction?: Prisma.SortOrder
   finalSalary?: Prisma.SortOrder
   hoaHong?: Prisma.SortOrder
+  thuongKhac?: Prisma.SortOrder
   tamUng?: Prisma.SortOrder
   manualFines?: Prisma.SortOrder
   attendanceFines?: Prisma.SortOrder
@@ -633,6 +665,7 @@ export type SalaryHistoryMinOrderByAggregateInput = {
   totalDeduction?: Prisma.SortOrder
   finalSalary?: Prisma.SortOrder
   hoaHong?: Prisma.SortOrder
+  thuongKhac?: Prisma.SortOrder
   tamUng?: Prisma.SortOrder
   manualFines?: Prisma.SortOrder
   attendanceFines?: Prisma.SortOrder
@@ -649,6 +682,7 @@ export type SalaryHistorySumOrderByAggregateInput = {
   totalDeduction?: Prisma.SortOrder
   finalSalary?: Prisma.SortOrder
   hoaHong?: Prisma.SortOrder
+  thuongKhac?: Prisma.SortOrder
   tamUng?: Prisma.SortOrder
   manualFines?: Prisma.SortOrder
   attendanceFines?: Prisma.SortOrder
@@ -716,6 +750,7 @@ export type SalaryHistoryCreateWithoutEmployeeInput = {
   totalDeduction: number
   finalSalary: number
   hoaHong?: number
+  thuongKhac?: number
   tamUng?: number
   manualFines?: number
   attendanceFines?: number
@@ -734,6 +769,7 @@ export type SalaryHistoryUncheckedCreateWithoutEmployeeInput = {
   totalDeduction: number
   finalSalary: number
   hoaHong?: number
+  thuongKhac?: number
   tamUng?: number
   manualFines?: number
   attendanceFines?: number
@@ -781,6 +817,7 @@ export type SalaryHistoryScalarWhereInput = {
   totalDeduction?: Prisma.FloatFilter<"SalaryHistory"> | number
   finalSalary?: Prisma.FloatFilter<"SalaryHistory"> | number
   hoaHong?: Prisma.FloatFilter<"SalaryHistory"> | number
+  thuongKhac?: Prisma.FloatFilter<"SalaryHistory"> | number
   tamUng?: Prisma.FloatFilter<"SalaryHistory"> | number
   manualFines?: Prisma.FloatFilter<"SalaryHistory"> | number
   attendanceFines?: Prisma.FloatFilter<"SalaryHistory"> | number
@@ -800,6 +837,7 @@ export type SalaryHistoryCreateManyEmployeeInput = {
   totalDeduction: number
   finalSalary: number
   hoaHong?: number
+  thuongKhac?: number
   tamUng?: number
   manualFines?: number
   attendanceFines?: number
@@ -818,6 +856,7 @@ export type SalaryHistoryUpdateWithoutEmployeeInput = {
   totalDeduction?: Prisma.FloatFieldUpdateOperationsInput | number
   finalSalary?: Prisma.FloatFieldUpdateOperationsInput | number
   hoaHong?: Prisma.FloatFieldUpdateOperationsInput | number
+  thuongKhac?: Prisma.FloatFieldUpdateOperationsInput | number
   tamUng?: Prisma.FloatFieldUpdateOperationsInput | number
   manualFines?: Prisma.FloatFieldUpdateOperationsInput | number
   attendanceFines?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -836,6 +875,7 @@ export type SalaryHistoryUncheckedUpdateWithoutEmployeeInput = {
   totalDeduction?: Prisma.FloatFieldUpdateOperationsInput | number
   finalSalary?: Prisma.FloatFieldUpdateOperationsInput | number
   hoaHong?: Prisma.FloatFieldUpdateOperationsInput | number
+  thuongKhac?: Prisma.FloatFieldUpdateOperationsInput | number
   tamUng?: Prisma.FloatFieldUpdateOperationsInput | number
   manualFines?: Prisma.FloatFieldUpdateOperationsInput | number
   attendanceFines?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -854,6 +894,7 @@ export type SalaryHistoryUncheckedUpdateManyWithoutEmployeeInput = {
   totalDeduction?: Prisma.FloatFieldUpdateOperationsInput | number
   finalSalary?: Prisma.FloatFieldUpdateOperationsInput | number
   hoaHong?: Prisma.FloatFieldUpdateOperationsInput | number
+  thuongKhac?: Prisma.FloatFieldUpdateOperationsInput | number
   tamUng?: Prisma.FloatFieldUpdateOperationsInput | number
   manualFines?: Prisma.FloatFieldUpdateOperationsInput | number
   attendanceFines?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -874,6 +915,7 @@ export type SalaryHistorySelect<ExtArgs extends runtime.Types.Extensions.Interna
   totalDeduction?: boolean
   finalSalary?: boolean
   hoaHong?: boolean
+  thuongKhac?: boolean
   tamUng?: boolean
   manualFines?: boolean
   attendanceFines?: boolean
@@ -894,6 +936,7 @@ export type SalaryHistorySelectCreateManyAndReturn<ExtArgs extends runtime.Types
   totalDeduction?: boolean
   finalSalary?: boolean
   hoaHong?: boolean
+  thuongKhac?: boolean
   tamUng?: boolean
   manualFines?: boolean
   attendanceFines?: boolean
@@ -914,6 +957,7 @@ export type SalaryHistorySelectUpdateManyAndReturn<ExtArgs extends runtime.Types
   totalDeduction?: boolean
   finalSalary?: boolean
   hoaHong?: boolean
+  thuongKhac?: boolean
   tamUng?: boolean
   manualFines?: boolean
   attendanceFines?: boolean
@@ -934,6 +978,7 @@ export type SalaryHistorySelectScalar = {
   totalDeduction?: boolean
   finalSalary?: boolean
   hoaHong?: boolean
+  thuongKhac?: boolean
   tamUng?: boolean
   manualFines?: boolean
   attendanceFines?: boolean
@@ -945,7 +990,7 @@ export type SalaryHistorySelectScalar = {
   createdAt?: boolean
 }
 
-export type SalaryHistoryOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "monthYear" | "baseSalary" | "totalBonus" | "totalDeduction" | "finalSalary" | "hoaHong" | "tamUng" | "manualFines" | "attendanceFines" | "halfDayDeduction" | "fullDayAbsenceDeduction" | "workDays" | "workDates" | "employeeId" | "createdAt", ExtArgs["result"]["salaryHistory"]>
+export type SalaryHistoryOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "monthYear" | "baseSalary" | "totalBonus" | "totalDeduction" | "finalSalary" | "hoaHong" | "thuongKhac" | "tamUng" | "manualFines" | "attendanceFines" | "halfDayDeduction" | "fullDayAbsenceDeduction" | "workDays" | "workDates" | "employeeId" | "createdAt", ExtArgs["result"]["salaryHistory"]>
 export type SalaryHistoryInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   employee?: boolean | Prisma.EmployeeDefaultArgs<ExtArgs>
 }
@@ -969,6 +1014,7 @@ export type $SalaryHistoryPayload<ExtArgs extends runtime.Types.Extensions.Inter
     totalDeduction: number
     finalSalary: number
     hoaHong: number
+    thuongKhac: number
     tamUng: number
     manualFines: number
     attendanceFines: number
@@ -1409,6 +1455,7 @@ export interface SalaryHistoryFieldRefs {
   readonly totalDeduction: Prisma.FieldRef<"SalaryHistory", 'Float'>
   readonly finalSalary: Prisma.FieldRef<"SalaryHistory", 'Float'>
   readonly hoaHong: Prisma.FieldRef<"SalaryHistory", 'Float'>
+  readonly thuongKhac: Prisma.FieldRef<"SalaryHistory", 'Float'>
   readonly tamUng: Prisma.FieldRef<"SalaryHistory", 'Float'>
   readonly manualFines: Prisma.FieldRef<"SalaryHistory", 'Float'>
   readonly attendanceFines: Prisma.FieldRef<"SalaryHistory", 'Float'>

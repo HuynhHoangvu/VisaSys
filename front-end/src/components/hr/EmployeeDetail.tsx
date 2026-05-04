@@ -4,6 +4,8 @@ import {
   type Employee,
   type AuthUser,
   type LeaveRequestData,
+  type SalesRecord,
+  type AttendanceRecord,
 } from "../../types";
 import { FaceAvatar } from "../ui/FaceAvatar";
 import LeaveRequestModal from "./LeaveRequestModal";
@@ -21,12 +23,144 @@ interface EmployeeDetailProps {
 }
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+/** Đồng bộ với backend/src/constants SALARY_THRESHOLD (lương BH + khấu 1 ngày vắng) */
+const SALARY_THRESHOLD_VND = 8_000_000;
+
 const formatVND = (amount: number): string => {
   return new Intl.NumberFormat("vi-VN", {
     style: "currency",
     currency: "VND",
   }).format(amount);
 };
+
+function parseVNDateToTime(dateStr: string): number {
+  const parts = String(dateStr || "").split("/");
+  if (parts.length !== 3) return 0;
+  const d = parseInt(parts[0], 10);
+  const m = parseInt(parts[1], 10) - 1;
+  const y = parseInt(parts[2], 10);
+  if (!Number.isFinite(d) || !Number.isFinite(m) || !Number.isFinite(y)) return 0;
+  return new Date(y, m, d).getTime();
+}
+
+type IncomeMovementRow = {
+  key: string;
+  sortTime: number;
+  flow: "thu" | "tru";
+  loai: string;
+  tieuDe: string;
+  phuDe?: string;
+  chiTietThoiGian?: string;
+  ghiChu: string;
+  soTien: number;
+};
+
+const PHU_CAP_SERVICES = ["Chuyên cần", "Ăn trưa", "Hỗ trợ khác"] as const;
+
+function buildIncomeMovements(
+  sales: SalesRecord[],
+  attendance: AttendanceRecord[],
+  grossBaseSalary: number,
+): IncomeMovementRow[] {
+  const rows: IncomeMovementRow[] = [];
+  const insuranceSalary =
+    grossBaseSalary >= SALARY_THRESHOLD_VND ? grossBaseSalary - 2_000_000 : grossBaseSalary;
+  const truMotNgayVang = Math.round(insuranceSalary / 21);
+
+  for (const sale of sales) {
+    const amount = Number(sale.profit) || 0;
+    const svc = sale.service || "";
+    let loai = "Hoa hồng / doanh số";
+    let flow: "thu" | "tru" = amount >= 0 ? "thu" : "tru";
+    if (svc === "Phạt") {
+      loai = "Phạt tiền";
+      flow = "tru";
+    } else if (svc === "Tạm ứng") {
+      loai = "Tạm ứng lương";
+      flow = "tru";
+    } else if (svc === "Thưởng hoa hồng") {
+      loai = "Thưởng hoa hồng";
+      flow = "thu";
+    } else if (svc === "Thưởng khác" || svc === "Thưởng") {
+      loai = svc === "Thưởng" ? "Thưởng khác (cũ)" : "Thưởng khác";
+      flow = "thu";
+    } else if (PHU_CAP_SERVICES.includes(svc as (typeof PHU_CAP_SERVICES)[number])) {
+      loai = "Phụ cấp (theo lương)";
+      flow = "thu";
+    }
+    const sortTime = sale.createdAt
+      ? new Date(sale.createdAt).getTime()
+      : parseVNDateToTime(sale.date);
+    const chiTietThoiGian = sale.createdAt
+      ? new Date(sale.createdAt).toLocaleDateString("vi-VN", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : undefined;
+    rows.push({
+      key: `sale-${sale.id}`,
+      sortTime: sortTime || parseVNDateToTime(sale.date),
+      flow,
+      loai,
+      tieuDe: sale.customer || "—",
+      phuDe: svc || undefined,
+      chiTietThoiGian,
+      ghiChu: sale.note?.trim() ? sale.note : "—",
+      soTien: amount,
+    });
+  }
+
+  for (const att of attendance) {
+    const t = parseVNDateToTime(att.date);
+    const dayKey = att.id || att.date;
+
+    if (att.fine > 0) {
+      rows.push({
+        key: `att-fine-${dayKey}`,
+        sortTime: t,
+        flow: "tru",
+        loai: "Trừ theo chấm công",
+        tieuDe: "Phạt đi muộn / vi phạm giờ làm",
+        phuDe: `Ngày ${att.date}`,
+        ghiChu: `Trạng thái: ${att.status}`,
+        soTien: -Math.abs(att.fine),
+      });
+    }
+
+    const half = att.halfDayDeduction || 0;
+    if (half > 0) {
+      rows.push({
+        key: `att-half-${dayKey}`,
+        sortTime: t,
+        flow: "tru",
+        loai: "Trừ theo chấm công",
+        tieuDe: "Khấu trừ nửa ngày / ca (về sớm, quên checkout…)",
+        phuDe: `Ngày ${att.date}`,
+        ghiChu: `Trạng thái: ${att.status}`,
+        soTien: -Math.abs(half),
+      });
+    }
+
+    if (att.status === "Vắng không phép") {
+      rows.push({
+        key: `att-abs-${dayKey}`,
+        sortTime: t,
+        flow: "tru",
+        loai: "Trừ theo chấm công",
+        tieuDe: "Vắng không phép (1 ngày công)",
+        phuDe: `Ngày ${att.date}`,
+        ghiChu: `Theo lương BH ≈ ${formatVND(truMotNgayVang)}/ngày`,
+        soTien: -truMotNgayVang,
+      });
+    }
+  }
+
+  rows.sort((a, b) => b.sortTime - a.sortTime);
+  return rows;
+}
 
 const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
   employee,
@@ -51,7 +185,7 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
 
   const [bonusAmount, setBonusAmount] = useState("");
   const [bonusNote, setBonusNote] = useState("");
-  const [bonusType, setBonusType] = useState("Thưởng");
+  const [bonusType, setBonusType] = useState("Thưởng hoa hồng");
   const [isBonusSaving, setIsBonusSaving] = useState(false);
 
   const todayStr = new Date().toLocaleDateString("vi-VN");
@@ -67,22 +201,31 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
   // ==========================================
   // THUẬT TOÁN TÍNH LƯƠNG
   // ==========================================
-  let totalBonusAndCommission = 0;
+  let totalHoaHongVaKpi = 0;
+  let totalThuongKhac = 0;
   let manualFines = 0;
   let salaryAdvances = 0;
 
   safeSalesRecords.forEach((record) => {
     const amount = Number(record.profit) || 0;
-    const type = record.service;
+    const type = record.service || "";
 
     if (type === "Phạt") {
       manualFines += Math.abs(amount);
     } else if (type === "Tạm ứng") {
       salaryAdvances += Math.abs(amount);
+    } else if (PHU_CAP_SERVICES.includes(type as (typeof PHU_CAP_SERVICES)[number])) {
+      // Phụ cấp lưu dạng sales — không cộng vào ô HH/thưởng (khớp backend)
+    } else if (type === "Thưởng khác" || type === "Thưởng") {
+      totalThuongKhac += amount;
+    } else if (type === "Thưởng hoa hồng") {
+      totalHoaHongVaKpi += amount;
     } else {
-      totalBonusAndCommission += amount;
+      totalHoaHongVaKpi += amount;
     }
   });
+
+  const totalBonusAndCommission = totalHoaHongVaKpi + totalThuongKhac;
 
   const attendanceFines = safeAttendanceRecords.reduce(
     (sum, r) => sum + (r.fine || 0),
@@ -99,6 +242,12 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
   const originalBaseSalary = employee.baseSalary || 0;
   const currentBaseSalary = originalBaseSalary - salaryAdvances;
   const finalSalary = currentBaseSalary + totalBonusAndCommission - totalFines;
+
+  const incomeMovementRows = buildIncomeMovements(
+    safeSalesRecords,
+    safeAttendanceRecords,
+    originalBaseSalary,
+  );
 
   // ==========================================
   // HANDLERS
@@ -140,6 +289,9 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
     let amount = Number(bonusAmount.replace(/\D/g, ""));
     if (bonusType === "Phạt" || bonusType === "Tạm ứng") {
       amount = -amount;
+    }
+    if (amount <= 0 && (bonusType === "Thưởng hoa hồng" || bonusType === "Thưởng khác")) {
+      return alert("Số tiền thưởng phải lớn hơn 0!");
     }
 
     setIsBonusSaving(true);
@@ -297,13 +449,17 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
           </p>
         </Card>
 
-        <Card className="border-l-[5px] border-l-green-500 shadow-sm border-y-0 border-r-0 rounded-xl hover:shadow-md transition-shadow">
+        <Card className="border-l-[5px] border-l-green-500 shadow-sm border-y-0 border-r-0 rounded-xl hover:shadow-md transition-shadow relative pb-10 sm:pb-4">
           <p className="text-xs sm:text-sm font-bold text-gray-500 uppercase tracking-wide">
-            Tổng Hoa Hồng & Thưởng
+            Thưởng & hoa hồng (dự kiến)
           </p>
           <h4 className="text-xl sm:text-2xl font-black text-green-500 mt-1">
             +{formatVND(totalBonusAndCommission)}
           </h4>
+          <div className="absolute bottom-2 right-4 flex flex-col items-end text-[10px] sm:text-[11px] font-medium text-gray-400">
+            <span>Hoa hồng / KPI: +{formatVND(totalHoaHongVaKpi)}</span>
+            <span>Thưởng khác: +{formatVND(totalThuongKhac)}</span>
+          </div>
         </Card>
 
         <Card className="border-l-[5px] border-l-red-500 shadow-sm border-y-0 border-r-0 rounded-xl hover:shadow-md transition-shadow relative pb-10 sm:pb-4">
@@ -425,15 +581,21 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
             <h5 className="text-base sm:text-lg font-bold text-gray-800">
               Biến động thu nhập
             </h5>
+            <p className="text-[10px] sm:text-xs text-gray-500 max-w-[55%] text-right hidden sm:block">
+              Hoa hồng, thưởng, phạt, tạm ứng và các khoản trừ theo chấm công
+            </p>
           </div>
-          <div className="overflow-x-auto max-h-[400px] custom-scrollbar w-full">
-            <table className="w-full min-w-[500px] text-sm text-left text-gray-500">
+          <div className="overflow-x-auto max-h-[480px] custom-scrollbar w-full">
+            <table className="w-full min-w-[640px] text-sm text-left text-gray-500">
               <thead className="text-[10px] sm:text-xs text-gray-700 uppercase border-b border-gray-200 bg-gray-50 sticky top-0 z-10">
                 <tr>
-                  <th className="px-3 sm:px-4 py-2 sm:py-3 font-bold w-1/3">
-                    Nguồn / Dịch vụ
+                  <th className="px-3 sm:px-4 py-2 sm:py-3 font-bold whitespace-nowrap w-[100px]">
+                    Loại
                   </th>
-                  <th className="px-3 sm:px-4 py-2 sm:py-3 font-bold w-1/3">
+                  <th className="px-3 sm:px-4 py-2 sm:py-3 font-bold min-w-[140px]">
+                    Nội dung
+                  </th>
+                  <th className="px-3 sm:px-4 py-2 sm:py-3 font-bold min-w-[120px]">
                     Ghi chú
                   </th>
                   <th className="px-3 sm:px-4 py-2 sm:py-3 text-right font-bold whitespace-nowrap">
@@ -442,51 +604,60 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
                 </tr>
               </thead>
               <tbody>
-                {safeSalesRecords.length === 0 ? (
+                {incomeMovementRows.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={3}
+                      colSpan={4}
                       className="px-4 py-8 text-center text-gray-400 italic text-xs sm:text-sm"
                     >
-                      Chưa có dữ liệu.
+                      Chưa có dữ liệu biến động trong kỳ.
                     </td>
                   </tr>
                 ) : (
-                  safeSalesRecords.map((sale) => (
+                  incomeMovementRows.map((row) => (
                     <tr
-                      key={sale.id}
+                      key={row.key}
                       className="border-b border-gray-100 last:border-0 hover:bg-blue-50/30 transition-colors"
                     >
-                      <td className="px-3 sm:px-4 py-3 sm:py-4">
-                        <p className="font-bold text-gray-900 text-xs sm:text-sm">
-                          {sale.customer}
-                        </p>
-                        <p className="text-[10px] sm:text-xs font-medium text-gray-500 mt-0.5">
-                          {sale.service === "Tạm ứng" ? (
-                            <span className="text-red-500 bg-red-50 px-1 py-0.5 rounded border border-red-100">
-                              Tạm ứng lương
-                            </span>
-                          ) : (
-                            sale.service
-                          )}
-                        </p>
-                        {sale.createdAt && (
-                          <p className="text-2xs text-gray-400 mt-0.5">
-                            {new Date(sale.createdAt).toLocaleDateString("vi-VN", {
-                              day: "2-digit", month: "2-digit", year: "numeric",
-                              hour: "2-digit", minute: "2-digit",
-                            })}
-                          </p>
-                        )}
+                      <td className="px-3 sm:px-4 py-3 sm:py-4 align-top">
+                        <span
+                          className={`inline-flex flex-col gap-0.5 rounded-md px-2 py-1 text-[10px] sm:text-xs font-bold border ${
+                            row.flow === "thu"
+                              ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                              : "bg-red-50 text-red-800 border-red-200"
+                          }`}
+                        >
+                          <span>{row.flow === "thu" ? "Thu" : "Trừ"}</span>
+                          <span className="font-semibold normal-case text-[9px] sm:text-[10px] opacity-90">
+                            {row.loai}
+                          </span>
+                        </span>
                       </td>
-                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-[10px] sm:text-xs italic text-gray-600">
-                        {sale.note || "Hệ thống tự động ghi nhận"}
+                      <td className="px-3 sm:px-4 py-3 sm:py-4 align-top">
+                        <p className="font-bold text-gray-900 text-xs sm:text-sm">{row.tieuDe}</p>
+                        {row.phuDe ? (
+                          <p className="text-[10px] sm:text-xs font-medium text-gray-500 mt-0.5">
+                            {row.phuDe}
+                          </p>
+                        ) : null}
+                        {row.chiTietThoiGian ? (
+                          <p className="text-2xs text-gray-400 mt-0.5">{row.chiTietThoiGian}</p>
+                        ) : null}
+                      </td>
+                      <td className="px-3 sm:px-4 py-3 sm:py-4 align-top text-[10px] sm:text-xs text-gray-600">
+                        {row.ghiChu}
                       </td>
                       <td
-                        className={`px-3 sm:px-4 py-3 sm:py-4 text-right font-bold text-xs sm:text-sm whitespace-nowrap ${sale.profit < 0 ? "text-red-500" : "text-green-600"}`}
+                        className={`px-3 sm:px-4 py-3 sm:py-4 align-top text-right font-bold text-xs sm:text-sm whitespace-nowrap ${
+                          row.soTien > 0
+                            ? "text-green-600"
+                            : row.soTien < 0
+                              ? "text-red-600"
+                              : "text-gray-500"
+                        }`}
                       >
-                        {sale.profit > 0 ? "+" : "-"}
-                        {formatVND(Math.abs(sale.profit))}
+                        {row.soTien > 0 ? "+" : row.soTien < 0 ? "−" : ""}
+                        {formatVND(Math.abs(row.soTien))}
                       </td>
                     </tr>
                   ))
@@ -520,7 +691,8 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
               onChange={(e) => setBonusType(e.target.value)}
               className="mt-1 font-medium"
             >
-              <option value="Thưởng">✨ Thưởng thêm</option>
+              <option value="Thưởng hoa hồng">💼 Thưởng hoa hồng / KPI</option>
+              <option value="Thưởng khác">✨ Thưởng khác</option>
               <option value="Phạt">📉 Trừ/Phạt tiền</option>
               <option value="Tạm ứng">💸 Tạm ứng lương</option>
             </Select>

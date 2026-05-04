@@ -7,6 +7,8 @@ import {
   BHXH_NLD_RATE, BHYT_NLD_RATE, BHTN_NLD_RATE,
   BONUS_CHUYÊN_CẦN, BONUS_ĂN_TRƯA, BONUS_HỖ_TRỢ_KHÁC,
 } from "../constants/index.js";
+import { getWorkDatesFromAttendance, calcSalesBreakdown } from "../services/SalaryService.js";
+import { dedupeSalaryHistoryLatestPerEmployeeMonth } from "../utils/salaryHistoryDedupe.js";
 
 /**
  * Locks payroll for a given month (format: "MM/YYYY").
@@ -33,7 +35,12 @@ export const finalizeMonthSalary = asyncHandler(async (req: Request, res: Respon
   const employees = await prisma.employee.findMany({
     include: {
       attendanceRecords: {
-        where: { date: { contains: `/${String(mm).padStart(2, "0")}/${yyyy}` } },
+        where: {
+          OR: [
+            { date: { contains: `/${String(mm).padStart(2, "0")}/${yyyy}` } },
+            { date: { contains: `/${mm}/${yyyy}` } },
+          ],
+        },
       },
       salesRecords: {
         where: { createdAt: { gte: monthStart, lt: monthEnd } },
@@ -52,15 +59,13 @@ export const finalizeMonthSalary = asyncHandler(async (req: Request, res: Respon
       monthAtt.forEach((r) => attIdsToDelete.push(r.id));
       monthSales.forEach((r) => saleIdsToDelete.push(r.id));
 
-      // Tally new figures from raw records
-      let newHoaHong = 0, newTamUng = 0, newManualFines = 0;
-      monthSales.forEach((r) => {
-        const amount = Number(r.profit) || 0;
-        if (r.service === "Phạt") newManualFines += Math.abs(amount);
-        else if (r.service === "Tạm ứng") newTamUng += Math.abs(amount);
-        else if (!["Chuyên cần", "Ăn trưa", "Hỗ trợ khác"].includes(r.service || ""))
-          newHoaHong += amount;
-      });
+      // Tally new figures from raw sales (tách hoa hồng / Thưởng HH vs Thưởng khác)
+      const {
+        hoaHong: newHoaHong,
+        thuongKhac: newThuongKhac,
+        tamUng: newTamUng,
+        manualFines: newManualFines,
+      } = calcSalesBreakdown(monthSales);
 
       const newAttendanceFines = monthAtt.reduce((s, r) => s + (r.fine || 0), 0);
       const newHalfDay         = monthAtt.reduce((s, r) => s + (r.halfDayDeduction || 0), 0);
@@ -74,17 +79,16 @@ export const finalizeMonthSalary = asyncHandler(async (req: Request, res: Respon
         0
       );
 
-      const newWorkDates = monthAtt
-        .filter((r) => r.outTime && r.outTime !== "-" && r.outTime !== "Quên checkout")
-        .map((r) => r.date);
+      const newWorkDates = getWorkDatesFromAttendance(monthAtt);
 
       // Check if this month was already partially finalized
-      const existing = await tx.salaryHistory.findFirst({
-        where: { employeeId: emp.id, monthYear },
+      const existing = await tx.salaryHistory.findUnique({
+        where: { employeeId_monthYear: { employeeId: emp.id, monthYear } },
       });
 
       // Accumulate: add new figures on top of previously saved ones
       const finalHoaHong         = (existing?.hoaHong || 0) + newHoaHong;
+      const finalThuongKhac      = (existing?.thuongKhac || 0) + newThuongKhac;
       const finalTamUng          = (existing?.tamUng || 0) + newTamUng;
       const finalManualFines     = (existing?.manualFines || 0) + newManualFines;
       const finalAttendanceFines = (existing?.attendanceFines || 0) + newAttendanceFines;
@@ -105,14 +109,15 @@ export const finalizeMonthSalary = asyncHandler(async (req: Request, res: Respon
       const totalNld = bhxhNld + bhytNld + bhtnNld;
 
       const totalDeductions = finalManualFines + finalAttendanceFines + finalHalfDay + finalFullDay + totalNld;
-      const finalSalary     = ins + cc + at + htk + finalHoaHong - finalTamUng - totalDeductions;
+      const finalSalary     = ins + cc + at + htk + finalHoaHong + finalThuongKhac - finalTamUng - totalDeductions;
 
       const historyData = {
         baseSalary:              ins,
-        totalBonus:              cc + at + htk + finalHoaHong,
+        totalBonus:              cc + at + htk + finalHoaHong + finalThuongKhac,
         totalDeduction:          totalDeductions + finalTamUng,
         finalSalary,
         hoaHong:                 finalHoaHong,
+        thuongKhac:              finalThuongKhac,
         tamUng:                  finalTamUng,
         manualFines:             finalManualFines,
         attendanceFines:         finalAttendanceFines,
@@ -122,13 +127,11 @@ export const finalizeMonthSalary = asyncHandler(async (req: Request, res: Respon
         workDates:               finalWorkDates,
       };
 
-      if (existing) {
-        await tx.salaryHistory.update({ where: { id: existing.id }, data: historyData });
-      } else {
-        await tx.salaryHistory.create({
-          data: { ...historyData, monthYear, employeeId: emp.id },
-        });
-      }
+      await tx.salaryHistory.upsert({
+        where: { employeeId_monthYear: { employeeId: emp.id, monthYear } },
+        create: { ...historyData, monthYear, employeeId: emp.id },
+        update: historyData,
+      });
     }
 
     // Delete raw records only after the snapshot is safely written
@@ -141,11 +144,13 @@ export const finalizeMonthSalary = asyncHandler(async (req: Request, res: Respon
 });
 
 export const getSalaryHistory = asyncHandler(async (_req: Request, res: Response) => {
-  const history = await prisma.salaryHistory.findMany({
+  const rows = await prisma.salaryHistory.findMany({
     include: {
       employee: { select: { id: true, name: true, employeeCode: true, department: true } },
     },
     orderBy: { createdAt: "desc" },
   });
-  res.json(history);
+  const deduped = dedupeSalaryHistoryLatestPerEmployeeMonth(rows);
+  deduped.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  res.json(deduped);
 });

@@ -172,6 +172,7 @@ model SalaryHistory {
 
   // Breakdown chi tiết để hiển thị lên bảng lịch sử
   hoaHong                 Float @default(0)
+  thuongKhac              Float @default(0) // Thưởng khác (không gộp vào hoa hồng/KPI)
   tamUng                  Float @default(0)
   manualFines             Float @default(0)
   attendanceFines         Float @default(0)
@@ -184,9 +185,9 @@ model SalaryHistory {
   employee        Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
   createdAt       DateTime @default(now())
 
+  @@unique([employeeId, monthYear])
   @@index([employeeId])
   @@index([monthYear])
-  @@index([employeeId, monthYear])
 }
 model LeaveRequest {
   id          String   @id @default(uuid())

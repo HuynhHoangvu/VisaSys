@@ -175,15 +175,15 @@ const Sidebar: React.FC<SidebarProps> = ({
         }`
       : `w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-150 ${
           isActive
-            ? "bg-orange-500/20 text-orange-300 border-l-[3px] border-orange-400 pl-[9px]"
-            : "text-gray-400 hover:bg-gray-700/60 hover:text-gray-100"
+            ? "bg-orange-500/20 text-orange-300 border-l-[3px] border-orange-400 pl-[9px] truncate whitespace-nowrap"
+            : "text-gray-400 hover:bg-gray-700/60 hover:text-gray-100 truncate whitespace-nowrap"
         }`;
 
   // Icon SVG paths (reused)
   const icons = {
     dashboard: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6",
     boss: "M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z",
-    crm: "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z",
+    crm: "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0z",
     kpi: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2",
     processing: "M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2",
     processed: "M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z",
@@ -218,7 +218,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
       {/* SIDEBAR */}
       <aside
-        className={`fixed inset-y-0 left-0 bg-gray-900 text-white flex flex-col shadow-2xl z-50
+        className={`fixed inset-y-0 left-0 bg-gray-900 text-white flex flex-col shadow-2xl z-50 overflow-x-hidden min-w-0
           transform transition-[transform,width] duration-300 ease-in-out
           lg:relative lg:translate-x-0
           ${isOpen ? "translate-x-0" : "-translate-x-full"}
@@ -349,7 +349,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         )}
 
         {/* NAV CHÍNH */}
-        <nav className={`flex-1 py-3 space-y-0.5 overflow-y-auto custom-scrollbar ${collapsed ? "px-2" : "px-3"}`}>
+        <nav className={`flex-1 py-3 space-y-0.5 overflow-y-auto overflow-x-hidden custom-scrollbar ${collapsed ? "px-2" : "px-3"}`}>
           {!isTeacherDeptUser && (
             <NavItem collapsed={collapsed} label="Tổng quan">
               <NavLink to="/dashboard" className={navLinkClass} onClick={handleNavClick}>

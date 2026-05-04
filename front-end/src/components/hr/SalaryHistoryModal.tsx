@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Modal, Badge } from "flowbite-react";
 import type { SalaryHistory } from "../../types";
 
@@ -7,6 +7,7 @@ export type EmployeeBreakdown = {
   employeeCode: string;
   role: string;
   hoaHong: number;
+  thuongKhac: number;
   tamUng: number;
   manualFines: number;
   attendanceFines: number;
@@ -47,6 +48,11 @@ const SalaryHistoryModal: React.FC<SalaryHistoryModalProps> = ({
     );
   };
 
+  /** Thu gọn panel Chi tiết nếu tháng đó không còn mở (bấm mũi tên thu tháng). */
+  useEffect(() => {
+    setExpandedBreakdown((eb) => (eb && !expandedMonths.includes(eb) ? null : eb));
+  }, [expandedMonths]);
+
   const toggleWorkDates = (key: string) => {
     setExpandedWorkDates((prev) => {
       const next = new Set(prev);
@@ -56,7 +62,8 @@ const SalaryHistoryModal: React.FC<SalaryHistoryModalProps> = ({
     });
   };
 
-  const fetchBreakdown = async (monthYear: string) => {
+  /** Mở panel chi tiết (fetch nếu chưa có cache). Bấm lại để đóng — xử lý ở nút Chi tiết. */
+  const openBreakdown = async (monthYear: string) => {
     if (breakdownData[monthYear]) {
       setExpandedBreakdown(monthYear);
       return;
@@ -76,6 +83,16 @@ const SalaryHistoryModal: React.FC<SalaryHistoryModalProps> = ({
     } finally {
       setLoadingBreakdown(null);
     }
+  };
+
+  const onChiTietClick = (e: React.MouseEvent, monthYear: string) => {
+    e.stopPropagation();
+    if (expandedBreakdown === monthYear) {
+      setExpandedBreakdown(null);
+      return;
+    }
+    setExpandedMonths((prev) => (prev.includes(monthYear) ? prev : [...prev, monthYear]));
+    void openBreakdown(monthYear);
   };
 
   const grouped = salaryHistories.reduce(
@@ -140,14 +157,23 @@ const SalaryHistoryModal: React.FC<SalaryHistoryModalProps> = ({
                       Excel
                     </button>
                     <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        fetchBreakdown(monthYear);
-                      }}
-                      className="inline-flex items-center gap-1.5 px-2 py-1.5 sm:px-3 sm:py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-bold transition-colors shadow-sm"
-                      title="Xem chi tiết thưởng/phạt"
+                      onClick={(e) => onChiTietClick(e, monthYear)}
+                      className={`inline-flex items-center gap-1.5 px-2 py-1.5 sm:px-3 sm:py-1.5 rounded-lg text-xs font-bold transition-colors shadow-sm ${
+                        expandedBreakdown === monthYear
+                          ? "bg-purple-800 ring-2 ring-purple-400 ring-offset-1 hover:bg-purple-900"
+                          : "bg-purple-600 hover:bg-purple-700"
+                      } text-white`}
+                      title={
+                        expandedBreakdown === monthYear
+                          ? "Thu gọn chi tiết thưởng/phạt"
+                          : "Xem chi tiết thưởng/phạt"
+                      }
                     >
-                      {loadingBreakdown === monthYear ? "..." : "Chi tiết"}
+                      {loadingBreakdown === monthYear
+                        ? "..."
+                        : expandedBreakdown === monthYear
+                          ? "Thu gọn"
+                          : "Chi tiết"}
                     </button>
                     <svg
                       className={`w-4 h-4 sm:w-5 sm:h-5 text-blue-600 transition-transform duration-300 ${isExpanded ? "rotate-180" : ""}`}
@@ -165,12 +191,13 @@ const SalaryHistoryModal: React.FC<SalaryHistoryModalProps> = ({
                     <div className="px-4 py-2 text-xs font-bold text-purple-700 uppercase tracking-wide">
                       Chi tiết thưởng / phạt tháng {monthYear}
                     </div>
-                    <table className="w-full min-w-[900px] text-xs text-left text-gray-600">
+                    <table className="w-full min-w-[1000px] text-xs text-left text-gray-600">
                       <thead className="bg-purple-100 text-purple-800 uppercase">
                         <tr>
                           <th className="px-3 py-2 font-bold">Nhân viên</th>
                           <th className="px-3 py-2 font-bold text-center">Ngày đi làm</th>
                           <th className="px-3 py-2 font-bold text-green-700 text-right">Hoa hồng</th>
+                          <th className="px-3 py-2 font-bold text-emerald-700 text-right">Thưởng khác</th>
                           <th className="px-3 py-2 font-bold text-red-600 text-right">Tạm ứng</th>
                           <th className="px-3 py-2 font-bold text-red-600 text-right">Phạt (đơn nghỉ)</th>
                           <th className="px-3 py-2 font-bold text-red-600 text-right">Phạt đi trễ</th>
@@ -199,6 +226,9 @@ const SalaryHistoryModal: React.FC<SalaryHistoryModalProps> = ({
                                 <td className="px-3 py-2 text-right text-green-700">
                                   {emp.hoaHong ? `+${fmt(emp.hoaHong)}` : "-"}
                                 </td>
+                                <td className="px-3 py-2 text-right text-emerald-700">
+                                  {emp.thuongKhac ? `+${fmt(emp.thuongKhac)}` : "-"}
+                                </td>
                                 <td className="px-3 py-2 text-right text-red-600">
                                   {emp.tamUng ? `-${fmt(emp.tamUng)}` : "-"}
                                 </td>
@@ -220,7 +250,7 @@ const SalaryHistoryModal: React.FC<SalaryHistoryModalProps> = ({
                               </tr>
                               {showDates && emp.workDates?.length > 0 && (
                                 <tr className="bg-purple-50/50">
-                                  <td colSpan={9} className="px-4 py-2 border-b border-purple-100">
+                                  <td colSpan={10} className="px-4 py-2 border-b border-purple-100">
                                     <div className="flex flex-wrap gap-1.5">
                                       <span className="text-xs font-semibold text-gray-500 mr-2 flex items-center">
                                         Lịch sử Check-out:
@@ -247,20 +277,28 @@ const SalaryHistoryModal: React.FC<SalaryHistoryModalProps> = ({
 
                 {isExpanded && (
                   <div className="overflow-x-auto custom-scrollbar border-t border-blue-100 w-full">
-                    <table className="w-full min-w-[700px] text-sm text-left text-gray-600">
+                    <table className="w-full min-w-[900px] text-sm text-left text-gray-600">
                       <thead className="text-xs text-gray-700 uppercase bg-gray-50 border-b border-gray-200">
                         <tr>
                           <th className="px-4 sm:px-6 py-3 sm:py-4 font-bold w-20">Mã NV</th>
                           <th className="px-4 sm:px-6 py-3 sm:py-4 font-bold">Nhân viên</th>
                           <th className="px-4 sm:px-6 py-3 sm:py-4 font-bold text-right">Lương CB</th>
-                          <th className="px-4 sm:px-6 py-3 sm:py-4 font-bold text-right text-green-600">Thưởng / HH</th>
+                          <th className="px-4 sm:px-6 py-3 sm:py-4 font-bold text-right text-gray-600">Phụ cấp</th>
+                          <th className="px-4 sm:px-6 py-3 sm:py-4 font-bold text-right text-green-600">Hoa hồng</th>
+                          <th className="px-4 sm:px-6 py-3 sm:py-4 font-bold text-right text-emerald-700">Thưởng khác</th>
                           <th className="px-4 sm:px-6 py-3 sm:py-4 font-bold text-right text-red-600">Phạt / Trừ</th>
                           <th className="px-4 sm:px-6 py-3 sm:py-4 font-bold text-right text-blue-700">Thực nhận</th>
                           <th className="px-4 sm:px-6 py-3 sm:py-4 font-bold text-center w-24">Phiếu lương</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
-                        {records.map((record, idx) => (
+                        {records.map((record, idx) => {
+                          const hh = record.hoaHong ?? 0;
+                          const tk = record.thuongKhac ?? 0;
+                          const phuCap = Math.max(0, record.totalBonus - hh - tk);
+                          const fmt = (n: number) =>
+                            new Intl.NumberFormat("vi-VN").format(Math.round(n));
+                          return (
                           <tr key={idx} className="bg-white hover:bg-gray-50 transition-colors">
                             <td className="px-4 sm:px-6 py-3 sm:py-4 font-bold text-gray-900">
                               {record.employee?.employeeCode}
@@ -274,16 +312,22 @@ const SalaryHistoryModal: React.FC<SalaryHistoryModalProps> = ({
                               </p>
                             </td>
                             <td className="px-4 sm:px-6 py-3 sm:py-4 text-right font-medium">
-                              {new Intl.NumberFormat("vi-VN").format(record.baseSalary)}đ
+                              {fmt(record.baseSalary)}đ
+                            </td>
+                            <td className="px-4 sm:px-6 py-3 sm:py-4 text-right text-gray-700 font-medium">
+                              +{fmt(phuCap)}đ
                             </td>
                             <td className="px-4 sm:px-6 py-3 sm:py-4 text-right text-green-600 font-bold">
-                              +{new Intl.NumberFormat("vi-VN").format(record.totalBonus)}đ
+                              +{fmt(hh)}đ
+                            </td>
+                            <td className="px-4 sm:px-6 py-3 sm:py-4 text-right text-emerald-700 font-bold">
+                              +{fmt(tk)}đ
                             </td>
                             <td className="px-4 sm:px-6 py-3 sm:py-4 text-right text-red-600 font-bold">
-                              -{new Intl.NumberFormat("vi-VN").format(record.totalDeduction)}đ
+                              -{fmt(record.totalDeduction)}đ
                             </td>
                             <td className="px-4 sm:px-6 py-3 sm:py-4 text-right font-bold text-blue-700 text-sm sm:text-base">
-                              {new Intl.NumberFormat("vi-VN").format(record.finalSalary)}đ
+                              {fmt(record.finalSalary)}đ
                             </td>
                             <td className="px-4 sm:px-6 py-3 sm:py-4 text-center">
                               <button
@@ -303,11 +347,12 @@ const SalaryHistoryModal: React.FC<SalaryHistoryModalProps> = ({
                               </button>
                             </td>
                           </tr>
-                        ))}
+                          );
+                        })}
                       </tbody>
                       <tfoot className="bg-blue-50 border-t-2 border-blue-200">
                         <tr>
-                          <td colSpan={5} className="px-4 sm:px-6 py-3 sm:py-4 text-right font-bold text-gray-700 uppercase tracking-wide text-xs sm:text-sm">
+                          <td colSpan={7} className="px-4 sm:px-6 py-3 sm:py-4 text-right font-bold text-gray-700 uppercase tracking-wide text-xs sm:text-sm">
                             TỔNG LƯƠNG TRẢ TRONG THÁNG:
                           </td>
                           <td colSpan={2} className="px-4 sm:px-6 py-3 sm:py-4 text-left font-black text-blue-800 text-base sm:text-lg">

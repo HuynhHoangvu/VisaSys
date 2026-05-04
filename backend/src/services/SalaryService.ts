@@ -10,6 +10,8 @@ export interface SalaryBreakdown {
   anTrua: number;
   hoTroKhac: number;
   hoaHong: number;
+  /** Thưởng khác, kể cả bản ghi cũ service "Thưởng" (legacy). */
+  thuongKhac: number;
   manualFines: number;
   tamUng: number;
   attendanceFines: number;
@@ -25,11 +27,27 @@ export interface SalaryBreakdown {
 
 interface AttendanceRecord {
   date: string;
+  inTime?: string;
   outTime: string;
   status: string;
   fine: number;
   halfDayDeduction: number;
 }
+
+/**
+ * Ngày công đi làm: có chấm công vào (inTime) và không phải vắng cả ngày không phép.
+ * Không bắt buộc phải checkout — nhiều phiếu lương bị 0 ngày vì outTime vẫn "-" hoặc "Quên checkout".
+ */
+export const getWorkDatesFromAttendance = (attendanceRecords: AttendanceRecord[]): string[] => {
+  const byDay = new Map<string, true>();
+  for (const r of attendanceRecords) {
+    if (r.status === "Vắng không phép") continue;
+    const inT = r.inTime != null ? String(r.inTime).trim() : "";
+    if (!inT || inT === "-") continue;
+    byDay.set(r.date, true);
+  }
+  return Array.from(byDay.keys()).sort();
+};
 
 interface SalesRecord {
   profit: number;
@@ -59,23 +77,27 @@ export const calcBaseComponents = (baseSalary: number) => {
   return { insuranceSalary, chuyenCan, anTrua, hoTroKhac };
 };
 
-/** Splits sales records into commission, manual fines, and salary advances. */
+const PHU_CAP_SERVICES = new Set(["Chuyên cần", "Ăn trưa", "Hỗ trợ khác"]);
+
+/** Ghi nhận sales thủ công; CRM/doanh số và "Thưởng hoa hồng" → hoaHong; "Thưởng khác"/"Thưởng" → thuongKhac. */
 export const calcSalesBreakdown = (salesRecords: SalesRecord[]) => {
-  let hoaHong = 0, manualFines = 0, tamUng = 0;
+  let hoaHong = 0, thuongKhac = 0, manualFines = 0, tamUng = 0;
   for (const r of salesRecords) {
     const amount = Number(r.profit) || 0;
-    if (r.service === "Phạt") manualFines += Math.abs(amount);
-    else if (r.service === "Tạm ứng") tamUng += Math.abs(amount);
-    else if (!["Chuyên cần", "Ăn trưa", "Hỗ trợ khác"].includes(r.service || ""))
-      hoaHong += amount;
+    const svc = r.service || "";
+    if (svc === "Phạt") manualFines += Math.abs(amount);
+    else if (svc === "Tạm ứng") tamUng += Math.abs(amount);
+    else if (PHU_CAP_SERVICES.has(svc)) {
+      /* phụ cấp lưu dạng sales — không cộng vào hoa hồng/ thưởng biến đổi */
+    } else if (svc === "Thưởng khác" || svc === "Thưởng") thuongKhac += amount;
+    else if (svc === "Thưởng hoa hồng") hoaHong += amount;
+    else hoaHong += amount;
   }
-  return { hoaHong, manualFines, tamUng };
+  return { hoaHong, thuongKhac, manualFines, tamUng };
 };
 
 /**
- * Aggregates attendance-based deductions and counts actual worked days.
- * A day counts as "worked" only if the employee checked out normally
- * (i.e., outTime exists and is not a placeholder or forgot-checkout marker).
+ * Aggregates attendance-based deductions and counts worked days (có check-in, không vắng không phép).
  */
 export const calcAttendanceBreakdown = (
   attendanceRecords: AttendanceRecord[],
@@ -87,11 +109,8 @@ export const calcAttendanceBreakdown = (
     r.status === "Vắng không phép" ? s + Math.round(insuranceSalary / 21) : s
   , 0);
 
-  const checkedOut = attendanceRecords.filter(
-    r => r.outTime && r.outTime !== "-" && r.outTime !== "Quên checkout"
-  );
-  const workDays  = checkedOut.length;
-  const workDates = checkedOut.map(r => r.date).sort();
+  const workDates = getWorkDatesFromAttendance(attendanceRecords);
+  const workDays = workDates.length;
 
   return { attendanceFines, halfDayDeduction, fullDayAbsenceDeduction, workDays, workDates };
 };
@@ -104,17 +123,17 @@ export const calcFullSalary = (
 ): SalaryBreakdown => {
   const { insuranceSalary, chuyenCan, anTrua, hoTroKhac } = calcBaseComponents(baseSalary);
   const { bhxhNld, bhytNld, bhtnNld } = calcInsurance(insuranceSalary);
-  const { hoaHong, manualFines, tamUng } = calcSalesBreakdown(salesRecords);
+  const { hoaHong, thuongKhac, manualFines, tamUng } = calcSalesBreakdown(salesRecords);
   const { attendanceFines, halfDayDeduction, fullDayAbsenceDeduction, workDays, workDates } =
     calcAttendanceBreakdown(attendanceRecords, insuranceSalary);
 
-  const totalIncome     = insuranceSalary + chuyenCan + anTrua + hoTroKhac + hoaHong;
+  const totalIncome     = insuranceSalary + chuyenCan + anTrua + hoTroKhac + hoaHong + thuongKhac;
   const totalDeductions = tamUng + manualFines + attendanceFines + halfDayDeduction + fullDayAbsenceDeduction + bhxhNld + bhytNld + bhtnNld;
   const finalSalary     = totalIncome - totalDeductions;
 
   return {
     insuranceSalary, chuyenCan, anTrua, hoTroKhac,
-    hoaHong, manualFines, tamUng,
+    hoaHong, thuongKhac, manualFines, tamUng,
     attendanceFines, halfDayDeduction, fullDayAbsenceDeduction,
     bhxhNld, bhytNld, bhtnNld,
     workDays, workDates,

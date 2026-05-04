@@ -145,6 +145,8 @@ export interface SalaryHistory {
   totalBonus: number;
   totalDeduction: number;
   finalSalary: number;
+  hoaHong?: number;
+  thuongKhac?: number;
   employee?: { id: string; name: string; employeeCode: string; department: string };
   createdAt: string;
 }

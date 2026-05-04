@@ -1,0 +1,4 @@
+# Python deps for backend/src/scripts/gen_salary.py (Excel export)
+openpyxl>=3.1.0
+# PDF generation (usually already installed where salary PDF works)
+reportlab>=4.0.0
