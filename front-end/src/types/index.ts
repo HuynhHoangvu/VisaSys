@@ -100,7 +100,6 @@ export interface Employee {
   employeeCode: string;
   name: string;
   email: string;
-  phone?: string | null;
   department: string;
   role: string;
   password?: string;
@@ -114,7 +113,6 @@ export interface Employee {
 export interface NewEmployeeData {
   name: string;
   email: string;
-  phone?: string;
   password?: string;
   department: string;
   role: string;

@@ -41,7 +41,6 @@ export type EmployeeMinAggregateOutputType = {
   employeeCode: string | null
   email: string | null
   name: string | null
-  phone: string | null
   password: string | null
   role: string | null
   baseSalary: number | null
@@ -55,7 +54,6 @@ export type EmployeeMaxAggregateOutputType = {
   employeeCode: string | null
   email: string | null
   name: string | null
-  phone: string | null
   password: string | null
   role: string | null
   baseSalary: number | null
@@ -69,7 +67,6 @@ export type EmployeeCountAggregateOutputType = {
   employeeCode: number
   email: number
   name: number
-  phone: number
   password: number
   role: number
   baseSalary: number
@@ -95,7 +92,6 @@ export type EmployeeMinAggregateInputType = {
   employeeCode?: true
   email?: true
   name?: true
-  phone?: true
   password?: true
   role?: true
   baseSalary?: true
@@ -109,7 +105,6 @@ export type EmployeeMaxAggregateInputType = {
   employeeCode?: true
   email?: true
   name?: true
-  phone?: true
   password?: true
   role?: true
   baseSalary?: true
@@ -123,7 +118,6 @@ export type EmployeeCountAggregateInputType = {
   employeeCode?: true
   email?: true
   name?: true
-  phone?: true
   password?: true
   role?: true
   baseSalary?: true
@@ -224,7 +218,6 @@ export type EmployeeGroupByOutputType = {
   employeeCode: string
   email: string
   name: string
-  phone: string | null
   password: string
   role: string
   baseSalary: number
@@ -261,7 +254,6 @@ export type EmployeeWhereInput = {
   employeeCode?: Prisma.StringFilter<"Employee"> | string
   email?: Prisma.StringFilter<"Employee"> | string
   name?: Prisma.StringFilter<"Employee"> | string
-  phone?: Prisma.StringNullableFilter<"Employee"> | string | null
   password?: Prisma.StringFilter<"Employee"> | string
   role?: Prisma.StringFilter<"Employee"> | string
   baseSalary?: Prisma.FloatFilter<"Employee"> | number
@@ -281,7 +273,6 @@ export type EmployeeOrderByWithRelationInput = {
   employeeCode?: Prisma.SortOrder
   email?: Prisma.SortOrder
   name?: Prisma.SortOrder
-  phone?: Prisma.SortOrderInput | Prisma.SortOrder
   password?: Prisma.SortOrder
   role?: Prisma.SortOrder
   baseSalary?: Prisma.SortOrder
@@ -304,7 +295,6 @@ export type EmployeeWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.EmployeeWhereInput[]
   NOT?: Prisma.EmployeeWhereInput | Prisma.EmployeeWhereInput[]
   name?: Prisma.StringFilter<"Employee"> | string
-  phone?: Prisma.StringNullableFilter<"Employee"> | string | null
   password?: Prisma.StringFilter<"Employee"> | string
   role?: Prisma.StringFilter<"Employee"> | string
   baseSalary?: Prisma.FloatFilter<"Employee"> | number
@@ -324,7 +314,6 @@ export type EmployeeOrderByWithAggregationInput = {
   employeeCode?: Prisma.SortOrder
   email?: Prisma.SortOrder
   name?: Prisma.SortOrder
-  phone?: Prisma.SortOrderInput | Prisma.SortOrder
   password?: Prisma.SortOrder
   role?: Prisma.SortOrder
   baseSalary?: Prisma.SortOrder
@@ -346,7 +335,6 @@ export type EmployeeScalarWhereWithAggregatesInput = {
   employeeCode?: Prisma.StringWithAggregatesFilter<"Employee"> | string
   email?: Prisma.StringWithAggregatesFilter<"Employee"> | string
   name?: Prisma.StringWithAggregatesFilter<"Employee"> | string
-  phone?: Prisma.StringNullableWithAggregatesFilter<"Employee"> | string | null
   password?: Prisma.StringWithAggregatesFilter<"Employee"> | string
   role?: Prisma.StringWithAggregatesFilter<"Employee"> | string
   baseSalary?: Prisma.FloatWithAggregatesFilter<"Employee"> | number
@@ -360,7 +348,6 @@ export type EmployeeCreateInput = {
   employeeCode: string
   email: string
   name: string
-  phone?: string | null
   password: string
   role: string
   baseSalary?: number
@@ -379,7 +366,6 @@ export type EmployeeUncheckedCreateInput = {
   employeeCode: string
   email: string
   name: string
-  phone?: string | null
   password: string
   role: string
   baseSalary?: number
@@ -398,7 +384,6 @@ export type EmployeeUpdateInput = {
   employeeCode?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   password?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.StringFieldUpdateOperationsInput | string
   baseSalary?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -417,7 +402,6 @@ export type EmployeeUncheckedUpdateInput = {
   employeeCode?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   password?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.StringFieldUpdateOperationsInput | string
   baseSalary?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -436,7 +420,6 @@ export type EmployeeCreateManyInput = {
   employeeCode: string
   email: string
   name: string
-  phone?: string | null
   password: string
   role: string
   baseSalary?: number
@@ -450,7 +433,6 @@ export type EmployeeUpdateManyMutationInput = {
   employeeCode?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   password?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.StringFieldUpdateOperationsInput | string
   baseSalary?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -463,7 +445,6 @@ export type EmployeeUncheckedUpdateManyInput = {
   employeeCode?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   password?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.StringFieldUpdateOperationsInput | string
   baseSalary?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -487,7 +468,6 @@ export type EmployeeCountOrderByAggregateInput = {
   employeeCode?: Prisma.SortOrder
   email?: Prisma.SortOrder
   name?: Prisma.SortOrder
-  phone?: Prisma.SortOrder
   password?: Prisma.SortOrder
   role?: Prisma.SortOrder
   baseSalary?: Prisma.SortOrder
@@ -506,7 +486,6 @@ export type EmployeeMaxOrderByAggregateInput = {
   employeeCode?: Prisma.SortOrder
   email?: Prisma.SortOrder
   name?: Prisma.SortOrder
-  phone?: Prisma.SortOrder
   password?: Prisma.SortOrder
   role?: Prisma.SortOrder
   baseSalary?: Prisma.SortOrder
@@ -520,7 +499,6 @@ export type EmployeeMinOrderByAggregateInput = {
   employeeCode?: Prisma.SortOrder
   email?: Prisma.SortOrder
   name?: Prisma.SortOrder
-  phone?: Prisma.SortOrder
   password?: Prisma.SortOrder
   role?: Prisma.SortOrder
   baseSalary?: Prisma.SortOrder
@@ -664,7 +642,6 @@ export type EmployeeCreateWithoutDepartmentInput = {
   employeeCode: string
   email: string
   name: string
-  phone?: string | null
   password: string
   role: string
   baseSalary?: number
@@ -682,7 +659,6 @@ export type EmployeeUncheckedCreateWithoutDepartmentInput = {
   employeeCode: string
   email: string
   name: string
-  phone?: string | null
   password: string
   role: string
   baseSalary?: number
@@ -729,7 +705,6 @@ export type EmployeeScalarWhereInput = {
   employeeCode?: Prisma.StringFilter<"Employee"> | string
   email?: Prisma.StringFilter<"Employee"> | string
   name?: Prisma.StringFilter<"Employee"> | string
-  phone?: Prisma.StringNullableFilter<"Employee"> | string | null
   password?: Prisma.StringFilter<"Employee"> | string
   role?: Prisma.StringFilter<"Employee"> | string
   baseSalary?: Prisma.FloatFilter<"Employee"> | number
@@ -743,7 +718,6 @@ export type EmployeeCreateWithoutAttendanceRecordsInput = {
   employeeCode: string
   email: string
   name: string
-  phone?: string | null
   password: string
   role: string
   baseSalary?: number
@@ -761,7 +735,6 @@ export type EmployeeUncheckedCreateWithoutAttendanceRecordsInput = {
   employeeCode: string
   email: string
   name: string
-  phone?: string | null
   password: string
   role: string
   baseSalary?: number
@@ -795,7 +768,6 @@ export type EmployeeUpdateWithoutAttendanceRecordsInput = {
   employeeCode?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   password?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.StringFieldUpdateOperationsInput | string
   baseSalary?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -813,7 +785,6 @@ export type EmployeeUncheckedUpdateWithoutAttendanceRecordsInput = {
   employeeCode?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   password?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.StringFieldUpdateOperationsInput | string
   baseSalary?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -831,7 +802,6 @@ export type EmployeeCreateWithoutSalesRecordsInput = {
   employeeCode: string
   email: string
   name: string
-  phone?: string | null
   password: string
   role: string
   baseSalary?: number
@@ -849,7 +819,6 @@ export type EmployeeUncheckedCreateWithoutSalesRecordsInput = {
   employeeCode: string
   email: string
   name: string
-  phone?: string | null
   password: string
   role: string
   baseSalary?: number
@@ -883,7 +852,6 @@ export type EmployeeUpdateWithoutSalesRecordsInput = {
   employeeCode?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   password?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.StringFieldUpdateOperationsInput | string
   baseSalary?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -901,7 +869,6 @@ export type EmployeeUncheckedUpdateWithoutSalesRecordsInput = {
   employeeCode?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   password?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.StringFieldUpdateOperationsInput | string
   baseSalary?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -919,7 +886,6 @@ export type EmployeeCreateWithoutSalaryHistoriesInput = {
   employeeCode: string
   email: string
   name: string
-  phone?: string | null
   password: string
   role: string
   baseSalary?: number
@@ -937,7 +903,6 @@ export type EmployeeUncheckedCreateWithoutSalaryHistoriesInput = {
   employeeCode: string
   email: string
   name: string
-  phone?: string | null
   password: string
   role: string
   baseSalary?: number
@@ -971,7 +936,6 @@ export type EmployeeUpdateWithoutSalaryHistoriesInput = {
   employeeCode?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   password?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.StringFieldUpdateOperationsInput | string
   baseSalary?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -989,7 +953,6 @@ export type EmployeeUncheckedUpdateWithoutSalaryHistoriesInput = {
   employeeCode?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   password?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.StringFieldUpdateOperationsInput | string
   baseSalary?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -1007,7 +970,6 @@ export type EmployeeCreateWithoutLeaveRequestsInput = {
   employeeCode: string
   email: string
   name: string
-  phone?: string | null
   password: string
   role: string
   baseSalary?: number
@@ -1025,7 +987,6 @@ export type EmployeeUncheckedCreateWithoutLeaveRequestsInput = {
   employeeCode: string
   email: string
   name: string
-  phone?: string | null
   password: string
   role: string
   baseSalary?: number
@@ -1059,7 +1020,6 @@ export type EmployeeUpdateWithoutLeaveRequestsInput = {
   employeeCode?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   password?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.StringFieldUpdateOperationsInput | string
   baseSalary?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -1077,7 +1037,6 @@ export type EmployeeUncheckedUpdateWithoutLeaveRequestsInput = {
   employeeCode?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   password?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.StringFieldUpdateOperationsInput | string
   baseSalary?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -1095,7 +1054,6 @@ export type EmployeeCreateWithoutWorkspacesInput = {
   employeeCode: string
   email: string
   name: string
-  phone?: string | null
   password: string
   role: string
   baseSalary?: number
@@ -1113,7 +1071,6 @@ export type EmployeeUncheckedCreateWithoutWorkspacesInput = {
   employeeCode: string
   email: string
   name: string
-  phone?: string | null
   password: string
   role: string
   baseSalary?: number
@@ -1147,7 +1104,6 @@ export type EmployeeUpdateWithoutWorkspacesInput = {
   employeeCode?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   password?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.StringFieldUpdateOperationsInput | string
   baseSalary?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -1165,7 +1121,6 @@ export type EmployeeUncheckedUpdateWithoutWorkspacesInput = {
   employeeCode?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   password?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.StringFieldUpdateOperationsInput | string
   baseSalary?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -1183,7 +1138,6 @@ export type EmployeeCreateManyDepartmentInput = {
   employeeCode: string
   email: string
   name: string
-  phone?: string | null
   password: string
   role: string
   baseSalary?: number
@@ -1196,7 +1150,6 @@ export type EmployeeUpdateWithoutDepartmentInput = {
   employeeCode?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   password?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.StringFieldUpdateOperationsInput | string
   baseSalary?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -1214,7 +1167,6 @@ export type EmployeeUncheckedUpdateWithoutDepartmentInput = {
   employeeCode?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   password?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.StringFieldUpdateOperationsInput | string
   baseSalary?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -1232,7 +1184,6 @@ export type EmployeeUncheckedUpdateManyWithoutDepartmentInput = {
   employeeCode?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   password?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.StringFieldUpdateOperationsInput | string
   baseSalary?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -1312,7 +1263,6 @@ export type EmployeeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   employeeCode?: boolean
   email?: boolean
   name?: boolean
-  phone?: boolean
   password?: boolean
   role?: boolean
   baseSalary?: boolean
@@ -1333,7 +1283,6 @@ export type EmployeeSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exte
   employeeCode?: boolean
   email?: boolean
   name?: boolean
-  phone?: boolean
   password?: boolean
   role?: boolean
   baseSalary?: boolean
@@ -1348,7 +1297,6 @@ export type EmployeeSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exte
   employeeCode?: boolean
   email?: boolean
   name?: boolean
-  phone?: boolean
   password?: boolean
   role?: boolean
   baseSalary?: boolean
@@ -1363,7 +1311,6 @@ export type EmployeeSelectScalar = {
   employeeCode?: boolean
   email?: boolean
   name?: boolean
-  phone?: boolean
   password?: boolean
   role?: boolean
   baseSalary?: boolean
@@ -1372,7 +1319,7 @@ export type EmployeeSelectScalar = {
   createdAt?: boolean
 }
 
-export type EmployeeOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "employeeCode" | "email" | "name" | "phone" | "password" | "role" | "baseSalary" | "commissionRate" | "departmentId" | "createdAt", ExtArgs["result"]["employee"]>
+export type EmployeeOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "employeeCode" | "email" | "name" | "password" | "role" | "baseSalary" | "commissionRate" | "departmentId" | "createdAt", ExtArgs["result"]["employee"]>
 export type EmployeeInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   salesRecords?: boolean | Prisma.Employee$salesRecordsArgs<ExtArgs>
   salaryHistories?: boolean | Prisma.Employee$salaryHistoriesArgs<ExtArgs>
@@ -1404,7 +1351,6 @@ export type $EmployeePayload<ExtArgs extends runtime.Types.Extensions.InternalAr
     employeeCode: string
     email: string
     name: string
-    phone: string | null
     password: string
     role: string
     baseSalary: number
@@ -1844,7 +1790,6 @@ export interface EmployeeFieldRefs {
   readonly employeeCode: Prisma.FieldRef<"Employee", 'String'>
   readonly email: Prisma.FieldRef<"Employee", 'String'>
   readonly name: Prisma.FieldRef<"Employee", 'String'>
-  readonly phone: Prisma.FieldRef<"Employee", 'String'>
   readonly password: Prisma.FieldRef<"Employee", 'String'>
   readonly role: Prisma.FieldRef<"Employee", 'String'>
   readonly baseSalary: Prisma.FieldRef<"Employee", 'Float'>

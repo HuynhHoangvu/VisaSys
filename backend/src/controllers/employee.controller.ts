@@ -48,7 +48,6 @@ export const getEmployees = asyncHandler(async (_req: Request, res: Response) =>
       employeeCode: emp.employeeCode,
       name: emp.name,
       email: emp.email,
-      phone: emp.phone,
       role: emp.role,
       baseSalary: emp.baseSalary,
       commissionRate: emp.commissionRate,
@@ -62,8 +61,8 @@ export const getEmployees = asyncHandler(async (_req: Request, res: Response) =>
 
 
 export const createEmployee = asyncHandler(async (req: Request, res: Response) => {
-  const { name, email, phone, password, department, role, baseSalary } = req.body as {
-    name: string; email: string; phone?: string; password: string; department: string; role: string; baseSalary: string;
+  const { name, email, password, department, role, baseSalary } = req.body as {
+    name: string; email: string; password: string; department: string; role: string; baseSalary: string;
   };
 
   const existing = await prisma.employee.findUnique({ where: { email } });
@@ -80,7 +79,6 @@ export const createEmployee = asyncHandler(async (req: Request, res: Response) =
       employeeCode,
       name,
       email,
-      phone: phone?.trim() ? phone.trim() : null,
       password: hashedPassword,
       role,
       departmentId: dept?.id || null,
@@ -98,8 +96,8 @@ export const createEmployee = asyncHandler(async (req: Request, res: Response) =
 
 export const updateEmployee = asyncHandler(async (req: Request, res: Response) => {
   const id = req.params.id as string;
-  const { name, email, phone, password, department, role, baseSalary } = req.body as {
-    name: string; email: string; phone?: string; password: string; department: string; role: string; baseSalary: string;
+  const { name, email, password, department, role, baseSalary } = req.body as {
+    name: string; email: string; password: string; department: string; role: string; baseSalary: string;
   };
 
   const conflicting = await prisma.employee.findFirst({
@@ -114,7 +112,6 @@ export const updateEmployee = asyncHandler(async (req: Request, res: Response) =
   const updateData: any = {
     name,
     email,
-    phone: phone?.trim() ? phone.trim() : null,
     role,
     departmentId: dept?.id || null,
     baseSalary: baseSalary ? parseFloat(baseSalary) : 5_000_000,

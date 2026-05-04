@@ -14,7 +14,6 @@ export const loginSchema = z.object({
 export const createEmployeeSchema = z.object({
   name: z.string().min(2, "Tên phải có ít nhất 2 ký tự"),
   email: z.string().email("Email không hợp lệ"),
-  phone: z.string().optional().or(z.literal("")),
   password: z.string().min(6, "Mật khẩu phải có ít nhất 6 ký tự").optional(),
   department: z.string().min(1, "Phải chọn phòng ban"),
   role: z.string().min(1, "Phải chọn chức vụ"),
@@ -24,7 +23,6 @@ export const createEmployeeSchema = z.object({
 export const updateEmployeeSchema = z.object({
   name: z.string().min(2, "Tên phải có ít nhất 2 ký tự"),
   email: z.string().email("Email không hợp lệ"),
-  phone: z.string().optional().or(z.literal("")),
   password: z.string().min(6).optional().or(z.literal("")),
   department: z.string().optional(),
   role: z.string().min(1, "Phải chọn chức vụ"),

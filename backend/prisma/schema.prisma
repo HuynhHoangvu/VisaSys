@@ -82,7 +82,6 @@ model Employee {
   employeeCode   String     @unique 
   email          String     @unique
   name           String
-  phone          String?
   password       String     
   role           String     
   baseSalary     Float      @default(6000000) 

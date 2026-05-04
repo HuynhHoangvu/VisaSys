@@ -23,7 +23,6 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({
   // Lấy giá trị trực tiếp từ employeeToEdit (nếu có), nếu không thì để rỗng
   const [name, setName] = useState(employeeToEdit?.name || "");
   const [email, setEmail] = useState(employeeToEdit?.email || "");
-  const [phone, setPhone] = useState(employeeToEdit?.phone || "");
   const [password, setPassword] = useState("");
   const [department, setDepartment] = useState(
     employeeToEdit?.department || "",
@@ -41,7 +40,6 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({
     onSubmitEmployee({
       name,
       email,
-      phone,
       password,
       department,
       role,
@@ -79,16 +77,6 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({
                 onChange={(e) => setEmail(e.target.value)}
               />
             </div>
-          </div>
-          <div>
-            <Label>Số điện thoại (tùy chọn)</Label>
-            <TextInput
-              id="empPhone"
-              type="tel"
-              placeholder="VD: 0901234567"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-            />
           </div>
 
           <div className="grid grid-cols-2 gap-4">

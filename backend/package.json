@@ -12,8 +12,7 @@
     "start": "npx tsx src/server.ts",
     "build": "npx prisma generate",
     "seed": "npx tsx prisma/seed.ts",
-    "migrate:deploy": "npx prisma migrate deploy",
-    "migrate:resolve:phone-applied": "npx prisma migrate resolve --applied 20260429163000_add_employee_phone"
+    "migrate:deploy": "npx prisma migrate deploy"
   },
   "keywords": [],
   "author": "",
