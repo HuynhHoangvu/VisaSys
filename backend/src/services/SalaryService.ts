@@ -35,8 +35,27 @@ interface AttendanceRecord {
 }
 
 /**
+ * Chuẩn hoá ngày chấm công dạng DD/MM/YYYY (vi-VN). Dùng khi chốt lương để chỉ xử lý đúng tháng năm
+ * (tránh xóa nhầm bản ghi tháng khác nếu filter chỉ dùng contains).
+ */
+export const attendanceDateBelongsToPayrollMonth = (
+  dateStr: string,
+  payrollMonth: number,
+  payrollYear: number,
+): boolean => {
+  const parts = String(dateStr || "").split("/");
+  if (parts.length !== 3) return false;
+  const d = parseInt(parts[0], 10);
+  const m = parseInt(parts[1], 10);
+  const y = parseInt(parts[2], 10);
+  if ([d, m, y].some((n) => Number.isNaN(n))) return false;
+  return m === payrollMonth && y === payrollYear;
+};
+
+/**
  * Ngày công đi làm: có chấm công vào (inTime) và không phải vắng cả ngày không phép.
  * Không bắt buộc phải checkout — nhiều phiếu lương bị 0 ngày vì outTime vẫn "-" hoặc "Quên checkout".
+ * Không có lịch nghỉ lễ cố định: ngày không có bản ghi hoặc không check-in không tính vào ngày công.
  */
 export const getWorkDatesFromAttendance = (attendanceRecords: AttendanceRecord[]): string[] => {
   const byDay = new Map<string, true>();

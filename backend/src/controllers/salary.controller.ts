@@ -7,7 +7,11 @@ import {
   BHXH_NLD_RATE, BHYT_NLD_RATE, BHTN_NLD_RATE,
   BONUS_CHUYÊN_CẦN, BONUS_ĂN_TRƯA, BONUS_HỖ_TRỢ_KHÁC,
 } from "../constants/index.js";
-import { getWorkDatesFromAttendance, calcSalesBreakdown } from "../services/SalaryService.js";
+import {
+  getWorkDatesFromAttendance,
+  calcSalesBreakdown,
+  attendanceDateBelongsToPayrollMonth,
+} from "../services/SalaryService.js";
 import { dedupeSalaryHistoryLatestPerEmployeeMonth } from "../utils/salaryHistoryDedupe.js";
 
 /**
@@ -53,7 +57,10 @@ export const finalizeMonthSalary = asyncHandler(async (req: Request, res: Respon
     const saleIdsToDelete: string[] = [];
 
     for (const emp of employees) {
-      const monthAtt   = emp.attendanceRecords;
+      // Chỉ tính/xóa đúng tháng năm chốt (parse DD/MM/YYYY) — bản ghi tháng 5 giữ nguyên khi chốt tháng 4.
+      const monthAtt = emp.attendanceRecords.filter((r) =>
+        attendanceDateBelongsToPayrollMonth(r.date, mm, yyyy),
+      );
       const monthSales = emp.salesRecords;
 
       monthAtt.forEach((r) => attIdsToDelete.push(r.id));
@@ -95,9 +102,8 @@ export const finalizeMonthSalary = asyncHandler(async (req: Request, res: Respon
       const finalHalfDay         = (existing?.halfDayDeduction || 0) + newHalfDay;
       const finalFullDay         = (existing?.fullDayAbsenceDeduction || 0) + newFullDay;
 
-      // Use a Set to deduplicate work dates across multiple finalization calls
-      const finalWorkDates = Array.from(new Set([...(existing?.workDates || []), ...newWorkDates]));
-      const finalWorkDays  = finalWorkDates.length;
+      // Mỗi lần chốt xóa bảng công đã tính; các ngày trong đợt sau không trùng đợt trước → cộng dồn số ngày
+      const finalWorkDays = (existing?.workDays || 0) + newWorkDates.length;
 
       const cc  = totalSalaryBrutto >= SALARY_THRESHOLD ? BONUS_CHUYÊN_CẦN  : 0;
       const at  = totalSalaryBrutto >= SALARY_THRESHOLD ? BONUS_ĂN_TRƯA     : 0;
@@ -124,7 +130,6 @@ export const finalizeMonthSalary = asyncHandler(async (req: Request, res: Respon
         halfDayDeduction:        finalHalfDay,
         fullDayAbsenceDeduction: finalFullDay,
         workDays:                finalWorkDays,
-        workDates:               finalWorkDates,
       };
 
       await tx.salaryHistory.upsert({

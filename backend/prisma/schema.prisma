@@ -179,7 +179,6 @@ model SalaryHistory {
   halfDayDeduction        Float @default(0)
   fullDayAbsenceDeduction Float @default(0)
   workDays                Int   @default(0)
-  workDates               String[] @default([]) // Danh sách ngày đi làm: ["01/02/2026", ...]
 
   employeeId      String
   employee        Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
