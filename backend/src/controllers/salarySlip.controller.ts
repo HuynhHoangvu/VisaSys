@@ -56,8 +56,11 @@ export const downloadSalarySlip = async (req: Request, res: Response) => {
         hoaHong: historyRecord.hoaHong || 0,
         thuongKhac: historyRecord.thuongKhac || 0,
         insuranceSalary: ins,
-        workDays: historyRecord.workDays || 0,
-        workDates: [],
+        workDays: Math.max(
+          historyRecord.workDays || 0,
+          (historyRecord.workDates && historyRecord.workDates.length) || 0,
+        ),
+        workDates: historyRecord.workDates || [],
         tamUng: historyRecord.tamUng || 0,
         fullDayAbsenceDeduction: historyRecord.fullDayAbsenceDeduction || 0,
         halfDayDeduction: historyRecord.halfDayDeduction || 0,
@@ -111,7 +114,7 @@ export const downloadSalarySlip = async (req: Request, res: Response) => {
         thuongKhac: salary.thuongKhac,
         insuranceSalary: salary.insuranceSalary,
         workDays: salary.workDays,
-        workDates: [],
+        workDates: salary.workDates,
         tamUng: salary.tamUng,
         fullDayAbsenceDeduction: salary.fullDayAbsenceDeduction,
         halfDayDeduction: salary.halfDayDeduction,
@@ -380,7 +383,7 @@ function buildEmployeePayrollData(employees: any[], monthYear: string) {
       thuongKhac: s.thuongKhac,
       totalBonus,
       workDays: s.workDays,
-      workDates: [],
+      workDates: s.workDates ?? [],
       totalSalary,
       insuranceSalary: ins,
       bhxhCty, bhytCty, bhtnCty, totalCty,
@@ -437,6 +440,7 @@ export const getSalaryBreakdown = async (req: Request, res: Response) => {
         totalBonus: h.totalBonus,
         finalSalary: h.finalSalary,
         workDays: h.workDays,
+        workDates: h.workDates ?? [],
       }));
       return res.json(breakdown);
     }
@@ -517,7 +521,7 @@ export const downloadSalarySummaryExcel = async (req: Request, res: Response) =>
           thuongKhac: h.thuongKhac ?? 0,
           totalBonus: h.totalBonus,
           workDays: h.workDays,
-          workDates: [],
+          workDates: h.workDates ?? [],
           totalSalary: totalSalary,
           insuranceSalary: ins,
           

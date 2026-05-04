@@ -179,6 +179,8 @@ model SalaryHistory {
   halfDayDeduction        Float @default(0)
   fullDayAbsenceDeduction Float @default(0)
   workDays                Int   @default(0)
+  /** Lưu snapshot ngày đi làm đã chốt (DD/MM/YYYY); không xóa cột để tránh mất dữ liệu trên DB. */
+  workDates               String[] @default([])
 
   employeeId      String
   employee        Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)

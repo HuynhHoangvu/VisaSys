@@ -16,6 +16,8 @@ export type EmployeeBreakdown = {
   totalBonus: number;
   finalSalary: number;
   workDays: number;
+  /** Có trên bản ghi đã chốt; live tính từ chấm công. */
+  workDates?: string[];
 };
 
 interface SalaryHistoryModalProps {
@@ -37,6 +39,7 @@ const SalaryHistoryModal: React.FC<SalaryHistoryModalProps> = ({
   const [breakdownData, setBreakdownData] = useState<Record<string, EmployeeBreakdown[]>>({});
   const [loadingBreakdown, setLoadingBreakdown] = useState<string | null>(null);
   const [expandedBreakdown, setExpandedBreakdown] = useState<string | null>(null);
+  const [expandedWorkDates, setExpandedWorkDates] = useState<Set<string>>(new Set());
 
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
@@ -50,6 +53,15 @@ const SalaryHistoryModal: React.FC<SalaryHistoryModalProps> = ({
   useEffect(() => {
     setExpandedBreakdown((eb) => (eb && !expandedMonths.includes(eb) ? null : eb));
   }, [expandedMonths]);
+
+  const toggleWorkDates = (key: string) => {
+    setExpandedWorkDates((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
 
   /** Mở panel chi tiết (fetch nếu chưa có cache). Bấm lại để đóng — xử lý ở nút Chi tiết. */
   const openBreakdown = async (monthYear: string) => {
@@ -198,11 +210,27 @@ const SalaryHistoryModal: React.FC<SalaryHistoryModalProps> = ({
                       <tbody className="divide-y divide-purple-100">
                         {breakdownData[monthYear].map((emp, i) => {
                           const fmt = (n: number) => new Intl.NumberFormat("vi-VN").format(n);
+                          const dateKey = `${monthYear}-${emp.employeeCode}`;
+                          const showDates = expandedWorkDates.has(dateKey);
+                          const dates = emp.workDates ?? [];
                           return (
-                            <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-purple-50"}>
+                            <React.Fragment key={i}>
+                              <tr className={i % 2 === 0 ? "bg-white" : "bg-purple-50"}>
                                 <td className="px-3 py-2 font-medium">{emp.name}</td>
-                                <td className="px-3 py-2 text-center text-xs font-semibold text-purple-800">
-                                  {emp.workDays || 0} ngày
+                                <td className="px-3 py-2 text-center">
+                                  {dates.length > 0 ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => toggleWorkDates(dateKey)}
+                                      className="text-xs font-bold text-purple-700 bg-purple-100 hover:bg-purple-200 px-2 py-0.5 rounded-full transition-colors shadow-sm"
+                                    >
+                                      {emp.workDays || 0} ngày {showDates ? "▲" : "▼"}
+                                    </button>
+                                  ) : (
+                                    <span className="text-xs font-semibold text-purple-800">
+                                      {emp.workDays || 0} ngày
+                                    </span>
+                                  )}
                                 </td>
                                 <td className="px-3 py-2 text-right text-green-700">
                                   {emp.hoaHong ? `+${fmt(emp.hoaHong)}` : "-"}
@@ -229,7 +257,27 @@ const SalaryHistoryModal: React.FC<SalaryHistoryModalProps> = ({
                                   {fmt(emp.finalSalary)}đ
                                 </td>
                               </tr>
-                            );
+                              {showDates && dates.length > 0 && (
+                                <tr className="bg-purple-50/50">
+                                  <td colSpan={10} className="px-4 py-2 border-b border-purple-100">
+                                    <div className="flex flex-wrap gap-1.5">
+                                      <span className="text-xs font-semibold text-gray-500 mr-2 flex items-center">
+                                        Ngày đi làm (snapshot chốt):
+                                      </span>
+                                      {dates.map((d, di) => (
+                                        <span
+                                          key={di}
+                                          className="text-xs font-medium bg-white border border-purple-200 text-purple-700 px-2 py-0.5 rounded shadow-sm"
+                                        >
+                                          {d}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </td>
+                                </tr>
+                              )}
+                            </React.Fragment>
+                          );
                         })}
                       </tbody>
                     </table>

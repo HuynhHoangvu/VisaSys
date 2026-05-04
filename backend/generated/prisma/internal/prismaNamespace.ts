@@ -1804,6 +1804,7 @@ export const SalaryHistoryScalarFieldEnum = {
   halfDayDeduction: 'halfDayDeduction',
   fullDayAbsenceDeduction: 'fullDayAbsenceDeduction',
   workDays: 'workDays',
+  workDates: 'workDates',
   employeeId: 'employeeId',
   createdAt: 'createdAt'
 } as const

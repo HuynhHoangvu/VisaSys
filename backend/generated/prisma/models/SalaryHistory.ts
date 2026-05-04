@@ -109,6 +109,7 @@ export type SalaryHistoryCountAggregateOutputType = {
   halfDayDeduction: number
   fullDayAbsenceDeduction: number
   workDays: number
+  workDates: number
   employeeId: number
   createdAt: number
   _all: number
@@ -198,6 +199,7 @@ export type SalaryHistoryCountAggregateInputType = {
   halfDayDeduction?: true
   fullDayAbsenceDeduction?: true
   workDays?: true
+  workDates?: true
   employeeId?: true
   createdAt?: true
   _all?: true
@@ -304,6 +306,7 @@ export type SalaryHistoryGroupByOutputType = {
   halfDayDeduction: number
   fullDayAbsenceDeduction: number
   workDays: number
+  workDates: string[]
   employeeId: string
   createdAt: Date
   _count: SalaryHistoryCountAggregateOutputType | null
@@ -346,6 +349,7 @@ export type SalaryHistoryWhereInput = {
   halfDayDeduction?: Prisma.FloatFilter<"SalaryHistory"> | number
   fullDayAbsenceDeduction?: Prisma.FloatFilter<"SalaryHistory"> | number
   workDays?: Prisma.IntFilter<"SalaryHistory"> | number
+  workDates?: Prisma.StringNullableListFilter<"SalaryHistory">
   employeeId?: Prisma.StringFilter<"SalaryHistory"> | string
   createdAt?: Prisma.DateTimeFilter<"SalaryHistory"> | Date | string
   employee?: Prisma.XOR<Prisma.EmployeeScalarRelationFilter, Prisma.EmployeeWhereInput>
@@ -366,6 +370,7 @@ export type SalaryHistoryOrderByWithRelationInput = {
   halfDayDeduction?: Prisma.SortOrder
   fullDayAbsenceDeduction?: Prisma.SortOrder
   workDays?: Prisma.SortOrder
+  workDates?: Prisma.SortOrder
   employeeId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   employee?: Prisma.EmployeeOrderByWithRelationInput
@@ -390,6 +395,7 @@ export type SalaryHistoryWhereUniqueInput = Prisma.AtLeast<{
   halfDayDeduction?: Prisma.FloatFilter<"SalaryHistory"> | number
   fullDayAbsenceDeduction?: Prisma.FloatFilter<"SalaryHistory"> | number
   workDays?: Prisma.IntFilter<"SalaryHistory"> | number
+  workDates?: Prisma.StringNullableListFilter<"SalaryHistory">
   employeeId?: Prisma.StringFilter<"SalaryHistory"> | string
   createdAt?: Prisma.DateTimeFilter<"SalaryHistory"> | Date | string
   employee?: Prisma.XOR<Prisma.EmployeeScalarRelationFilter, Prisma.EmployeeWhereInput>
@@ -410,6 +416,7 @@ export type SalaryHistoryOrderByWithAggregationInput = {
   halfDayDeduction?: Prisma.SortOrder
   fullDayAbsenceDeduction?: Prisma.SortOrder
   workDays?: Prisma.SortOrder
+  workDates?: Prisma.SortOrder
   employeeId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   _count?: Prisma.SalaryHistoryCountOrderByAggregateInput
@@ -437,6 +444,7 @@ export type SalaryHistoryScalarWhereWithAggregatesInput = {
   halfDayDeduction?: Prisma.FloatWithAggregatesFilter<"SalaryHistory"> | number
   fullDayAbsenceDeduction?: Prisma.FloatWithAggregatesFilter<"SalaryHistory"> | number
   workDays?: Prisma.IntWithAggregatesFilter<"SalaryHistory"> | number
+  workDates?: Prisma.StringNullableListFilter<"SalaryHistory">
   employeeId?: Prisma.StringWithAggregatesFilter<"SalaryHistory"> | string
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"SalaryHistory"> | Date | string
 }
@@ -456,6 +464,7 @@ export type SalaryHistoryCreateInput = {
   halfDayDeduction?: number
   fullDayAbsenceDeduction?: number
   workDays?: number
+  workDates?: Prisma.SalaryHistoryCreateworkDatesInput | string[]
   createdAt?: Date | string
   employee: Prisma.EmployeeCreateNestedOneWithoutSalaryHistoriesInput
 }
@@ -475,6 +484,7 @@ export type SalaryHistoryUncheckedCreateInput = {
   halfDayDeduction?: number
   fullDayAbsenceDeduction?: number
   workDays?: number
+  workDates?: Prisma.SalaryHistoryCreateworkDatesInput | string[]
   employeeId: string
   createdAt?: Date | string
 }
@@ -494,6 +504,7 @@ export type SalaryHistoryUpdateInput = {
   halfDayDeduction?: Prisma.FloatFieldUpdateOperationsInput | number
   fullDayAbsenceDeduction?: Prisma.FloatFieldUpdateOperationsInput | number
   workDays?: Prisma.IntFieldUpdateOperationsInput | number
+  workDates?: Prisma.SalaryHistoryUpdateworkDatesInput | string[]
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   employee?: Prisma.EmployeeUpdateOneRequiredWithoutSalaryHistoriesNestedInput
 }
@@ -513,6 +524,7 @@ export type SalaryHistoryUncheckedUpdateInput = {
   halfDayDeduction?: Prisma.FloatFieldUpdateOperationsInput | number
   fullDayAbsenceDeduction?: Prisma.FloatFieldUpdateOperationsInput | number
   workDays?: Prisma.IntFieldUpdateOperationsInput | number
+  workDates?: Prisma.SalaryHistoryUpdateworkDatesInput | string[]
   employeeId?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -532,6 +544,7 @@ export type SalaryHistoryCreateManyInput = {
   halfDayDeduction?: number
   fullDayAbsenceDeduction?: number
   workDays?: number
+  workDates?: Prisma.SalaryHistoryCreateworkDatesInput | string[]
   employeeId: string
   createdAt?: Date | string
 }
@@ -551,6 +564,7 @@ export type SalaryHistoryUpdateManyMutationInput = {
   halfDayDeduction?: Prisma.FloatFieldUpdateOperationsInput | number
   fullDayAbsenceDeduction?: Prisma.FloatFieldUpdateOperationsInput | number
   workDays?: Prisma.IntFieldUpdateOperationsInput | number
+  workDates?: Prisma.SalaryHistoryUpdateworkDatesInput | string[]
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -569,6 +583,7 @@ export type SalaryHistoryUncheckedUpdateManyInput = {
   halfDayDeduction?: Prisma.FloatFieldUpdateOperationsInput | number
   fullDayAbsenceDeduction?: Prisma.FloatFieldUpdateOperationsInput | number
   workDays?: Prisma.IntFieldUpdateOperationsInput | number
+  workDates?: Prisma.SalaryHistoryUpdateworkDatesInput | string[]
   employeeId?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -603,6 +618,7 @@ export type SalaryHistoryCountOrderByAggregateInput = {
   halfDayDeduction?: Prisma.SortOrder
   fullDayAbsenceDeduction?: Prisma.SortOrder
   workDays?: Prisma.SortOrder
+  workDates?: Prisma.SortOrder
   employeeId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
@@ -717,6 +733,15 @@ export type SalaryHistoryUncheckedUpdateManyWithoutEmployeeNestedInput = {
   deleteMany?: Prisma.SalaryHistoryScalarWhereInput | Prisma.SalaryHistoryScalarWhereInput[]
 }
 
+export type SalaryHistoryCreateworkDatesInput = {
+  set: string[]
+}
+
+export type SalaryHistoryUpdateworkDatesInput = {
+  set?: string[]
+  push?: string | string[]
+}
+
 export type SalaryHistoryCreateWithoutEmployeeInput = {
   id?: string
   monthYear: string
@@ -732,6 +757,7 @@ export type SalaryHistoryCreateWithoutEmployeeInput = {
   halfDayDeduction?: number
   fullDayAbsenceDeduction?: number
   workDays?: number
+  workDates?: Prisma.SalaryHistoryCreateworkDatesInput | string[]
   createdAt?: Date | string
 }
 
@@ -750,6 +776,7 @@ export type SalaryHistoryUncheckedCreateWithoutEmployeeInput = {
   halfDayDeduction?: number
   fullDayAbsenceDeduction?: number
   workDays?: number
+  workDates?: Prisma.SalaryHistoryCreateworkDatesInput | string[]
   createdAt?: Date | string
 }
 
@@ -797,6 +824,7 @@ export type SalaryHistoryScalarWhereInput = {
   halfDayDeduction?: Prisma.FloatFilter<"SalaryHistory"> | number
   fullDayAbsenceDeduction?: Prisma.FloatFilter<"SalaryHistory"> | number
   workDays?: Prisma.IntFilter<"SalaryHistory"> | number
+  workDates?: Prisma.StringNullableListFilter<"SalaryHistory">
   employeeId?: Prisma.StringFilter<"SalaryHistory"> | string
   createdAt?: Prisma.DateTimeFilter<"SalaryHistory"> | Date | string
 }
@@ -816,6 +844,7 @@ export type SalaryHistoryCreateManyEmployeeInput = {
   halfDayDeduction?: number
   fullDayAbsenceDeduction?: number
   workDays?: number
+  workDates?: Prisma.SalaryHistoryCreateworkDatesInput | string[]
   createdAt?: Date | string
 }
 
@@ -834,6 +863,7 @@ export type SalaryHistoryUpdateWithoutEmployeeInput = {
   halfDayDeduction?: Prisma.FloatFieldUpdateOperationsInput | number
   fullDayAbsenceDeduction?: Prisma.FloatFieldUpdateOperationsInput | number
   workDays?: Prisma.IntFieldUpdateOperationsInput | number
+  workDates?: Prisma.SalaryHistoryUpdateworkDatesInput | string[]
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -852,6 +882,7 @@ export type SalaryHistoryUncheckedUpdateWithoutEmployeeInput = {
   halfDayDeduction?: Prisma.FloatFieldUpdateOperationsInput | number
   fullDayAbsenceDeduction?: Prisma.FloatFieldUpdateOperationsInput | number
   workDays?: Prisma.IntFieldUpdateOperationsInput | number
+  workDates?: Prisma.SalaryHistoryUpdateworkDatesInput | string[]
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -870,6 +901,7 @@ export type SalaryHistoryUncheckedUpdateManyWithoutEmployeeInput = {
   halfDayDeduction?: Prisma.FloatFieldUpdateOperationsInput | number
   fullDayAbsenceDeduction?: Prisma.FloatFieldUpdateOperationsInput | number
   workDays?: Prisma.IntFieldUpdateOperationsInput | number
+  workDates?: Prisma.SalaryHistoryUpdateworkDatesInput | string[]
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -890,6 +922,7 @@ export type SalaryHistorySelect<ExtArgs extends runtime.Types.Extensions.Interna
   halfDayDeduction?: boolean
   fullDayAbsenceDeduction?: boolean
   workDays?: boolean
+  workDates?: boolean
   employeeId?: boolean
   createdAt?: boolean
   employee?: boolean | Prisma.EmployeeDefaultArgs<ExtArgs>
@@ -910,6 +943,7 @@ export type SalaryHistorySelectCreateManyAndReturn<ExtArgs extends runtime.Types
   halfDayDeduction?: boolean
   fullDayAbsenceDeduction?: boolean
   workDays?: boolean
+  workDates?: boolean
   employeeId?: boolean
   createdAt?: boolean
   employee?: boolean | Prisma.EmployeeDefaultArgs<ExtArgs>
@@ -930,6 +964,7 @@ export type SalaryHistorySelectUpdateManyAndReturn<ExtArgs extends runtime.Types
   halfDayDeduction?: boolean
   fullDayAbsenceDeduction?: boolean
   workDays?: boolean
+  workDates?: boolean
   employeeId?: boolean
   createdAt?: boolean
   employee?: boolean | Prisma.EmployeeDefaultArgs<ExtArgs>
@@ -950,11 +985,12 @@ export type SalaryHistorySelectScalar = {
   halfDayDeduction?: boolean
   fullDayAbsenceDeduction?: boolean
   workDays?: boolean
+  workDates?: boolean
   employeeId?: boolean
   createdAt?: boolean
 }
 
-export type SalaryHistoryOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "monthYear" | "baseSalary" | "totalBonus" | "totalDeduction" | "finalSalary" | "hoaHong" | "thuongKhac" | "tamUng" | "manualFines" | "attendanceFines" | "halfDayDeduction" | "fullDayAbsenceDeduction" | "workDays" | "employeeId" | "createdAt", ExtArgs["result"]["salaryHistory"]>
+export type SalaryHistoryOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "monthYear" | "baseSalary" | "totalBonus" | "totalDeduction" | "finalSalary" | "hoaHong" | "thuongKhac" | "tamUng" | "manualFines" | "attendanceFines" | "halfDayDeduction" | "fullDayAbsenceDeduction" | "workDays" | "workDates" | "employeeId" | "createdAt", ExtArgs["result"]["salaryHistory"]>
 export type SalaryHistoryInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   employee?: boolean | Prisma.EmployeeDefaultArgs<ExtArgs>
 }
@@ -985,6 +1021,10 @@ export type $SalaryHistoryPayload<ExtArgs extends runtime.Types.Extensions.Inter
     halfDayDeduction: number
     fullDayAbsenceDeduction: number
     workDays: number
+    /**
+     * * Lưu snapshot ngày đi làm đã chốt (DD/MM/YYYY); không xóa cột để tránh mất dữ liệu trên DB.
+     */
+    workDates: string[]
     employeeId: string
     createdAt: Date
   }, ExtArgs["result"]["salaryHistory"]>
@@ -1425,6 +1465,7 @@ export interface SalaryHistoryFieldRefs {
   readonly halfDayDeduction: Prisma.FieldRef<"SalaryHistory", 'Float'>
   readonly fullDayAbsenceDeduction: Prisma.FieldRef<"SalaryHistory", 'Float'>
   readonly workDays: Prisma.FieldRef<"SalaryHistory", 'Int'>
+  readonly workDates: Prisma.FieldRef<"SalaryHistory", 'String[]'>
   readonly employeeId: Prisma.FieldRef<"SalaryHistory", 'String'>
   readonly createdAt: Prisma.FieldRef<"SalaryHistory", 'DateTime'>
 }

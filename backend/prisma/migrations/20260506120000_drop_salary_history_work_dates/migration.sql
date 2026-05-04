@@ -1,5 +1,5 @@
--- Bỏ danh sách ngày đi làm (PostgreSQL TEXT[]); giữ workDays.
--- Trước đó: gỡ trùng (employeeId, monthYear) để tạo unique an toàn trên Railway.
+-- Railway: gỡ trùng trước khi thêm unique (employeeId, monthYear).
+-- Giữ nguyên cột workDates — không DROP để không mất dữ liệu snapshot.
 
 DELETE FROM "SalaryHistory" sh
 WHERE sh.id IN (
@@ -13,7 +13,5 @@ WHERE sh.id IN (
   ) sub
   WHERE sub.rn > 1
 );
-
-ALTER TABLE "SalaryHistory" DROP COLUMN IF EXISTS "workDates";
 
 CREATE UNIQUE INDEX IF NOT EXISTS "SalaryHistory_employeeId_monthYear_key" ON "SalaryHistory" ("employeeId", "monthYear");

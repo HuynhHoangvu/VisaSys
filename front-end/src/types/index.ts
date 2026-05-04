@@ -147,6 +147,8 @@ export interface SalaryHistory {
   finalSalary: number;
   hoaHong?: number;
   thuongKhac?: number;
+  workDays?: number;
+  workDates?: string[];
   employee?: { id: string; name: string; employeeCode: string; department: string };
   createdAt: string;
 }

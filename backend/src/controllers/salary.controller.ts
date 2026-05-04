@@ -102,8 +102,9 @@ export const finalizeMonthSalary = asyncHandler(async (req: Request, res: Respon
       const finalHalfDay         = (existing?.halfDayDeduction || 0) + newHalfDay;
       const finalFullDay         = (existing?.fullDayAbsenceDeduction || 0) + newFullDay;
 
-      // Mỗi lần chốt xóa bảng công đã tính; các ngày trong đợt sau không trùng đợt trước → cộng dồn số ngày
-      const finalWorkDays = (existing?.workDays || 0) + newWorkDates.length;
+      // Gộp danh sách ngày đi làm giữa các lần chốt một phần; workDays khớp số phần tử sau merge.
+      const finalWorkDates = Array.from(new Set([...(existing?.workDates || []), ...newWorkDates]));
+      const finalWorkDays  = finalWorkDates.length;
 
       const cc  = totalSalaryBrutto >= SALARY_THRESHOLD ? BONUS_CHUYÊN_CẦN  : 0;
       const at  = totalSalaryBrutto >= SALARY_THRESHOLD ? BONUS_ĂN_TRƯA     : 0;
@@ -130,6 +131,7 @@ export const finalizeMonthSalary = asyncHandler(async (req: Request, res: Respon
         halfDayDeduction:        finalHalfDay,
         fullDayAbsenceDeduction: finalFullDay,
         workDays:                finalWorkDays,
+        workDates:               finalWorkDates,
       };
 
       await tx.salaryHistory.upsert({
