@@ -1,0 +1,6 @@
+-- This migration is intentionally empty (no-op).
+-- The original migration failed and was recorded in the _prisma_migrations table
+-- with a failed status. Re-creating the file as a no-op allows Prisma to mark
+-- the migration as successfully applied (via `prisma migrate resolve --applied`)
+-- or to complete it cleanly on the next `prisma migrate deploy`, unblocking
+-- subsequent migrations and resolving the P3009 error.
