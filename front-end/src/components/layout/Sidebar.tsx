@@ -176,12 +176,16 @@ const Sidebar: React.FC<SidebarProps> = ({
   const handleWorkspaceChange = (wsId: string) => {
     const ws = workspaces.find((w) => w.id === wsId);
     if (!ws) return;
-    setActiveWorkspaceId(wsId);
     
     const normalized = normalizeUrl(ws.url);
     if (normalized && !isSameWorkspaceUrl(normalized, window.location.href)) {
-      window.location.assign(normalized);
+      // Nếu là link ngoài hoặc hệ thống khác, mở tab mới và không đổi selection ở tab hiện tại
+      window.open(normalized, "_blank");
+      return;
     }
+
+    // Nếu là trong cùng hệ thống hoặc không có URL, cập nhật activeWorkspaceId
+    setActiveWorkspaceId(wsId);
   };
 
   const handleNavClick = () => { if (onClose) onClose(); };
