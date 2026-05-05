@@ -110,6 +110,14 @@ const RecruitmentBoard: React.FC<RecruitmentBoardProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [taskStepMap, setTaskStepMap] = useState<Record<string, StepId>>({});
   const [activeTab, setActiveTab] = useState<"kanban" | "list">("kanban");
+  const [collapsedCols, setCollapsedCols] = useState<Record<string, boolean>>({});
+
+  const toggleColumnCollapse = (colId: string) => {
+    setCollapsedCols((prev) => ({
+      ...prev,
+      [colId]: !prev[colId],
+    }));
+  };
 
   // Search & filter
   const [searchQuery, setSearchQuery] = useState("");
@@ -379,38 +387,73 @@ const RecruitmentBoard: React.FC<RecruitmentBoardProps> = ({
                 .filter(Boolean);
               const visibleCount = tasks.filter(isTaskVisible).length;
 
+              const isCollapsed = collapsedCols[step.id];
+
               return (
                 <div
                   key={step.id}
-                  className="flex flex-col rounded-xl shrink-0 snap-center shadow-sm"
+                  className="flex flex-col rounded-xl shrink-0 transition-all duration-300 shadow-sm"
                   style={{
-                    width: "240px",
+                    width: isCollapsed ? "48px" : "240px",
                     background: step.accent,
                     border: `1px solid ${step.color}30`,
                     maxHeight: "100%",
+                    overflow: "hidden",
                   }}
                 >
                   <div
-                    className="px-3 py-3 flex justify-between items-center rounded-t-xl bg-white/60 backdrop-blur-sm border-b"
+                    className={`px-3 py-3 flex items-center rounded-t-xl bg-white/60 backdrop-blur-sm border-b ${
+                      isCollapsed ? "flex-col h-full justify-start gap-4 pt-4" : "justify-between"
+                    }`}
                     style={{ borderColor: `${step.color}20` }}
                   >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className="text-base shrink-0">{step.emoji}</span>
-                      <h3
-                        className="font-bold text-xs uppercase tracking-wide truncate"
+                    <div className={`flex items-center gap-2 min-w-0 ${isCollapsed ? "flex-col" : ""}`}>
+                      <button
+                        onClick={() => toggleColumnCollapse(step.id)}
+                        className="p-1 hover:bg-white/80 rounded transition-colors shrink-0"
                         style={{ color: step.color }}
+                        title={isCollapsed ? "Mở rộng" : "Thu gọn"}
                       >
-                        {step.title}
-                      </h3>
+                        <svg
+                          className={`w-4 h-4 transform transition-transform duration-300 ${
+                            isCollapsed ? "rotate-180" : ""
+                          }`}
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
+                          />
+                        </svg>
+                      </button>
+                      <div className={`flex items-center gap-2 min-w-0 ${isCollapsed ? "flex-col" : ""}`}>
+                        <span className="text-base shrink-0">{step.emoji}</span>
+                        <h3
+                          className={`font-bold uppercase tracking-wide ${
+                            isCollapsed ? "text-[10px] whitespace-nowrap" : "text-xs truncate"
+                          }`}
+                          style={{
+                            color: step.color,
+                            ...(isCollapsed ? { writingMode: "vertical-rl", textOrientation: "mixed" } : {}),
+                          }}
+                        >
+                          {step.title}
+                        </h3>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1 shrink-0">
-                      {hasActiveFilter && visibleCount !== tasks.length && (
+
+                    <div className={`flex items-center gap-1 shrink-0 ${isCollapsed ? "mt-auto mb-4" : ""}`}>
+                      {!isCollapsed && hasActiveFilter && visibleCount !== tasks.length && (
                         <span className="text-orange-500 text-xs font-bold">
                           {visibleCount}/
                         </span>
                       )}
                       <span
-                        className="text-xs font-bold px-2 py-0.5 rounded-full"
+                        className={`font-bold px-2 py-0.5 rounded-full ${isCollapsed ? "text-[10px]" : "text-xs"}`}
                         style={{
                           background: step.color + "15",
                           color: step.color,
@@ -421,7 +464,8 @@ const RecruitmentBoard: React.FC<RecruitmentBoardProps> = ({
                     </div>
                   </div>
 
-                  <Droppable droppableId={step.id}>
+                  {!isCollapsed && (
+                    <Droppable droppableId={step.id}>
                     {(provided, snapshot) => (
                       <div
                         ref={provided.innerRef}
@@ -571,13 +615,13 @@ const RecruitmentBoard: React.FC<RecruitmentBoardProps> = ({
                       </div>
                     )}
                   </Droppable>
+                  )}
                 </div>
               );
             })}
           </div>
         </DragDropContext>
       )}
-
       {/* ==================== LIST VIEW (Flex Layout - Không Dùng Table) ==================== */}
       {activeTab === "list" && col5Tasks.length > 0 && (
         <div className="flex flex-col flex-1 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">

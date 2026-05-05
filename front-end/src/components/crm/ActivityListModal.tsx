@@ -62,7 +62,6 @@ const ActivityListModal: React.FC<ActivityListModalProps> = ({
         </button>
         <button
           onClick={() => {
-            onClose();
             onEditActivity(act.id);
           }}
           className="p-1 hover:text-flygold"
@@ -163,7 +162,6 @@ const ActivityListModal: React.FC<ActivityListModalProps> = ({
         </div>
         <div
           onClick={() => {
-            onClose();
             onOpenScheduleForm();
           }}
           className="p-3 bg-gray-100 text-center text-gray-800 font-bold text-xs sm:text-sm cursor-pointer hover:bg-gray-200 border-t border-gray-200 mt-auto"

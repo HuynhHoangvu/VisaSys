@@ -127,6 +127,14 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
   const [procColumns, setProcColumns] = useState<ProcColumnsState>(buildEmptyColumns);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"kanban" | "table">("kanban");
+  const [collapsedCols, setCollapsedCols] = useState<Record<string, boolean>>({});
+
+  const toggleColumnCollapse = (colId: string) => {
+    setCollapsedCols((prev) => ({
+      ...prev,
+      [colId]: !prev[colId],
+    }));
+  };
 
   const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -439,30 +447,67 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
                 ? allTasks.filter(isTaskVisible).length
                 : allTasks.length;
 
+              const isCollapsed = collapsedCols[columnId];
+
               return (
                 <div
                   key={columnId}
-                  className="flex flex-col bg-gray-100/50 rounded-xl w-64 min-w-[16rem] max-h-full shrink-0 border border-gray-200/50 shadow-sm"
+                  className={`flex flex-col bg-gray-100/50 rounded-xl h-full shrink-0 border border-gray-200/50 shadow-sm transition-all duration-300 ${
+                    isCollapsed ? "w-12 min-w-[3rem] overflow-hidden" : "w-64 min-w-[16rem]"
+                  }`}
                 >
                   {/* Column header */}
-                  <div className="p-3 flex justify-between items-center bg-white/40 rounded-t-xl border-b border-gray-200/50">
-                    <h3 className="font-bold text-gray-700 uppercase text-[12px] tracking-wide">
-                      {PROC_COL_MAP[columnId].title}
-                    </h3>
-                    <div className="flex items-center gap-1">
-                      {hasActiveFilter && visibleCount !== allTasks.length && (
+                  <div
+                    className={`p-3 flex items-center bg-white/40 rounded-t-xl border-b border-gray-200/50 ${
+                      isCollapsed ? "flex-col h-full justify-start gap-4 pt-4" : "justify-between"
+                    }`}
+                  >
+                    <div className={`flex items-center gap-2 min-w-0 ${isCollapsed ? "flex-col" : ""}`}>
+                      <button
+                        onClick={() => toggleColumnCollapse(columnId)}
+                        className="p-1 hover:bg-gray-200 rounded transition-colors text-gray-500 shrink-0"
+                        title={isCollapsed ? "Mở rộng" : "Thu gọn"}
+                      >
+                        <svg
+                          className={`w-4 h-4 transform transition-transform duration-300 ${
+                            isCollapsed ? "rotate-180" : ""
+                          }`}
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
+                          />
+                        </svg>
+                      </button>
+                      <h3
+                        className={`font-bold text-gray-700 uppercase tracking-wide ${
+                          isCollapsed ? "text-[10px] whitespace-nowrap" : "text-[12px] truncate"
+                        }`}
+                        style={isCollapsed ? { writingMode: "vertical-rl", textOrientation: "mixed" } : {}}
+                      >
+                        {PROC_COL_MAP[columnId].title}
+                      </h3>
+                    </div>
+
+                    <div className={`flex items-center gap-1 shrink-0 ${isCollapsed ? "mt-auto mb-4" : ""}`}>
+                      {!isCollapsed && hasActiveFilter && visibleCount !== allTasks.length && (
                         <span className="text-orange-500 text-xs font-bold">
                           {visibleCount}/
                         </span>
                       )}
-                      <span className="bg-gray-300 text-gray-800 text-xs font-bold px-2 py-0.5 rounded-full">
+                      <span className={`bg-gray-300 text-gray-800 font-bold px-2 py-0.5 rounded-full ${isCollapsed ? "text-[10px]" : "text-xs"}`}>
                         {allTasks.length}
                       </span>
                     </div>
                   </div>
 
-                  {/* Droppable zone */}
-                  <Droppable droppableId={columnId}>
+                  {!isCollapsed && (
+                    <Droppable droppableId={columnId}>
                     {(provided, snapshot) => (
                       <div
                         ref={provided.innerRef}
@@ -622,6 +667,7 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
                       </div>
                     )}
                   </Droppable>
+                  )}
                 </div>
               );
             })}

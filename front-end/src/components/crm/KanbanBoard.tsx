@@ -56,6 +56,14 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
   const [visibleLimits, setVisibleLimits] = useState<Record<string, number>>(
     {},
   );
+  const [collapsedCols, setCollapsedCols] = useState<Record<string, boolean>>({});
+
+  const toggleColumnCollapse = (colId: string) => {
+    setCollapsedCols((prev) => ({
+      ...prev,
+      [colId]: !prev[colId],
+    }));
+  };
   const DEFAULT_LIMIT = 20;
 
   // Lọc
@@ -1038,29 +1046,68 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                     ? column.taskIds
                     : column.taskIds.slice(0, limit);
 
+                  const isCollapsed = collapsedCols[column.id];
+
                   return (
                     <div
                       key={column.id}
-                      className="flex flex-col bg-gray-100/50 rounded-xl w-[85vw] sm:w-64 min-w-[16rem] h-full shrink-0"
+                      className={`flex flex-col bg-gray-100/50 rounded-xl h-full shrink-0 transition-all duration-300 ${
+                        isCollapsed
+                          ? "w-12 min-w-[3rem] overflow-hidden"
+                          : "w-[85vw] sm:w-64 min-w-[16rem]"
+                      }`}
                     >
-                      <div className="px-3 py-3 flex justify-between items-center shrink-0 border-b border-gray-200/50">
-                        <h3 className="font-bold text-gray-600 uppercase text-[11px] tracking-wider">
-                          {column.title}
-                        </h3>
-                        <div className="flex items-center gap-1">
-                          {hasActiveFilter &&
-                            filteredTaskIds.length !== allTasksInCol.length && (
-                              <span className="text-orange-500 text-2xs font-bold">
-                                {filteredTaskIds.length}
-                              </span>
-                            )}
-                          <span className="bg-gray-200 text-gray-600 text-2xs font-bold px-2 py-0.5 rounded-full">
+                      <div
+                        className={`px-3 py-3 flex items-center shrink-0 border-b border-gray-200/50 ${
+                          isCollapsed ? "flex-col h-full justify-start gap-4 pt-4" : "justify-between"
+                        }`}
+                      >
+                        <div className={`flex items-center gap-2 min-w-0 ${isCollapsed ? "flex-col" : ""}`}>
+                          <button
+                            onClick={() => toggleColumnCollapse(column.id)}
+                            className="p-1 hover:bg-gray-200 rounded transition-colors text-gray-500 shrink-0"
+                            title={isCollapsed ? "Mở rộng" : "Thu gọn"}
+                          >
+                            <svg
+                              className={`w-4 h-4 transform transition-transform duration-300 ${
+                                isCollapsed ? "rotate-180" : ""
+                              }`}
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                                d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
+                              />
+                            </svg>
+                          </button>
+                          <h3
+                            className={`font-bold text-gray-600 uppercase tracking-wider ${
+                              isCollapsed ? "text-[10px] whitespace-nowrap" : "text-[11px] truncate"
+                            }`}
+                            style={isCollapsed ? { writingMode: "vertical-rl", textOrientation: "mixed" } : {}}
+                          >
+                            {column.title}
+                          </h3>
+                        </div>
+
+                        <div className={`flex items-center gap-1 shrink-0 ${isCollapsed ? "mt-auto mb-4" : ""}`}>
+                          {!isCollapsed && hasActiveFilter && filteredTaskIds.length !== allTasksInCol.length && (
+                            <span className="text-orange-500 text-2xs font-bold">
+                              {filteredTaskIds.length}
+                            </span>
+                          )}
+                          <span className={`bg-gray-200 text-gray-600 font-bold px-2 py-0.5 rounded-full ${isCollapsed ? "text-[10px]" : "text-2xs"}`}>
                             {allTasksInCol.length}
                           </span>
                         </div>
                       </div>
 
-                      <Droppable droppableId={column.id}>
+                      {!isCollapsed && (
+                        <Droppable droppableId={column.id}>
                         {(provided, snapshot) => (
                           <div
                             ref={provided.innerRef}
@@ -1103,6 +1150,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                           </div>
                         )}
                       </Droppable>
+                      )}
                     </div>
                   );
                 })}
