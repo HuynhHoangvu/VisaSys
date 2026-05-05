@@ -15,7 +15,7 @@ import processedDocsRoutes from "./routes/processedDocs.routes.js";
 import kpiRoutes from "./routes/kpi.routes.js";
 import workspaceRoutes from "./routes/workspace.routes.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
-import { FRONTEND_URL, SESSION_SECRET, isProduction } from "../config/env.js";
+import { SESSION_SECRET, isProduction, getCorsOrigins } from "../config/env.js";
 
 const app = express();
 
@@ -40,15 +40,8 @@ const loginLimiter = rateLimit({
 app.use("/api/", apiLimiter);
 app.use("/api/auth/login", loginLimiter);
 
-const allowedOrigins = [
-  "http://localhost:5173",
-  "http://localhost:5174",
-  "https://flyvisa.up.railway.app",
-  FRONTEND_URL
-].filter(Boolean) as string[];
-
 app.use(cors({
-  origin: allowedOrigins,
+  origin: getCorsOrigins(),
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
