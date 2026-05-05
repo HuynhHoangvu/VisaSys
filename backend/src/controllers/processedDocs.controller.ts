@@ -1,9 +1,26 @@
 import { Request, Response } from "express";
 import { prisma } from "../../lib/prisma.js";
 import { getIO } from "../socket.js";
-import { bucket, uploadToGCS } from "../middlewares/upload.js"; 
+import {
+  bucket,
+  uploadToGCS,
+} from "../middlewares/upload.js";
 import fsPromises from "fs/promises";
 import path from "path";
+
+const logUpload = (msg: string, meta?: Record<string, unknown>) => {
+  const suffix = meta ? ` ${JSON.stringify(meta)}` : "";
+  console.log(`[processed-docs:upload][${new Date().toISOString()}] ${msg}${suffix}`);
+};
+
+const safeUnlink = async (filePath: string | undefined) => {
+  if (!filePath) return;
+  try {
+    await fsPromises.unlink(filePath);
+  } catch {
+    // already gone or unreadable
+  }
+};
 
 const deleteLocalFile = async (fileUrl: string) => {
   if (!fileUrl.startsWith("/uploads")) return;
@@ -88,20 +105,37 @@ export const getFiles = async (_req: Request, res: Response) => {
 };
 
 export const uploadFile = async (req: Request, res: Response) => {
+  if (!req.file) {
+    return res.status(400).json({ error: "Chưa chọn file", code: "NO_FILE" });
+  }
+
+  const tempPath = req.file.path;
+  const uploadedBy = (req.body.uploadedBy as string) || "Ẩn danh";
+  const size = (req.body.size as string) || "0 KB";
+
+  let folderId: string | null = null;
+  if (typeof req.body.folderId === "string" && req.body.folderId !== "null")
+    folderId = req.body.folderId;
+  else if (Array.isArray(req.body.folderId))
+    folderId = req.body.folderId[0] !== "null" ? req.body.folderId[0] : null;
+
+  const decodedName = Buffer.from(req.file.originalname, "latin1").toString("utf8").trim();
+  if (!decodedName) {
+    await safeUnlink(tempPath);
+    return res.status(400).json({ error: "Tên file không hợp lệ", code: "INVALID_FILENAME" });
+  }
+
+  logUpload("start", {
+    name: decodedName,
+    sizeBytes: req.file.size,
+    folderId,
+    tempPath,
+  });
+
+  let gcsObjectName: string | null = null;
   try {
-    if (!req.file) return res.status(400).json({ error: "Chưa chọn file" });
-
-    const uploadedBy = (req.body.uploadedBy as string) || "Ẩn danh";
-    const size = (req.body.size as string) || "0 KB";
-
-    let folderId: string | null = null;
-    if (typeof req.body.folderId === "string" && req.body.folderId !== "null") folderId = req.body.folderId;
-    else if (Array.isArray(req.body.folderId)) folderId = req.body.folderId[0] !== "null" ? req.body.folderId[0] : null;
-
-    const decodedName = Buffer.from(req.file.originalname, "latin1").toString("utf8");
-
-    // Upload to a dedicated GCS folder for processed docs.
-    const result = await uploadToGCS(req.file.path, "flyvisa-processed-docs", decodedName);
+    const result = await uploadToGCS(tempPath, "flyvisa-processed-docs", decodedName);
+    gcsObjectName = result.publicId;
 
     const newFile = await prisma.processedFile.create({
       data: {
@@ -110,15 +144,25 @@ export const uploadFile = async (req: Request, res: Response) => {
         uploadedBy,
         fileUrl: result.url,
         folderId,
-        cloudinaryPublicId: result.publicId, 
+        cloudinaryPublicId: result.publicId,
       },
     });
 
+    logUpload("success", { id: newFile.id, publicId: result.publicId });
     getIO().emit("docs_changed");
     res.status(201).json(newFile);
   } catch (error) {
-    console.error("Lỗi upload GCS:", error);
-    res.status(500).json({ error: "Lỗi upload file lên Google Cloud" });
+    if (gcsObjectName) {
+      await bucket.file(gcsObjectName).delete().catch(() => {
+        logUpload("gcs_delete_after_failed_db_failed", { publicId: gcsObjectName });
+      });
+    }
+    await safeUnlink(tempPath);
+    console.error("[processed-docs:upload] Lỗi upload GCS/DB:", error);
+    res.status(500).json({
+      error: "Lỗi upload file lên Google Cloud hoặc lưu cơ sở dữ liệu",
+      code: "UPLOAD_STORAGE_OR_DB",
+    });
   }
 };
 

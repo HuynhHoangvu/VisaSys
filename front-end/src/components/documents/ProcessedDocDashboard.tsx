@@ -9,6 +9,11 @@ import JSZip from "jszip";
 import { type AuthUser, type DocFolder, type DocFile } from "../../types";
 import { formatFileSize, formatUploadTime } from "../../utils/helpers";
 import socket from "../../services/socket";
+import {
+  uploadProcessedDocFile,
+  PROCESSED_DOC_UPLOAD_BATCH_SIZE,
+  ProcessedDocUploadHttpError,
+} from "../../services/processedDocUpload";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
@@ -126,6 +131,7 @@ const ProcessedDocDashboard: React.FC<ProcessedDocDashboardProps> = ({
   };
 
   const getErrorMessage = (error: unknown) => {
+    if (error instanceof ProcessedDocUploadHttpError) return error.message;
     if (error instanceof Error) return error.message;
     if (typeof error === "string") return error;
     try {
@@ -255,15 +261,17 @@ const ProcessedDocDashboard: React.FC<ProcessedDocDashboardProps> = ({
   };
 
   const processUploadFile = async (file: File) => {
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("uploadedBy", currentUser?.name || "Admin");
-    formData.append("size", formatFileSize(file.size));
-    if (currentFolderId) formData.append("folderId", currentFolderId);
+    const uploadedBy = currentUser?.name || "Admin";
+    const size = formatFileSize(file.size);
+    const folderId = currentFolderId;
     try {
-      await fetch(`${API_URL}/api/processed-docs/files/upload`, {
-        method: "POST",
-        body: formData,
+      await uploadProcessedDocFile(API_URL, () => {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("uploadedBy", uploadedBy);
+        formData.append("size", size);
+        if (folderId) formData.append("folderId", folderId);
+        return formData;
       });
       if (fileInputRef.current) fileInputRef.current.value = "";
     } catch (error) {
@@ -281,6 +289,7 @@ const ProcessedDocDashboard: React.FC<ProcessedDocDashboardProps> = ({
       }
       setSingleUploadProgress({ current: 0, total: 0, name: "" });
       if (fileInputRef.current) fileInputRef.current.value = "";
+      await fetchData();
     }
   };
 
@@ -397,35 +406,42 @@ const ProcessedDocDashboard: React.FC<ProcessedDocDashboardProps> = ({
       }
     }
 
-    // Upload tuần tự theo batch (3 file mỗi lần) để tránh ERR_ACCESS_DENIED khi quá nhiều request đồng thời
-    const BATCH_SIZE = 3;
+    // Upload theo batch để tránh quá tải kết nối đồng thời
     setUploadProgress({ current: 0, total: uploadFiles.length });
 
-    for (let i = 0; i < uploadFiles.length; i += BATCH_SIZE) {
-      const batch = uploadFiles.slice(i, i + BATCH_SIZE);
+    for (let i = 0; i < uploadFiles.length; i += PROCESSED_DOC_UPLOAD_BATCH_SIZE) {
+      const batch = uploadFiles.slice(i, i + PROCESSED_DOC_UPLOAD_BATCH_SIZE);
       await Promise.all(
         batch.map(async (file) => {
           const relPath = (file as File & { webkitRelativePath: string })
             .webkitRelativePath;
           const dirPath = relPath.split("/").slice(0, -1).join("/");
           const targetFolderId = folderIdMap.get(dirPath) ?? currentFolderId;
-          const formData = new FormData();
-          formData.append("file", file);
-          formData.append("uploadedBy", currentUser?.name || "Admin");
-          formData.append("size", formatFileSize(file.size));
-          if (targetFolderId) formData.append("folderId", targetFolderId);
+          const uploadedBy = currentUser?.name || "Admin";
+          const sizeLabel = formatFileSize(file.size);
           try {
-            await fetch(`${API_URL}/api/processed-docs/files/upload`, {
-              method: "POST",
-              body: formData,
+            await uploadProcessedDocFile(API_URL, () => {
+              const formData = new FormData();
+              formData.append("file", file);
+              formData.append("uploadedBy", uploadedBy);
+              formData.append("size", sizeLabel);
+              if (targetFolderId) formData.append("folderId", targetFolderId);
+              return formData;
             });
           } catch (error) {
-            console.error(`Lỗi khi tải file ${file.name}:`, error);
+            console.error(
+              `Lỗi khi tải file ${file.name}:`,
+              getErrorMessage(error),
+            );
+            alert(`Lỗi upload "${file.name}":\n${getErrorMessage(error)}`);
           }
         }),
       );
       setUploadProgress({
-        current: Math.min(i + BATCH_SIZE, uploadFiles.length),
+        current: Math.min(
+          i + PROCESSED_DOC_UPLOAD_BATCH_SIZE,
+          uploadFiles.length,
+        ),
         total: uploadFiles.length,
       });
     }
@@ -512,29 +528,43 @@ const ProcessedDocDashboard: React.FC<ProcessedDocDashboardProps> = ({
       setIsUploadingFolder(true);
       for (const entry of entries) await traverseEntry(entry, currentFolderId);
 
-      const BATCH_SIZE = 3;
       setUploadProgress({ current: 0, total: collectedFiles.length });
-      for (let i = 0; i < collectedFiles.length; i += BATCH_SIZE) {
-        const batch = collectedFiles.slice(i, i + BATCH_SIZE);
+      for (
+        let i = 0;
+        i < collectedFiles.length;
+        i += PROCESSED_DOC_UPLOAD_BATCH_SIZE
+      ) {
+        const batch = collectedFiles.slice(
+          i,
+          i + PROCESSED_DOC_UPLOAD_BATCH_SIZE,
+        );
         await Promise.all(
           batch.map(async ({ file, folderId }) => {
-            const formData = new FormData();
-            formData.append("file", file);
-            formData.append("uploadedBy", currentUser?.name || "Admin");
-            formData.append("size", formatFileSize(file.size));
-            if (folderId) formData.append("folderId", folderId);
+            const uploadedBy = currentUser?.name || "Admin";
+            const sizeLabel = formatFileSize(file.size);
             try {
-              await fetch(`${API_URL}/api/processed-docs/files/upload`, {
-                method: "POST",
-                body: formData,
+              await uploadProcessedDocFile(API_URL, () => {
+                const formData = new FormData();
+                formData.append("file", file);
+                formData.append("uploadedBy", uploadedBy);
+                formData.append("size", sizeLabel);
+                if (folderId) formData.append("folderId", folderId);
+                return formData;
               });
             } catch (err) {
-              console.error(`Lỗi upload "${file.name}":`, err);
+              console.error(
+                `Lỗi upload "${file.name}":`,
+                getErrorMessage(err),
+              );
+              alert(`Lỗi upload "${file.name}":\n${getErrorMessage(err)}`);
             }
           }),
         );
         setUploadProgress({
-          current: Math.min(i + BATCH_SIZE, collectedFiles.length),
+          current: Math.min(
+            i + PROCESSED_DOC_UPLOAD_BATCH_SIZE,
+            collectedFiles.length,
+          ),
           total: collectedFiles.length,
         });
       }

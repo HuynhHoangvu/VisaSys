@@ -13,10 +13,12 @@ const diskStorage = multer.diskStorage({
   filename: (_req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`),
 });
 
-// Giới hạn 500MB
+/** Max size for processed-doc uploads (multer + API messaging must stay aligned). */
+export const PROCESSED_DOC_MAX_FILE_BYTES = 500 * 1024 * 1024;
+
 const multerUpload = multer({
   storage: diskStorage,
-  limits: { fileSize: 500 * 1024 * 1024 },
+  limits: { fileSize: PROCESSED_DOC_MAX_FILE_BYTES },
 });
 
 // Export cả 2 tên để fix lỗi SyntaxError ở các file Routes

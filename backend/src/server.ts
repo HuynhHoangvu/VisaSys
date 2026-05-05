@@ -5,6 +5,9 @@ import { scheduleAttendanceJobs } from "./jobs/attendance.job.js";
 import { PORT } from "../config/env.js";
 
 const server = http.createServer(app);
+/** Allow long multipart uploads (Node default request timeout can drop large/slow requests). */
+server.requestTimeout = 0;
+server.headersTimeout = 120_000;
 const io = initSocket(server);
 
 scheduleAttendanceJobs();
