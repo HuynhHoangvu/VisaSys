@@ -23,5 +23,5 @@ RUN npm run build && npx prisma generate
 
 EXPOSE 3001
 
-# Dùng CMD để Railway có thể ghi đè nếu cần
-CMD npx prisma db push && npm start
+# Áp dụng migration SQL đã commit (đồng bộ DB với schema — tránh lệch cột production).
+CMD ["sh", "-c", "npx prisma migrate deploy && npm start"]
