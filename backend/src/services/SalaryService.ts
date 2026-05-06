@@ -90,15 +90,12 @@ export const calcBaseComponents = (baseSalary: number) => {
  * Legacy rows only stored insurance base in `baseSalary`; infer gross when the snapshot clearly crossed the threshold.
  */
 export function grossSalaryForLockedPayrollAllowances(snapshot: {
-  grossBaseSalary?: number | null;
   baseSalary: number;
   /** Helps resolve ambiguous legacy rows where baseSalary is exactly 6M (either gross 6M or gross 8M → insurance 6M). */
   totalBonus?: number;
   hoaHong?: number;
   thuongKhac?: number;
 }): number {
-  const stored = snapshot.grossBaseSalary;
-  if (stored != null && Number.isFinite(stored) && stored > 0) return stored;
   const ins = snapshot.baseSalary;
   if (ins >= SALARY_THRESHOLD) return ins + 2_000_000;
 

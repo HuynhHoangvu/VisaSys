@@ -122,7 +122,6 @@ export const finalizeMonthSalary = asyncHandler(async (req: Request, res: Respon
       const finalSalary     = ins + cc + at + htk + finalHoaHong + finalThuongKhac - finalTamUng - totalDeductions;
 
       const historyData = {
-        grossBaseSalary:         totalSalaryBrutto,
         baseSalary:              ins,
         totalBonus:              cc + at + htk + finalHoaHong + finalThuongKhac,
         totalDeduction:          totalDeductions + finalTamUng,

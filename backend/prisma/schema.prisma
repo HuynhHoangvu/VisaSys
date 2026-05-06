@@ -164,9 +164,7 @@ model DocFile {
 model SalaryHistory {
   id              String   @id @default(uuid())
   monthYear       String   // VD: "02/2026"
-  /** Mức lương gross (Employee.baseSalary) tại lần chốt — dùng để tính phụ cấp cố định khi xuất Excel/PDF từ snapshot. */
-  grossBaseSalary Float?
-  /** Mức lương đóng BHXH (sau khi trừ 2M nếu gross ≥ ngưỡng). */
+  /** Lương đóng BHXH (snapshot sau quy tắc trừ 2M nếu gross ≥ ngưỡng). */
   baseSalary      Float
   totalBonus      Float    // Tổng tiền thưởng + hoa hồng
   totalDeduction  Float    // Tổng tiền phạt + đi muộn + tạm ứng
