@@ -157,6 +157,22 @@ export const addManualBonus = asyncHandler(async (req: Request, res: Response) =
   res.status(201).json(newRecord);
 });
 
+export const deleteSalesRecord = asyncHandler(async (req: Request, res: Response) => {
+  const employeeId = req.params.id as string;
+  const salesRecordId = req.params.salesRecordId as string;
+
+  const existing = await prisma.salesRecord.findFirst({
+    where: { id: salesRecordId, employeeId },
+  });
+  if (!existing) {
+    return res.status(404).json({ error: "Không tìm thấy khoản điều chỉnh." });
+  }
+
+  await prisma.salesRecord.delete({ where: { id: salesRecordId } });
+  getIO().emit("data_changed");
+  res.json({ success: true });
+});
+
 /**
  * HR/QL: gỡ trừ nửa ngày (quên checkout, về sớm...) — chỉnh halfDayDeduction về 0,
  * không cần giả "Thưởng khác" để bù. Áp dụng cho tháng chưa chốt (bản ghi attendance còn trong DB).
@@ -178,6 +194,29 @@ export const waiveHalfDayDeduction = asyncHandler(async (req: Request, res: Resp
   const updated = await prisma.attendanceRecord.update({
     where: { id: recordId },
     data: { halfDayDeduction: 0 },
+  });
+
+  getIO().emit("data_changed");
+  res.json(updated);
+});
+
+export const waiveAttendanceFine = asyncHandler(async (req: Request, res: Response) => {
+  const employeeId = req.params.id as string;
+  const recordId = req.params.recordId as string;
+
+  const record = await prisma.attendanceRecord.findFirst({
+    where: { id: recordId, employeeId },
+  });
+  if (!record) {
+    return res.status(404).json({ error: "Không tìm thấy bản ghi chấm công." });
+  }
+  if ((record.fine || 0) <= 0) {
+    return res.status(400).json({ error: "Bản ghi không có khoản phạt CI." });
+  }
+
+  const updated = await prisma.attendanceRecord.update({
+    where: { id: recordId },
+    data: { fine: 0 },
   });
 
   getIO().emit("data_changed");

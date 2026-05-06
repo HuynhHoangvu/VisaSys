@@ -237,6 +237,7 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
   const [bonusType, setBonusType] = useState("Thưởng hoa hồng");
   const [isBonusSaving, setIsBonusSaving] = useState(false);
   const [waiveHalfDayFor, setWaiveHalfDayFor] = useState<string | null>(null);
+  const [deletingDeductionKey, setDeletingDeductionKey] = useState<string | null>(null);
 
   const todayStr = new Date().toLocaleDateString("vi-VN");
   const safeAttendanceRecords = employee.attendanceRecords || [];
@@ -421,6 +422,58 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
       alert(String(error));
     } finally {
       setWaiveHalfDayFor(null);
+    }
+  };
+
+  const getDeleteAction = (row: IncomeMovementRow) => {
+    if (row.flow !== "tru") return null;
+    if (row.key.startsWith("sale-")) {
+      const salesRecordId = row.key.slice("sale-".length).trim();
+      if (!salesRecordId) return null;
+      return {
+        endpoint: `${API_URL}/api/hr/employees/${employee.id}/sales-records/${salesRecordId}`,
+        method: "DELETE",
+      } as const;
+    }
+    if (row.key.startsWith("att-half-")) {
+      const recordId = row.key.slice("att-half-".length).trim();
+      if (!recordId || recordId.includes("/")) return null;
+      return {
+        endpoint: `${API_URL}/api/hr/employees/${employee.id}/attendance-records/${recordId}/waive-half-day`,
+        method: "POST",
+      } as const;
+    }
+    if (row.key.startsWith("att-fine-")) {
+      const recordId = row.key.slice("att-fine-".length).trim();
+      if (!recordId || recordId.includes("/")) return null;
+      return {
+        endpoint: `${API_URL}/api/hr/employees/${employee.id}/attendance-records/${recordId}/waive-fine`,
+        method: "POST",
+      } as const;
+    }
+    return null;
+  };
+
+  const handleDeleteDeduction = async (row: IncomeMovementRow) => {
+    if (!canAdjustBonus) return;
+    const action = getDeleteAction(row);
+    if (!action) {
+      alert("Khoản này là khoản tính tự động theo kỳ, chưa hỗ trợ xóa trực tiếp.");
+      return;
+    }
+    if (!window.confirm("Xóa khoản trừ này luôn khỏi dữ liệu?")) return;
+
+    setDeletingDeductionKey(row.key);
+    try {
+      const res = await fetch(action.endpoint, { method: action.method });
+      const body = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) throw new Error(body.error || "Lỗi server");
+      window.dispatchEvent(new Event("refreshBoard"));
+      if (socket) socket.emit("data_changed");
+    } catch (error) {
+      alert(`Không thể xóa khoản trừ: ${String(error)}`);
+    } finally {
+      setDeletingDeductionKey(null);
     }
   };
 
@@ -797,8 +850,23 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
                               : "text-gray-500"
                         }`}
                       >
-                        {row.soTien > 0 ? "+" : row.soTien < 0 ? "−" : ""}
-                        {formatVND(Math.abs(row.soTien))}
+                        <div className="flex flex-col items-end gap-1">
+                          <span>
+                            {row.soTien > 0 ? "+" : row.soTien < 0 ? "−" : ""}
+                            {formatVND(Math.abs(row.soTien))}
+                          </span>
+                          {canAdjustBonus && row.flow === "tru" && getDeleteAction(row) ? (
+                            <Button
+                              size="xs"
+                              color="light"
+                              className="px-2 py-0.5 text-[10px] font-semibold border-gray-300 text-indigo-700 hover:bg-indigo-50"
+                              onClick={() => void handleDeleteDeduction(row)}
+                              disabled={deletingDeductionKey === row.key}
+                            >
+                              {deletingDeductionKey === row.key ? "..." : "Xóa"}
+                            </Button>
+                          ) : null}
+                        </div>
                       </td>
                     </tr>
                   ))
