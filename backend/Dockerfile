@@ -18,10 +18,10 @@ RUN npm install
 # Copy toàn bộ mã nguồn (bao gồm src/scripts/gen_salary.py)
 COPY . .
 
-# Build ứng dụng TypeScript (nếu cần) và generate Prisma client
-RUN npm run build && npx prisma generate
+# Sinh Prisma client vào image (thư mục generated/ không commit trong git).
+RUN npm run build
 
 EXPOSE 3001
 
-# Áp dụng migration SQL đã commit (đồng bộ DB với schema — tránh lệch cột production).
+# Migrate trước khi listen; start chỉ chạy server — tránh 502 lúc Railway chờ HTTP.
 CMD ["sh", "-c", "npx prisma migrate deploy && npm start"]

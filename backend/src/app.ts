@@ -21,6 +21,11 @@ const app = express();
 
 app.set("trust proxy", 1);
 
+/** Railway/proxy health — không đụng DB; giúp kiểm tra tiến trình đã listen. */
+app.get("/health", (_req, res) => {
+  res.status(200).type("text/plain").send("ok");
+});
+
 app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
 
 const apiLimiter = rateLimit({
@@ -40,8 +45,17 @@ const loginLimiter = rateLimit({
 app.use("/api/", apiLimiter);
 app.use("/api/auth/login", loginLimiter);
 
+const corsOriginValidator = (
+  origin: string | undefined,
+  callback: (err: Error | null, allow?: boolean) => void,
+) => {
+  const allowed = getCorsOrigins();
+  if (!origin || allowed.includes(origin)) callback(null, true);
+  else callback(null, false);
+};
+
 app.use(cors({
-  origin: getCorsOrigins(),
+  origin: corsOriginValidator,
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],

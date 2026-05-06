@@ -1,6 +1,5 @@
 [phases.setup]
 nixPkgs = ["nodejs_22"]
 
-# Không dùng railway.json — tránh trùng cấu hình; vẫn migrate DB trước khi listen (Nixpacks deploy).
-[start]
-cmd = "npx prisma migrate deploy && npm start"
+[phases.build]
+cmds = ["npm run build"]

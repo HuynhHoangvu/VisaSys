@@ -1,0 +1,8 @@
+# Railway — đặt Root Directory của service = backend.
+# Release chạy Prisma generate + migrate TRƯỚC khi traffic được chuyển (giảm 502 trong lúc deploy).
+# Start chỉ chạy HTTP server (listen ngay).
+[deploy]
+releaseCommand = "npm run railway:release"
+startCommand = "npm start"
+restartPolicyType = "ON_FAILURE"
+healthcheckPath = "/health"

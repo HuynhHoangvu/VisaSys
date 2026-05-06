@@ -8,7 +8,11 @@ let io: Server;
 export const initSocket = (server: HTTPServer) => {
   io = new Server(server, {
     cors: {
-      origin: getCorsOrigins(),
+      origin: (origin, cb) => {
+        const allowed = getCorsOrigins();
+        if (!origin || allowed.includes(origin)) cb(null, true);
+        else cb(null, false);
+      },
       methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
       credentials: true,
     },
