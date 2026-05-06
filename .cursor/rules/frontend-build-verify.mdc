@@ -1,0 +1,21 @@
+---
+description: Sau khi sửa front-end TypeScript/React — bắt buộc verify build (tránh lỗi TS lộ trên CI/Railway).
+globs: front-end/**/*.ts*
+alwaysApply: true
+---
+
+# Front-end — verify trước khi kết thúc task
+
+Khi đã chỉnh **bất kỳ** file trong `front-end/` (`.ts`, `.tsx`), trước khi coi task xong:
+
+1. Chạy build typecheck + bundle từ thư mục front-end:
+   - `cd front-end && npm run build`
+   - (Windows PowerShell tương đương: `Set-Location front-end; npm run build`)
+
+2. **Sửa hết** lỗi TypeScript / build (thiếu import, biến chưa khai báo, v.v.) — không để CI hoặc Railway là nơi đầu tiên phát hiện.
+
+3. Các lỗi hay gặp cần tự rà:
+   - Gọi hàm đã export nhưng **quên import** từ `utils/` hoặc alias.
+   - Dùng biến trong string/`newRecord` sau refactor nhưng **quên `const`** hoặc đổi tên không đồng bộ.
+
+Nếu chỉ đổi config nhẹ (README, ảnh) không đụng `.ts`/`.tsx`, bước build không bắt buộc trừ khi PR policy yêu cầu.
