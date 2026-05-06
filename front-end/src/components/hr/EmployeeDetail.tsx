@@ -19,6 +19,7 @@ import {
   computeAbsentScheduledDates,
   computeLatePenaltyTotalVnd,
   computeScheduledAbsentDeductionVnd,
+  dailyWageFromGrossBase,
   getTodayPartsVN,
   resolveAbsenceCutoffDay,
 } from "../../utils/payroll";

@@ -166,6 +166,11 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
     const targetEmployee = employees.find((e) => e.id === empId);
     if (!targetEmployee) return;
     const now = new Date();
+    const currentTimeStr = now.toLocaleTimeString("vi-VN", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
     const todayStr = now.toLocaleDateString("vi-VN");
     if (targetEmployee.attendanceRecords.some((r) => r.date === todayStr)) {
       alert("Hôm nay nhân viên này đã check-in rồi!");
