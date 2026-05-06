@@ -18,6 +18,11 @@ import {
   type LeaveRequest,
 } from "../../types";
 import { calculateLateFine } from "../../utils/helpers";
+import {
+  getVNWallClockMinutes,
+  HALF_DAY_SPLIT_MINUTES,
+  STANDARD_WORK_DAYS,
+} from "../../utils/payroll";
 import socket from "../../services/socket";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
@@ -30,6 +35,9 @@ const getStatusColor = (status: AttendanceStatus): string => {
       return "warning";
     case "Vắng không phép":
       return "failure";
+    case "Nửa ngày chiều":
+    case "Nửa ngày sáng":
+      return "indigo";
     default:
       return "gray";
   }
@@ -163,28 +171,44 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
       alert("Hôm nay nhân viên này đã check-in rồi!");
       return;
     }
-    const currentTimeStr = now.toLocaleTimeString("vi-VN", {
-      hour: "2-digit",
-      minute: "2-digit",
-    } as Intl.DateTimeFormatOptions);
-    const isLate = now.getHours() * 60 + now.getMinutes() > 520;
-    const status: AttendanceStatus = isLate ? "Đi muộn" : "Đúng giờ";
-    const fine = isLate
-      ? calculateLateFine(targetEmployee.attendanceRecords, now)
-      : 0;
-    if (isLate) {
+    const vnMins = getVNWallClockMinutes(now);
+    const halfUnit = Math.round(
+      (targetEmployee.baseSalary || 0) / STANDARD_WORK_DAYS / 2,
+    );
+
+    let status: AttendanceStatus;
+    let fine = 0;
+    let halfDayDeduction = 0;
+
+    if (vnMins > HALF_DAY_SPLIT_MINUTES) {
+      status = "Nửa ngày chiều";
+      fine = 0;
+      halfDayDeduction = halfUnit;
       alert(
-        `Đã đi muộn!\nGiờ Check-in: ${currentTimeStr}\nBị phạt: ${new Intl.NumberFormat("vi-VN").format(fine)}đ`,
+        `Check-in sau 12h trưa — làm nửa buổi chiều.\nGiờ vào: ${currentTimeStr}\nTrừ nửa ngày lương: ${new Intl.NumberFormat("vi-VN").format(halfDayDeduction)}đ\n(Không áp phạt đi muộn lũy tiến.)`,
       );
     } else {
-      alert(`Check-in thành công!\nGiờ Check-in: ${currentTimeStr}`);
+      const isLate = vnMins > 520;
+      status = isLate ? "Đi muộn" : "Đúng giờ";
+      fine = isLate
+        ? calculateLateFine(targetEmployee.attendanceRecords, now)
+        : 0;
+      if (isLate) {
+        alert(
+          `Đã đi muộn!\nGiờ Check-in: ${currentTimeStr}\nBị phạt: ${new Intl.NumberFormat("vi-VN").format(fine)}đ`,
+        );
+      } else {
+        alert(`Check-in thành công!\nGiờ Check-in: ${currentTimeStr}`);
+      }
     }
+
     const newRecord = {
       date: todayStr,
       inTime: currentTimeStr,
       outTime: "-",
       status,
       fine,
+      halfDayDeduction,
     };
     setEmployees((prevEmps) =>
       prevEmps.map((emp) => {
@@ -236,11 +260,15 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
       const data = await res.json();
       if (!res.ok) return alert(data.error);
       if (data.isEarlyLeave) {
-        alert(
-          `Check-out lúc ${data.outTime} — VỀ SỚM!\n` +
-            `Bị trừ nửa ngày công: -${new Intl.NumberFormat("vi-VN").format(data.halfDayDeduction)}đ\n` +
-            `(Nếu có đơn xin phép được duyệt sẽ không bị trừ)`,
-        );
+        if (data.additionalHalfDayApplied) {
+          alert(
+            `Check-out lúc ${data.outTime}.\nKhấu trừ thêm nửa ngày lương: ${new Intl.NumberFormat("vi-VN").format(data.halfDayDeduction)}đ`,
+          );
+        } else {
+          alert(
+            `Check-out lúc ${data.outTime} (về sớm).\nKhông trừ thêm nửa ngày — đã có khấu trừ nửa ngày khi vào làm sau 12h trưa, hoặc đã ghi nhận trước đó.`,
+          );
+        }
       } else {
         alert(`Check-out thành công lúc ${data.outTime} ✅`);
       }

@@ -1,31 +1,7 @@
-import type { AttendanceRecord } from "../types";
+import { calculateLateFineForNextCheckIn } from "./payroll";
 
-/**
- * Calculates the late-arrival fine for a given check-in based on how many
- * times the employee was late in the current month (including this occurrence).
- * Fine tiers: 1st = 50k, 2nd = 100k, 3rd+ = 300k.
- */
-export const calculateLateFine = (
-  attendanceRecords: AttendanceRecord[],
-  currentDate: Date,
-): number => {
-  const currentMonth = currentDate.getMonth();
-  const currentYear  = currentDate.getFullYear();
-
-  // Date strings are stored as "dd/mm/yyyy"
-  const lateRecordsThisMonth = attendanceRecords.filter((record) => {
-    const parts = record.date.split("/");
-    if (parts.length !== 3) return false;
-    const recordMonth = parseInt(parts[1]) - 1;
-    const recordYear  = parseInt(parts[2]);
-    return record.status === "Đi muộn" && recordMonth === currentMonth && recordYear === currentYear;
-  });
-
-  const lateCount = lateRecordsThisMonth.length + 1;
-  if (lateCount === 1) return 50_000;
-  if (lateCount === 2) return 100_000;
-  return 300_000;
-};
+/** @deprecated import calculateLateFineForNextCheckIn from utils/payroll */
+export const calculateLateFine = calculateLateFineForNextCheckIn;
 
 /** Converts a byte count to a human-readable string (e.g. "2.4 MB"). */
 export const formatFileSize = (bytes: number): string => {

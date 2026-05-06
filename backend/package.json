@@ -14,7 +14,8 @@
     "seed": "npx tsx prisma/seed.ts",
     "migrate:deploy": "npx prisma migrate deploy",
     "migrate:resolve:phone-failed": "npx prisma migrate resolve --rolled-back 20260429163000_add_employee_phone",
-    "migrate:resolve:phone-ok": "npx prisma migrate resolve --applied 20260429163000_add_employee_phone"
+    "migrate:resolve:phone-ok": "npx prisma migrate resolve --applied 20260429163000_add_employee_phone",
+    "test": "node --import tsx --test src/services/attendancePayroll.test.ts"
   },
   "keywords": [],
   "author": "",

@@ -3,6 +3,12 @@ import {
   BHXH_NLD_RATE, BHYT_NLD_RATE, BHTN_NLD_RATE,
   BONUS_CHUYÊN_CẦN, BONUS_ĂN_TRƯA, BONUS_HỖ_TRỢ_KHÁC
 } from "../constants/index.js";
+import {
+  computeLatePenaltyTotalVnd,
+  computeScheduledAbsentDeductionVnd,
+  listAttendedWorkDatesForPayroll,
+  type AttendancePayrollRow,
+} from "./attendancePayroll.js";
 
 export interface SalaryBreakdown {
   insuranceSalary: number;
@@ -25,32 +31,15 @@ export interface SalaryBreakdown {
   finalSalary: number;
 }
 
-interface AttendanceRecord {
+interface AttendanceRecord extends AttendancePayrollRow {
   date: string;
-  inTime?: string;
   outTime: string;
   status: string;
   fine: number;
   halfDayDeduction: number;
 }
 
-/**
- * Chuẩn hoá ngày chấm công dạng DD/MM/YYYY (vi-VN). Dùng khi chốt lương để chỉ xử lý đúng tháng năm
- * (tránh xóa nhầm bản ghi tháng khác nếu filter chỉ dùng contains).
- */
-export const attendanceDateBelongsToPayrollMonth = (
-  dateStr: string,
-  payrollMonth: number,
-  payrollYear: number,
-): boolean => {
-  const parts = String(dateStr || "").split("/");
-  if (parts.length !== 3) return false;
-  const d = parseInt(parts[0], 10);
-  const m = parseInt(parts[1], 10);
-  const y = parseInt(parts[2], 10);
-  if ([d, m, y].some((n) => Number.isNaN(n))) return false;
-  return m === payrollMonth && y === payrollYear;
-};
+export { attendanceDateBelongsToPayrollMonth } from "../utils/payrollDates.js";
 
 /**
  * Ngày công đi làm: có chấm công vào (inTime) và không phải vắng cả ngày không phép.
@@ -116,35 +105,75 @@ export const calcSalesBreakdown = (salesRecords: SalesRecord[]) => {
 };
 
 /**
- * Aggregates attendance-based deductions and counts worked days (có check-in, không vắng không phép).
+ * Aggregates attendance-based deductions for one payroll month:
+ * - Vắng theo lịch T2–T6 (trừ ngày lễ hưởng lương): không có check-in hợp lệ ⇒ trừ 1 ngày lương (= lương cơ bản / 22).
+ * - Đi trễ: tổng phạt = Σ (thứ tự lần trong tháng × 50k).
+ * - Nửa ngày / quên checkout: giữ theo trường halfDayDeduction trên bản ghi.
  */
 export const calcAttendanceBreakdown = (
   attendanceRecords: AttendanceRecord[],
-  insuranceSalary: number
+  grossBaseSalary: number,
+  payrollMonth: number,
+  payrollYear: number,
+  absenceCutoffDay?: number,
 ) => {
-  const attendanceFines = attendanceRecords.reduce((s, r) => s + (r.fine || 0), 0);
-  const halfDayDeduction = attendanceRecords.reduce((s, r) => s + (r.halfDayDeduction || 0), 0);
-  const fullDayAbsenceDeduction = attendanceRecords.reduce((s, r) =>
-    r.status === "Vắng không phép" ? s + Math.round(insuranceSalary / 21) : s
-  , 0);
+  const lastDom = new Date(payrollYear, payrollMonth, 0).getDate();
+  const cutoff = absenceCutoffDay ?? lastDom;
 
-  const workDates = getWorkDatesFromAttendance(attendanceRecords);
+  const attendanceFines = computeLatePenaltyTotalVnd(
+    attendanceRecords,
+    payrollMonth,
+    payrollYear,
+  );
+  const halfDayDeduction = attendanceRecords.reduce((s, r) => s + (r.halfDayDeduction || 0), 0);
+
+  const { deductionVnd: fullDayAbsenceDeduction, absentDates } =
+    computeScheduledAbsentDeductionVnd(
+      attendanceRecords,
+      grossBaseSalary,
+      payrollMonth,
+      payrollYear,
+      cutoff,
+    );
+
+  const workDates = listAttendedWorkDatesForPayroll(
+    attendanceRecords,
+    payrollMonth,
+    payrollYear,
+    cutoff,
+  );
   const workDays = workDates.length;
 
-  return { attendanceFines, halfDayDeduction, fullDayAbsenceDeduction, workDays, workDates };
+  return {
+    attendanceFines,
+    halfDayDeduction,
+    fullDayAbsenceDeduction,
+    workDays,
+    workDates,
+    absentDates,
+  };
 };
 
 /** Computes the full salary breakdown from raw attendance and sales data. */
 export const calcFullSalary = (
   baseSalary: number,
   attendanceRecords: AttendanceRecord[],
-  salesRecords: SalesRecord[]
+  salesRecords: SalesRecord[],
+  payrollMonth: number,
+  payrollYear: number,
+  absenceCutoffDay?: number,
 ): SalaryBreakdown => {
   const { insuranceSalary, chuyenCan, anTrua, hoTroKhac } = calcBaseComponents(baseSalary);
   const { bhxhNld, bhytNld, bhtnNld } = calcInsurance(insuranceSalary);
   const { hoaHong, thuongKhac, manualFines, tamUng } = calcSalesBreakdown(salesRecords);
   const { attendanceFines, halfDayDeduction, fullDayAbsenceDeduction, workDays, workDates } =
-    calcAttendanceBreakdown(attendanceRecords, insuranceSalary);
+    calcAttendanceBreakdown(
+      attendanceRecords,
+      baseSalary,
+      payrollMonth,
+      payrollYear,
+      absenceCutoffDay,
+    );
 
   const totalIncome     = insuranceSalary + chuyenCan + anTrua + hoTroKhac + hoaHong + thuongKhac;
   const totalDeductions = tamUng + manualFines + attendanceFines + halfDayDeduction + fullDayAbsenceDeduction + bhxhNld + bhytNld + bhtnNld;

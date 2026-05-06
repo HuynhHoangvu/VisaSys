@@ -13,6 +13,15 @@ import LeaveRequestModal from "./LeaveRequestModal";
 // Nếu bạn chưa dùng thư viện socket.io-client ở Frontend, bạn có thể comment dòng này lại.
 import socket from "../../services/socket";
 import LeaveHistoryModal from "./Leavehistorymodal";
+import {
+  attendanceDateBelongsToPayrollMonth,
+  buildLateFineDetailRows,
+  computeAbsentScheduledDates,
+  computeLatePenaltyTotalVnd,
+  computeScheduledAbsentDeductionVnd,
+  getTodayPartsVN,
+  resolveAbsenceCutoffDay,
+} from "../../utils/payroll";
 
 interface EmployeeDetailProps {
   employee: Employee;
@@ -23,8 +32,6 @@ interface EmployeeDetailProps {
 }
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
-/** Đồng bộ với backend/src/constants SALARY_THRESHOLD (lương BH + khấu 1 ngày vắng) */
-const SALARY_THRESHOLD_VND = 8_000_000;
 
 const formatVND = (amount: number): string => {
   return new Intl.NumberFormat("vi-VN", {
@@ -61,11 +68,10 @@ function buildIncomeMovements(
   sales: SalesRecord[],
   attendance: AttendanceRecord[],
   grossBaseSalary: number,
+  payrollMonthYear?: { month: number; year: number },
 ): IncomeMovementRow[] {
   const rows: IncomeMovementRow[] = [];
-  const insuranceSalary =
-    grossBaseSalary >= SALARY_THRESHOLD_VND ? grossBaseSalary - 2_000_000 : grossBaseSalary;
-  const truMotNgayVang = Math.round(insuranceSalary / 21);
+  const dailyAbsent = dailyWageFromGrossBase(grossBaseSalary);
 
   for (const sale of sales) {
     const amount = Number(sale.profit) || 0;
@@ -116,8 +122,15 @@ function buildIncomeMovements(
   for (const att of attendance) {
     const t = parseVNDateToTime(att.date);
     const dayKey = att.id || att.date;
+    const inCurrentPayrollMonth =
+      payrollMonthYear &&
+      attendanceDateBelongsToPayrollMonth(
+        att.date,
+        payrollMonthYear.month,
+        payrollMonthYear.year,
+      );
 
-    if (att.fine > 0) {
+    if (att.fine > 0 && !inCurrentPayrollMonth) {
       rows.push({
         key: `att-fine-${dayKey}`,
         sortTime: t,
@@ -144,7 +157,7 @@ function buildIncomeMovements(
       });
     }
 
-    if (att.status === "Vắng không phép") {
+    if (att.status === "Vắng không phép" && !inCurrentPayrollMonth) {
       rows.push({
         key: `att-abs-${dayKey}`,
         sortTime: t,
@@ -152,10 +165,45 @@ function buildIncomeMovements(
         loai: "Trừ theo chấm công",
         tieuDe: "Vắng không phép (1 ngày công)",
         phuDe: `Ngày ${att.date}`,
-        ghiChu: `Theo lương BH ≈ ${formatVND(truMotNgayVang)}/ngày`,
-        soTien: -truMotNgayVang,
+        ghiChu: `Một ngày công ≈ ${formatVND(dailyAbsent)}`,
+        soTien: -dailyAbsent,
       });
     }
+  }
+
+  if (payrollMonthYear) {
+    const { month: pm, year: py } = payrollMonthYear;
+    const cutoff = resolveAbsenceCutoffDay(pm, py);
+    const monthAtt = attendance.filter((r) =>
+      attendanceDateBelongsToPayrollMonth(r.date, pm, py),
+    );
+    let seq = 0;
+    for (const row of buildLateFineDetailRows(monthAtt, pm, py)) {
+      seq += 1;
+      rows.push({
+        key: `payroll-late-${row.date}-${seq}`,
+        sortTime: parseVNDateToTime(row.date),
+        flow: "tru",
+        loai: "Trừ theo chấm công",
+        tieuDe: `Đi muộn — lần ${seq} trong tháng`,
+        phuDe: `Ngày ${row.date}`,
+        ghiChu: row.status,
+        soTien: -Math.abs(row.amount),
+      });
+    }
+    const absentDates = computeAbsentScheduledDates(monthAtt, pm, py, cutoff);
+    absentDates.forEach((dateStr, i) => {
+      rows.push({
+        key: `payroll-absent-${dateStr}-${i}`,
+        sortTime: parseVNDateToTime(dateStr),
+        flow: "tru",
+        loai: "Trừ theo chấm công",
+        tieuDe: "Không điểm danh (1 ngày công)",
+        phuDe: `Ngày ${dateStr}`,
+        ghiChu: `Một ngày công ≈ ${formatVND(dailyAbsent)}`,
+        soTien: -dailyAbsent,
+      });
+    });
   }
 
   rows.sort((a, b) => b.sortTime - a.sortTime);
@@ -227,19 +275,46 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
 
   const totalBonusAndCommission = totalHoaHongVaKpi + totalThuongKhac;
 
-  const attendanceFines = safeAttendanceRecords.reduce(
-    (sum, r) => sum + (r.fine || 0),
-    0,
+  const originalBaseSalary = employee.baseSalary || 0;
+
+  const vnToday = getTodayPartsVN();
+  const payrollMY = { month: vnToday.month, year: vnToday.year };
+  const cutoffPreview = resolveAbsenceCutoffDay(payrollMY.month, payrollMY.year);
+
+  const latePenaltyCurrentMonth = computeLatePenaltyTotalVnd(
+    safeAttendanceRecords,
+    payrollMY.month,
+    payrollMY.year,
   );
+
+  const scheduledAbsentPreview = computeScheduledAbsentDeductionVnd(
+    safeAttendanceRecords,
+    originalBaseSalary,
+    payrollMY.month,
+    payrollMY.year,
+    cutoffPreview,
+  );
+
+  const attendanceFinesOtherMonths = safeAttendanceRecords
+    .filter(
+      (r) =>
+        !attendanceDateBelongsToPayrollMonth(r.date, payrollMY.month, payrollMY.year),
+    )
+    .reduce((sum, r) => sum + (r.fine || 0), 0);
+
+  const attendanceFines = latePenaltyCurrentMonth + attendanceFinesOtherMonths;
 
   const halfDayDeductions = safeAttendanceRecords.reduce(
     (sum, r) => sum + (r.halfDayDeduction || 0),
     0,
   );
 
-  const totalFines = manualFines + attendanceFines + halfDayDeductions;
+  const totalFines =
+    manualFines +
+    attendanceFines +
+    halfDayDeductions +
+    scheduledAbsentPreview.deductionVnd;
 
-  const originalBaseSalary = employee.baseSalary || 0;
   const currentBaseSalary = originalBaseSalary - salaryAdvances;
   const finalSalary = currentBaseSalary + totalBonusAndCommission - totalFines;
 
@@ -247,6 +322,7 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
     safeSalesRecords,
     safeAttendanceRecords,
     originalBaseSalary,
+    payrollMY,
   );
 
   // ==========================================
@@ -445,7 +521,7 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
             {formatVND(finalSalary)}
           </h4>
           <p className="text-[10px] sm:text-xs font-medium text-gray-400 mt-1">
-            (Đã trừ tạm ứng + phạt)
+            Dự kiến theo lịch làm việc (VN). Đã trừ tạm ứng và các khoản phạt/khấu trừ bên dưới.
           </p>
         </Card>
 
@@ -469,10 +545,17 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
           <h4 className="text-xl sm:text-2xl font-black text-red-500 mt-1">
             -{formatVND(totalFines)}
           </h4>
-          <div className="absolute bottom-2 right-4 flex flex-col items-end text-[10px] sm:text-[11px] font-medium text-gray-400">
-            <span>Đi muộn: -{formatVND(attendanceFines)}</span>
-            <span>Về sớm/Quên CO: -{formatVND(halfDayDeductions)}</span>
-            <span>Phạt khác: -{formatVND(manualFines)}</span>
+          <div className="absolute bottom-2 right-4 flex flex-col items-end text-[10px] sm:text-[11px] font-medium text-gray-400 max-w-[85%] text-right">
+            <span title="Buổi sáng: thang phạt lũy tiến theo tháng hiện tại (VN); tháng khác: theo số ghi trên phiếu.">
+              Đi muộn (phạt CI): -{formatVND(attendanceFines)}
+            </span>
+            <span title="Nửa ngày sáng/chiều, về sớm, quên checkout — theo Trừ CO trên phiếu.">
+              Nửa ngày / về sớm / quên CO: -{formatVND(halfDayDeductions)}
+            </span>
+            <span title="Ngày làm T2–T6 trong tháng VN đến hôm nay: không điểm danh thì trừ 1 ngày lương (÷22).">
+              Vắng không điểm danh: -{formatVND(scheduledAbsentPreview.deductionVnd)}
+            </span>
+            <span>Phạt qua CRM / thủ công: -{formatVND(manualFines)}</span>
           </div>
         </Card>
       </div>
@@ -500,7 +583,10 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
                   <th className="px-3 sm:px-4 py-2 sm:py-3 font-bold">
                     Trạng thái
                   </th>
-                  <th className="px-3 sm:px-4 py-2 sm:py-3 text-right font-bold">
+                  <th
+                    className="px-3 sm:px-4 py-2 sm:py-3 text-right font-bold"
+                    title="Số ghi khi check-in. Tổng đi muộn tháng này trong ô KPI có thể được tính lại theo quy tắc mới."
+                  >
                     Phạt CI
                   </th>
                   <th className="px-3 sm:px-4 py-2 sm:py-3 text-right font-bold">
@@ -525,11 +611,14 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
                         ? "bg-green-100 text-green-700"
                         : record.status === "Đi muộn"
                           ? "bg-yellow-100 text-yellow-700"
-                          : record.status?.includes("Về sớm")
-                            ? "bg-orange-100 text-orange-700"
-                            : record.status === "Quên checkout"
-                              ? "bg-red-100 text-red-700"
-                              : "bg-gray-100 text-gray-600";
+                          : record.status === "Nửa ngày chiều" ||
+                              record.status === "Nửa ngày sáng"
+                            ? "bg-indigo-100 text-indigo-800"
+                            : record.status?.includes("Về sớm")
+                              ? "bg-orange-100 text-orange-700"
+                              : record.status === "Quên checkout"
+                                ? "bg-red-100 text-red-700"
+                                : "bg-gray-100 text-gray-600";
 
                     return (
                       <tr

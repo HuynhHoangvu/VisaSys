@@ -2,7 +2,6 @@ import { Request, Response } from "express";
 import { prisma } from "../../lib/prisma.js";
 import { getIO } from "../socket.js";
 import { asyncHandler } from "../middlewares/asyncHandler.js";
-import { STANDARD_WORK_DAYS, SYSTEM_ACTOR } from "../constants/index.js";
 
 export const createLeaveRequest = asyncHandler(async (req: Request, res: Response) => {
   const id = req.params.id as string;
@@ -18,8 +17,6 @@ export const createLeaveRequest = asyncHandler(async (req: Request, res: Respons
     data: { type, startDate, endDate, reason, employeeId: id, status: "Chờ duyệt" },
   });
 
-  // Notify the director, admin, and all Sale department managers.
-  // Use a Set to deduplicate in case a manager name matches a fixed receiver.
   const saleManagers = await prisma.employee.findMany({
     where: {
       role: { contains: "Trưởng phòng", mode: "insensitive" },
@@ -29,7 +26,7 @@ export const createLeaveRequest = asyncHandler(async (req: Request, res: Respons
   });
 
   const receivers = Array.from(
-    new Set(["Giám đốc", "Admin", ...saleManagers.map((m) => m.name.trim())])
+    new Set(["Giám đốc", "Admin", ...saleManagers.map((m) => m.name.trim())]),
   );
 
   await prisma.notification.create({
@@ -63,10 +60,8 @@ export const getLeaveRequestsByEmployee = asyncHandler(async (req: Request, res:
 });
 
 /**
- * Approving a leave request has a financial side effect:
- * a salary deduction record is created dated at the start of the leave period
- * so that it falls into the correct payroll month during finalization.
- * Half-day requests deduct 0.5 days; full leave deducts the calendar day count.
+ * Duyệt / từ chối đơn chỉ cập nhật trạng thái để quản lý theo dõi.
+ * Khấu trừ lương theo quy tắc chấm công (vắng không điểm danh, đi trễ, về sớm…) — không tự tạo Phạt sales hay xóa phạt chấm công khi duyệt phép.
  */
 export const updateLeaveRequestStatus = asyncHandler(async (req: Request, res: Response) => {
   const id = req.params.id as string;
@@ -74,73 +69,9 @@ export const updateLeaveRequestStatus = asyncHandler(async (req: Request, res: R
 
   const leaveRequest = await prisma.leaveRequest.findUnique({
     where: { id },
-    include: { employee: true },
   });
   if (!leaveRequest) {
     return res.status(404).json({ error: "Không tìm thấy đơn xin nghỉ này!" });
-  }
-
-  const isApproved = status === "Đã duyệt" || status === "Duyệt";
-  const wasNotApproved = leaveRequest.status !== "Đã duyệt" && leaveRequest.status !== "Duyệt";
-
-  if (isApproved && wasNotApproved) {
-    const formatDateVN = (dStr: string) => {
-      const [y, m, d] = dStr.split("-");
-      return `${d}/${m}/${y}`;
-    };
-
-    // Tạo danh sách ngày trong khoảng (định dạng vi-VN dd/mm/yyyy)
-    // để tìm đúng attendanceRecord cần cập nhật.
-    const datesInRange: string[] = [];
-    const cur = new Date(leaveRequest.startDate);
-    const endD = new Date(leaveRequest.endDate);
-    while (cur <= endD) {
-      datesInRange.push(formatDateVN(cur.toISOString().slice(0, 10)));
-      cur.setDate(cur.getDate() + 1);
-    }
-
-    if (leaveRequest.type === "Vô trễ") {
-      // Xóa phạt đi muộn cho các ngày trong đơn
-      await prisma.attendanceRecord.updateMany({
-        where: {
-          employeeId: leaveRequest.employeeId,
-          date: { in: datesInRange },
-          fine: { gt: 0 },
-        },
-        data: { fine: 0, status: "Đi muộn (Có phép)" },
-      });
-    } else if (leaveRequest.type === "Về sớm") {
-      // Xóa trừ nửa ngày cho các ngày trong đơn
-      await prisma.attendanceRecord.updateMany({
-        where: {
-          employeeId: leaveRequest.employeeId,
-          date: { in: datesInRange },
-          halfDayDeduction: { gt: 0 },
-        },
-        data: { halfDayDeduction: 0, status: "Về sớm (Có phép)" },
-      });
-    } else if (leaveRequest.type === "Xin phép nghỉ" || leaveRequest.type === "Nửa ngày") {
-      const dailyWage = Math.round((leaveRequest.employee.baseSalary || 0) / STANDARD_WORK_DAYS);
-      const diffDays =
-        leaveRequest.type === "Nửa ngày"
-          ? 0.5
-          : Math.round(
-              Math.abs(
-                new Date(leaveRequest.endDate).getTime() - new Date(leaveRequest.startDate).getTime()
-              ) / (1000 * 60 * 60 * 24)
-            ) + 1;
-
-      await prisma.salesRecord.create({
-        data: {
-          employeeId: leaveRequest.employeeId,
-          customer: SYSTEM_ACTOR,
-          service: "Phạt",
-          profit: -Math.round(dailyWage * diffDays),
-          note: `Trừ ${diffDays} ngày lương: Nghỉ phép từ ${formatDateVN(leaveRequest.startDate)} đến ${formatDateVN(leaveRequest.endDate)}`,
-          createdAt: new Date(leaveRequest.startDate),
-        },
-      });
-    }
   }
 
   const updated = await prisma.leaveRequest.update({ where: { id }, data: { status } });

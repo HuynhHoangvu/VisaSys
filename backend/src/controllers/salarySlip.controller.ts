@@ -4,7 +4,23 @@ import path from "path";
 import os from "os";
 import { Request, Response } from "express";
 import { prisma } from "../../lib/prisma.js";
-import { calcBaseComponents, calcInsurance, calcFullSalary } from "../services/SalaryService.js";
+import {
+  calcBaseComponents,
+  calcInsurance,
+  calcFullSalary,
+  attendanceDateBelongsToPayrollMonth,
+} from "../services/SalaryService.js";
+import {
+  resolveAbsenceCutoffDay,
+  computeAbsentScheduledDates,
+  dailyWageFromGrossBase,
+  buildLateFineDetailRows,
+} from "../services/attendancePayroll.js";
+
+function parsePayrollMonthYear(monthYear: string): { mm: number; yyyy: number } {
+  const [mmStr, yyyyStr] = monthYear.split("/");
+  return { mm: parseInt(mmStr, 10), yyyy: parseInt(yyyyStr, 10) };
+}
 import { SALARY_THRESHOLD } from "../constants/index.js";
 import { dedupeSalaryHistoryLatestPerEmployeeMonth } from "../utils/salaryHistoryDedupe.js";
 
@@ -95,10 +111,17 @@ export const downloadSalarySlip = async (req: Request, res: Response) => {
       });
       if (!employee) return res.status(404).json({ error: "Không tìm thấy nhân viên" });
 
+      const monthAttendance = employee.attendanceRecords.filter((r) =>
+        attendanceDateBelongsToPayrollMonth(r.date, parseInt(mm, 10), parseInt(yyyy, 10)),
+      );
+
       const salary = calcFullSalary(
         employee.baseSalary || 0,
-        employee.attendanceRecords,
-        employee.salesRecords
+        monthAttendance,
+        employee.salesRecords,
+        parseInt(mm, 10),
+        parseInt(yyyy, 10),
+        resolveAbsenceCutoffDay(parseInt(mm, 10), parseInt(yyyy, 10)),
       );
 
       data = {
@@ -173,19 +196,25 @@ export const testSalaryCalculation = async (req: Request, res: Response) => {
     });
     if (!employee) return res.status(404).json({ error: "Không tìm thấy nhân viên" });
 
-    // Filter attendance and sales records by the requested payroll month
-    const [mm, yyyy] = monthYear.split('/');
-    const monthAttendance = employee.attendanceRecords.filter((r) => {
-      const parts = r.date ? r.date.split('/') : [];
-      return parts.length === 3 && parseInt(parts[1]) === parseInt(mm) && parseInt(parts[2]) === parseInt(yyyy);
-    });
+    const { mm: pm, yyyy: py } = parsePayrollMonthYear(monthYear);
+    const monthAttendance = employee.attendanceRecords.filter((r) =>
+      attendanceDateBelongsToPayrollMonth(r.date, pm, py),
+    );
     const monthSales = employee.salesRecords.filter((r) => {
       if (!r.createdAt) return true;
       const d = new Date(r.createdAt);
-      return d.getMonth() + 1 === parseInt(mm) && d.getFullYear() === parseInt(yyyy);
+      return d.getMonth() + 1 === pm && d.getFullYear() === py;
     });
 
-    const salary = calcFullSalary(employee.baseSalary || 0, monthAttendance, monthSales);
+    const cutoff = resolveAbsenceCutoffDay(pm, py);
+    const salary = calcFullSalary(
+      employee.baseSalary || 0,
+      monthAttendance,
+      monthSales,
+      pm,
+      py,
+      cutoff,
+    );
 
     // Return JSON payload for debugging
     res.json({
@@ -256,8 +285,20 @@ export const downloadSalarySummary = async (req: Request, res: Response) => {
       orderBy: { name: "asc" },
     });
 
+    const { mm, yyyy } = parsePayrollMonthYear(monthYear);
+    const cutoff = resolveAbsenceCutoffDay(mm, yyyy);
+
     const employeeData = employees.map((emp) => {
-      const s = calcFullSalary(emp.baseSalary || 0, emp.attendanceRecords, emp.salesRecords);
+      const monthAtt = emp.attendanceRecords.filter((r: any) =>
+        attendanceDateBelongsToPayrollMonth(r.date, mm, yyyy),
+      );
+      const monthSales = emp.salesRecords.filter((r: any) => {
+        if (!r.createdAt) return true;
+        const d = new Date(r.createdAt);
+        return d.getMonth() + 1 === mm && d.getFullYear() === yyyy;
+      });
+
+      const s = calcFullSalary(emp.baseSalary || 0, monthAtt, monthSales, mm, yyyy, cutoff);
       const ins = s.insuranceSalary;
       const totalBonus = s.chuyenCan + s.anTrua + s.hoTroKhac + s.hoaHong + s.thuongKhac;
       const totalSalary = ins + totalBonus;
@@ -331,19 +372,21 @@ export const downloadSalarySummary = async (req: Request, res: Response) => {
 // ==========================================
 // Helper: build monthly payroll data for each employee
 function buildEmployeePayrollData(employees: any[], monthYear: string) {
-  const [mm, yyyy] = monthYear.split('/');
+  const { mm, yyyy } = parsePayrollMonthYear(monthYear);
+  const cutoff = resolveAbsenceCutoffDay(mm, yyyy);
+  const dailyAbsence = (base: number) => dailyWageFromGrossBase(base);
+
   return employees.map((emp) => {
-    const monthAtt = emp.attendanceRecords.filter((r: any) => {
-      const parts = r.date ? r.date.split('/') : [];
-      return parts.length === 3 && parseInt(parts[1]) === parseInt(mm) && parseInt(parts[2]) === parseInt(yyyy);
-    });
+    const monthAtt = emp.attendanceRecords.filter((r: any) =>
+      attendanceDateBelongsToPayrollMonth(r.date, mm, yyyy),
+    );
     const monthSales = emp.salesRecords.filter((r: any) => {
       if (!r.createdAt) return true;
       const d = new Date(r.createdAt);
-      return d.getMonth() + 1 === parseInt(mm) && d.getFullYear() === parseInt(yyyy);
+      return d.getMonth() + 1 === mm && d.getFullYear() === yyyy;
     });
 
-    const s = calcFullSalary(emp.baseSalary || 0, monthAtt, monthSales);
+    const s = calcFullSalary(emp.baseSalary || 0, monthAtt, monthSales, mm, yyyy, cutoff);
     const ins = s.insuranceSalary;
     const totalBonus = s.chuyenCan + s.anTrua + s.hoTroKhac + s.hoaHong + s.thuongKhac;
     const totalSalary = ins + totalBonus;
@@ -359,16 +402,18 @@ function buildEmployeePayrollData(employees: any[], monthYear: string) {
     const lateRecords = monthAtt.filter((r: any) => (r.halfDayDeduction || 0) > 0).map((r: any) => ({
       date: r.date, amount: r.halfDayDeduction, status: r.status,
     }));
-    const fineRecords = monthAtt.filter((r: any) => (r.fine || 0) > 0).map((r: any) => ({
-      date: r.date, amount: r.fine, status: r.status,
-    }));
+    const fineRecords = buildLateFineDetailRows(monthAtt, mm, yyyy);
     const advanceRecords = monthSales.filter((r: any) => r.service === "Tạm ứng").map((r: any) => ({
       date: r.createdAt ? new Date(r.createdAt).toLocaleDateString('vi-VN') : '',
       amount: Math.abs(Number(r.profit) || 0),
       note: r.note || '',
     }));
-    const absenceRecords = monthAtt.filter((r: any) => r.status === "Vắng không phép").map((r: any) => ({
-      date: r.date, amount: Math.round(ins / 21), status: r.status,
+    const absentDates = computeAbsentScheduledDates(monthAtt, mm, yyyy, cutoff);
+    const perDay = dailyAbsence(emp.baseSalary || 0);
+    const absenceRecords = absentDates.map((date: string) => ({
+      date,
+      amount: perDay,
+      status: "Không điểm danh",
     }));
 
     return {

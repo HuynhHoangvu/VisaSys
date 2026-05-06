@@ -8,7 +8,7 @@ import {
   BONUS_CHUYÊN_CẦN, BONUS_ĂN_TRƯA, BONUS_HỖ_TRỢ_KHÁC,
 } from "../constants/index.js";
 import {
-  getWorkDatesFromAttendance,
+  calcAttendanceBreakdown,
   calcSalesBreakdown,
   attendanceDateBelongsToPayrollMonth,
 } from "../services/SalaryService.js";
@@ -74,19 +74,22 @@ export const finalizeMonthSalary = asyncHandler(async (req: Request, res: Respon
         manualFines: newManualFines,
       } = calcSalesBreakdown(monthSales);
 
-      const newAttendanceFines = monthAtt.reduce((s, r) => s + (r.fine || 0), 0);
-      const newHalfDay         = monthAtt.reduce((s, r) => s + (r.halfDayDeduction || 0), 0);
-
       // Insurance base salary is capped: if gross >= threshold, deduct 2M before calculating insurance.
       const totalSalaryBrutto = emp.baseSalary || 0;
       const ins = totalSalaryBrutto >= SALARY_THRESHOLD ? totalSalaryBrutto - 2_000_000 : totalSalaryBrutto;
 
-      const newFullDay = monthAtt.reduce(
-        (s, r) => (r.status === "Vắng không phép" ? s + Math.round(ins / 21) : s),
-        0
+      const lastDom = new Date(yyyy, mm, 0).getDate();
+      const attBreakdown = calcAttendanceBreakdown(
+        monthAtt,
+        totalSalaryBrutto,
+        mm,
+        yyyy,
+        lastDom,
       );
-
-      const newWorkDates = getWorkDatesFromAttendance(monthAtt);
+      const newAttendanceFines = attBreakdown.attendanceFines;
+      const newHalfDay         = attBreakdown.halfDayDeduction;
+      const newFullDay         = attBreakdown.fullDayAbsenceDeduction;
+      const newWorkDates       = attBreakdown.workDates;
 
       // Check if this month was already partially finalized
       const existing = await tx.salaryHistory.findUnique({

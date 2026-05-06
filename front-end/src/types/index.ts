@@ -72,8 +72,15 @@ export interface Department {
 }
 
 export type AttendanceStatus =
-  | "Đúng giờ" | "Đi muộn" | "Vắng không phép"
-  | "Chưa Check-in" | "Về sớm" | "Đi muộn + Về Sớm" | "Quên checkout";
+  | "Đúng giờ"
+  | "Đi muộn"
+  | "Vắng không phép"
+  | "Chưa Check-in"
+  | "Về sớm"
+  | "Đi muộn + Về Sớm"
+  | "Quên checkout"
+  | "Nửa ngày chiều"
+  | "Nửa ngày sáng";
 
 export interface AttendanceRecord {
   id?: string;

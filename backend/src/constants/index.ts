@@ -16,7 +16,7 @@ export const BONUS_CHUYÊN_CẦN  = 1_000_000; // Attendance bonus
 export const BONUS_ĂN_TRƯA     =   500_000; // Lunch allowance
 export const BONUS_HỖ_TRỢ_KHÁC =   500_000; // Miscellaneous support
 
-/** Standard working days per month used to prorate daily wages on approved leave. */
+/** Chuẩn ngày công trong tháng để quy đổi trừ lương theo ngày (đồng bộ luật chấm công T2–T6). */
 export const STANDARD_WORK_DAYS = 22;
 
 // --- Commission rates by role ---
@@ -28,6 +28,13 @@ export const COMMISSION_RATE_DEFAULT = 0;
 
 /** Employees who check out before this hour (24h) are considered leaving early. */
 export const CHECKOUT_HOUR = 17;
+
+/**
+ * Ranh giới 12h trưa (phút trong ngày).
+ * Vào làm **sau** mốc này → nửa buổi chiều (trừ nửa ngày), không áp thang phạt đi trễ.
+ * Về **không sau** mốc này (≤12h) → coi như nửa buổi sáng (trừ nửa ngày nếu chưa trừ lúc vào).
+ */
+export const HALF_DAY_SPLIT_MINUTES = 12 * 60;
 
 // --- Kanban board ---
 export const DEFAULT_COLUMN_ID = "col-1"; // Default column for new tasks
