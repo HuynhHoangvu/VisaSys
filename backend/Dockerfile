@@ -23,5 +23,7 @@ RUN npm run build
 
 EXPOSE 3001
 
-# Migrate trước khi listen; start chỉ chạy server — tránh 502 lúc Railway chờ HTTP.
-CMD ["sh", "-c", "npx prisma migrate deploy && npm start"]
+RUN chmod +x ./entrypoint.sh
+
+# Migrate rồi start server (entrypoint ghi log từng bước).
+CMD ["sh", "./entrypoint.sh"]
