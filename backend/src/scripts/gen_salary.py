@@ -549,7 +549,7 @@ def generate_summary_excel(data, output_path):
 
     ORANGE, LT_ORANGE, WHITE = "FFA500", "FFF3E0", "FFFFFF"
     NUM = '#,##0'
-    LAST_COL_LETTER = 'AA'
+    LAST_COL_LETTER = 'Y'
 
     style_merge(ws, f'A1:{LAST_COL_LETTER}1', 'CONG TY TNHH FLY VISA', bold=True, size=11)
     style_merge(ws, f'A2:{LAST_COL_LETTER}2', 'MST: 0316444315', size=9)
@@ -558,7 +558,7 @@ def generate_summary_excel(data, output_path):
     style_merge(ws, f'A6:{LAST_COL_LETTER}6', month_text, bold=True, size=12, h='center')
 
     for r in range(1, 7):
-        for c in range(1, 28): ws.cell(row=r, column=c).border = None
+        for c in range(1, 26): ws.cell(row=r, column=c).border = None
     ws.row_dimensions[5].height, ws.row_dimensions[6].height = 22, 18
 
     HR1, HR2, DS = 8, 9, 10
@@ -567,24 +567,23 @@ def generate_summary_excel(data, output_path):
     style_merge(ws, f'B{HR1}:B{HR2}', 'Ho va ten', bold=True, size=8, h='center', fill=ORANGE)
     style_merge(ws, f'C{HR1}:C{HR2}', 'Chuc vu', bold=True, size=8, h='center', fill=ORANGE)
     style_merge(ws, f'D{HR1}:D{HR2}', 'Luong co ban', bold=True, size=8, h='center', fill=ORANGE)
-    style_merge(ws, f'E{HR1}:I{HR1}', 'Phu cap', bold=True, size=8, h='center', fill=ORANGE)
-    style_merge(ws, f'J{HR1}:J{HR2}', 'Tong thu nhap', bold=True, size=8, h='center', fill=ORANGE)
-    style_merge(ws, f'K{HR1}:K{HR2}', 'Luong dong BH', bold=True, size=8, h='center', fill=ORANGE)
-    style_merge(ws, f'L{HR1}:O{HR1}', 'Cac khoan trich chi phi DN', bold=True, size=8, h='center', fill=ORANGE)
-    style_merge(ws, f'P{HR1}:S{HR1}', 'Cac khoan trich vao luong', bold=True, size=8, h='center', fill=ORANGE)
-    style_merge(ws, f'T{HR1}:T{HR2}', 'Vang ca ngay\n(khong diem danh)', bold=True, size=8, h='center', fill=ORANGE)
-    style_merge(ws, f'U{HR1}:U{HR2}', 'Phat di tre +\nTam ung', bold=True, size=8, h='center', fill=ORANGE)
-    style_merge(ws, f'V{HR1}:V{HR2}', 'Tru nua ngay/\nve som/quen CO', bold=True, size=8, h='center', fill=ORANGE)
-    style_merge(ws, f'W{HR1}:W{HR2}', 'Phat khac\n(CRM/thu cong)', bold=True, size=8, h='center', fill=ORANGE)
-    style_merge(ws, f'X{HR1}:X{HR2}', 'Thuong khac\n(bu tru)', bold=True, size=8, h='center', fill=ORANGE)
-    style_merge(ws, f'Y{HR1}:Y{HR2}', 'Tong tru\n(rong)', bold=True, size=8, h='center', fill=ORANGE)
-    style_merge(ws, f'Z{HR1}:Z{HR2}', 'Thuc linh', bold=True, size=8, h='center', fill=ORANGE)
-    style_merge(ws, f'AA{HR1}:AA{HR2}', 'Ngay cong', bold=True, size=8, h='center', fill=ORANGE)
+    style_merge(ws, f'E{HR1}:H{HR1}', 'Phu cap', bold=True, size=8, h='center', fill=ORANGE)
+    style_merge(ws, f'I{HR1}:I{HR2}', 'Tong thu nhap', bold=True, size=8, h='center', fill=ORANGE)
+    style_merge(ws, f'J{HR1}:J{HR2}', 'Luong dong BH', bold=True, size=8, h='center', fill=ORANGE)
+    style_merge(ws, f'K{HR1}:N{HR1}', 'Cac khoan trich chi phi DN', bold=True, size=8, h='center', fill=ORANGE)
+    style_merge(ws, f'O{HR1}:R{HR1}', 'Cac khoan trich vao luong', bold=True, size=8, h='center', fill=ORANGE)
+    style_merge(ws, f'S{HR1}:S{HR2}', 'Vang ca ngay\n(khong diem danh)', bold=True, size=8, h='center', fill=ORANGE)
+    style_merge(ws, f'T{HR1}:T{HR2}', 'Vang nua ngay', bold=True, size=8, h='center', fill=ORANGE)
+    style_merge(ws, f'U{HR1}:U{HR2}', 'Phat di tre', bold=True, size=8, h='center', fill=ORANGE)
+    style_merge(ws, f'V{HR1}:V{HR2}', 'Tong vang +\nphat tre', bold=True, size=8, h='center', fill=ORANGE)
+    style_merge(ws, f'W{HR1}:W{HR2}', 'Tong trich NLD\n(tu cot R)', bold=True, size=8, h='center', fill=ORANGE)
+    style_merge(ws, f'X{HR1}:X{HR2}', 'Tong cong tru', bold=True, size=8, h='center', fill=ORANGE)
+    style_merge(ws, f'Y{HR1}:Y{HR2}', 'Thuc linh', bold=True, size=8, h='center', fill=ORANGE)
 
     subs = {
-        'E': 'Chuyen can', 'F': 'An trua', 'G': 'Ho tro khac', 'H': 'Hoa hong', 'I': '—',
-        'L': 'BHXH\n(17,5%)', 'M': 'BHYT\n(3%)', 'N': 'BHTN\n(1%)', 'O': 'Tong',
-        'P': 'BHXH\n(8%)', 'Q': 'BHYT\n(1,5%)', 'R': 'BHTN\n(1%)', 'S': 'Tong'
+        'E': 'Chuyen can', 'F': 'An trua', 'G': 'Ho tro khac', 'H': 'Hoa hong',
+        'K': 'BHXH\n(17,5%)', 'L': 'BHYT\n(3%)', 'M': 'BHTN\n(1%)', 'N': 'Tong',
+        'O': 'BHXH\n(8%)', 'P': 'BHYT\n(1,5%)', 'Q': 'BHTN\n(1%)', 'R': 'Tong'
     }
     for col, text in subs.items():
         sc(ws, f'{col}{HR2}', text, bold=True, size=8, h='center', fill=ORANGE, bdr=True)
@@ -600,21 +599,14 @@ def generate_summary_excel(data, output_path):
         at = money_amount(emp.get('anTrua'))
         htk = money_amount(emp.get('hoTroKhac'))
         hh = money_amount(emp.get('hoaHong'))
-        thk = money_amount(emp.get('thuongKhac'))
-        ngay = int(money_amount(emp.get('workDays')))
-        tu = money_amount(emp.get('tamUng'))
         full_a = money_amount(emp.get('fullDayAbsenceDeduction'))
-        half_d = money_amount(emp.get('halfDayDeduction'))
         att_f = money_amount(emp.get('attendanceFines'))
-        mf = money_amount(emp.get('manualFines'))
-
-        att_plus_tam = att_f + tu
+        half_d = money_amount(emp.get('halfDayDeduction'))
 
         data_map = {
             'A': (i, 'center'), 'B': (emp.get('name', ''), 'left'), 'C': (emp.get('role', ''), 'left'),
-            'D': (base, 'right'), 'E': (cc, 'right'), 'F': (at, 'right'), 'G': (htk, 'right'), 'H': (hh, 'right'), 'I': (0.0, 'right'),
-            'T': (full_a, 'right'), 'U': (att_plus_tam, 'right'), 'V': (half_d, 'right'), 'W': (mf, 'right'), 'X': (thk, 'right'),
-            'Z': (money_amount(emp.get('finalSalary')), 'right'), 'AA': (ngay, 'center')
+            'D': (base, 'right'), 'E': (cc, 'right'), 'F': (at, 'right'), 'G': (htk, 'right'), 'H': (hh, 'right'),
+            'S': (full_a, 'right'), 'T': (half_d, 'right'), 'U': (att_f, 'right')
         }
 
         for col, (val, align) in data_map.items():
@@ -622,20 +614,21 @@ def generate_summary_excel(data, output_path):
                 out_val = val
             elif col == 'A':
                 out_val = i
-            elif col == 'AA':
-                out_val = ngay
             else:
                 out_val = money_amount(val)
             c = sc(ws, f'{col}{r}', out_val, h=align, fill=fill_c, bdr=True)
-            if col not in ('A', 'B', 'C', 'AA'):
+            if col not in ('A', 'B', 'C'):
                 c.number_format = NUM
 
         formulas = {
-            # D–H: lương CB + 3 phụ cấp + hoa hồng; I là cột “—” (0), không gộp thưởng khác (cột X).
-            'J': f'=SUM(D{r}:H{r})', 'K': f'=D{r}',
-            'L': f'=ROUND(K{r}*17.5%,0)', 'M': f'=ROUND(K{r}*3%,0)', 'N': f'=ROUND(K{r}*1%,0)', 'O': f'=SUM(L{r}:N{r})',
-            'P': f'=ROUND(K{r}*8%,0)', 'Q': f'=ROUND(K{r}*1.5%,0)', 'R': f'=ROUND(K{r}*1%,0)', 'S': f'=SUM(P{r}:R{r})',
-            'Y': f'=T{r}+U{r}+V{r}+W{r}-X{r}',
+            # Tong thu nhap co tinh hoa hong o cot H.
+            'I': f'=SUM(D{r}:H{r})', 'J': f'=D{r}',
+            'K': f'=ROUND(J{r}*17.5%,0)', 'L': f'=ROUND(J{r}*3%,0)', 'M': f'=ROUND(J{r}*1%,0)', 'N': f'=SUM(K{r}:M{r})',
+            'O': f'=ROUND(J{r}*8%,0)', 'P': f'=ROUND(J{r}*1.5%,0)', 'Q': f'=ROUND(J{r}*1%,0)', 'R': f'=SUM(O{r}:Q{r})',
+            'V': f'=S{r}+T{r}+U{r}',
+            'W': f'=R{r}',
+            'X': f'=V{r}+W{r}',
+            'Y': f'=I{r}-X{r}',
         }
         for col, f in formulas.items():
             c = sc(ws, f'{col}{r}', f, h='right', fill=fill_c, bdr=True)
@@ -644,17 +637,17 @@ def generate_summary_excel(data, output_path):
 
     TR = DS + len(employees)
     style_merge(ws, f'A{TR}:C{TR}', 'TONG CONG', bold=True, size=10, h='center', fill=ORANGE)
-    for col_idx in range(4, 28):
+    for col_idx in range(4, 26):
         col = get_column_letter(col_idx)
         cell = sc(ws, f'{col}{TR}', f'=SUM({col}{DS}:{col}{TR-1})', bold=True, h='right', fill=ORANGE, bdr=True)
         cell.number_format = NUM
     ws.row_dimensions[TR].height = 18
 
-    widths = {'A': 5, 'B': 22, 'C': 12, 'D': 14, 'E': 11, 'F': 10, 'G': 11, 'H': 11, 'I': 11, 'J': 13, 'K': 13, 'L': 11, 'M': 9, 'N': 9, 'O': 11, 'P': 9, 'Q': 9, 'R': 9, 'S': 11, 'T': 12, 'U': 13, 'V': 12, 'W': 11, 'X': 11, 'Y': 12, 'Z': 13, 'AA': 10}
+    widths = {'A': 5, 'B': 22, 'C': 12, 'D': 14, 'E': 11, 'F': 10, 'G': 11, 'H': 11, 'I': 13, 'J': 13, 'K': 11, 'L': 9, 'M': 9, 'N': 11, 'O': 9, 'P': 9, 'Q': 9, 'R': 11, 'S': 12, 'T': 12, 'U': 12, 'V': 13, 'W': 12, 'X': 12, 'Y': 13}
     for c, w in widths.items(): ws.column_dimensions[c].width = w
 
     ws.freeze_panes = f'A{DS}'
-    _add_history_sheet(wb, employees, month_text)
+    # Bo sheet chi tiet lich su theo yeu cau.
     _add_slip_sheets(wb, employees, month_text)
     
     wb.save(output_path)
