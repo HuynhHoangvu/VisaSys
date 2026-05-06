@@ -9,6 +9,7 @@ import {
   calcInsurance,
   calcFullSalary,
   attendanceDateBelongsToPayrollMonth,
+  grossSalaryForLockedPayrollAllowances,
 } from "../services/SalaryService.js";
 import {
   resolveAbsenceCutoffDay,
@@ -21,7 +22,6 @@ function parsePayrollMonthYear(monthYear: string): { mm: number; yyyy: number } 
   const [mmStr, yyyyStr] = monthYear.split("/");
   return { mm: parseInt(mmStr, 10), yyyy: parseInt(yyyyStr, 10) };
 }
-import { SALARY_THRESHOLD } from "../constants/index.js";
 import { dedupeSalaryHistoryLatestPerEmployeeMonth } from "../utils/salaryHistoryDedupe.js";
 
 /**
@@ -57,7 +57,8 @@ export const downloadSalarySlip = async (req: Request, res: Response) => {
     if (historyRecord) {
       // If the month is finalized: reuse snapshot data and recompute allowances via SalaryService
       const ins = historyRecord.baseSalary;
-      const { chuyenCan, anTrua, hoTroKhac } = calcBaseComponents(ins >= SALARY_THRESHOLD ? ins + 2_000_000 : ins);
+      const gross = grossSalaryForLockedPayrollAllowances(historyRecord);
+      const { chuyenCan, anTrua, hoTroKhac } = calcBaseComponents(gross);
       const { bhxhNld, bhytNld, bhtnNld } = calcInsurance(ins);
 
       data = {
@@ -541,7 +542,8 @@ export const downloadSalarySummaryExcel = async (req: Request, res: Response) =>
       employeeData = historyRecords.map(h => {
         // In DB, baseSalary corresponds to insuranceSalary (after the threshold adjustment)
         const ins = h.baseSalary;
-        const { chuyenCan: cc, anTrua: at, hoTroKhac: htk } = calcBaseComponents(ins >= (SALARY_THRESHOLD - 2_000_000) ? ins + 2_000_000 : ins);
+        const gross = grossSalaryForLockedPayrollAllowances(h);
+        const { chuyenCan: cc, anTrua: at, hoTroKhac: htk } = calcBaseComponents(gross);
         const { bhxhNld, bhytNld, bhtnNld } = calcInsurance(ins);
         const bhxhCty  = Math.round(ins * 0.175);
         const bhytCty  = Math.round(ins * 0.03);

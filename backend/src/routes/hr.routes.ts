@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { getDepartments, createDepartment, updateDepartment, deleteDepartment } from "../controllers/department.controller.js";
 import { getEmployees, createEmployee, updateEmployee, deleteEmployee } from "../controllers/employee.controller.js";
-import { checkInEmployee, checkOutEmployee, addManualBonus, penalizeForgotCheckout } from "../controllers/attendance.controller.js";
+import { checkInEmployee, checkOutEmployee, addManualBonus, penalizeForgotCheckout, waiveHalfDayDeduction } from "../controllers/attendance.controller.js";
 import { createLeaveRequest, getLeaveRequests, getLeaveRequestsByEmployee, updateLeaveRequestStatus } from "../controllers/leave.controller.js";
 import { finalizeMonthSalary, getSalaryHistory } from "../controllers/salary.controller.js";
 import { downloadSalarySlip, downloadSalarySummary, downloadSalarySummaryExcel, downloadSalarySlipsExcel, testSalaryCalculation, getSalaryBreakdown } from "../controllers/salarySlip.controller.js";
@@ -42,6 +42,7 @@ router.delete("/employees/:id", deleteEmployee);
 // Attendance
 router.post("/employees/:id/checkin",             checkInEmployee);
 router.post("/employees/:id/checkout",            checkOutEmployee);
+router.post("/employees/:id/attendance-records/:recordId/waive-half-day", waiveHalfDayDeduction);
 router.post("/employees/:id/bonus",               validate(manualBonusSchema), addManualBonus);
 router.post("/attendance/penalize-forgot-checkout", penalizeForgotCheckout);
 

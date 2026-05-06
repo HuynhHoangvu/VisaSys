@@ -9,6 +9,7 @@ Usage:
 import sys
 import json
 import os
+import math
 from reportlab.lib.pagesizes import A4, landscape, A3
 from reportlab.lib import colors
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
@@ -40,6 +41,25 @@ def fmt(amount):
     if not amount: return "0"
     try: return f"{int(amount):,}".replace(",", ".")
     except: return str(amount)
+
+def money_amount(v):
+    """JSON có thể trả chuỗi — Excel SUM() bỏ qua ô text nên cột H/J sai; ép float."""
+    try:
+        if v is None:
+            return 0.0
+        if isinstance(v, bool):
+            return 0.0
+        if isinstance(v, str):
+            s = v.strip().replace("\u00a0", "").replace(" ", "").replace(",", "")
+            if not s:
+                return 0.0
+            return float(s)
+        x = float(v)
+        if math.isnan(x) or math.isinf(x):
+            return 0.0
+        return x
+    except (TypeError, ValueError):
+        return 0.0
 
 def p(text, font=None, size=9, align=0, color=colors.black):
     f = font or FONT
@@ -575,29 +595,43 @@ def generate_summary_excel(data, output_path):
         r = DS + i - 1
         fill_c = LT_ORANGE if i % 2 == 0 else WHITE
 
-        base, cc, at, htk, hh = emp.get('baseSalary', 0) or 0, emp.get('chuyenCan', 0) or 0, emp.get('anTrua', 0) or 0, emp.get('hoTroKhac', 0) or 0, emp.get('hoaHong', 0) or 0
-        thk = emp.get('thuongKhac', 0) or 0
-        ngay = emp.get('workDays', 0) or 0
-        tu = emp.get('tamUng', 0) or 0
-        full_a = emp.get('fullDayAbsenceDeduction', 0) or 0
-        half_d = emp.get('halfDayDeduction', 0) or 0
-        att_f = emp.get('attendanceFines', 0) or 0
-        mf = emp.get('manualFines', 0) or 0
+        base = money_amount(emp.get('baseSalary'))
+        cc = money_amount(emp.get('chuyenCan'))
+        at = money_amount(emp.get('anTrua'))
+        htk = money_amount(emp.get('hoTroKhac'))
+        hh = money_amount(emp.get('hoaHong'))
+        thk = money_amount(emp.get('thuongKhac'))
+        ngay = int(money_amount(emp.get('workDays')))
+        tu = money_amount(emp.get('tamUng'))
+        full_a = money_amount(emp.get('fullDayAbsenceDeduction'))
+        half_d = money_amount(emp.get('halfDayDeduction'))
+        att_f = money_amount(emp.get('attendanceFines'))
+        mf = money_amount(emp.get('manualFines'))
 
         att_plus_tam = att_f + tu
 
         data_map = {
             'A': (i, 'center'), 'B': (emp.get('name', ''), 'left'), 'C': (emp.get('role', ''), 'left'),
-            'D': (base, 'right'), 'E': (cc, 'right'), 'F': (at, 'right'), 'G': (htk, 'right'), 'H': (hh, 'right'), 'I': (0, 'right'),
+            'D': (base, 'right'), 'E': (cc, 'right'), 'F': (at, 'right'), 'G': (htk, 'right'), 'H': (hh, 'right'), 'I': (0.0, 'right'),
             'T': (full_a, 'right'), 'U': (att_plus_tam, 'right'), 'V': (half_d, 'right'), 'W': (mf, 'right'), 'X': (thk, 'right'),
-            'Z': (emp.get('finalSalary', 0) or 0, 'right'), 'AA': (ngay, 'center')
+            'Z': (money_amount(emp.get('finalSalary')), 'right'), 'AA': (ngay, 'center')
         }
 
         for col, (val, align) in data_map.items():
-            c = sc(ws, f'{col}{r}', val if val else (0 if isinstance(val, (int,float)) else ''), h=align, fill=fill_c, bdr=True)
-            if isinstance(val, (int, float)) and col not in ('A', 'AA'): c.number_format = NUM
+            if col in ('B', 'C'):
+                out_val = val
+            elif col == 'A':
+                out_val = i
+            elif col == 'AA':
+                out_val = ngay
+            else:
+                out_val = money_amount(val)
+            c = sc(ws, f'{col}{r}', out_val, h=align, fill=fill_c, bdr=True)
+            if col not in ('A', 'B', 'C', 'AA'):
+                c.number_format = NUM
 
         formulas = {
+            # D–H: lương CB + 3 phụ cấp + hoa hồng; I là cột “—” (0), không gộp thưởng khác (cột X).
             'J': f'=SUM(D{r}:H{r})', 'K': f'=D{r}',
             'L': f'=ROUND(K{r}*17.5%,0)', 'M': f'=ROUND(K{r}*3%,0)', 'N': f'=ROUND(K{r}*1%,0)', 'O': f'=SUM(L{r}:N{r})',
             'P': f'=ROUND(K{r}*8%,0)', 'Q': f'=ROUND(K{r}*1.5%,0)', 'R': f'=ROUND(K{r}*1%,0)', 'S': f'=SUM(P{r}:R{r})',

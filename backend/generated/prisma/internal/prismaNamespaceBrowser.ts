@@ -234,6 +234,7 @@ export type DocFileScalarFieldEnum = (typeof DocFileScalarFieldEnum)[keyof typeo
 export const SalaryHistoryScalarFieldEnum = {
   id: 'id',
   monthYear: 'monthYear',
+  grossBaseSalary: 'grossBaseSalary',
   baseSalary: 'baseSalary',
   totalBonus: 'totalBonus',
   totalDeduction: 'totalDeduction',

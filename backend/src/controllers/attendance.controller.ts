@@ -158,6 +158,33 @@ export const addManualBonus = asyncHandler(async (req: Request, res: Response) =
 });
 
 /**
+ * HR/QL: gỡ trừ nửa ngày (quên checkout, về sớm...) — chỉnh halfDayDeduction về 0,
+ * không cần giả "Thưởng khác" để bù. Áp dụng cho tháng chưa chốt (bản ghi attendance còn trong DB).
+ */
+export const waiveHalfDayDeduction = asyncHandler(async (req: Request, res: Response) => {
+  const employeeId = req.params.id as string;
+  const recordId = req.params.recordId as string;
+
+  const record = await prisma.attendanceRecord.findFirst({
+    where: { id: recordId, employeeId },
+  });
+  if (!record) {
+    return res.status(404).json({ error: "Không tìm thấy bản ghi chấm công." });
+  }
+  if ((record.halfDayDeduction || 0) <= 0) {
+    return res.status(400).json({ error: "Bản ghi không có khoản trừ nửa ngày." });
+  }
+
+  const updated = await prisma.attendanceRecord.update({
+    where: { id: recordId },
+    data: { halfDayDeduction: 0 },
+  });
+
+  getIO().emit("data_changed");
+  res.json(updated);
+});
+
+/**
  * Pure business logic for penalizing employees who forgot to check out.
  * Extracted from the HTTP controller so the nightly cron job can call it
  * directly without constructing a fake req/res pair.

@@ -85,6 +85,34 @@ export const calcBaseComponents = (baseSalary: number) => {
   return { insuranceSalary, chuyenCan, anTrua, hoTroKhac };
 };
 
+/**
+ * Gross contract salary used for attendance/lunch/other fixed allowances when rebuilding from SalaryHistory.
+ * Legacy rows only stored insurance base in `baseSalary`; infer gross when the snapshot clearly crossed the threshold.
+ */
+export function grossSalaryForLockedPayrollAllowances(snapshot: {
+  grossBaseSalary?: number | null;
+  baseSalary: number;
+  /** Helps resolve ambiguous legacy rows where baseSalary is exactly 6M (either gross 6M or gross 8M → insurance 6M). */
+  totalBonus?: number;
+  hoaHong?: number;
+  thuongKhac?: number;
+}): number {
+  const stored = snapshot.grossBaseSalary;
+  if (stored != null && Number.isFinite(stored) && stored > 0) return stored;
+  const ins = snapshot.baseSalary;
+  if (ins >= SALARY_THRESHOLD) return ins + 2_000_000;
+
+  const fixedSum =
+    BONUS_CHUYÊN_CẦN + BONUS_ĂN_TRƯA + BONUS_HỖ_TRỢ_KHÁC;
+  const tb = snapshot.totalBonus ?? 0;
+  const hh = snapshot.hoaHong ?? 0;
+  const tk = snapshot.thuongKhac ?? 0;
+  const fixedPortion = tb - hh - tk;
+  if (Math.abs(fixedPortion - fixedSum) < 1) return ins + 2_000_000;
+
+  return ins;
+}
+
 const PHU_CAP_SERVICES = new Set(["Chuyên cần", "Ăn trưa", "Hỗ trợ khác"]);
 
 /** Ghi nhận sales thủ công; CRM/doanh số và "Thưởng hoa hồng" → hoaHong; "Thưởng khác"/"Thưởng" → thuongKhac. */

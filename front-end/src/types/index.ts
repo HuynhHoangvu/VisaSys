@@ -146,6 +146,8 @@ export interface LeaveRequest extends LeaveRequestData {
 export interface SalaryHistory {
   id: string;
   monthYear: string;
+  /** Lương gross (hợp đồng) chốt trong snapshot — có thể null với bản ghi cũ. */
+  grossBaseSalary?: number | null;
   baseSalary: number;
   totalBonus: number;
   totalDeduction: number;

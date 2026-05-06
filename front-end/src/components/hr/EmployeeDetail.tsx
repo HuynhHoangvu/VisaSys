@@ -236,6 +236,7 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
   const [bonusNote, setBonusNote] = useState("");
   const [bonusType, setBonusType] = useState("Thưởng hoa hồng");
   const [isBonusSaving, setIsBonusSaving] = useState(false);
+  const [waiveHalfDayFor, setWaiveHalfDayFor] = useState<string | null>(null);
 
   const todayStr = new Date().toLocaleDateString("vi-VN");
   const safeAttendanceRecords = employee.attendanceRecords || [];
@@ -395,6 +396,31 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
       alert("Lỗi khi cập nhật! " + error);
     } finally {
       setIsBonusSaving(false);
+    }
+  };
+
+  const handleWaiveHalfDay = async (recordId: string) => {
+    if (!canAdjustBonus || !recordId) return;
+    if (
+      !window.confirm(
+        "Miễn trừ nửa ngày cho bản ghi này? Hệ thống sẽ đặt Trừ CO về 0 (không cần cộng Thưởng khác để bù).",
+      )
+    )
+      return;
+    setWaiveHalfDayFor(recordId);
+    try {
+      const res = await fetch(
+        `${API_URL}/api/hr/employees/${employee.id}/attendance-records/${recordId}/waive-half-day`,
+        { method: "POST" },
+      );
+      const body = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) throw new Error(body.error || "Lỗi server");
+      window.dispatchEvent(new Event("refreshBoard"));
+      if (socket) socket.emit("data_changed");
+    } catch (error) {
+      alert(String(error));
+    } finally {
+      setWaiveHalfDayFor(null);
     }
   };
 
@@ -593,13 +619,18 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
                   <th className="px-3 sm:px-4 py-2 sm:py-3 text-right font-bold">
                     Trừ CO
                   </th>
+                  {canAdjustBonus ? (
+                    <th className="px-3 sm:px-4 py-2 sm:py-3 text-center font-bold whitespace-nowrap">
+                      Miễn trừ
+                    </th>
+                  ) : null}
                 </tr>
               </thead>
               <tbody>
                 {safeAttendanceRecords.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={6}
+                      colSpan={canAdjustBonus ? 7 : 6}
                       className="px-4 py-8 text-center text-gray-400 italic text-xs sm:text-sm"
                     >
                       Chưa có dữ liệu chấm công.
@@ -623,7 +654,7 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
 
                     return (
                       <tr
-                        key={index}
+                        key={record.id || `${record.date}-${index}`}
                         className="border-b border-gray-100 last:border-0 hover:bg-blue-50/30 transition-colors"
                       >
                         <td className="px-3 sm:px-4 py-3 sm:py-4 font-bold text-gray-800 text-xs sm:text-sm">
@@ -656,6 +687,26 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
                             ? `-${formatVND(record.halfDayDeduction!)}`
                             : "—"}
                         </td>
+                        {canAdjustBonus ? (
+                          <td className="px-2 sm:px-3 py-3 sm:py-4 text-center align-middle">
+                            {(record.halfDayDeduction || 0) > 0 &&
+                            record.id ? (
+                              <Button
+                                size="xs"
+                                color="light"
+                                className="font-bold text-[10px] whitespace-nowrap px-2 py-1 border-amber-200 text-amber-800 hover:bg-amber-50"
+                                disabled={waiveHalfDayFor === record.id}
+                                onClick={() => handleWaiveHalfDay(record.id!)}
+                              >
+                                {waiveHalfDayFor === record.id
+                                  ? "…"
+                                  : "Miễn nửa ngày"}
+                              </Button>
+                            ) : (
+                              <span className="text-gray-300 text-xs">—</span>
+                            )}
+                          </td>
+                        ) : null}
                       </tr>
                     );
                   })

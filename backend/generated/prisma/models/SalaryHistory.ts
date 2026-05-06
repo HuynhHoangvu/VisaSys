@@ -27,6 +27,7 @@ export type AggregateSalaryHistory = {
 }
 
 export type SalaryHistoryAvgAggregateOutputType = {
+  grossBaseSalary: number | null
   baseSalary: number | null
   totalBonus: number | null
   totalDeduction: number | null
@@ -42,6 +43,7 @@ export type SalaryHistoryAvgAggregateOutputType = {
 }
 
 export type SalaryHistorySumAggregateOutputType = {
+  grossBaseSalary: number | null
   baseSalary: number | null
   totalBonus: number | null
   totalDeduction: number | null
@@ -59,6 +61,7 @@ export type SalaryHistorySumAggregateOutputType = {
 export type SalaryHistoryMinAggregateOutputType = {
   id: string | null
   monthYear: string | null
+  grossBaseSalary: number | null
   baseSalary: number | null
   totalBonus: number | null
   totalDeduction: number | null
@@ -78,6 +81,7 @@ export type SalaryHistoryMinAggregateOutputType = {
 export type SalaryHistoryMaxAggregateOutputType = {
   id: string | null
   monthYear: string | null
+  grossBaseSalary: number | null
   baseSalary: number | null
   totalBonus: number | null
   totalDeduction: number | null
@@ -97,6 +101,7 @@ export type SalaryHistoryMaxAggregateOutputType = {
 export type SalaryHistoryCountAggregateOutputType = {
   id: number
   monthYear: number
+  grossBaseSalary: number
   baseSalary: number
   totalBonus: number
   totalDeduction: number
@@ -117,6 +122,7 @@ export type SalaryHistoryCountAggregateOutputType = {
 
 
 export type SalaryHistoryAvgAggregateInputType = {
+  grossBaseSalary?: true
   baseSalary?: true
   totalBonus?: true
   totalDeduction?: true
@@ -132,6 +138,7 @@ export type SalaryHistoryAvgAggregateInputType = {
 }
 
 export type SalaryHistorySumAggregateInputType = {
+  grossBaseSalary?: true
   baseSalary?: true
   totalBonus?: true
   totalDeduction?: true
@@ -149,6 +156,7 @@ export type SalaryHistorySumAggregateInputType = {
 export type SalaryHistoryMinAggregateInputType = {
   id?: true
   monthYear?: true
+  grossBaseSalary?: true
   baseSalary?: true
   totalBonus?: true
   totalDeduction?: true
@@ -168,6 +176,7 @@ export type SalaryHistoryMinAggregateInputType = {
 export type SalaryHistoryMaxAggregateInputType = {
   id?: true
   monthYear?: true
+  grossBaseSalary?: true
   baseSalary?: true
   totalBonus?: true
   totalDeduction?: true
@@ -187,6 +196,7 @@ export type SalaryHistoryMaxAggregateInputType = {
 export type SalaryHistoryCountAggregateInputType = {
   id?: true
   monthYear?: true
+  grossBaseSalary?: true
   baseSalary?: true
   totalBonus?: true
   totalDeduction?: true
@@ -294,6 +304,7 @@ export type SalaryHistoryGroupByArgs<ExtArgs extends runtime.Types.Extensions.In
 export type SalaryHistoryGroupByOutputType = {
   id: string
   monthYear: string
+  grossBaseSalary: number | null
   baseSalary: number
   totalBonus: number
   totalDeduction: number
@@ -337,6 +348,7 @@ export type SalaryHistoryWhereInput = {
   NOT?: Prisma.SalaryHistoryWhereInput | Prisma.SalaryHistoryWhereInput[]
   id?: Prisma.StringFilter<"SalaryHistory"> | string
   monthYear?: Prisma.StringFilter<"SalaryHistory"> | string
+  grossBaseSalary?: Prisma.FloatNullableFilter<"SalaryHistory"> | number | null
   baseSalary?: Prisma.FloatFilter<"SalaryHistory"> | number
   totalBonus?: Prisma.FloatFilter<"SalaryHistory"> | number
   totalDeduction?: Prisma.FloatFilter<"SalaryHistory"> | number
@@ -358,6 +370,7 @@ export type SalaryHistoryWhereInput = {
 export type SalaryHistoryOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   monthYear?: Prisma.SortOrder
+  grossBaseSalary?: Prisma.SortOrderInput | Prisma.SortOrder
   baseSalary?: Prisma.SortOrder
   totalBonus?: Prisma.SortOrder
   totalDeduction?: Prisma.SortOrder
@@ -383,6 +396,7 @@ export type SalaryHistoryWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.SalaryHistoryWhereInput[]
   NOT?: Prisma.SalaryHistoryWhereInput | Prisma.SalaryHistoryWhereInput[]
   monthYear?: Prisma.StringFilter<"SalaryHistory"> | string
+  grossBaseSalary?: Prisma.FloatNullableFilter<"SalaryHistory"> | number | null
   baseSalary?: Prisma.FloatFilter<"SalaryHistory"> | number
   totalBonus?: Prisma.FloatFilter<"SalaryHistory"> | number
   totalDeduction?: Prisma.FloatFilter<"SalaryHistory"> | number
@@ -404,6 +418,7 @@ export type SalaryHistoryWhereUniqueInput = Prisma.AtLeast<{
 export type SalaryHistoryOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   monthYear?: Prisma.SortOrder
+  grossBaseSalary?: Prisma.SortOrderInput | Prisma.SortOrder
   baseSalary?: Prisma.SortOrder
   totalBonus?: Prisma.SortOrder
   totalDeduction?: Prisma.SortOrder
@@ -432,6 +447,7 @@ export type SalaryHistoryScalarWhereWithAggregatesInput = {
   NOT?: Prisma.SalaryHistoryScalarWhereWithAggregatesInput | Prisma.SalaryHistoryScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"SalaryHistory"> | string
   monthYear?: Prisma.StringWithAggregatesFilter<"SalaryHistory"> | string
+  grossBaseSalary?: Prisma.FloatNullableWithAggregatesFilter<"SalaryHistory"> | number | null
   baseSalary?: Prisma.FloatWithAggregatesFilter<"SalaryHistory"> | number
   totalBonus?: Prisma.FloatWithAggregatesFilter<"SalaryHistory"> | number
   totalDeduction?: Prisma.FloatWithAggregatesFilter<"SalaryHistory"> | number
@@ -452,6 +468,7 @@ export type SalaryHistoryScalarWhereWithAggregatesInput = {
 export type SalaryHistoryCreateInput = {
   id?: string
   monthYear: string
+  grossBaseSalary?: number | null
   baseSalary: number
   totalBonus: number
   totalDeduction: number
@@ -472,6 +489,7 @@ export type SalaryHistoryCreateInput = {
 export type SalaryHistoryUncheckedCreateInput = {
   id?: string
   monthYear: string
+  grossBaseSalary?: number | null
   baseSalary: number
   totalBonus: number
   totalDeduction: number
@@ -492,6 +510,7 @@ export type SalaryHistoryUncheckedCreateInput = {
 export type SalaryHistoryUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   monthYear?: Prisma.StringFieldUpdateOperationsInput | string
+  grossBaseSalary?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   baseSalary?: Prisma.FloatFieldUpdateOperationsInput | number
   totalBonus?: Prisma.FloatFieldUpdateOperationsInput | number
   totalDeduction?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -512,6 +531,7 @@ export type SalaryHistoryUpdateInput = {
 export type SalaryHistoryUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   monthYear?: Prisma.StringFieldUpdateOperationsInput | string
+  grossBaseSalary?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   baseSalary?: Prisma.FloatFieldUpdateOperationsInput | number
   totalBonus?: Prisma.FloatFieldUpdateOperationsInput | number
   totalDeduction?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -532,6 +552,7 @@ export type SalaryHistoryUncheckedUpdateInput = {
 export type SalaryHistoryCreateManyInput = {
   id?: string
   monthYear: string
+  grossBaseSalary?: number | null
   baseSalary: number
   totalBonus: number
   totalDeduction: number
@@ -552,6 +573,7 @@ export type SalaryHistoryCreateManyInput = {
 export type SalaryHistoryUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   monthYear?: Prisma.StringFieldUpdateOperationsInput | string
+  grossBaseSalary?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   baseSalary?: Prisma.FloatFieldUpdateOperationsInput | number
   totalBonus?: Prisma.FloatFieldUpdateOperationsInput | number
   totalDeduction?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -571,6 +593,7 @@ export type SalaryHistoryUpdateManyMutationInput = {
 export type SalaryHistoryUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   monthYear?: Prisma.StringFieldUpdateOperationsInput | string
+  grossBaseSalary?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   baseSalary?: Prisma.FloatFieldUpdateOperationsInput | number
   totalBonus?: Prisma.FloatFieldUpdateOperationsInput | number
   totalDeduction?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -606,6 +629,7 @@ export type SalaryHistoryEmployeeIdMonthYearCompoundUniqueInput = {
 export type SalaryHistoryCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   monthYear?: Prisma.SortOrder
+  grossBaseSalary?: Prisma.SortOrder
   baseSalary?: Prisma.SortOrder
   totalBonus?: Prisma.SortOrder
   totalDeduction?: Prisma.SortOrder
@@ -624,6 +648,7 @@ export type SalaryHistoryCountOrderByAggregateInput = {
 }
 
 export type SalaryHistoryAvgOrderByAggregateInput = {
+  grossBaseSalary?: Prisma.SortOrder
   baseSalary?: Prisma.SortOrder
   totalBonus?: Prisma.SortOrder
   totalDeduction?: Prisma.SortOrder
@@ -641,6 +666,7 @@ export type SalaryHistoryAvgOrderByAggregateInput = {
 export type SalaryHistoryMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   monthYear?: Prisma.SortOrder
+  grossBaseSalary?: Prisma.SortOrder
   baseSalary?: Prisma.SortOrder
   totalBonus?: Prisma.SortOrder
   totalDeduction?: Prisma.SortOrder
@@ -660,6 +686,7 @@ export type SalaryHistoryMaxOrderByAggregateInput = {
 export type SalaryHistoryMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   monthYear?: Prisma.SortOrder
+  grossBaseSalary?: Prisma.SortOrder
   baseSalary?: Prisma.SortOrder
   totalBonus?: Prisma.SortOrder
   totalDeduction?: Prisma.SortOrder
@@ -677,6 +704,7 @@ export type SalaryHistoryMinOrderByAggregateInput = {
 }
 
 export type SalaryHistorySumOrderByAggregateInput = {
+  grossBaseSalary?: Prisma.SortOrder
   baseSalary?: Prisma.SortOrder
   totalBonus?: Prisma.SortOrder
   totalDeduction?: Prisma.SortOrder
@@ -737,6 +765,14 @@ export type SalaryHistoryCreateworkDatesInput = {
   set: string[]
 }
 
+export type NullableFloatFieldUpdateOperationsInput = {
+  set?: number | null
+  increment?: number
+  decrement?: number
+  multiply?: number
+  divide?: number
+}
+
 export type SalaryHistoryUpdateworkDatesInput = {
   set?: string[]
   push?: string | string[]
@@ -745,6 +781,7 @@ export type SalaryHistoryUpdateworkDatesInput = {
 export type SalaryHistoryCreateWithoutEmployeeInput = {
   id?: string
   monthYear: string
+  grossBaseSalary?: number | null
   baseSalary: number
   totalBonus: number
   totalDeduction: number
@@ -764,6 +801,7 @@ export type SalaryHistoryCreateWithoutEmployeeInput = {
 export type SalaryHistoryUncheckedCreateWithoutEmployeeInput = {
   id?: string
   monthYear: string
+  grossBaseSalary?: number | null
   baseSalary: number
   totalBonus: number
   totalDeduction: number
@@ -812,6 +850,7 @@ export type SalaryHistoryScalarWhereInput = {
   NOT?: Prisma.SalaryHistoryScalarWhereInput | Prisma.SalaryHistoryScalarWhereInput[]
   id?: Prisma.StringFilter<"SalaryHistory"> | string
   monthYear?: Prisma.StringFilter<"SalaryHistory"> | string
+  grossBaseSalary?: Prisma.FloatNullableFilter<"SalaryHistory"> | number | null
   baseSalary?: Prisma.FloatFilter<"SalaryHistory"> | number
   totalBonus?: Prisma.FloatFilter<"SalaryHistory"> | number
   totalDeduction?: Prisma.FloatFilter<"SalaryHistory"> | number
@@ -832,6 +871,7 @@ export type SalaryHistoryScalarWhereInput = {
 export type SalaryHistoryCreateManyEmployeeInput = {
   id?: string
   monthYear: string
+  grossBaseSalary?: number | null
   baseSalary: number
   totalBonus: number
   totalDeduction: number
@@ -851,6 +891,7 @@ export type SalaryHistoryCreateManyEmployeeInput = {
 export type SalaryHistoryUpdateWithoutEmployeeInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   monthYear?: Prisma.StringFieldUpdateOperationsInput | string
+  grossBaseSalary?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   baseSalary?: Prisma.FloatFieldUpdateOperationsInput | number
   totalBonus?: Prisma.FloatFieldUpdateOperationsInput | number
   totalDeduction?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -870,6 +911,7 @@ export type SalaryHistoryUpdateWithoutEmployeeInput = {
 export type SalaryHistoryUncheckedUpdateWithoutEmployeeInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   monthYear?: Prisma.StringFieldUpdateOperationsInput | string
+  grossBaseSalary?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   baseSalary?: Prisma.FloatFieldUpdateOperationsInput | number
   totalBonus?: Prisma.FloatFieldUpdateOperationsInput | number
   totalDeduction?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -889,6 +931,7 @@ export type SalaryHistoryUncheckedUpdateWithoutEmployeeInput = {
 export type SalaryHistoryUncheckedUpdateManyWithoutEmployeeInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   monthYear?: Prisma.StringFieldUpdateOperationsInput | string
+  grossBaseSalary?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   baseSalary?: Prisma.FloatFieldUpdateOperationsInput | number
   totalBonus?: Prisma.FloatFieldUpdateOperationsInput | number
   totalDeduction?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -910,6 +953,7 @@ export type SalaryHistoryUncheckedUpdateManyWithoutEmployeeInput = {
 export type SalaryHistorySelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   monthYear?: boolean
+  grossBaseSalary?: boolean
   baseSalary?: boolean
   totalBonus?: boolean
   totalDeduction?: boolean
@@ -931,6 +975,7 @@ export type SalaryHistorySelect<ExtArgs extends runtime.Types.Extensions.Interna
 export type SalaryHistorySelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   monthYear?: boolean
+  grossBaseSalary?: boolean
   baseSalary?: boolean
   totalBonus?: boolean
   totalDeduction?: boolean
@@ -952,6 +997,7 @@ export type SalaryHistorySelectCreateManyAndReturn<ExtArgs extends runtime.Types
 export type SalaryHistorySelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   monthYear?: boolean
+  grossBaseSalary?: boolean
   baseSalary?: boolean
   totalBonus?: boolean
   totalDeduction?: boolean
@@ -973,6 +1019,7 @@ export type SalaryHistorySelectUpdateManyAndReturn<ExtArgs extends runtime.Types
 export type SalaryHistorySelectScalar = {
   id?: boolean
   monthYear?: boolean
+  grossBaseSalary?: boolean
   baseSalary?: boolean
   totalBonus?: boolean
   totalDeduction?: boolean
@@ -990,7 +1037,7 @@ export type SalaryHistorySelectScalar = {
   createdAt?: boolean
 }
 
-export type SalaryHistoryOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "monthYear" | "baseSalary" | "totalBonus" | "totalDeduction" | "finalSalary" | "hoaHong" | "thuongKhac" | "tamUng" | "manualFines" | "attendanceFines" | "halfDayDeduction" | "fullDayAbsenceDeduction" | "workDays" | "workDates" | "employeeId" | "createdAt", ExtArgs["result"]["salaryHistory"]>
+export type SalaryHistoryOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "monthYear" | "grossBaseSalary" | "baseSalary" | "totalBonus" | "totalDeduction" | "finalSalary" | "hoaHong" | "thuongKhac" | "tamUng" | "manualFines" | "attendanceFines" | "halfDayDeduction" | "fullDayAbsenceDeduction" | "workDays" | "workDates" | "employeeId" | "createdAt", ExtArgs["result"]["salaryHistory"]>
 export type SalaryHistoryInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   employee?: boolean | Prisma.EmployeeDefaultArgs<ExtArgs>
 }
@@ -1009,6 +1056,13 @@ export type $SalaryHistoryPayload<ExtArgs extends runtime.Types.Extensions.Inter
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     monthYear: string
+    /**
+     * * Mức lương gross (Employee.baseSalary) tại lần chốt — dùng để tính phụ cấp cố định khi xuất Excel/PDF từ snapshot.
+     */
+    grossBaseSalary: number | null
+    /**
+     * * Mức lương đóng BHXH (sau khi trừ 2M nếu gross ≥ ngưỡng).
+     */
     baseSalary: number
     totalBonus: number
     totalDeduction: number
@@ -1453,6 +1507,7 @@ export interface Prisma__SalaryHistoryClient<T, Null = never, ExtArgs extends ru
 export interface SalaryHistoryFieldRefs {
   readonly id: Prisma.FieldRef<"SalaryHistory", 'String'>
   readonly monthYear: Prisma.FieldRef<"SalaryHistory", 'String'>
+  readonly grossBaseSalary: Prisma.FieldRef<"SalaryHistory", 'Float'>
   readonly baseSalary: Prisma.FieldRef<"SalaryHistory", 'Float'>
   readonly totalBonus: Prisma.FieldRef<"SalaryHistory", 'Float'>
   readonly totalDeduction: Prisma.FieldRef<"SalaryHistory", 'Float'>
