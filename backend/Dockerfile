@@ -23,5 +23,8 @@ RUN npm run build && npx prisma generate
 
 EXPOSE 3001
 
-# Áp dụng migration SQL đã commit (đồng bộ DB với schema — tránh lệch cột production).
-CMD ["sh", "-c", "npx prisma migrate deploy && npm start"]
+# Make entrypoint executable (file is included via COPY . . above)
+RUN chmod +x ./entrypoint.sh
+
+# Run migrations then start the server; entrypoint logs each step and captures errors.
+CMD ["sh", "./entrypoint.sh"]
