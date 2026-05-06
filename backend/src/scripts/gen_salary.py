@@ -199,6 +199,16 @@ def generate_summary(data, output_path):
     story = []
 
     employees = data.get('employees', [])
+
+    def _is_sale_group(emp):
+        role = str(emp.get('role', '') or '').lower()
+        name = str(emp.get('name', '') or '').lower()
+        return ('sale' in role) or ('telesale' in role) or ('sale' in name)
+
+    # Gom nhom Sale thanh 1 cum khi xuat bang luong tong.
+    sale_employees = [e for e in employees if _is_sale_group(e)]
+    other_employees = [e for e in employees if not _is_sale_group(e)]
+    grouped_employees = sale_employees + other_employees
     parts = str(data.get('monthYear', '')).split('/')
     month_text = f"THANG {parts[0]} NAM {parts[1]}" if len(parts) == 2 else data.get('monthYear', '')
 
@@ -222,7 +232,7 @@ def generate_summary(data, output_path):
     cws = [W*0.05, W*0.08, W*0.04, W*0.046, W*0.029, W*0.027, W*0.027, W*0.029, W*0.029, W*0.044, W*0.038, W*0.029, W*0.023, W*0.023, W*0.029, W*0.025, W*0.021, W*0.021, W*0.027, W*0.03, W*0.035, W*0.03, W*0.03, W*0.032, W*0.036, W*0.058, W*0.078]
     table_rows = [header1, header2]
 
-    for i, emp in enumerate(employees, start=1):
+    for i, emp in enumerate(grouped_employees, start=1):
         def cv(v): return cp(fmt(v) if v else '0', align=2)
         hh = emp.get('hoaHong', 0) or 0
         cc = emp.get('chuyenCan', 0) or 0
@@ -502,18 +512,23 @@ def _add_slip_sheets(wb, employees, month_text):
         dr(start_data_row + 14, '',   '',                       '',   '3,3', 'Phat khac',                   manual_fine)
         dr(start_data_row + 15, '',   '',                       '',   '4',   'Tam ung',                     tu)
 
+        # Gan cong thuc cho cac dong tong hop trong sheet chi tiet nhan vien
+        sc(ws, f'C{start_data_row + 10}', f'=SUM(C{start_data_row}:C{start_data_row + 5})', size=8, h='right', bdr=True, num_fmt='#,##0')
+        sc(ws, f'G{start_data_row + 4}', f'=SUM(G{start_data_row + 1}:G{start_data_row + 3})', size=8, h='right', bdr=True, num_fmt='#,##0')
+        sc(ws, f'G{start_data_row + 10}', f'=SUM(G{start_data_row + 7}:G{start_data_row + 9})', size=8, h='right', bdr=True, num_fmt='#,##0')
+
         row_dong_tong = start_data_row + 16
         style_merge(ws, f'A{row_dong_tong}:B{row_dong_tong}', 'Tong Cong', bold=True, size=9, h='center', fill=ORANGE)
-        sc(ws, f'C{row_dong_tong}', total_in, bold=True, size=9, h='right', fill=ORANGE, bdr=True, num_fmt='#,##0')
+        sc(ws, f'C{row_dong_tong}', f'=C{start_data_row + 10}', bold=True, size=9, h='right', fill=ORANGE, bdr=True, num_fmt='#,##0')
         style_merge(ws, f'D{row_dong_tong}:F{row_dong_tong}', 'Tong Cong', bold=True, size=9, h='center', fill=ORANGE)
-        sc(ws, f'G{row_dong_tong}', total_out, bold=True, size=9, h='right', fill=ORANGE, bdr=True, num_fmt='#,##0')
+        sc(ws, f'G{row_dong_tong}', f'=SUM(G{start_data_row + 6},G{start_data_row + 10}:G{start_data_row + 15})', bold=True, size=9, h='right', fill=ORANGE, bdr=True, num_fmt='#,##0')
         ws.row_dimensions[row_dong_tong].height = 16
 
         row_tong_thuc = row_dong_tong + 2
         ws.row_dimensions[row_tong_thuc - 1].height = 6
         thucnhan_bd = Border(left=Side(style='medium', color=BLUE), right=Side(style='medium', color=BLUE), top=Side(style='medium', color=BLUE), bottom=Side(style='medium', color=BLUE))
         style_merge(ws, f'A{row_tong_thuc}:E{row_tong_thuc}', 'Tong So Tien Luong Thuc Nhan', bold=True, size=11)
-        style_merge(ws, f'F{row_tong_thuc}:G{row_tong_thuc}', final, bold=True, size=12, h='right', color=BLUE, num_fmt='#,##0')
+        style_merge(ws, f'F{row_tong_thuc}:G{row_tong_thuc}', f'=C{row_dong_tong}-G{row_dong_tong}', bold=True, size=12, h='right', color=BLUE, num_fmt='#,##0')
         for c in range(1, 8):
             ws.cell(row=row_tong_thuc, column=c).border = Border(top=thucnhan_bd.top, bottom=thucnhan_bd.bottom, left=thucnhan_bd.left if c == 1 else None, right=thucnhan_bd.right if c == 7 else None)
         ws.row_dimensions[row_tong_thuc].height = 20
@@ -635,7 +650,7 @@ def generate_summary_excel(data, output_path):
             c.number_format = NUM
         ws.row_dimensions[r].height = 16
 
-    TR = DS + len(employees)
+    TR = DS + len(grouped_employees)
     style_merge(ws, f'A{TR}:C{TR}', 'TONG CONG', bold=True, size=10, h='center', fill=ORANGE)
     for col_idx in range(4, 26):
         col = get_column_letter(col_idx)
