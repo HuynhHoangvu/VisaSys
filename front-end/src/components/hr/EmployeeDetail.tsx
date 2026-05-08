@@ -282,7 +282,7 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
 
   const vnToday = getTodayPartsVN();
   const payrollMY = { month: vnToday.month, year: vnToday.year };
-  const cutoffPreview = resolveAbsenceCutoffDay(payrollMY.month, payrollMY.year);
+  const cutoffPreview = resolveAbsenceCutoffDay(payrollMY.month, payrollMY.year, vnToday, new Date());
 
   const latePenaltyCurrentMonth = computeLatePenaltyTotalVnd(
     safeAttendanceRecords,
@@ -433,6 +433,7 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
       return {
         endpoint: `${API_URL}/api/hr/employees/${employee.id}/sales-records/${salesRecordId}`,
         method: "DELETE",
+        label: "Xóa",
       } as const;
     }
     if (row.key.startsWith("att-half-")) {
@@ -441,6 +442,7 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
       return {
         endpoint: `${API_URL}/api/hr/employees/${employee.id}/attendance-records/${recordId}/waive-half-day`,
         method: "POST",
+        label: "Hoàn tác",
       } as const;
     }
     if (row.key.startsWith("att-fine-")) {
@@ -449,6 +451,18 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
       return {
         endpoint: `${API_URL}/api/hr/employees/${employee.id}/attendance-records/${recordId}/waive-fine`,
         method: "POST",
+        label: "Hoàn tác",
+      } as const;
+    }
+    if (row.key.startsWith("payroll-absent-")) {
+      const m = String(row.phuDe || "").match(/Ngày\s+(\d{1,2}\/\d{1,2}\/\d{4})/);
+      const date = m?.[1]?.trim();
+      if (!date) return null;
+      return {
+        endpoint: `${API_URL}/api/hr/employees/${employee.id}/attendance/excuse-absence`,
+        method: "POST",
+        body: { date },
+        label: "Hoàn tác",
       } as const;
     }
     return null;
@@ -461,11 +475,19 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
       alert("Khoản này là khoản tính tự động theo kỳ, chưa hỗ trợ xóa trực tiếp.");
       return;
     }
-    if (!window.confirm("Xóa khoản trừ này luôn khỏi dữ liệu?")) return;
+    const confirmMsg =
+      action.label === "Xóa"
+        ? "Xóa khoản trừ này luôn khỏi dữ liệu?"
+        : "Hoàn tác khoản trừ này? (Hệ thống sẽ ghi 'Có phép' để không bị tính là không điểm danh.)";
+    if (!window.confirm(confirmMsg)) return;
 
     setDeletingDeductionKey(row.key);
     try {
-      const res = await fetch(action.endpoint, { method: action.method });
+      const res = await fetch(action.endpoint, {
+        method: action.method,
+        headers: action.body ? { "Content-Type": "application/json" } : undefined,
+        body: action.body ? JSON.stringify(action.body) : undefined,
+      });
       const body = (await res.json().catch(() => ({}))) as { error?: string };
       if (!res.ok) throw new Error(body.error || "Lỗi server");
       window.dispatchEvent(new Event("refreshBoard"));
@@ -863,7 +885,9 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
                               onClick={() => void handleDeleteDeduction(row)}
                               disabled={deletingDeductionKey === row.key}
                             >
-                              {deletingDeductionKey === row.key ? "..." : "Xóa"}
+                              {deletingDeductionKey === row.key
+                                ? "..."
+                                : (getDeleteAction(row)?.label ?? "Xóa")}
                             </Button>
                           ) : null}
                         </div>

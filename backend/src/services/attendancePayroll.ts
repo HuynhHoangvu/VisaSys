@@ -52,14 +52,39 @@ export function getTodayPartsVN(): { year: number; month: number; day: number } 
   return { year: y, month: m, day: d };
 }
 
+/** Phút trong ngày theo giờ VN (0–1439). */
+export function getVNWallClockMinutes(asOf: Date = new Date()): number {
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Ho_Chi_Minh",
+    hour: "numeric",
+    minute: "numeric",
+    hour12: false,
+  });
+  const parts = formatter.formatToParts(asOf);
+  let h = 0,
+    min = 0;
+  for (const p of parts) {
+    if (p.type === "hour") h = parseInt(p.value, 10) % 24;
+    if (p.type === "minute") min = parseInt(p.value, 10);
+  }
+  return h * 60 + min;
+}
+
 export function resolveAbsenceCutoffDay(
   payrollMonth: number,
   payrollYear: number,
   todayVN: { year: number; month: number; day: number } = getTodayPartsVN(),
+  asOf: Date = new Date(),
+  /** Trước giờ này (VN) thì chưa "kết luận vắng" cho ngày hiện tại. Mặc định 23:59. */
+  finalizeTodayAfterMinutes: number = 23 * 60 + 59,
 ): number {
   const lastDom = new Date(payrollYear, payrollMonth, 0).getDate();
   if (todayVN.year !== payrollYear || todayVN.month !== payrollMonth) {
     return lastDom;
+  }
+  const nowMins = getVNWallClockMinutes(asOf);
+  if (nowMins < finalizeTodayAfterMinutes) {
+    return Math.max(0, Math.min(todayVN.day - 1, lastDom));
   }
   return Math.min(todayVN.day, lastDom);
 }

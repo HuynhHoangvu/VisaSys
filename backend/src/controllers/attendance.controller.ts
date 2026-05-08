@@ -224,6 +224,51 @@ export const waiveAttendanceFine = asyncHandler(async (req: Request, res: Respon
 });
 
 /**
+ * HR/QL: hoàn tác khoản "Không điểm danh (1 ngày công)" (tính tự động theo lịch T2–T6).
+ * Cách làm: tạo / cập nhật một AttendanceRecord "Có phép" với check-in hợp lệ cho ngày đó,
+ * để kỳ lương không còn tính ngày này là vắng.
+ */
+export const excuseScheduledAbsence = asyncHandler(async (req: Request, res: Response) => {
+  const employeeId = req.params.id as string;
+  const { date } = (req.body || {}) as { date?: string };
+  const targetDate = String(date || "").trim();
+  if (!targetDate) {
+    return res.status(400).json({ error: "Thiếu ngày cần hoàn tác (date)." });
+  }
+
+  const existing = await prisma.attendanceRecord.findFirst({
+    where: { employeeId, date: targetDate },
+  });
+
+  // Dùng giờ vào "08:00" để satisfy hasValidCheckIn(), nhưng không tạo phạt vì status không phải "Đi muộn".
+  const payload = {
+    date: targetDate,
+    inTime: "08:00",
+    outTime: "-",
+    status: "Có phép",
+    fine: 0,
+    halfDayDeduction: 0,
+    employeeId,
+  } as const;
+
+  const record = existing
+    ? await prisma.attendanceRecord.update({
+        where: { id: existing.id },
+        data: {
+          inTime: payload.inTime,
+          outTime: payload.outTime,
+          status: payload.status,
+          fine: payload.fine,
+          halfDayDeduction: payload.halfDayDeduction,
+        },
+      })
+    : await prisma.attendanceRecord.create({ data: payload });
+
+  getIO().emit("data_changed");
+  res.json(record);
+});
+
+/**
  * Pure business logic for penalizing employees who forgot to check out.
  * Extracted from the HTTP controller so the nightly cron job can call it
  * directly without constructing a fake req/res pair.

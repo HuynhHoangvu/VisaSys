@@ -125,10 +125,17 @@ export function resolveAbsenceCutoffDay(
   payrollMonth: number,
   payrollYear: number,
   todayVN = getTodayPartsVN(),
+  asOf: Date = new Date(),
+  /** Trước giờ này (VN) thì chưa "kết luận vắng" cho ngày hiện tại. Mặc định 23:59. */
+  finalizeTodayAfterMinutes: number = 23 * 60 + 59,
 ): number {
   const lastDom = new Date(payrollYear, payrollMonth, 0).getDate();
   if (todayVN.year !== payrollYear || todayVN.month !== payrollMonth) {
     return lastDom;
+  }
+  const nowMins = getVNWallClockMinutes(asOf);
+  if (nowMins < finalizeTodayAfterMinutes) {
+    return Math.max(0, Math.min(todayVN.day - 1, lastDom));
   }
   return Math.min(todayVN.day, lastDom);
 }
