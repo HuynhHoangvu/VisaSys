@@ -112,8 +112,16 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
         hrFetch(`${API_URL}/api/hr/employees`),
         hrFetch(`${API_URL}/api/hr/departments`),
       ]);
-      setEmployees(await empRes.json());
-      setDepartments(await deptRes.json());
+      const empJson: unknown = await empRes.json();
+      const deptJson: unknown = await deptRes.json();
+      if (!empRes.ok) {
+        console.error("GET /api/hr/employees:", empRes.status, empJson);
+      }
+      if (!deptRes.ok) {
+        console.error("GET /api/hr/departments:", deptRes.status, deptJson);
+      }
+      setEmployees(Array.isArray(empJson) ? empJson : []);
+      setDepartments(Array.isArray(deptJson) ? deptJson : []);
     } catch (error) {
       console.error("Lỗi khi tải dữ liệu:", error);
     }
@@ -471,7 +479,7 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
     .filter((group) => group.employees.length > 0);
 
   const unassignedEmployees = filteredEmployees.filter(
-    (emp) => !departments.some((d) => d.name === emp.department),
+    (emp) => !filteredDepartments.some((d) => d.name === emp.department),
   );
   if (
     unassignedEmployees.length > 0 &&
@@ -630,7 +638,7 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
                       >
                         <span className="mr-2">📁</span>
                         Bộ phận:{" "}
-                        <span className="text-blue-700 uppercase tracking-wide ml-1 text-xs sm:text-sm">
+                        <span className="text-blue-700 ml-1 text-xs sm:text-sm font-semibold tracking-tight">
                           {group.departmentName}
                         </span>
                         <span className="ml-3 text-[10px] sm:text-xs font-semibold text-gray-500 bg-white px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full border border-gray-200 shadow-sm">

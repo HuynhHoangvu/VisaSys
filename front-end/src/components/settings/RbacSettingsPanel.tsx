@@ -74,10 +74,19 @@ const RbacSettingsPanel: React.FC<{ onSelfPermissionsUpdated?: (u: AuthUser) => 
   const loadCatalogAndMatrix = useCallback(async () => {
     const [cRes, mRes] = await Promise.all([
       api.get<{ catalog: CatalogItem[] }>("/api/access/catalog"),
-      api.get<{ matrix: MatrixRow[] }>("/api/access/matrix"),
+      api.get<{
+        matrix: MatrixRow[];
+        rbacSchemaMissing?: boolean;
+        warning?: string;
+      }>("/api/access/matrix"),
     ]);
     setCatalog(cRes.data.catalog);
     const rows = mRes.data.matrix;
+    if (mRes.data.rbacSchemaMissing && mRes.data.warning) {
+      setStatus(mRes.data.warning);
+    } else {
+      setStatus(null);
+    }
     setMatrix(rows);
     const next: Record<string, Set<string>> = {};
     for (const r of rows) {

@@ -116,8 +116,8 @@ function intersectCatalog(set: Set<string>): string[] {
   return sanitizePermissionList([...set]);
 }
 
-/** DB chưa migrate RBAC (P2021 / bảng chưa tồn tại) — dùng legacy, không crash login. */
-function isMissingRbacTablesError(e: unknown): boolean {
+/** DB chưa migrate RBAC (P2021 / bảng chưa tồn tại) — dùng legacy, không crash login/API. */
+export function isMissingRbacTablesError(e: unknown): boolean {
   if (!e || typeof e !== "object") return false;
   const err = e as { code?: string; message?: string; meta?: { modelName?: string } };
   if (err.code === "P2021") return true;
