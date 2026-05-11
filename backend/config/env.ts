@@ -8,6 +8,9 @@ export const isProduction = NODE_ENV === "production";
 export const PORT = process.env.PORT ?? "3001";
 export const FRONTEND_URL = process.env.FRONTEND_URL ?? "http://localhost:5173";
 export const SESSION_SECRET = process.env.SESSION_SECRET ?? "flyvisa-secret-key-2026";
+/** Ký JWT refresh token — nên set JWT_REFRESH_SECRET riêng trên production. */
+export const JWT_REFRESH_SECRET =
+  process.env.JWT_REFRESH_SECRET ?? `${SESSION_SECRET}:flyvisa-jwt-refresh`;
 export const DATABASE_URL = process.env.DATABASE_URL ?? "";
 export const GCS_BUCKET_NAME = process.env.GCS_BUCKET_NAME ?? "flyvisa-documents";
 export const GCS_PROJECT_ID = process.env.GCS_PROJECT_ID ?? "";

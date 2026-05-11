@@ -95,6 +95,7 @@ model Employee {
   // [THÊM DÒNG NÀY]: 1 Nhân viên có nhiều lượt chấm công
   attendanceRecords AttendanceRecord[]
   workspaces        Workspace[]
+  permissionOverride EmployeePermissionOverride?
 
   createdAt      DateTime   @default(now())
 }
@@ -242,4 +243,21 @@ model Workspace {
   createdAt  DateTime @default(now())
 
   @@index([employeeId])
+}
+
+/** Ma trận quyền mặc định theo chức danh (Employee.role) */
+model RolePermission {
+  role          String   @id
+  permissions String[]
+}
+
+/**
+ * Ghi đè theo nhân viên: quyền hiệu lực = (theo role ∪ granted) \\ revoked,
+ * sau đó giao với catalog và quy tắc phòng ban legacy trên server.
+ */
+model EmployeePermissionOverride {
+  employeeId String   @id
+  granted      String[] @default([])
+  revoked      String[] @default([])
+  employee     Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
 }

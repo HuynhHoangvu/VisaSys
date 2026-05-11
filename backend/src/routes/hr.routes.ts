@@ -6,6 +6,7 @@ import { createLeaveRequest, getLeaveRequests, getLeaveRequestsByEmployee, updat
 import { finalizeMonthSalary, getSalaryHistory } from "../controllers/salary.controller.js";
 import { downloadSalarySlip, downloadSalarySummary, downloadSalarySummaryExcel, downloadSalarySlipsExcel, testSalaryCalculation, getSalaryBreakdown } from "../controllers/salarySlip.controller.js";
 import { validate } from "../middlewares/validate.js";
+import { requireAuth, requirePermission, requireHrWriteOrSelfAttendance } from "../middlewares/authorize.js";
 import {
   createEmployeeSchema,
   updateEmployeeSchema,
@@ -17,42 +18,52 @@ import {
 
 const router = Router();
 
+const auth = requireAuth;
+const hrRead = requirePermission(["hr.registry.read"]);
+const hrWrite = requirePermission(["hr.registry.write"]);
+const hrDeleteEmp = requirePermission(["hr.employees.delete"]);
+const hrPayFinalize = requirePermission(["hr.payroll.finalize"]);
+const hrPayExport = requirePermission(["hr.payroll.export"]);
+const hrLeaveApprove = requirePermission(["hr.leave.approve"]);
+/** Đọc hoặc xuất lương (xem breakdown / test / phiếu) */
+const hrPayReadOrExport = requirePermission(["hr.registry.read", "hr.payroll.export"], "any");
+
 // Salary
-router.post("/salary/finalize",                  validate(finalizeMonthSchema), finalizeMonthSalary);
-router.get("/salary/history",                    getSalaryHistory);
-router.get("/salary/breakdown/:monthYear",       getSalaryBreakdown);
-router.get("/salary/test/:employeeId/:monthYear",testSalaryCalculation);
-router.get("/salary/slip/:employeeId/:monthYear",downloadSalarySlip);
-router.get("/salary/summary/:monthYear",         downloadSalarySummary);
-router.get("/salary/summary-excel/:monthYear",   downloadSalarySummaryExcel);
-router.get("/salary/slips-excel/:monthYear",     downloadSalarySlipsExcel);
+router.post("/salary/finalize", auth, hrPayFinalize, validate(finalizeMonthSchema), finalizeMonthSalary);
+router.get("/salary/history", auth, hrRead, getSalaryHistory);
+router.get("/salary/breakdown/:monthYear", auth, hrPayReadOrExport, getSalaryBreakdown);
+router.get("/salary/test/:employeeId/:monthYear", auth, hrPayReadOrExport, testSalaryCalculation);
+router.get("/salary/slip/:employeeId/:monthYear", auth, hrPayExport, downloadSalarySlip);
+router.get("/salary/summary/:monthYear", auth, hrPayExport, downloadSalarySummary);
+router.get("/salary/summary-excel/:monthYear", auth, hrPayExport, downloadSalarySummaryExcel);
+router.get("/salary/slips-excel/:monthYear", auth, hrPayExport, downloadSalarySlipsExcel);
 
 // Departments
-router.get("/departments",      getDepartments);
-router.post("/departments",     createDepartment);
-router.put("/departments/:id",  updateDepartment);
-router.delete("/departments/:id", deleteDepartment);
+router.get("/departments", auth, hrRead, getDepartments);
+router.post("/departments", auth, hrWrite, createDepartment);
+router.put("/departments/:id", auth, hrWrite, updateDepartment);
+router.delete("/departments/:id", auth, hrWrite, deleteDepartment);
 
 // Employees
-router.get("/employees",      getEmployees);
-router.post("/employees",     validate(createEmployeeSchema), createEmployee);
-router.put("/employees/:id",  validate(updateEmployeeSchema), updateEmployee);
-router.delete("/employees/:id", deleteEmployee);
+router.get("/employees", auth, hrRead, getEmployees);
+router.post("/employees", auth, hrWrite, validate(createEmployeeSchema), createEmployee);
+router.put("/employees/:id", auth, hrWrite, validate(updateEmployeeSchema), updateEmployee);
+router.delete("/employees/:id", auth, hrDeleteEmp, deleteEmployee);
 
-// Attendance
-router.post("/employees/:id/checkin",             checkInEmployee);
-router.post("/employees/:id/checkout",            checkOutEmployee);
-router.post("/employees/:id/attendance-records/:recordId/waive-half-day", waiveHalfDayDeduction);
-router.post("/employees/:id/attendance-records/:recordId/waive-fine", waiveAttendanceFine);
-router.post("/employees/:id/attendance/excuse-absence", excuseScheduledAbsence);
-router.post("/employees/:id/bonus",               validate(manualBonusSchema), addManualBonus);
-router.delete("/employees/:id/sales-records/:salesRecordId", deleteSalesRecord);
-router.post("/attendance/penalize-forgot-checkout", penalizeForgotCheckout);
+// Attendance (self: hr.attendance.self + :id = session; full: hr.registry.write)
+router.post("/employees/:id/checkin", auth, requireHrWriteOrSelfAttendance, checkInEmployee);
+router.post("/employees/:id/checkout", auth, requireHrWriteOrSelfAttendance, checkOutEmployee);
+router.post("/employees/:id/attendance-records/:recordId/waive-half-day", auth, hrWrite, waiveHalfDayDeduction);
+router.post("/employees/:id/attendance-records/:recordId/waive-fine", auth, hrWrite, waiveAttendanceFine);
+router.post("/employees/:id/attendance/excuse-absence", auth, hrWrite, excuseScheduledAbsence);
+router.post("/employees/:id/bonus", auth, hrWrite, validate(manualBonusSchema), addManualBonus);
+router.delete("/employees/:id/sales-records/:salesRecordId", auth, hrWrite, deleteSalesRecord);
+router.post("/attendance/penalize-forgot-checkout", auth, hrWrite, penalizeForgotCheckout);
 
 // Leave requests
-router.post("/employees/:id/leave",              validate(leaveRequestSchema), createLeaveRequest);
-router.get("/employees/:id/leave",               getLeaveRequestsByEmployee);
-router.get("/leave-requests",                    getLeaveRequests);
-router.put("/leave-requests/:id/status",         validate(updateLeaveStatusSchema), updateLeaveRequestStatus);
+router.post("/employees/:id/leave", auth, requireHrWriteOrSelfAttendance, validate(leaveRequestSchema), createLeaveRequest);
+router.get("/employees/:id/leave", auth, hrRead, getLeaveRequestsByEmployee);
+router.get("/leave-requests", auth, hrRead, getLeaveRequests);
+router.put("/leave-requests/:id/status", auth, hrLeaveApprove, validate(updateLeaveStatusSchema), updateLeaveRequestStatus);
 
 export default router;

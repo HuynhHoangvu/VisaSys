@@ -61,6 +61,23 @@ export const updateLeaveStatusSchema = z.object({
 });
 
 // ==========================================
+// ACCESS / RBAC
+// ==========================================
+export const accessMatrixPutSchema = z.object({
+  assignments: z.array(
+    z.object({
+      role: z.string().min(1),
+      permissions: z.array(z.string()),
+    }),
+  ),
+});
+
+export const employeeOverridePutSchema = z.object({
+  granted: z.array(z.string()),
+  revoked: z.array(z.string()),
+});
+
+// ==========================================
 // TASK / KANBAN
 // ==========================================
 export const createTaskSchema = z.object({

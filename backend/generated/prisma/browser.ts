@@ -97,3 +97,15 @@ export type WeeklyKPI = Prisma.WeeklyKPIModel
  * 
  */
 export type Workspace = Prisma.WorkspaceModel
+/**
+ * Model RolePermission
+ * * Ma trận quyền mặc định theo chức danh (Employee.role)
+ */
+export type RolePermission = Prisma.RolePermissionModel
+/**
+ * Model EmployeePermissionOverride
+ * *
+ *  * Ghi đè theo nhân viên: quyền hiệu lực = (theo role ∪ granted) \\ revoked,
+ *  * sau đó giao với catalog và quy tắc phòng ban legacy trên server.
+ */
+export type EmployeePermissionOverride = Prisma.EmployeePermissionOverrideModel

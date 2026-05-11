@@ -100,18 +100,26 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
   };
 
   useEffect(() => {
-    if (show) {
-      const fetchStaffList = async () => {
-        try {
-          const response = await fetch(`${API_URL}/api/hr/employees`);
-          const allEmployees: Employee[] = await response.json();
-          setStaffList(allEmployees);
-        } catch (error) {
-          console.error("Lỗi khi tải danh sách nhân viên:", error);
-        }
-      };
-      fetchStaffList();
-    }
+    if (!show) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const response = await fetch(`${API_URL}/api/hr/employees`, {
+          credentials: "include",
+        });
+        const raw: unknown = await response.json().catch(() => null);
+        if (cancelled) return;
+        setStaffList(
+          response.ok && Array.isArray(raw) ? (raw as Employee[]) : [],
+        );
+      } catch (error) {
+        console.error("Lỗi khi tải danh sách nhân viên:", error);
+        if (!cancelled) setStaffList([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [show]);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -361,7 +369,7 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
                 sizing="sm"
               >
                 <option value="">-- Chọn nhân viên --</option>
-                {staffList.map((staff) => (
+                {(Array.isArray(staffList) ? staffList : []).map((staff) => (
                   <option key={staff.id} value={staff.name}>
                     {staff.name} - {staff.employeeCode}
                   </option>

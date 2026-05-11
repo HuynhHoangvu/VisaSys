@@ -1,16 +1,21 @@
 import React, { useState } from "react";
 import type { AuthUser } from "../../types";
-import { FaceAvatar } from "../ui/FaceAvatar";
+import { canManageRbac } from "../../utils/access";
+import RbacSettingsPanel from "./RbacSettingsPanel";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 interface SettingsDashboardProps {
   currentUser: AuthUser;
+  onUserRefresh?: (user: AuthUser) => void;
 }
 
 const SettingsDashboard: React.FC<SettingsDashboardProps> = ({
   currentUser,
+  onUserRefresh,
 }) => {
+  const [mainTab, setMainTab] = useState<"security" | "rbac">("security");
+  const showRbacTab = canManageRbac(currentUser);
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -67,70 +72,52 @@ const SettingsDashboard: React.FC<SettingsDashboardProps> = ({
     }
   };
 
-  const infoRows = [
-    { label: "Mã nhân viên", value: currentUser.employeeCode || "—" },
-    { label: "Họ và tên", value: currentUser.name || "—" },
-    { label: "Email", value: currentUser.email || "—" },
-    { label: "Chức vụ", value: currentUser.role || "—" },
-    { label: "Phòng ban", value: currentUser.department || "—" },
-  ];
-
   return (
     <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-gray-50 space-y-5">
-      {/* HEADER */}
       <div>
         <h1 className="text-2xl font-bold text-gray-800">Cài đặt</h1>
         <p className="text-sm text-gray-500 mt-0.5">
-          Quản lý thông tin tài khoản của bạn
+          {mainTab === "security"
+            ? "Đổi mật khẩu và thông tin phiên bản ứng dụng"
+            : "Phân quyền truy cập theo vai trò và từng nhân viên"}
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {/* PROFILE CARD */}
-        <div className="lg:col-span-1">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <div className="flex flex-col items-center text-center">
-              <div className="w-20 h-20 rounded-full overflow-hidden shadow-lg mb-4">
-                <FaceAvatar
-                  name={currentUser.name || currentUser.employeeCode || "user"}
-                  size={80}
-                  showInitial={false}
-                />
-              </div>
-              <h2 className="text-lg font-bold text-gray-800">
-                {currentUser.name}
-              </h2>
-              <span className="mt-1 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700">
-                {currentUser.role || "Nhân viên"}
-              </span>
-              {currentUser.department && (
-                <p className="text-sm text-gray-500 mt-1">
-                  {currentUser.department}
-                </p>
-              )}
-            </div>
-
-            <div className="mt-6 space-y-3 border-t border-gray-100 pt-5">
-              {infoRows.map((row) => (
-                <div
-                  key={row.label}
-                  className="flex justify-between items-center py-1"
-                >
-                  <span className="text-xs text-gray-500 font-medium">
-                    {row.label}
-                  </span>
-                  <span className="text-sm font-semibold text-gray-800 max-w-[60%] text-right truncate">
-                    {row.value}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
+      {showRbacTab && (
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setMainTab("security")}
+            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+              mainTab === "security"
+                ? "bg-gray-900 text-white"
+                : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50"
+            }`}
+          >
+            Bảo mật
+          </button>
+          <button
+            type="button"
+            onClick={() => setMainTab("rbac")}
+            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+              mainTab === "rbac"
+                ? "bg-gray-900 text-white"
+                : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50"
+            }`}
+          >
+            Phân quyền (RBAC)
+          </button>
         </div>
+      )}
 
-        {/* RIGHT COLUMN */}
-        <div className="lg:col-span-2 space-y-5">
-          {/* CHANGE PASSWORD */}
+      {mainTab === "rbac" && showRbacTab ? (
+        <RbacSettingsPanel
+          onSelfPermissionsUpdated={(u) => {
+            onUserRefresh?.(u);
+          }}
+        />
+      ) : (
+        <div className="max-w-2xl space-y-5">
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <div className="flex items-center gap-3 mb-5">
               <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center">
@@ -151,7 +138,7 @@ const SettingsDashboard: React.FC<SettingsDashboardProps> = ({
               <div>
                 <h3 className="font-bold text-gray-800">Đổi mật khẩu</h3>
                 <p className="text-xs text-gray-500">
-                  Cập nhật mật khẩu đăng nhập của bạn
+                  Cập nhật mật khẩu đăng nhập
                 </p>
               </div>
             </div>
@@ -273,7 +260,6 @@ const SettingsDashboard: React.FC<SettingsDashboardProps> = ({
             </form>
           </div>
 
-          {/* APP INFO */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
@@ -313,7 +299,7 @@ const SettingsDashboard: React.FC<SettingsDashboardProps> = ({
             </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

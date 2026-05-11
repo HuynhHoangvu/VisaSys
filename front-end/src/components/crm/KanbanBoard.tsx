@@ -17,6 +17,7 @@ import type {
 } from "../../types";
 import socket from "../../services/socket";
 import SearchFilterBar from "../filter/SearchFilterBar";
+import { hasPermission, P } from "../../utils/access";
 
 interface KanbanBoardProps {
   onOpenActivityList: (taskId: string) => void;
@@ -74,32 +75,27 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
   const [filterSource, setFilterSource] = useState("all");
   const [filterDateRange, setFilterDateRange] = useState("all");
 
-  // Phân quyền
-  const userRole = currentUser?.role?.trim().toLowerCase() || "";
-  const isBoss = userRole.includes("giám đốc") || currentUser?.id === "admin";
-  const isManager =
-    userRole === "quản lý" ||
-    userRole === "trưởng phòng" ||
-    userRole === "admin";
   const isMarketingDept =
     currentUser?.department?.toLowerCase().includes("marketing") || false;
-
-  const isProcessingDept = ["xử lý hồ sơ", "hồ sơ", "trợ lý giám đốc"].some(
-    (d) => currentUser?.department?.toLowerCase().includes(d),
-  );
-
-  const canSeeAll = isBoss || isManager || isProcessingDept || isMarketingDept;
+  const canSeeAll =
+    (currentUser ? hasPermission(currentUser, P.crmSeeAll) : false) ||
+    isMarketingDept;
 
   useEffect(() => {
     const fetchStaffList = async () => {
       try {
-        const response = await fetch(`${API_URL}/api/hr/employees`);
-        if (response.ok) {
-          const data: Employee[] = await response.json();
-          setStaffList(data);
+        const response = await fetch(`${API_URL}/api/hr/employees`, {
+          credentials: "include",
+        });
+        const raw: unknown = await response.json().catch(() => null);
+        if (response.ok && Array.isArray(raw)) {
+          setStaffList(raw as Employee[]);
+        } else {
+          setStaffList([]);
         }
       } catch (error) {
         console.error("Lỗi tải danh sách nhân viên:", error);
+        setStaffList([]);
       }
     };
     fetchStaffList();
