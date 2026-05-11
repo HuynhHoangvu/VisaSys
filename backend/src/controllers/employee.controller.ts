@@ -70,7 +70,10 @@ export const createEmployee = asyncHandler(async (req: Request, res: Response) =
     return res.status(400).json({ error: "Email này đã tồn tại trong hệ thống!" });
   }
 
-  const dept = await prisma.department.findFirst({ where: { name: department } });
+  const deptName = typeof department === "string" ? department.trim() : "";
+  const dept = deptName
+    ? await prisma.department.findFirst({ where: { name: deptName } })
+    : null;
   const employeeCode = await generateEmployeeCode();
   const hashedPassword = await bcrypt.hash(password || "123456", 10);
 
@@ -107,7 +110,10 @@ export const updateEmployee = asyncHandler(async (req: Request, res: Response) =
     return res.status(400).json({ error: "Email này đã được sử dụng bởi nhân viên khác!" });
   }
 
-  const dept = await prisma.department.findFirst({ where: { name: department } });
+  const deptName = typeof department === "string" ? department.trim() : "";
+  const dept = deptName
+    ? await prisma.department.findFirst({ where: { name: deptName } })
+    : null;
 
   const updateData: any = {
     name,
@@ -122,9 +128,23 @@ export const updateEmployee = asyncHandler(async (req: Request, res: Response) =
     updateData.password = await bcrypt.hash(password, 10);
   }
 
-  const updated = await prisma.employee.update({ where: { id }, data: updateData });
+  const updated = await prisma.employee.update({
+    where: { id },
+    data: updateData,
+    include: { department: true },
+  });
   getIO().emit("data_changed");
-  res.json(updated);
+  res.json({
+    id: updated.id,
+    employeeCode: updated.employeeCode,
+    name: updated.name,
+    email: updated.email,
+    role: updated.role,
+    baseSalary: updated.baseSalary,
+    commissionRate: updated.commissionRate,
+    department: updated.department?.name || "Chưa phân bổ / Khác",
+    departmentId: updated.departmentId,
+  });
 });
 
 export const deleteEmployee = asyncHandler(async (req: Request, res: Response) => {

@@ -24,6 +24,11 @@ import {
 import socket from "../../services/socket";
 import { hasPermission, P } from "../../utils/access";
 import { canManageOthersAttendanceByRole } from "../../utils/hrRoles";
+import {
+  mergeCatalogWithInUseNames,
+  normalizeDeptKey,
+  isInferredDepartmentId,
+} from "../../utils/hrDepartments";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
@@ -314,6 +319,12 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
   };
 
   const handleUpdateDepartment = async (id: string) => {
+    if (isInferredDepartmentId(id)) {
+      alert(
+        "Tên này chỉ xuất hiện trên hồ sơ nhân viên (chưa có bản ghi trong danh mục). Hãy bấm «Thêm» để tạo bộ phận cùng tên, hoặc «Sửa» nhân viên để gán đúng bộ phận trong danh mục.",
+      );
+      return;
+    }
     if (!canAddPersonnel || !editDeptName.trim()) return;
     try {
       await hrFetch(`${API_URL}/api/hr/departments/${id}`, {
@@ -329,6 +340,12 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
   };
 
   const handleDeleteDepartment = async (id: string) => {
+    if (isInferredDepartmentId(id)) {
+      alert(
+        "Không thể xóa dòng này — đó là tên đang gán trên nhân viên nhưng chưa có trong danh mục bộ phận. Thêm bộ phận trùng tên hoặc sửa nhân viên để gán lại.",
+      );
+      return;
+    }
     if (!canDeletePersonnel)
       return alert("Chỉ Giám đốc mới có quyền xóa phòng ban!");
     if (
@@ -459,13 +476,17 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
     );
   }
 
-  let filteredDepartments = departments;
+  const departmentBoard = mergeCatalogWithInUseNames(departments, employees);
+
+  let filteredDepartments = departmentBoard;
   let filteredEmployees = employees;
 
   if (!canManageOthersAttendance && currentUser) {
     filteredEmployees = employees.filter((e) => e.id === currentUser.id);
-    filteredDepartments = departments.filter(
-      (d) => d.name === currentUser.department,
+    filteredDepartments = departmentBoard.filter(
+      (d) =>
+        normalizeDeptKey(d.name) ===
+        normalizeDeptKey(currentUser.department ?? ""),
     );
   }
 
@@ -473,13 +494,18 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
     .map((dept) => ({
       departmentName: dept.name,
       employees: filteredEmployees.filter(
-        (emp) => emp.department === dept.name,
+        (emp) =>
+          normalizeDeptKey(emp.department) === normalizeDeptKey(dept.name),
       ),
     }))
     .filter((group) => group.employees.length > 0);
 
   const unassignedEmployees = filteredEmployees.filter(
-    (emp) => !filteredDepartments.some((d) => d.name === emp.department),
+    (emp) =>
+      !filteredDepartments.some(
+        (d) =>
+          normalizeDeptKey(d.name) === normalizeDeptKey(emp.department),
+      ),
   );
   if (
     unassignedEmployees.length > 0 &&
@@ -502,6 +528,11 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
             </h2>
             <p className="text-gray-500 text-xs sm:text-sm mt-1">
               Danh sách nhân viên, bộ phận và phân quyền
+            </p>
+            <p className="text-gray-400 text-[11px] sm:text-xs mt-1 max-w-2xl">
+              Trong Cài đặt, mục Phân quyền (RBAC) là vai trò công việc (Giám đốc,
+              Nhân viên…), không phải danh mục bộ phận. Bộ phận HR chỉ quản tại trang
+              này và trong «Quản lý bộ phận».
             </p>
           </div>
 
@@ -730,7 +761,7 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
           setIsAddEmpModalOpen(false);
           setEmployeeToEdit(null);
         }}
-        departments={departments}
+        departments={departmentBoard}
         onSubmitEmployee={handleSubmitEmployee}
         employeeToEdit={employeeToEdit}
       />
@@ -738,7 +769,7 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
       <DepartmentModal
         show={isDeptModalOpen}
         onClose={() => setIsDeptModalOpen(false)}
-        departments={departments}
+        departments={departmentBoard}
         canAddPersonnel={!!canAddPersonnel}
         canDeletePersonnel={!!canDeletePersonnel}
         newDeptName={newDeptName}
