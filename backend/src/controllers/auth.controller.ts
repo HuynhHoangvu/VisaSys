@@ -2,7 +2,7 @@
 import { Request, Response } from "express";
 import { prisma } from "../../lib/prisma.js";
 import { buildSessionUserPayload } from "../services/accessResolution.js";
-import { isProduction } from "../../config/env.js";
+import { sessionCookieCrossSite } from "../../config/env.js";
 import {
   REFRESH_COOKIE_MAX_AGE_MS,
   REFRESH_COOKIE_NAME,
@@ -46,8 +46,8 @@ export const login = async (req: Request, res: Response) => {
     const refreshJwt = signRefreshToken(employee.id);
     res.cookie(REFRESH_COOKIE_NAME, refreshJwt, {
       httpOnly: true,
-      secure: isProduction,
-      sameSite: isProduction ? "none" : "lax",
+      secure: sessionCookieCrossSite,
+      sameSite: sessionCookieCrossSite ? "none" : "lax",
       maxAge: REFRESH_COOKIE_MAX_AGE_MS,
       path: "/",
     });
@@ -70,8 +70,8 @@ export const logout = async (req: Request, res: Response) => {
     res.clearCookie("connect.sid");
     res.clearCookie(REFRESH_COOKIE_NAME, {
       httpOnly: true,
-      secure: isProduction,
-      sameSite: isProduction ? "none" : "lax",
+      secure: sessionCookieCrossSite,
+      sameSite: sessionCookieCrossSite ? "none" : "lax",
       path: "/",
     });
     res.json({ message: "Đăng xuất thành công" });
@@ -99,8 +99,8 @@ export const refreshSession = async (req: Request, res: Response) => {
   const nextRefresh = signRefreshToken(parsed.sub);
   res.cookie(REFRESH_COOKIE_NAME, nextRefresh, {
     httpOnly: true,
-    secure: isProduction,
-    sameSite: isProduction ? "none" : "lax",
+    secure: sessionCookieCrossSite,
+    sameSite: sessionCookieCrossSite ? "none" : "lax",
     maxAge: REFRESH_COOKIE_MAX_AGE_MS,
     path: "/",
   });
