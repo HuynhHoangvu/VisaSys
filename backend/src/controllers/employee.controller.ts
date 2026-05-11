@@ -35,12 +35,12 @@ export const getEmployees = asyncHandler(async (req: Request, res: Response) => 
   const user = (req.session as any).user;
   const perms: string[] = Array.isArray(user?.permissions) ? user.permissions : [];
   const hasReadFull = perms.includes("hr.registry.read");
-  const hasSelfAttendance = perms.includes("hr.attendance.self");
+  const hasSelfRead = perms.includes("hr.registry.read_self") || perms.includes("hr.attendance.self");
 
   let whereClause = {};
-  if (!hasReadFull && hasSelfAttendance && user?.id) {
+  if (!hasReadFull && hasSelfRead && user?.id) {
     whereClause = { id: user.id };
-  } else if (!hasReadFull && !hasSelfAttendance) {
+  } else if (!hasReadFull && !hasSelfRead) {
     return res.status(403).json({ error: "Bạn không có quyền thực hiện thao tác này" });
   }
 

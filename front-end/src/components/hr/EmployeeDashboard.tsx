@@ -481,7 +481,9 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
   let filteredDepartments = departmentBoard;
   let filteredEmployees = employees;
 
-  if (!canManageOthersAttendance && currentUser) {
+  const canViewAll = hasPermission(currentUser, P.hrRead);
+
+  if (!canViewAll && currentUser) {
     filteredEmployees = employees.filter((e) => e.id === currentUser.id);
     filteredDepartments = departmentBoard.filter(
       (d) =>
@@ -509,7 +511,7 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
   );
   if (
     unassignedEmployees.length > 0 &&
-    (canManageOthersAttendance ||
+    (canViewAll ||
       unassignedEmployees.some((e) => e.id === currentUser?.id))
   ) {
     groupedEmployees.push({

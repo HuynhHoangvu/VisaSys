@@ -20,7 +20,8 @@ export const PERMISSION_CATALOG = [
   { id: "crm.board.see_all", label: "CRM: xem toàn bộ deal / lọc theo sale", group: "crm" },
   { id: "kpi.week.edit", label: "KPI: chỉnh mục tiêu / phân công tuần", group: "kpi" },
 
-  { id: "hr.registry.read", label: "HR: xem danh sách, lương, đơn nghỉ (đọc)", group: "hr" },
+  { id: "hr.registry.read", label: "HR: xem tổng thể danh sách, lương, đơn nghỉ", group: "hr" },
+  { id: "hr.registry.read_self", label: "HR: tự xem bảng chính mình (lương, đơn nghỉ)", group: "hr" },
   {
     id: "hr.attendance.self",
     label: "HR: tự chấm công, checkout, gửi đơn nghỉ (chỉ bản thân)",

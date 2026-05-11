@@ -17,6 +17,7 @@ export const P = {
   crmSeeAll: "crm.board.see_all",
   kpiWeekEdit: "kpi.week.edit",
   hrRead: "hr.registry.read",
+  hrReadSelf: "hr.registry.read_self",
   /** Chấm công / checkout / gửi đơn nghỉ chỉ cho `:id` = chính mình (API đã kiểm tra). */
   hrAttendanceSelf: "hr.attendance.self",
   hrWrite: "hr.registry.write",
@@ -60,7 +61,7 @@ function canProcessingNav(user: AuthUser): boolean {
 /** Fallback khi localStorage chưa có `permissions` (phiên cũ) — khớp logic backend legacy. */
 function legacyEffectivePermissions(user: AuthUser): Set<string> {
   if (isTeacherDept(user)) {
-    return new Set([P.navHr, P.hrRead, P.hrAttendanceSelf]);
+    return new Set([P.navHr, P.hrReadSelf, P.hrAttendanceSelf]);
   }
   const perms = new Set<string>([
     P.navHr,
@@ -94,6 +95,7 @@ function legacyEffectivePermissions(user: AuthUser): Set<string> {
     perms.add(P.hrPayrollExport);
     perms.add(P.hrLeaveApprove);
   } else {
+    perms.add(P.hrReadSelf);
     perms.add(P.hrAttendanceSelf);
   }
   if (directorLevel || deputy || roleHas(user.role, "admin") || user.id === "admin") {

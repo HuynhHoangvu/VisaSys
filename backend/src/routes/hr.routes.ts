@@ -20,7 +20,7 @@ const router = Router();
 
 const auth = requireAuth;
 const hrRead = requirePermission(["hr.registry.read"]);
-const hrReadOrSelfAttendance = requirePermission(["hr.registry.read", "hr.attendance.self"], "any");
+const hrReadOrSelfAttendance = requirePermission(["hr.registry.read", "hr.registry.read_self", "hr.attendance.self"], "any");
 const hrWrite = requirePermission(["hr.registry.write"]);
 const hrDeleteEmp = requirePermission(["hr.employees.delete"]);
 const hrPayFinalize = requirePermission(["hr.payroll.finalize"]);

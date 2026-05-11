@@ -94,7 +94,7 @@ export const requireHrReadOrSelfAttendance = (req: Request, res: Response, next:
   }
   const targetId = String(req.params.id || "").trim();
   const selfId = String(user.id || "").trim();
-  if (perms.includes(HR_ATTENDANCE_SELF) && targetId && selfId && targetId === selfId) {
+  if ((perms.includes(HR_ATTENDANCE_SELF) || perms.includes("hr.registry.read_self")) && targetId && selfId && targetId === selfId) {
     next();
     return;
   }
