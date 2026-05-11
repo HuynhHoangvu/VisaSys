@@ -79,7 +79,7 @@ const SettingsDashboard: React.FC<SettingsDashboardProps> = ({
         <p className="text-sm text-gray-500 mt-0.5">
           {mainTab === "security"
             ? "Đổi mật khẩu và thông tin phiên bản ứng dụng"
-            : "Phân quyền truy cập theo vai trò và từng nhân viên"}
+            : "Phân quyền theo bộ phận và ghi đè từng nhân viên"}
         </p>
       </div>
 

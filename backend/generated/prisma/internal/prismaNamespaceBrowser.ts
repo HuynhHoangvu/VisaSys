@@ -67,6 +67,7 @@ export const ModelName = {
   ProcessedFile: 'ProcessedFile',
   WeeklyKPI: 'WeeklyKPI',
   Workspace: 'Workspace',
+  DepartmentPermission: 'DepartmentPermission',
   RolePermission: 'RolePermission',
   EmployeePermissionOverride: 'EmployeePermissionOverride'
 } as const
@@ -313,6 +314,14 @@ export const WorkspaceScalarFieldEnum = {
 } as const
 
 export type WorkspaceScalarFieldEnum = (typeof WorkspaceScalarFieldEnum)[keyof typeof WorkspaceScalarFieldEnum]
+
+
+export const DepartmentPermissionScalarFieldEnum = {
+  departmentId: 'departmentId',
+  permissions: 'permissions'
+} as const
+
+export type DepartmentPermissionScalarFieldEnum = (typeof DepartmentPermissionScalarFieldEnum)[keyof typeof DepartmentPermissionScalarFieldEnum]
 
 
 export const RolePermissionScalarFieldEnum = {

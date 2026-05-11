@@ -13,6 +13,7 @@ async function main() {
 
   await prisma.employeePermissionOverride.deleteMany();
   await prisma.rolePermission.deleteMany();
+  await prisma.departmentPermission.deleteMany();
   await prisma.employee.deleteMany();
   await prisma.department.deleteMany();
 

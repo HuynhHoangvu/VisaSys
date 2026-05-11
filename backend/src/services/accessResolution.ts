@@ -1,4 +1,9 @@
-import type { Employee, Department, EmployeePermissionOverride, RolePermission } from "../../generated/prisma/client";
+import type {
+  Employee,
+  Department,
+  EmployeePermissionOverride,
+  DepartmentPermission,
+} from "../../generated/prisma/client";
 import { prisma } from "../../lib/prisma.js";
 import { isValidPermissionId, sanitizePermissionList, type PermissionId } from "../constants/permissions.js";
 
@@ -48,7 +53,7 @@ function canAccessProcessingRoutes(role: string, deptName: string | undefined | 
 }
 
 /**
- * Default permissions when no DB row for RolePermission (legacy mirror).
+ * Default permissions when no DB row for DepartmentPermission (legacy mirror).
  */
 export function legacyDefaultPermissions(e: {
   id: string;
@@ -122,17 +127,25 @@ export function isMissingRbacTablesError(e: unknown): boolean {
   const err = e as { code?: string; message?: string; meta?: { modelName?: string } };
   if (err.code === "P2021") return true;
   const msg = `${err.message || ""} ${JSON.stringify(err.meta || {})}`;
-  if (msg.includes("does not exist") && (msg.includes("RolePermission") || msg.includes("EmployeePermissionOverride"))) {
+  if (
+    msg.includes("does not exist") &&
+    (msg.includes("RolePermission") ||
+      msg.includes("DepartmentPermission") ||
+      msg.includes("EmployeePermissionOverride"))
+  ) {
     return true;
   }
   return false;
 }
 
-async function loadRoleRow(role: string): Promise<RolePermission | null> {
-  const key = role.trim();
-  if (!key) return null;
+async function loadDepartmentPermissionRow(
+  departmentId: string | null | undefined,
+): Promise<DepartmentPermission | null> {
+  if (!departmentId?.trim()) return null;
   try {
-    return await prisma.rolePermission.findUnique({ where: { role: key } });
+    return await prisma.departmentPermission.findUnique({
+      where: { departmentId: departmentId.trim() },
+    });
   } catch (e) {
     if (isMissingRbacTablesError(e)) return null;
     throw e;
@@ -180,10 +193,10 @@ export async function buildSessionUserPayload(employeeId: string): Promise<{
 export async function resolveEffectivePermissions(
   employee: Employee & { department: Department | null },
 ): Promise<string[]> {
-  const roleRow = await loadRoleRow(employee.role);
+  const deptPermRow = await loadDepartmentPermissionRow(employee.departmentId);
   let base: Set<string>;
-  if (roleRow?.permissions?.length) {
-    base = new Set(sanitizePermissionList(roleRow.permissions));
+  if (deptPermRow?.permissions?.length) {
+    base = new Set(sanitizePermissionList(deptPermRow.permissions));
   } else {
     base = legacyDefaultPermissions(employee);
   }

@@ -122,8 +122,13 @@ export type WeeklyKPI = Prisma.WeeklyKPIModel
  */
 export type Workspace = Prisma.WorkspaceModel
 /**
+ * Model DepartmentPermission
+ * * Ma trận quyền mặc định theo bộ phận (Department). Employee.role chỉ là chức danh HR, không dùng làm khóa ma trận.
+ */
+export type DepartmentPermission = Prisma.DepartmentPermissionModel
+/**
  * Model RolePermission
- * * Ma trận quyền mặc định theo chức danh (Employee.role)
+ * * Cũ: ma trận theo role — không còn dùng trong resolveEffectivePermissions; giữ bảng để migrate an toàn.
  */
 export type RolePermission = Prisma.RolePermissionModel
 /**

@@ -66,7 +66,7 @@ export const updateLeaveStatusSchema = z.object({
 export const accessMatrixPutSchema = z.object({
   assignments: z.array(
     z.object({
-      role: z.string().min(1),
+      departmentId: z.string().min(1),
       permissions: z.array(z.string()),
     }),
   ),

@@ -530,9 +530,10 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
               Danh sách nhân viên, bộ phận và phân quyền
             </p>
             <p className="text-gray-400 text-[11px] sm:text-xs mt-1 max-w-2xl">
-              Trong Cài đặt, mục Phân quyền (RBAC) là vai trò công việc (Giám đốc,
-              Nhân viên…), không phải danh mục bộ phận. Bộ phận HR chỉ quản tại trang
-              này và trong «Quản lý bộ phận».
+              Trong Cài đặt › Phân quyền (RBAC), ma trận quyền gắn theo{" "}
+              <span className="text-gray-500">bộ phận</span>; cột «Chức vụ» trên bảng là{" "}
+              <span className="text-gray-500">vai trò HR</span> (tách khỏi quyền truy cập). Danh mục bộ phận quản tại
+              «Quản lý bộ phận».
             </p>
           </div>
 

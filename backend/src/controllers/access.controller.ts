@@ -20,50 +20,51 @@ export const getAccessCatalog = async (_req: Request, res: Response) => {
 
 export const getAccessMatrix = async (_req: Request, res: Response) => {
   try {
-    const [rows, distinctRoles] = await Promise.all([
-      prisma.rolePermission.findMany({ orderBy: { role: "asc" } }),
-      prisma.employee.findMany({ select: { role: true }, distinct: ["role"] }),
+    const [departments, permRows] = await Promise.all([
+      prisma.department.findMany({ orderBy: { name: "asc" } }),
+      prisma.departmentPermission.findMany(),
     ]);
-    const roleSet = new Set<string>();
-    for (const r of rows) roleSet.add(r.role);
-    for (const e of distinctRoles) {
-      if (e.role?.trim()) roleSet.add(e.role.trim());
-    }
-    const matrix = [...roleSet].sort().map((role) => {
-      const row = rows.find((x) => x.role === role);
-      return {
-        role,
-        permissions: row ? sanitizePermissionList(row.permissions) : [],
-      };
-    });
+    const byDept = new Map(permRows.map((p) => [p.departmentId, p.permissions]));
+    const matrix = departments.map((d) => ({
+      departmentId: d.id,
+      departmentName: d.name,
+      permissions: sanitizePermissionList(byDept.get(d.id) || []),
+    }));
     res.json({ matrix, rbacSchemaMissing: false as const });
   } catch (e) {
     if (!isMissingRbacTablesError(e)) throw e;
-    const distinctRoles = await prisma.employee.findMany({ select: { role: true }, distinct: ["role"] });
-    const roleSet = new Set<string>();
-    for (const emp of distinctRoles) {
-      if (emp.role?.trim()) roleSet.add(emp.role.trim());
-    }
-    const matrix = [...roleSet].sort().map((role) => ({ role, permissions: [] as string[] }));
+    const departments = await prisma.department.findMany({ orderBy: { name: "asc" } });
+    const matrix = departments.map((d) => ({
+      departmentId: d.id,
+      departmentName: d.name,
+      permissions: [] as string[],
+    }));
     res.json({
       matrix,
       rbacSchemaMissing: true as const,
       warning:
-        "Chưa có bảng RBAC trên database. Chạy trên server: npx prisma migrate deploy (hoặc để Railway release chạy).",
+        "Chưa có bảng DepartmentPermission (hoặc RBAC chưa migrate). Trên server chạy: npx prisma migrate deploy",
     });
   }
 };
 
 export const putAccessMatrix = async (req: Request, res: Response) => {
-  const { assignments } = req.body as { assignments: { role: string; permissions: string[] }[] };
+  const { assignments } = req.body as {
+    assignments: { departmentId: string; permissions: string[] }[];
+  };
   try {
     for (const a of assignments) {
-      const role = a.role.trim();
-      if (!role) continue;
+      const departmentId = a.departmentId.trim();
+      if (!departmentId) continue;
+      const exists = await prisma.department.findUnique({
+        where: { id: departmentId },
+        select: { id: true },
+      });
+      if (!exists) continue;
       const permissions = sanitizePermissionList(a.permissions || []);
-      await prisma.rolePermission.upsert({
-        where: { role },
-        create: { role, permissions },
+      await prisma.departmentPermission.upsert({
+        where: { departmentId },
+        create: { departmentId, permissions },
         update: { permissions },
       });
     }
@@ -72,7 +73,7 @@ export const putAccessMatrix = async (req: Request, res: Response) => {
     if (isMissingRbacTablesError(e)) {
       return res.status(503).json({
         error:
-          "Database chưa có bảng RolePermission. Deploy backend với migration RBAC hoặc chạy: npx prisma migrate deploy",
+          "Database chưa có bảng DepartmentPermission. Chạy: npx prisma migrate deploy trên server.",
       });
     }
     throw e;
@@ -113,26 +114,29 @@ export const getEmployeeAccessEffective = async (req: Request, res: Response) =>
   if (!employee) {
     return res.status(404).json({ error: "Không tìm thấy nhân viên" });
   }
-  let roleRow: Awaited<ReturnType<typeof prisma.rolePermission.findUnique>> = null;
+  let deptPermRow: Awaited<ReturnType<typeof prisma.departmentPermission.findUnique>> = null;
   let override: Awaited<ReturnType<typeof prisma.employeePermissionOverride.findUnique>> = null;
   let rbacSchemaMissing = false;
   try {
-    [roleRow, override] = await Promise.all([
-      prisma.rolePermission.findUnique({ where: { role: employee.role.trim() } }),
+    [deptPermRow, override] = await Promise.all([
+      employee.departmentId
+        ? prisma.departmentPermission.findUnique({ where: { departmentId: employee.departmentId } })
+        : Promise.resolve(null),
       prisma.employeePermissionOverride.findUnique({ where: { employeeId: id } }),
     ]);
   } catch (e) {
     if (!isMissingRbacTablesError(e)) throw e;
     rbacSchemaMissing = true;
   }
-  const fromRoleDb = roleRow ? sanitizePermissionList(roleRow.permissions) : null;
-  const fromRoleLegacy = sanitizePermissionList([...legacyDefaultPermissions(employee)]);
+  const fromDeptDb = deptPermRow ? sanitizePermissionList(deptPermRow.permissions) : null;
+  const legacyDefaultPreview = sanitizePermissionList([...legacyDefaultPermissions(employee)]);
   const effective = await resolveEffectivePermissions(employee);
   res.json({
     employeeId: id,
     role: employee.role,
-    rolePermissionsFromDb: fromRoleDb,
-    rolePermissionsLegacyPreview: fromRoleLegacy,
+    department: employee.department?.name || "",
+    departmentPermissionsFromDb: fromDeptDb,
+    legacyDefaultPreview,
     override: override
       ? { granted: sanitizePermissionList(override.granted), revoked: sanitizePermissionList(override.revoked) }
       : null,

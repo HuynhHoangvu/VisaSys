@@ -74,7 +74,9 @@ model Department {
   name      String     @unique // Ví dụ: Sale, Xử lý hồ sơ, Kế toán...
   
   // Quan hệ 1 phòng ban có nhiều nhân viên
-  employees Employee[] 
+  employees Employee[]
+  /** Ma trận quyền RBAC mặc định theo bộ phận (khác với Employee.role). */
+  departmentPermission DepartmentPermission?
 }
 
 model Employee {
@@ -245,7 +247,14 @@ model Workspace {
   @@index([employeeId])
 }
 
-/** Ma trận quyền mặc định theo chức danh (Employee.role) */
+/** Ma trận quyền mặc định theo bộ phận (Department). Employee.role chỉ là chức danh HR, không dùng làm khóa ma trận. */
+model DepartmentPermission {
+  departmentId String   @id
+  permissions  String[]
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+}
+
+/** Cũ: ma trận theo role — không còn dùng trong resolveEffectivePermissions; giữ bảng để migrate an toàn. */
 model RolePermission {
   role          String   @id
   permissions String[]

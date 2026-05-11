@@ -3,7 +3,11 @@ import api from "../../services/api";
 import type { AuthUser } from "../../types";
 
 type CatalogItem = { id: string; label: string; group: string };
-type MatrixRow = { role: string; permissions: string[] };
+type MatrixRow = {
+  departmentId: string;
+  departmentName: string;
+  permissions: string[];
+};
 type EmployeeRow = {
   id: string;
   name: string;
@@ -14,8 +18,9 @@ type EmployeeRow = {
 type EffectivePayload = {
   employeeId: string;
   role: string;
-  rolePermissionsFromDb: string[] | null;
-  rolePermissionsLegacyPreview: string[];
+  department: string;
+  departmentPermissionsFromDb: string[] | null;
+  legacyDefaultPreview: string[];
   override: { granted: string[]; revoked: string[] } | null;
   effective: string[];
 };
@@ -34,10 +39,10 @@ function catalogGroupLabel(group: string): string {
   return titles[key] ?? group;
 }
 
-type RolePreset = "full" | "nav_only" | "nav_hr" | "clear";
+type DeptPreset = "full" | "nav_only" | "nav_hr" | "clear";
 
-function applyRolePreset(
-  preset: RolePreset,
+function applyDeptPreset(
+  preset: DeptPreset,
   catalog: CatalogItem[],
   allIds: Set<string>,
 ): Set<string> {
@@ -55,10 +60,10 @@ function applyRolePreset(
 const RbacSettingsPanel: React.FC<{ onSelfPermissionsUpdated?: (u: AuthUser) => void }> = ({
   onSelfPermissionsUpdated,
 }) => {
-  const [subTab, setSubTab] = useState<"role" | "employee">("role");
+  const [subTab, setSubTab] = useState<"department" | "employee">("department");
   const [catalog, setCatalog] = useState<CatalogItem[]>([]);
   const [matrix, setMatrix] = useState<MatrixRow[]>([]);
-  const [roleEdits, setRoleEdits] = useState<Record<string, Set<string>>>({});
+  const [deptEdits, setDeptEdits] = useState<Record<string, Set<string>>>({});
   const [employees, setEmployees] = useState<EmployeeRow[]>([]);
   const [empId, setEmpId] = useState("");
   const [effectiveData, setEffectiveData] = useState<EffectivePayload | null>(null);
@@ -66,10 +71,10 @@ const RbacSettingsPanel: React.FC<{ onSelfPermissionsUpdated?: (u: AuthUser) => 
   const [revoked, setRevoked] = useState<Set<string>>(new Set());
   const [status, setStatus] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  /** Lọc quyền theo tên (tab vai trò + tab nhân viên). */
+  /** Lọc quyền theo tên (tab bộ phận + tab nhân viên). */
   const [permFilter, setPermFilter] = useState("");
   const [overridePermFilter, setOverridePermFilter] = useState("");
-  const [openRoles, setOpenRoles] = useState<Record<string, boolean>>({});
+  const [openDepts, setOpenDepts] = useState<Record<string, boolean>>({});
 
   const loadCatalogAndMatrix = useCallback(async () => {
     const [cRes, mRes] = await Promise.all([
@@ -90,9 +95,9 @@ const RbacSettingsPanel: React.FC<{ onSelfPermissionsUpdated?: (u: AuthUser) => 
     setMatrix(rows);
     const next: Record<string, Set<string>> = {};
     for (const r of rows) {
-      next[r.role] = new Set(r.permissions);
+      next[r.departmentId] = new Set(r.permissions);
     }
-    setRoleEdits(next);
+    setDeptEdits(next);
   }, []);
 
   useEffect(() => {
@@ -109,13 +114,13 @@ const RbacSettingsPanel: React.FC<{ onSelfPermissionsUpdated?: (u: AuthUser) => 
   }, [subTab, loadEmployees]);
 
   useEffect(() => {
-    setOpenRoles((prev) => {
+    setOpenDepts((prev) => {
       const next = { ...prev };
       for (const r of matrix) {
-        if (next[r.role] === undefined) next[r.role] = true;
+        if (next[r.departmentId] === undefined) next[r.departmentId] = true;
       }
       for (const k of Object.keys(next)) {
-        if (!matrix.some((m) => m.role === k)) delete next[k];
+        if (!matrix.some((m) => m.departmentId === k)) delete next[k];
       }
       return next;
     });
@@ -149,52 +154,52 @@ const RbacSettingsPanel: React.FC<{ onSelfPermissionsUpdated?: (u: AuthUser) => 
 
   const allCatalogIds = useMemo(() => new Set(catalog.map((c) => c.id)), [catalog]);
 
-  const setRolePermSet = (role: string, next: Set<string>) => {
-    setRoleEdits((prev) => ({ ...prev, [role]: next }));
+  const setDeptPermSet = (departmentId: string, next: Set<string>) => {
+    setDeptEdits((prev) => ({ ...prev, [departmentId]: next }));
   };
 
-  const selectAllForRole = (role: string) => {
-    setRolePermSet(role, new Set(allCatalogIds));
+  const selectAllForDept = (departmentId: string) => {
+    setDeptPermSet(departmentId, new Set(allCatalogIds));
   };
 
   /** Để trống = sau khi lưu vẫn theo mô tả backend (chưa gán quyền trong DB → legacy). */
-  const clearAllForRole = (role: string) => {
-    setRolePermSet(role, new Set());
+  const clearAllForDept = (departmentId: string) => {
+    setDeptPermSet(departmentId, new Set());
   };
 
-  const mergeGroupIntoRole = (role: string, items: CatalogItem[]) => {
-    setRoleEdits((prev) => {
+  const mergeGroupIntoDept = (departmentId: string, items: CatalogItem[]) => {
+    setDeptEdits((prev) => {
       const copy = { ...prev };
-      const set = new Set(copy[role] || []);
+      const set = new Set(copy[departmentId] || []);
       for (const it of items) set.add(it.id);
-      copy[role] = set;
+      copy[departmentId] = set;
       return copy;
     });
   };
 
-  const removeGroupFromRole = (role: string, items: CatalogItem[]) => {
-    setRoleEdits((prev) => {
+  const removeGroupFromDept = (departmentId: string, items: CatalogItem[]) => {
+    setDeptEdits((prev) => {
       const copy = { ...prev };
-      const set = new Set(copy[role] || []);
+      const set = new Set(copy[departmentId] || []);
       for (const it of items) set.delete(it.id);
-      copy[role] = set;
+      copy[departmentId] = set;
       return copy;
     });
   };
 
-  const toggleRolePerm = (role: string, id: string) => {
-    setRoleEdits((prev) => {
+  const toggleDeptPerm = (departmentId: string, id: string) => {
+    setDeptEdits((prev) => {
       const copy = { ...prev };
-      const set = new Set(copy[role] || []);
+      const set = new Set(copy[departmentId] || []);
       if (set.has(id)) set.delete(id);
       else set.add(id);
-      copy[role] = set;
+      copy[departmentId] = set;
       return copy;
     });
   };
 
-  const copyPermissionsFromRole = (targetRole: string, sourceRole: string) => {
-    setRolePermSet(targetRole, new Set(roleEdits[sourceRole] || []));
+  const copyPermissionsFromDept = (targetDeptId: string, sourceDeptId: string) => {
+    setDeptPermSet(targetDeptId, new Set(deptEdits[sourceDeptId] || []));
   };
 
   const saveMatrix = async () => {
@@ -202,11 +207,11 @@ const RbacSettingsPanel: React.FC<{ onSelfPermissionsUpdated?: (u: AuthUser) => 
     setStatus(null);
     try {
       const assignments = matrix.map((r) => ({
-        role: r.role,
-        permissions: [...(roleEdits[r.role] || new Set())],
+        departmentId: r.departmentId,
+        permissions: [...(deptEdits[r.departmentId] || new Set())],
       }));
       await api.put("/api/access/matrix", { assignments });
-      setStatus("Đã lưu ma trận theo vai trò.");
+      setStatus("Đã lưu ma trận theo bộ phận.");
       const me = await api.get<AuthUser>("/api/auth/me");
       localStorage.setItem("flyvisa_user", JSON.stringify(me.data));
       onSelfPermissionsUpdated?.(me.data);
@@ -257,7 +262,8 @@ const RbacSettingsPanel: React.FC<{ onSelfPermissionsUpdated?: (u: AuthUser) => 
   };
 
   const resetOverride = async () => {
-    if (!empId || !window.confirm("Xóa ghi đè và trả nhân viên về quyền theo vai trò?")) return;
+    if (!empId || !window.confirm("Xóa ghi đè và trả nhân viên về quyền theo bộ phận (mặc định hệ thống)?"))
+      return;
     setBusy(true);
     try {
       await api.delete(`/api/access/employees/${empId}/override`);
@@ -282,12 +288,12 @@ const RbacSettingsPanel: React.FC<{ onSelfPermissionsUpdated?: (u: AuthUser) => 
       <div className="flex flex-wrap gap-2 border-b border-gray-100 pb-3">
         <button
           type="button"
-          onClick={() => setSubTab("role")}
+          onClick={() => setSubTab("department")}
           className={`px-4 py-2 rounded-lg text-sm font-semibold ${
-            subTab === "role" ? "bg-orange-500 text-white" : "bg-gray-100 text-gray-700"
+            subTab === "department" ? "bg-orange-500 text-white" : "bg-gray-100 text-gray-700"
           }`}
         >
-          Theo vai trò
+          Theo bộ phận
         </button>
         <button
           type="button"
@@ -306,15 +312,16 @@ const RbacSettingsPanel: React.FC<{ onSelfPermissionsUpdated?: (u: AuthUser) => 
         </p>
       )}
 
-      {subTab === "role" && (
+      {subTab === "department" && (
         <div className="space-y-4">
           <p className="text-sm text-gray-600 leading-relaxed">
-            Ma trận theo <span className="font-medium text-gray-800">chức danh</span>: gán quyền rồi bấm lưu một lần.
-            Ô trống sau khi lưu vẫn được hệ thống xử lý như mặc định (legacy). Dùng{" "}
+            Ma trận theo <span className="font-medium text-gray-800">bộ phận</span> (danh mục HR): mọi nhân viên
+            trong cùng bộ phận dùng chung tập quyền này, trừ khi có ghi đè ở tab «Theo nhân viên».{" "}
+            <span className="font-medium text-gray-800">Vai trò / chức danh</span> trên hồ sơ NV là phần riêng (HR),
+            không còn làm khóa ma trận. Ô trống sau khi lưu = hệ thống dùng mặc định (legacy). Dùng{" "}
             <span className="font-medium text-gray-800">mẫu nhanh</span>,{" "}
-            <span className="font-medium text-gray-800">sao chép từ vai trò</span> hoặc{" "}
-            <span className="font-medium text-gray-800">tìm kiếm</span> để chỉnh nhanh giống phần mềm quản trị thông
-            thường.
+            <span className="font-medium text-gray-800">sao chép từ bộ phận khác</span> hoặc{" "}
+            <span className="font-medium text-gray-800">tìm kiếm</span> để chỉnh nhanh.
           </p>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div className="relative flex-1 min-w-0 max-w-md">
@@ -339,19 +346,19 @@ const RbacSettingsPanel: React.FC<{ onSelfPermissionsUpdated?: (u: AuthUser) => 
           </div>
           <div className="max-h-[520px] overflow-y-auto space-y-3 pr-1">
             {matrix.map((row) => {
-              const selected = roleEdits[row.role]?.size ?? 0;
+              const selected = deptEdits[row.departmentId]?.size ?? 0;
               const total = catalog.length;
-              const isOpen = openRoles[row.role] !== false;
-              const otherRoles = matrix.filter((m) => m.role !== row.role);
+              const isOpen = openDepts[row.departmentId] !== false;
+              const otherDepts = matrix.filter((m) => m.departmentId !== row.departmentId);
               return (
                 <section
-                  key={row.role}
+                  key={row.departmentId}
                   className="border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm"
                 >
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch sm:justify-between border-b border-gray-100 bg-gradient-to-r from-gray-50/90 to-white px-3 py-2.5 sm:px-4">
                     <button
                       type="button"
-                      onClick={() => setOpenRoles((p) => ({ ...p, [row.role]: !isOpen }))}
+                      onClick={() => setOpenDepts((p) => ({ ...p, [row.departmentId]: !isOpen }))}
                       className="flex flex-1 min-w-0 items-center gap-2 text-left rounded-lg -m-1 p-1 hover:bg-white/80 transition-colors"
                       aria-expanded={isOpen}
                     >
@@ -359,7 +366,7 @@ const RbacSettingsPanel: React.FC<{ onSelfPermissionsUpdated?: (u: AuthUser) => 
                         {isOpen ? "▼" : "▶"}
                       </span>
                       <div className="min-w-0">
-                        <h4 className="font-semibold text-gray-900 truncate">{row.role}</h4>
+                        <h4 className="font-semibold text-gray-900 truncate">{row.departmentName}</h4>
                         <p className="text-xs text-gray-500 mt-0.5">
                           Đã chọn <span className="font-medium text-gray-700">{selected}</span> / {total} quyền trong
                           catalog
@@ -370,12 +377,12 @@ const RbacSettingsPanel: React.FC<{ onSelfPermissionsUpdated?: (u: AuthUser) => 
                       <select
                         disabled={busy || catalog.length === 0}
                         className="text-xs font-medium rounded-md border border-gray-200 bg-white px-2 py-1.5 text-gray-700 max-w-[11rem] disabled:opacity-50"
-                        aria-label={`Mẫu nhanh cho ${row.role}`}
+                        aria-label={`Mẫu nhanh cho ${row.departmentName}`}
                         value=""
                         onChange={(e) => {
-                          const v = e.target.value as RolePreset | "";
+                          const v = e.target.value as DeptPreset | "";
                           if (!v) return;
-                          setRolePermSet(row.role, applyRolePreset(v, catalog, allCatalogIds));
+                          setDeptPermSet(row.departmentId, applyDeptPreset(v, catalog, allCatalogIds));
                           e.target.value = "";
                         }}
                       >
@@ -386,27 +393,27 @@ const RbacSettingsPanel: React.FC<{ onSelfPermissionsUpdated?: (u: AuthUser) => 
                         <option value="clear">Không gán (mặc định HT)</option>
                       </select>
                       <select
-                        disabled={busy || otherRoles.length === 0}
+                        disabled={busy || otherDepts.length === 0}
                         className="text-xs font-medium rounded-md border border-gray-200 bg-white px-2 py-1.5 text-gray-700 max-w-[11rem] disabled:opacity-50"
-                        aria-label={`Sao chép quyền từ vai trò khác sang ${row.role}`}
+                        aria-label={`Sao chép quyền từ bộ phận khác sang ${row.departmentName}`}
                         value=""
                         onChange={(e) => {
                           const src = e.target.value;
-                          if (src) copyPermissionsFromRole(row.role, src);
+                          if (src) copyPermissionsFromDept(row.departmentId, src);
                           e.target.value = "";
                         }}
                       >
                         <option value="">Sao chép từ…</option>
-                        {otherRoles.map((m) => (
-                          <option key={m.role} value={m.role}>
-                            {m.role}
+                        {otherDepts.map((m) => (
+                          <option key={m.departmentId} value={m.departmentId}>
+                            {m.departmentName}
                           </option>
                         ))}
                       </select>
                       <button
                         type="button"
                         disabled={busy || catalog.length === 0}
-                        onClick={() => selectAllForRole(row.role)}
+                        onClick={() => selectAllForDept(row.departmentId)}
                         className="text-xs font-semibold px-2.5 py-1.5 rounded-md bg-orange-500 text-white hover:bg-orange-600 disabled:opacity-50"
                       >
                         Tất cả
@@ -414,7 +421,7 @@ const RbacSettingsPanel: React.FC<{ onSelfPermissionsUpdated?: (u: AuthUser) => 
                       <button
                         type="button"
                         disabled={busy}
-                        onClick={() => clearAllForRole(row.role)}
+                        onClick={() => clearAllForDept(row.departmentId)}
                         className="text-xs font-semibold px-2.5 py-1.5 rounded-md border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50"
                       >
                         Bỏ hết
@@ -436,7 +443,7 @@ const RbacSettingsPanel: React.FC<{ onSelfPermissionsUpdated?: (u: AuthUser) => 
                                 <button
                                   type="button"
                                   disabled={busy}
-                                  onClick={() => mergeGroupIntoRole(row.role, items)}
+                                  onClick={() => mergeGroupIntoDept(row.departmentId, items)}
                                   className="text-xs font-medium text-orange-600 hover:text-orange-800 hover:underline disabled:opacity-50"
                                 >
                                   Chọn nhóm
@@ -447,7 +454,7 @@ const RbacSettingsPanel: React.FC<{ onSelfPermissionsUpdated?: (u: AuthUser) => 
                                 <button
                                   type="button"
                                   disabled={busy}
-                                  onClick={() => removeGroupFromRole(row.role, items)}
+                                  onClick={() => removeGroupFromDept(row.departmentId, items)}
                                   className="text-xs font-medium text-gray-500 hover:text-gray-800 hover:underline disabled:opacity-50"
                                 >
                                   Bỏ nhóm
@@ -458,8 +465,8 @@ const RbacSettingsPanel: React.FC<{ onSelfPermissionsUpdated?: (u: AuthUser) => 
                               <table className="w-full text-sm border-collapse">
                                 <tbody>
                                   {items.map((item) => {
-                                    const checked = roleEdits[row.role]?.has(item.id) ?? false;
-                                    const rid = `rbac-role-${encodeURIComponent(row.role)}-${item.id}`;
+                                    const checked = deptEdits[row.departmentId]?.has(item.id) ?? false;
+                                    const rid = `rbac-dept-${row.departmentId}-${item.id}`;
                                     return (
                                       <tr
                                         key={item.id}
@@ -473,7 +480,7 @@ const RbacSettingsPanel: React.FC<{ onSelfPermissionsUpdated?: (u: AuthUser) => 
                                               className="mt-0.5 rounded border-gray-300 shrink-0"
                                               checked={checked}
                                               title={item.id}
-                                              onChange={() => toggleRolePerm(row.role, item.id)}
+                                              onChange={() => toggleDeptPerm(row.departmentId, item.id)}
                                             />
                                             <span className="text-gray-800 leading-snug">{item.label}</span>
                                           </label>
@@ -499,7 +506,7 @@ const RbacSettingsPanel: React.FC<{ onSelfPermissionsUpdated?: (u: AuthUser) => 
             onClick={saveMatrix}
             className="w-full sm:w-auto bg-orange-500 hover:bg-orange-600 disabled:opacity-60 text-white font-semibold py-2.5 px-6 rounded-lg text-sm"
           >
-            {busy ? "Đang lưu…" : "Lưu ma trận vai trò"}
+            {busy ? "Đang lưu…" : "Lưu ma trận bộ phận"}
           </button>
         </div>
       )}
@@ -521,7 +528,7 @@ const RbacSettingsPanel: React.FC<{ onSelfPermissionsUpdated?: (u: AuthUser) => 
               <option value="">—</option>
               {employees.map((e) => (
                 <option key={e.id} value={e.id}>
-                  {e.name} ({e.employeeCode}) — {e.role}
+                  {e.name} ({e.employeeCode}) — {e.department || "Chưa gán BP"} · {e.role}
                 </option>
               ))}
             </select>
@@ -531,7 +538,11 @@ const RbacSettingsPanel: React.FC<{ onSelfPermissionsUpdated?: (u: AuthUser) => 
             <>
               <div className="text-sm text-gray-600 space-y-1">
                 <p>
-                  <span className="font-semibold">Vai trò:</span> {effectiveData.role}
+                  <span className="font-semibold">Bộ phận:</span>{" "}
+                  {effectiveData.department || "Chưa gán"}
+                </p>
+                <p>
+                  <span className="font-semibold">Vai trò (HR):</span> {effectiveData.role}
                 </p>
                 <p>
                   <span className="font-semibold">Quyền hiệu lực:</span>{" "}
@@ -618,7 +629,7 @@ const RbacSettingsPanel: React.FC<{ onSelfPermissionsUpdated?: (u: AuthUser) => 
                 </div>
                 <div>
                   <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-                    <h5 className="font-semibold text-gray-800 text-sm">Thu hồi quyền theo vai trò</h5>
+                    <h5 className="font-semibold text-gray-800 text-sm">Thu hồi so với mặc định bộ phận</h5>
                     <button
                       type="button"
                       disabled={busy}
@@ -676,7 +687,7 @@ const RbacSettingsPanel: React.FC<{ onSelfPermissionsUpdated?: (u: AuthUser) => 
                   onClick={resetOverride}
                   className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-lg text-sm"
                 >
-                  Reset về vai trò
+                  Reset về bộ phận
                 </button>
               </div>
             </>
