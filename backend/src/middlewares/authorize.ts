@@ -76,3 +76,28 @@ export const requireHrWriteOrSelfAttendance = (req: Request, res: Response, next
   }
   res.status(403).json({ error: "Bạn không có quyền thực hiện thao tác này" });
 };
+
+/**
+ * Cho phép `hr.registry.read` HOẶC `hr.attendance.self` khi và chỉ khi `:id` trùng nhân viên đang đăng nhập
+ * (xem danh sách chấm công / đơn nghỉ cho chính mình).
+ */
+export const requireHrReadOrSelfAttendance = (req: Request, res: Response, next: NextFunction): void => {
+  const user = (req.session as any).user;
+  if (!user) {
+    res.status(401).json({ error: "Chưa đăng nhập" });
+    return;
+  }
+  const perms: string[] = Array.isArray(user.permissions) ? user.permissions : [];
+  if (perms.includes("hr.registry.read")) {
+    next();
+    return;
+  }
+  const targetId = String(req.params.id || "").trim();
+  const selfId = String(user.id || "").trim();
+  if (perms.includes(HR_ATTENDANCE_SELF) && targetId && selfId && targetId === selfId) {
+    next();
+    return;
+  }
+  res.status(403).json({ error: "Bạn không có quyền thực hiện thao tác này" });
+};
+

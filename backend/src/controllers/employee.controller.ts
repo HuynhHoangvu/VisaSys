@@ -30,10 +30,22 @@ const generateEmployeeCode = async (): Promise<string> => {
   return `${EMPLOYEE_CODE_PREFIX}${String(max + 1).padStart(3, "0")}`;
 };
 
-export const getEmployees = asyncHandler(async (_req: Request, res: Response) => {
+export const getEmployees = asyncHandler(async (req: Request, res: Response) => {
   const todayStr = new Date().toLocaleDateString("vi-VN");
+  const user = (req.session as any).user;
+  const perms: string[] = Array.isArray(user?.permissions) ? user.permissions : [];
+  const hasReadFull = perms.includes("hr.registry.read");
+  const hasSelfAttendance = perms.includes("hr.attendance.self");
+
+  let whereClause = {};
+  if (!hasReadFull && hasSelfAttendance && user?.id) {
+    whereClause = { id: user.id };
+  } else if (!hasReadFull && !hasSelfAttendance) {
+    return res.status(403).json({ error: "Bạn không có quyền thực hiện thao tác này" });
+  }
 
   const employees = await prisma.employee.findMany({
+    where: whereClause,
     include: {
       department: true,
       attendanceRecords: { orderBy: { createdAt: "desc" } },

@@ -6,7 +6,7 @@ import { createLeaveRequest, getLeaveRequests, getLeaveRequestsByEmployee, updat
 import { finalizeMonthSalary, getSalaryHistory } from "../controllers/salary.controller.js";
 import { downloadSalarySlip, downloadSalarySummary, downloadSalarySummaryExcel, downloadSalarySlipsExcel, testSalaryCalculation, getSalaryBreakdown } from "../controllers/salarySlip.controller.js";
 import { validate } from "../middlewares/validate.js";
-import { requireAuth, requirePermission, requireHrWriteOrSelfAttendance } from "../middlewares/authorize.js";
+import { requireAuth, requirePermission, requireHrWriteOrSelfAttendance, requireHrReadOrSelfAttendance } from "../middlewares/authorize.js";
 import {
   createEmployeeSchema,
   updateEmployeeSchema,
@@ -20,6 +20,7 @@ const router = Router();
 
 const auth = requireAuth;
 const hrRead = requirePermission(["hr.registry.read"]);
+const hrReadOrSelfAttendance = requirePermission(["hr.registry.read", "hr.attendance.self"], "any");
 const hrWrite = requirePermission(["hr.registry.write"]);
 const hrDeleteEmp = requirePermission(["hr.employees.delete"]);
 const hrPayFinalize = requirePermission(["hr.payroll.finalize"]);
@@ -27,6 +28,7 @@ const hrPayExport = requirePermission(["hr.payroll.export"]);
 const hrLeaveApprove = requirePermission(["hr.leave.approve"]);
 /** Đọc hoặc xuất lương (xem breakdown / test / phiếu) */
 const hrPayReadOrExport = requirePermission(["hr.registry.read", "hr.payroll.export"], "any");
+
 
 // Salary
 router.post("/salary/finalize", auth, hrPayFinalize, validate(finalizeMonthSchema), finalizeMonthSalary);
@@ -39,13 +41,13 @@ router.get("/salary/summary-excel/:monthYear", auth, hrPayExport, downloadSalary
 router.get("/salary/slips-excel/:monthYear", auth, hrPayExport, downloadSalarySlipsExcel);
 
 // Departments
-router.get("/departments", auth, hrRead, getDepartments);
+router.get("/departments", auth, hrReadOrSelfAttendance, getDepartments);
 router.post("/departments", auth, hrWrite, createDepartment);
 router.put("/departments/:id", auth, hrWrite, updateDepartment);
 router.delete("/departments/:id", auth, hrWrite, deleteDepartment);
 
 // Employees
-router.get("/employees", auth, hrRead, getEmployees);
+router.get("/employees", auth, hrReadOrSelfAttendance, getEmployees);
 router.post("/employees", auth, hrWrite, validate(createEmployeeSchema), createEmployee);
 router.put("/employees/:id", auth, hrWrite, validate(updateEmployeeSchema), updateEmployee);
 router.delete("/employees/:id", auth, hrDeleteEmp, deleteEmployee);
@@ -62,7 +64,7 @@ router.post("/attendance/penalize-forgot-checkout", auth, hrWrite, penalizeForgo
 
 // Leave requests
 router.post("/employees/:id/leave", auth, requireHrWriteOrSelfAttendance, validate(leaveRequestSchema), createLeaveRequest);
-router.get("/employees/:id/leave", auth, hrRead, getLeaveRequestsByEmployee);
+router.get("/employees/:id/leave", auth, requireHrReadOrSelfAttendance, getLeaveRequestsByEmployee);
 router.get("/leave-requests", auth, hrRead, getLeaveRequests);
 router.put("/leave-requests/:id/status", auth, hrLeaveApprove, validate(updateLeaveStatusSchema), updateLeaveRequestStatus);
 
