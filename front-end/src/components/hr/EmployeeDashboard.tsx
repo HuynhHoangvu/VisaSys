@@ -23,7 +23,7 @@ import {
 } from "../../utils/payroll";
 import socket from "../../services/socket";
 import { hasPermission, P } from "../../utils/access";
-import { canManageOthersAttendanceByRole } from "../../utils/hrRoles";
+import { canManageOthersAttendanceByRole, isAdminLikeForHr } from "../../utils/hrRoles";
 import {
   mergeCatalogWithInUseNames,
   normalizeDeptKey,
@@ -90,14 +90,12 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
     new Date().toISOString().slice(0, 7),
   );
 
-  const isManager = hasPermission(currentUser?.role, PERMISSIONS.HR_VIEW);
-  const isDirector = currentUser?.role?.toLowerCase().includes("giám đốc") ||
-                     currentUser?.role?.toLowerCase().includes("admin");
-  const isHeadOfDepartment = currentUser?.role?.toLowerCase().includes("trưởng phòng");
-  const isAdmin = isDirector;
-
-  const canAddPersonnel = hasPermission(currentUser?.role, PERMISSIONS.HR_MANAGE);
-  const canDeletePersonnel = isDirector;
+  const isBoss = isAdminLikeForHr(currentUser);
+  const isAdmin = isBoss;
+  const isManager =
+    !!currentUser &&
+    (currentUser.role?.toLowerCase().includes("quản lý") ||
+      currentUser.role?.toLowerCase().includes("trưởng phòng"));
 
   /** Giám đốc / Phó / admin + Trưởng phòng / Quản lý — chấm công thay người khác & xem cả danh sách. */
   const canManageOthersAttendance = canManageOthersAttendanceByRole(currentUser);

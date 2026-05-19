@@ -31,8 +31,6 @@ import RecruitmentPage from "./pages/RecruitmentPage";
 import DashboardPage from "./pages/DashboardPage";
 import SettingsPage from "./pages/SettingsPage";
 import type { AuthUser } from "./types";
-import { isBossOrManager, isProcessingDept, isTeacherDeptUser } from "./constants/roles";
-
 
 // Re-mounts on each route change so the fade-in animation replays
 const PageWrapper: React.FC = () => {
