@@ -37,11 +37,13 @@ export const getEmployees = asyncHandler(async (req: Request, res: Response) => 
   const hasReadFull = perms.includes("hr.registry.read");
   const hasSelfRead = perms.includes("hr.registry.read_self") || perms.includes("hr.attendance.self");
 
-  let whereClause = {};
+  let whereClause: Record<string, any> = {};
   if (!hasReadFull && hasSelfRead && user?.id) {
     whereClause = { id: user.id };
   } else if (!hasReadFull && !hasSelfRead) {
     return res.status(403).json({ error: "Bạn không có quyền thực hiện thao tác này" });
+  } else if (hasReadFull && user?.department === "Sale") {
+    whereClause = { department: { name: "Sale" } };
   }
 
   const employees = await prisma.employee.findMany({
