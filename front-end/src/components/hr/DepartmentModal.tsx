@@ -1,6 +1,7 @@
 import React from "react";
 import { Modal, Button, TextInput } from "flowbite-react";
 import type { Department } from "../../types";
+import { isInferredDepartmentId } from "../../utils/hrDepartments";
 
 interface DepartmentModalProps {
   show: boolean;
@@ -62,6 +63,11 @@ const DepartmentModal: React.FC<DepartmentModalProps> = ({
             Thêm
           </Button>
         </div>
+        <p className="text-xs text-gray-600 mb-3">
+          Danh sách gồm bộ phận trong hệ thống; nếu có tên chỉ xuất hiện trên
+          nhân viên mà chưa có trong danh mục, hệ thống hiển thị kèm ghi chú để
+          bạn thêm hoặc gán lại cho khớp.
+        </p>
         <div className="max-h-[50vh] sm:max-h-80 overflow-y-auto overflow-x-auto border border-gray-200 rounded-lg shadow-sm custom-scrollbar w-full">
           <table className="w-full min-w-[400px] text-sm text-left text-gray-500">
             <thead className="text-xs text-gray-700 uppercase bg-gray-50 border-b">
@@ -81,7 +87,15 @@ const DepartmentModal: React.FC<DepartmentModalProps> = ({
                         onChange={(e) => setEditDeptName(e.target.value)}
                       />
                     ) : (
-                      dept.name
+                      <div className="flex flex-col gap-1">
+                        <span>{dept.name}</span>
+                        {isInferredDepartmentId(dept.id) && (
+                          <span className="text-[11px] leading-snug text-amber-800 font-normal">
+                            Chưa có trong danh mục — dùng ô «Thêm» cùng tên hoặc
+                            «Sửa» nhân viên để gán bộ phận đã tạo.
+                          </span>
+                        )}
+                      </div>
                     )}
                   </td>
                   <td className="px-4 sm:px-6 py-3 sm:py-4 text-right">
@@ -100,6 +114,8 @@ const DepartmentModal: React.FC<DepartmentModalProps> = ({
                           Hủy
                         </button>
                       </div>
+                    ) : isInferredDepartmentId(dept.id) ? (
+                      <span className="text-xs text-gray-400">—</span>
                     ) : (
                       <div className="flex justify-end gap-3 sm:gap-4">
                         {canAddPersonnel && (

@@ -17,21 +17,69 @@ export const getWorkDaysInMonth = (year: number, month: number): number => {
 
 import { isAfternoonOnlyCheckIn } from "../services/attendancePayroll.js";
 
+const getTodayIsoInVN = (asOf: Date = new Date()): string => {
+  const fmt = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Ho_Chi_Minh",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  const parts = fmt.formatToParts(asOf);
+  let y = "", m = "", d = "";
+  for (const p of parts) {
+    if (p.type === "year") y = p.value;
+    if (p.type === "month") m = p.value;
+    if (p.type === "day") d = p.value;
+  }
+  return `${y}-${m}-${d}`;
+};
+
+const hasApprovedLeaveTypeOnDate = async (
+  employeeId: string,
+  leaveType: "Vô trễ" | "Về sớm",
+  isoDate: string,
+): Promise<boolean> => {
+  const found = await prisma.leaveRequest.findFirst({
+    where: {
+      employeeId,
+      type: leaveType,
+      status: "Đã duyệt",
+      startDate: { lte: isoDate },
+      endDate: { gte: isoDate },
+    },
+    select: { id: true },
+  });
+  return !!found;
+};
+
 export const checkInEmployee = asyncHandler(async (req: Request, res: Response) => {
   const id = req.params.id as string;
   let { date, inTime, outTime, status, fine } = req.body;
 
   const emp = await prisma.employee.findUnique({ where: { id } });
   const unitHalf = Math.round((emp?.baseSalary || 0) / STANDARD_WORK_DAYS / 2);
+  const todayIsoVN = getTodayIsoInVN();
+  const hasApprovedLateLeave = await hasApprovedLeaveTypeOnDate(id, "Vô trễ", todayIsoVN);
 
   let halfDayDeduction = 0;
   let resolvedFine = Number(fine) || 0;
   let resolvedStatus = String(status || "Đúng giờ");
 
-  if (isAfternoonOnlyCheckIn(inTime)) {
+  if (isAfternoonOnlyCheckIn(inTime) && !hasApprovedLateLeave) {
     halfDayDeduction = unitHalf;
     resolvedFine = 0;
     resolvedStatus = "Nửa ngày chiều";
+  } else if (isAfternoonOnlyCheckIn(inTime) && hasApprovedLateLeave) {
+    halfDayDeduction = 0;
+    resolvedFine = 0;
+    resolvedStatus = "Vô trễ (có phép)";
+  }
+
+  if (hasApprovedLateLeave) {
+    resolvedFine = 0;
+    if (resolvedStatus === "Đi muộn") {
+      resolvedStatus = "Đi muộn (có phép)";
+    }
   }
 
   const newRecord = await prisma.attendanceRecord.create({
@@ -98,31 +146,42 @@ export const checkOutEmployee = asyncHandler(async (req: Request, res: Response)
   // Early checkout before end-of-day hour → tối đa một lần trừ nửa ngày / ngày (lương cơ bản / 22 / 2).
   const outMinutes = vnHour * 60 + vnMinute;
   const isEarlyLeave = outMinutes < CHECKOUT_HOUR * 60;
+  const todayIsoVN = `${vnYear}-${vnMonth}-${vnDay}`;
+  const hasApprovedEarlyLeave = await hasApprovedLeaveTypeOnDate(id, "Về sớm", todayIsoVN);
   const existingHalf = todayRecord.halfDayDeduction || 0;
   let halfDayDeduction = existingHalf;
   let newStatus = todayRecord.status;
   let additionalHalfDayApplied = false;
 
   if (isEarlyLeave) {
-    const employee = await prisma.employee.findUnique({ where: { id } });
-    const unitHalf = Math.round((employee!.baseSalary || 0) / STANDARD_WORK_DAYS / 2);
-
-    if (existingHalf === 0) {
-      additionalHalfDayApplied = true;
-      halfDayDeduction = unitHalf;
-      const morningLeave = outMinutes <= HALF_DAY_SPLIT_MINUTES;
-      const baseOk =
-        todayRecord.status === "Đúng giờ" || todayRecord.status.includes("Có phép");
-      if (morningLeave) {
-        newStatus = baseOk ? "Nửa ngày sáng" : `${todayRecord.status} + Nửa ngày sáng`;
-      } else {
-        newStatus = baseOk ? "Về sớm" : `${todayRecord.status} + Về sớm`;
+    if (hasApprovedEarlyLeave) {
+      halfDayDeduction = existingHalf;
+      if (!newStatus.includes("Về sớm (có phép)")) {
+        newStatus = newStatus.includes("Về sớm")
+          ? newStatus.replace("Về sớm", "Về sớm (có phép)")
+          : `${newStatus} + Về sớm (có phép)`;
       }
     } else {
-      newStatus =
-        todayRecord.status.includes("Về sớm") || todayRecord.status.includes("Nửa ngày sáng")
-          ? todayRecord.status
-          : `${todayRecord.status} + Về sớm`;
+      const employee = await prisma.employee.findUnique({ where: { id } });
+      const unitHalf = Math.round((employee!.baseSalary || 0) / STANDARD_WORK_DAYS / 2);
+
+      if (existingHalf === 0) {
+        additionalHalfDayApplied = true;
+        halfDayDeduction = unitHalf;
+        const morningLeave = outMinutes <= HALF_DAY_SPLIT_MINUTES;
+        const baseOk =
+          todayRecord.status === "Đúng giờ" || todayRecord.status.includes("Có phép");
+        if (morningLeave) {
+          newStatus = baseOk ? "Nửa ngày sáng" : `${todayRecord.status} + Nửa ngày sáng`;
+        } else {
+          newStatus = baseOk ? "Về sớm" : `${todayRecord.status} + Về sớm`;
+        }
+      } else {
+        newStatus =
+          todayRecord.status.includes("Về sớm") || todayRecord.status.includes("Nửa ngày sáng")
+            ? todayRecord.status
+            : `${todayRecord.status} + Về sớm`;
+      }
     }
   }
 
@@ -141,7 +200,7 @@ export const checkOutEmployee = asyncHandler(async (req: Request, res: Response)
     halfDayDeduction,
     outTime,
     additionalHalfDayApplied,
-    hasLeaveApproval: halfDayDeduction === 0,
+    hasLeaveApproval: hasApprovedEarlyLeave,
   });
 });
 

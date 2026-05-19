@@ -52,12 +52,23 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
   }, [task]);
 
   useEffect(() => {
-    if (show) {
-      fetch(`${API_URL}/api/hr/employees`)
-        .then((r) => r.json())
-        .then((data: Employee[]) => setStaffList(data))
-        .catch(console.error);
-    }
+    if (!show) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await fetch(`${API_URL}/api/hr/employees`, {
+          credentials: "include",
+        });
+        const raw: unknown = await r.json().catch(() => null);
+        if (cancelled) return;
+        setStaffList(Array.isArray(raw) ? (raw as Employee[]) : []);
+      } catch {
+        if (!cancelled) setStaffList([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [show]);
 
   if (!task || !formData) return null;
@@ -252,7 +263,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
                   className="border-0 border-b border-dashed border-gray-300 bg-transparent p-0 text-xs font-semibold text-gray-700 focus:ring-0 focus:border-orange-400 outline-none cursor-pointer"
                 >
                   <option value="">-- Chọn --</option>
-                  {staffList.map((staff) => (
+                  {(Array.isArray(staffList) ? staffList : []).map((staff) => (
                     <option key={staff.id} value={staff.name}>
                       {staff.name} - {staff.employeeCode}
                     </option>

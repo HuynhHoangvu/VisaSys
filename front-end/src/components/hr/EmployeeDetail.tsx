@@ -23,6 +23,10 @@ import {
   getTodayPartsVN,
   resolveAbsenceCutoffDay,
 } from "../../utils/payroll";
+import {
+  canAdjustAttendanceRecords,
+  canAdjustPayrollManualBonus,
+} from "../../utils/hrRoles";
 
 interface EmployeeDetailProps {
   employee: Employee;
@@ -221,16 +225,11 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
   const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
   const [isBonusModalOpen, setIsBonusModalOpen] = useState(false);
 
-  const isDirector =
-    currentUser?.role.toLowerCase().includes("giám đốc") ||
-    currentUser?.role.toLowerCase().includes("admin") ||
-    currentUser?.role.toLowerCase().includes("phó giám đốc");
-
-  const isTruongPhong = currentUser?.role
-    .toLowerCase()
-    .includes("trưởng phòng");
-  const isSameDepartment = currentUser?.department === employee.department;
-  const canAdjustBonus = isDirector || (isTruongPhong && isSameDepartment);
+  const canWaiveAttendance = canAdjustAttendanceRecords(currentUser);
+  const canAdjustManualBonus = canAdjustPayrollManualBonus(
+    currentUser,
+    employee.department,
+  );
 
   const [bonusAmount, setBonusAmount] = useState("");
   const [bonusNote, setBonusNote] = useState("");
@@ -362,6 +361,7 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
   };
 
   const handleAddManualBonus = async () => {
+    if (!canAdjustManualBonus) return;
     if (isBonusSaving) return;
     if (!bonusAmount || !bonusNote) return alert("Vui lòng nhập đủ thông tin!");
 
@@ -377,6 +377,7 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
     try {
       const res = await fetch(`${API_URL}/api/hr/employees/${employee.id}/bonus`, {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           customer: "Điều chỉnh thủ công",
@@ -401,7 +402,7 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
   };
 
   const handleWaiveHalfDay = async (recordId: string) => {
-    if (!canAdjustBonus || !recordId) return;
+    if (!canWaiveAttendance || !recordId) return;
     if (
       !window.confirm(
         "Miễn trừ nửa ngày cho bản ghi này? Hệ thống sẽ đặt Trừ CO về 0 (không cần cộng Thưởng khác để bù).",
@@ -412,7 +413,7 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
     try {
       const res = await fetch(
         `${API_URL}/api/hr/employees/${employee.id}/attendance-records/${recordId}/waive-half-day`,
-        { method: "POST" },
+        { method: "POST", credentials: "include" },
       );
       const body = (await res.json().catch(() => ({}))) as { error?: string };
       if (!res.ok) throw new Error(body.error || "Lỗi server");
@@ -469,12 +470,15 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
   };
 
   const handleDeleteDeduction = async (row: IncomeMovementRow) => {
-    if (!canAdjustBonus) return;
     const action = getDeleteAction(row);
     if (!action) {
       alert("Khoản này là khoản tính tự động theo kỳ, chưa hỗ trợ xóa trực tiếp.");
       return;
     }
+    const isSalesDelete =
+      action.method === "DELETE" && action.endpoint.includes("sales-records");
+    if (isSalesDelete && !canAdjustManualBonus) return;
+    if (!isSalesDelete && !canWaiveAttendance) return;
     const confirmMsg =
       action.label === "Xóa"
         ? "Xóa khoản trừ này luôn khỏi dữ liệu?"
@@ -485,6 +489,7 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
     try {
       const res = await fetch(action.endpoint, {
         method: action.method,
+        credentials: "include",
         headers: action.body ? { "Content-Type": "application/json" } : undefined,
         body: action.body ? JSON.stringify(action.body) : undefined,
       });
@@ -557,7 +562,7 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
         </div>
 
         <div className="flex gap-2 w-full xl:w-auto flex-wrap sm:flex-nowrap">
-          {canAdjustBonus && (
+          {canAdjustManualBonus && (
             <Button
               color="light"
               size="sm"
@@ -694,7 +699,7 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
                   <th className="px-3 sm:px-4 py-2 sm:py-3 text-right font-bold">
                     Trừ CO
                   </th>
-                  {canAdjustBonus ? (
+                  {canWaiveAttendance ? (
                     <th className="px-3 sm:px-4 py-2 sm:py-3 text-center font-bold whitespace-nowrap">
                       Miễn trừ
                     </th>
@@ -705,7 +710,7 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
                 {safeAttendanceRecords.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={canAdjustBonus ? 7 : 6}
+                      colSpan={canWaiveAttendance ? 7 : 6}
                       className="px-4 py-8 text-center text-gray-400 italic text-xs sm:text-sm"
                     >
                       Chưa có dữ liệu chấm công.
@@ -762,7 +767,7 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
                             ? `-${formatVND(record.halfDayDeduction!)}`
                             : "—"}
                         </td>
-                        {canAdjustBonus ? (
+                        {canWaiveAttendance ? (
                           <td className="px-2 sm:px-3 py-3 sm:py-4 text-center align-middle">
                             {(record.halfDayDeduction || 0) > 0 &&
                             record.id ? (
@@ -877,19 +882,30 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
                             {row.soTien > 0 ? "+" : row.soTien < 0 ? "−" : ""}
                             {formatVND(Math.abs(row.soTien))}
                           </span>
-                          {canAdjustBonus && row.flow === "tru" && getDeleteAction(row) ? (
-                            <Button
-                              size="xs"
-                              color="light"
-                              className="px-2 py-0.5 text-[10px] font-semibold border-gray-300 text-indigo-700 hover:bg-indigo-50"
-                              onClick={() => void handleDeleteDeduction(row)}
-                              disabled={deletingDeductionKey === row.key}
-                            >
-                              {deletingDeductionKey === row.key
-                                ? "..."
-                                : (getDeleteAction(row)?.label ?? "Xóa")}
-                            </Button>
-                          ) : null}
+                          {row.flow === "tru"
+                            ? (() => {
+                                const act = getDeleteAction(row);
+                                if (!act) return null;
+                                const isSalesDel =
+                                  act.method === "DELETE" &&
+                                  act.endpoint.includes("sales-records");
+                                if (isSalesDel && !canAdjustManualBonus) return null;
+                                if (!isSalesDel && !canWaiveAttendance) return null;
+                                return (
+                                  <Button
+                                    size="xs"
+                                    color="light"
+                                    className="px-2 py-0.5 text-[10px] font-semibold border-gray-300 text-indigo-700 hover:bg-indigo-50"
+                                    onClick={() => void handleDeleteDeduction(row)}
+                                    disabled={deletingDeductionKey === row.key}
+                                  >
+                                    {deletingDeductionKey === row.key
+                                      ? "..."
+                                      : (act.label ?? "Xóa")}
+                                  </Button>
+                                );
+                              })()
+                            : null}
                         </div>
                       </td>
                     </tr>

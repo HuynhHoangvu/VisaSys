@@ -266,6 +266,7 @@ export type EmployeeWhereInput = {
   department?: Prisma.XOR<Prisma.DepartmentNullableScalarRelationFilter, Prisma.DepartmentWhereInput> | null
   attendanceRecords?: Prisma.AttendanceRecordListRelationFilter
   workspaces?: Prisma.WorkspaceListRelationFilter
+  permissionOverride?: Prisma.XOR<Prisma.EmployeePermissionOverrideNullableScalarRelationFilter, Prisma.EmployeePermissionOverrideWhereInput> | null
 }
 
 export type EmployeeOrderByWithRelationInput = {
@@ -285,6 +286,7 @@ export type EmployeeOrderByWithRelationInput = {
   department?: Prisma.DepartmentOrderByWithRelationInput
   attendanceRecords?: Prisma.AttendanceRecordOrderByRelationAggregateInput
   workspaces?: Prisma.WorkspaceOrderByRelationAggregateInput
+  permissionOverride?: Prisma.EmployeePermissionOverrideOrderByWithRelationInput
 }
 
 export type EmployeeWhereUniqueInput = Prisma.AtLeast<{
@@ -307,6 +309,7 @@ export type EmployeeWhereUniqueInput = Prisma.AtLeast<{
   department?: Prisma.XOR<Prisma.DepartmentNullableScalarRelationFilter, Prisma.DepartmentWhereInput> | null
   attendanceRecords?: Prisma.AttendanceRecordListRelationFilter
   workspaces?: Prisma.WorkspaceListRelationFilter
+  permissionOverride?: Prisma.XOR<Prisma.EmployeePermissionOverrideNullableScalarRelationFilter, Prisma.EmployeePermissionOverrideWhereInput> | null
 }, "id" | "employeeCode" | "email">
 
 export type EmployeeOrderByWithAggregationInput = {
@@ -359,6 +362,7 @@ export type EmployeeCreateInput = {
   department?: Prisma.DepartmentCreateNestedOneWithoutEmployeesInput
   attendanceRecords?: Prisma.AttendanceRecordCreateNestedManyWithoutEmployeeInput
   workspaces?: Prisma.WorkspaceCreateNestedManyWithoutEmployeeInput
+  permissionOverride?: Prisma.EmployeePermissionOverrideCreateNestedOneWithoutEmployeeInput
 }
 
 export type EmployeeUncheckedCreateInput = {
@@ -377,6 +381,7 @@ export type EmployeeUncheckedCreateInput = {
   leaveRequests?: Prisma.LeaveRequestUncheckedCreateNestedManyWithoutEmployeeInput
   attendanceRecords?: Prisma.AttendanceRecordUncheckedCreateNestedManyWithoutEmployeeInput
   workspaces?: Prisma.WorkspaceUncheckedCreateNestedManyWithoutEmployeeInput
+  permissionOverride?: Prisma.EmployeePermissionOverrideUncheckedCreateNestedOneWithoutEmployeeInput
 }
 
 export type EmployeeUpdateInput = {
@@ -395,6 +400,7 @@ export type EmployeeUpdateInput = {
   department?: Prisma.DepartmentUpdateOneWithoutEmployeesNestedInput
   attendanceRecords?: Prisma.AttendanceRecordUpdateManyWithoutEmployeeNestedInput
   workspaces?: Prisma.WorkspaceUpdateManyWithoutEmployeeNestedInput
+  permissionOverride?: Prisma.EmployeePermissionOverrideUpdateOneWithoutEmployeeNestedInput
 }
 
 export type EmployeeUncheckedUpdateInput = {
@@ -413,6 +419,7 @@ export type EmployeeUncheckedUpdateInput = {
   leaveRequests?: Prisma.LeaveRequestUncheckedUpdateManyWithoutEmployeeNestedInput
   attendanceRecords?: Prisma.AttendanceRecordUncheckedUpdateManyWithoutEmployeeNestedInput
   workspaces?: Prisma.WorkspaceUncheckedUpdateManyWithoutEmployeeNestedInput
+  permissionOverride?: Prisma.EmployeePermissionOverrideUncheckedUpdateOneWithoutEmployeeNestedInput
 }
 
 export type EmployeeCreateManyInput = {
@@ -637,6 +644,20 @@ export type EmployeeUpdateOneRequiredWithoutWorkspacesNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.EmployeeUpdateToOneWithWhereWithoutWorkspacesInput, Prisma.EmployeeUpdateWithoutWorkspacesInput>, Prisma.EmployeeUncheckedUpdateWithoutWorkspacesInput>
 }
 
+export type EmployeeCreateNestedOneWithoutPermissionOverrideInput = {
+  create?: Prisma.XOR<Prisma.EmployeeCreateWithoutPermissionOverrideInput, Prisma.EmployeeUncheckedCreateWithoutPermissionOverrideInput>
+  connectOrCreate?: Prisma.EmployeeCreateOrConnectWithoutPermissionOverrideInput
+  connect?: Prisma.EmployeeWhereUniqueInput
+}
+
+export type EmployeeUpdateOneRequiredWithoutPermissionOverrideNestedInput = {
+  create?: Prisma.XOR<Prisma.EmployeeCreateWithoutPermissionOverrideInput, Prisma.EmployeeUncheckedCreateWithoutPermissionOverrideInput>
+  connectOrCreate?: Prisma.EmployeeCreateOrConnectWithoutPermissionOverrideInput
+  upsert?: Prisma.EmployeeUpsertWithoutPermissionOverrideInput
+  connect?: Prisma.EmployeeWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.EmployeeUpdateToOneWithWhereWithoutPermissionOverrideInput, Prisma.EmployeeUpdateWithoutPermissionOverrideInput>, Prisma.EmployeeUncheckedUpdateWithoutPermissionOverrideInput>
+}
+
 export type EmployeeCreateWithoutDepartmentInput = {
   id?: string
   employeeCode: string
@@ -652,6 +673,7 @@ export type EmployeeCreateWithoutDepartmentInput = {
   leaveRequests?: Prisma.LeaveRequestCreateNestedManyWithoutEmployeeInput
   attendanceRecords?: Prisma.AttendanceRecordCreateNestedManyWithoutEmployeeInput
   workspaces?: Prisma.WorkspaceCreateNestedManyWithoutEmployeeInput
+  permissionOverride?: Prisma.EmployeePermissionOverrideCreateNestedOneWithoutEmployeeInput
 }
 
 export type EmployeeUncheckedCreateWithoutDepartmentInput = {
@@ -669,6 +691,7 @@ export type EmployeeUncheckedCreateWithoutDepartmentInput = {
   leaveRequests?: Prisma.LeaveRequestUncheckedCreateNestedManyWithoutEmployeeInput
   attendanceRecords?: Prisma.AttendanceRecordUncheckedCreateNestedManyWithoutEmployeeInput
   workspaces?: Prisma.WorkspaceUncheckedCreateNestedManyWithoutEmployeeInput
+  permissionOverride?: Prisma.EmployeePermissionOverrideUncheckedCreateNestedOneWithoutEmployeeInput
 }
 
 export type EmployeeCreateOrConnectWithoutDepartmentInput = {
@@ -728,6 +751,7 @@ export type EmployeeCreateWithoutAttendanceRecordsInput = {
   leaveRequests?: Prisma.LeaveRequestCreateNestedManyWithoutEmployeeInput
   department?: Prisma.DepartmentCreateNestedOneWithoutEmployeesInput
   workspaces?: Prisma.WorkspaceCreateNestedManyWithoutEmployeeInput
+  permissionOverride?: Prisma.EmployeePermissionOverrideCreateNestedOneWithoutEmployeeInput
 }
 
 export type EmployeeUncheckedCreateWithoutAttendanceRecordsInput = {
@@ -745,6 +769,7 @@ export type EmployeeUncheckedCreateWithoutAttendanceRecordsInput = {
   salaryHistories?: Prisma.SalaryHistoryUncheckedCreateNestedManyWithoutEmployeeInput
   leaveRequests?: Prisma.LeaveRequestUncheckedCreateNestedManyWithoutEmployeeInput
   workspaces?: Prisma.WorkspaceUncheckedCreateNestedManyWithoutEmployeeInput
+  permissionOverride?: Prisma.EmployeePermissionOverrideUncheckedCreateNestedOneWithoutEmployeeInput
 }
 
 export type EmployeeCreateOrConnectWithoutAttendanceRecordsInput = {
@@ -778,6 +803,7 @@ export type EmployeeUpdateWithoutAttendanceRecordsInput = {
   leaveRequests?: Prisma.LeaveRequestUpdateManyWithoutEmployeeNestedInput
   department?: Prisma.DepartmentUpdateOneWithoutEmployeesNestedInput
   workspaces?: Prisma.WorkspaceUpdateManyWithoutEmployeeNestedInput
+  permissionOverride?: Prisma.EmployeePermissionOverrideUpdateOneWithoutEmployeeNestedInput
 }
 
 export type EmployeeUncheckedUpdateWithoutAttendanceRecordsInput = {
@@ -795,6 +821,7 @@ export type EmployeeUncheckedUpdateWithoutAttendanceRecordsInput = {
   salaryHistories?: Prisma.SalaryHistoryUncheckedUpdateManyWithoutEmployeeNestedInput
   leaveRequests?: Prisma.LeaveRequestUncheckedUpdateManyWithoutEmployeeNestedInput
   workspaces?: Prisma.WorkspaceUncheckedUpdateManyWithoutEmployeeNestedInput
+  permissionOverride?: Prisma.EmployeePermissionOverrideUncheckedUpdateOneWithoutEmployeeNestedInput
 }
 
 export type EmployeeCreateWithoutSalesRecordsInput = {
@@ -812,6 +839,7 @@ export type EmployeeCreateWithoutSalesRecordsInput = {
   department?: Prisma.DepartmentCreateNestedOneWithoutEmployeesInput
   attendanceRecords?: Prisma.AttendanceRecordCreateNestedManyWithoutEmployeeInput
   workspaces?: Prisma.WorkspaceCreateNestedManyWithoutEmployeeInput
+  permissionOverride?: Prisma.EmployeePermissionOverrideCreateNestedOneWithoutEmployeeInput
 }
 
 export type EmployeeUncheckedCreateWithoutSalesRecordsInput = {
@@ -829,6 +857,7 @@ export type EmployeeUncheckedCreateWithoutSalesRecordsInput = {
   leaveRequests?: Prisma.LeaveRequestUncheckedCreateNestedManyWithoutEmployeeInput
   attendanceRecords?: Prisma.AttendanceRecordUncheckedCreateNestedManyWithoutEmployeeInput
   workspaces?: Prisma.WorkspaceUncheckedCreateNestedManyWithoutEmployeeInput
+  permissionOverride?: Prisma.EmployeePermissionOverrideUncheckedCreateNestedOneWithoutEmployeeInput
 }
 
 export type EmployeeCreateOrConnectWithoutSalesRecordsInput = {
@@ -862,6 +891,7 @@ export type EmployeeUpdateWithoutSalesRecordsInput = {
   department?: Prisma.DepartmentUpdateOneWithoutEmployeesNestedInput
   attendanceRecords?: Prisma.AttendanceRecordUpdateManyWithoutEmployeeNestedInput
   workspaces?: Prisma.WorkspaceUpdateManyWithoutEmployeeNestedInput
+  permissionOverride?: Prisma.EmployeePermissionOverrideUpdateOneWithoutEmployeeNestedInput
 }
 
 export type EmployeeUncheckedUpdateWithoutSalesRecordsInput = {
@@ -879,6 +909,7 @@ export type EmployeeUncheckedUpdateWithoutSalesRecordsInput = {
   leaveRequests?: Prisma.LeaveRequestUncheckedUpdateManyWithoutEmployeeNestedInput
   attendanceRecords?: Prisma.AttendanceRecordUncheckedUpdateManyWithoutEmployeeNestedInput
   workspaces?: Prisma.WorkspaceUncheckedUpdateManyWithoutEmployeeNestedInput
+  permissionOverride?: Prisma.EmployeePermissionOverrideUncheckedUpdateOneWithoutEmployeeNestedInput
 }
 
 export type EmployeeCreateWithoutSalaryHistoriesInput = {
@@ -896,6 +927,7 @@ export type EmployeeCreateWithoutSalaryHistoriesInput = {
   department?: Prisma.DepartmentCreateNestedOneWithoutEmployeesInput
   attendanceRecords?: Prisma.AttendanceRecordCreateNestedManyWithoutEmployeeInput
   workspaces?: Prisma.WorkspaceCreateNestedManyWithoutEmployeeInput
+  permissionOverride?: Prisma.EmployeePermissionOverrideCreateNestedOneWithoutEmployeeInput
 }
 
 export type EmployeeUncheckedCreateWithoutSalaryHistoriesInput = {
@@ -913,6 +945,7 @@ export type EmployeeUncheckedCreateWithoutSalaryHistoriesInput = {
   leaveRequests?: Prisma.LeaveRequestUncheckedCreateNestedManyWithoutEmployeeInput
   attendanceRecords?: Prisma.AttendanceRecordUncheckedCreateNestedManyWithoutEmployeeInput
   workspaces?: Prisma.WorkspaceUncheckedCreateNestedManyWithoutEmployeeInput
+  permissionOverride?: Prisma.EmployeePermissionOverrideUncheckedCreateNestedOneWithoutEmployeeInput
 }
 
 export type EmployeeCreateOrConnectWithoutSalaryHistoriesInput = {
@@ -946,6 +979,7 @@ export type EmployeeUpdateWithoutSalaryHistoriesInput = {
   department?: Prisma.DepartmentUpdateOneWithoutEmployeesNestedInput
   attendanceRecords?: Prisma.AttendanceRecordUpdateManyWithoutEmployeeNestedInput
   workspaces?: Prisma.WorkspaceUpdateManyWithoutEmployeeNestedInput
+  permissionOverride?: Prisma.EmployeePermissionOverrideUpdateOneWithoutEmployeeNestedInput
 }
 
 export type EmployeeUncheckedUpdateWithoutSalaryHistoriesInput = {
@@ -963,6 +997,7 @@ export type EmployeeUncheckedUpdateWithoutSalaryHistoriesInput = {
   leaveRequests?: Prisma.LeaveRequestUncheckedUpdateManyWithoutEmployeeNestedInput
   attendanceRecords?: Prisma.AttendanceRecordUncheckedUpdateManyWithoutEmployeeNestedInput
   workspaces?: Prisma.WorkspaceUncheckedUpdateManyWithoutEmployeeNestedInput
+  permissionOverride?: Prisma.EmployeePermissionOverrideUncheckedUpdateOneWithoutEmployeeNestedInput
 }
 
 export type EmployeeCreateWithoutLeaveRequestsInput = {
@@ -980,6 +1015,7 @@ export type EmployeeCreateWithoutLeaveRequestsInput = {
   department?: Prisma.DepartmentCreateNestedOneWithoutEmployeesInput
   attendanceRecords?: Prisma.AttendanceRecordCreateNestedManyWithoutEmployeeInput
   workspaces?: Prisma.WorkspaceCreateNestedManyWithoutEmployeeInput
+  permissionOverride?: Prisma.EmployeePermissionOverrideCreateNestedOneWithoutEmployeeInput
 }
 
 export type EmployeeUncheckedCreateWithoutLeaveRequestsInput = {
@@ -997,6 +1033,7 @@ export type EmployeeUncheckedCreateWithoutLeaveRequestsInput = {
   salaryHistories?: Prisma.SalaryHistoryUncheckedCreateNestedManyWithoutEmployeeInput
   attendanceRecords?: Prisma.AttendanceRecordUncheckedCreateNestedManyWithoutEmployeeInput
   workspaces?: Prisma.WorkspaceUncheckedCreateNestedManyWithoutEmployeeInput
+  permissionOverride?: Prisma.EmployeePermissionOverrideUncheckedCreateNestedOneWithoutEmployeeInput
 }
 
 export type EmployeeCreateOrConnectWithoutLeaveRequestsInput = {
@@ -1030,6 +1067,7 @@ export type EmployeeUpdateWithoutLeaveRequestsInput = {
   department?: Prisma.DepartmentUpdateOneWithoutEmployeesNestedInput
   attendanceRecords?: Prisma.AttendanceRecordUpdateManyWithoutEmployeeNestedInput
   workspaces?: Prisma.WorkspaceUpdateManyWithoutEmployeeNestedInput
+  permissionOverride?: Prisma.EmployeePermissionOverrideUpdateOneWithoutEmployeeNestedInput
 }
 
 export type EmployeeUncheckedUpdateWithoutLeaveRequestsInput = {
@@ -1047,6 +1085,7 @@ export type EmployeeUncheckedUpdateWithoutLeaveRequestsInput = {
   salaryHistories?: Prisma.SalaryHistoryUncheckedUpdateManyWithoutEmployeeNestedInput
   attendanceRecords?: Prisma.AttendanceRecordUncheckedUpdateManyWithoutEmployeeNestedInput
   workspaces?: Prisma.WorkspaceUncheckedUpdateManyWithoutEmployeeNestedInput
+  permissionOverride?: Prisma.EmployeePermissionOverrideUncheckedUpdateOneWithoutEmployeeNestedInput
 }
 
 export type EmployeeCreateWithoutWorkspacesInput = {
@@ -1064,6 +1103,7 @@ export type EmployeeCreateWithoutWorkspacesInput = {
   leaveRequests?: Prisma.LeaveRequestCreateNestedManyWithoutEmployeeInput
   department?: Prisma.DepartmentCreateNestedOneWithoutEmployeesInput
   attendanceRecords?: Prisma.AttendanceRecordCreateNestedManyWithoutEmployeeInput
+  permissionOverride?: Prisma.EmployeePermissionOverrideCreateNestedOneWithoutEmployeeInput
 }
 
 export type EmployeeUncheckedCreateWithoutWorkspacesInput = {
@@ -1081,6 +1121,7 @@ export type EmployeeUncheckedCreateWithoutWorkspacesInput = {
   salaryHistories?: Prisma.SalaryHistoryUncheckedCreateNestedManyWithoutEmployeeInput
   leaveRequests?: Prisma.LeaveRequestUncheckedCreateNestedManyWithoutEmployeeInput
   attendanceRecords?: Prisma.AttendanceRecordUncheckedCreateNestedManyWithoutEmployeeInput
+  permissionOverride?: Prisma.EmployeePermissionOverrideUncheckedCreateNestedOneWithoutEmployeeInput
 }
 
 export type EmployeeCreateOrConnectWithoutWorkspacesInput = {
@@ -1114,6 +1155,7 @@ export type EmployeeUpdateWithoutWorkspacesInput = {
   leaveRequests?: Prisma.LeaveRequestUpdateManyWithoutEmployeeNestedInput
   department?: Prisma.DepartmentUpdateOneWithoutEmployeesNestedInput
   attendanceRecords?: Prisma.AttendanceRecordUpdateManyWithoutEmployeeNestedInput
+  permissionOverride?: Prisma.EmployeePermissionOverrideUpdateOneWithoutEmployeeNestedInput
 }
 
 export type EmployeeUncheckedUpdateWithoutWorkspacesInput = {
@@ -1131,6 +1173,95 @@ export type EmployeeUncheckedUpdateWithoutWorkspacesInput = {
   salaryHistories?: Prisma.SalaryHistoryUncheckedUpdateManyWithoutEmployeeNestedInput
   leaveRequests?: Prisma.LeaveRequestUncheckedUpdateManyWithoutEmployeeNestedInput
   attendanceRecords?: Prisma.AttendanceRecordUncheckedUpdateManyWithoutEmployeeNestedInput
+  permissionOverride?: Prisma.EmployeePermissionOverrideUncheckedUpdateOneWithoutEmployeeNestedInput
+}
+
+export type EmployeeCreateWithoutPermissionOverrideInput = {
+  id?: string
+  employeeCode: string
+  email: string
+  name: string
+  password: string
+  role: string
+  baseSalary?: number
+  commissionRate?: number
+  createdAt?: Date | string
+  salesRecords?: Prisma.SalesRecordCreateNestedManyWithoutEmployeeInput
+  salaryHistories?: Prisma.SalaryHistoryCreateNestedManyWithoutEmployeeInput
+  leaveRequests?: Prisma.LeaveRequestCreateNestedManyWithoutEmployeeInput
+  department?: Prisma.DepartmentCreateNestedOneWithoutEmployeesInput
+  attendanceRecords?: Prisma.AttendanceRecordCreateNestedManyWithoutEmployeeInput
+  workspaces?: Prisma.WorkspaceCreateNestedManyWithoutEmployeeInput
+}
+
+export type EmployeeUncheckedCreateWithoutPermissionOverrideInput = {
+  id?: string
+  employeeCode: string
+  email: string
+  name: string
+  password: string
+  role: string
+  baseSalary?: number
+  commissionRate?: number
+  departmentId?: string | null
+  createdAt?: Date | string
+  salesRecords?: Prisma.SalesRecordUncheckedCreateNestedManyWithoutEmployeeInput
+  salaryHistories?: Prisma.SalaryHistoryUncheckedCreateNestedManyWithoutEmployeeInput
+  leaveRequests?: Prisma.LeaveRequestUncheckedCreateNestedManyWithoutEmployeeInput
+  attendanceRecords?: Prisma.AttendanceRecordUncheckedCreateNestedManyWithoutEmployeeInput
+  workspaces?: Prisma.WorkspaceUncheckedCreateNestedManyWithoutEmployeeInput
+}
+
+export type EmployeeCreateOrConnectWithoutPermissionOverrideInput = {
+  where: Prisma.EmployeeWhereUniqueInput
+  create: Prisma.XOR<Prisma.EmployeeCreateWithoutPermissionOverrideInput, Prisma.EmployeeUncheckedCreateWithoutPermissionOverrideInput>
+}
+
+export type EmployeeUpsertWithoutPermissionOverrideInput = {
+  update: Prisma.XOR<Prisma.EmployeeUpdateWithoutPermissionOverrideInput, Prisma.EmployeeUncheckedUpdateWithoutPermissionOverrideInput>
+  create: Prisma.XOR<Prisma.EmployeeCreateWithoutPermissionOverrideInput, Prisma.EmployeeUncheckedCreateWithoutPermissionOverrideInput>
+  where?: Prisma.EmployeeWhereInput
+}
+
+export type EmployeeUpdateToOneWithWhereWithoutPermissionOverrideInput = {
+  where?: Prisma.EmployeeWhereInput
+  data: Prisma.XOR<Prisma.EmployeeUpdateWithoutPermissionOverrideInput, Prisma.EmployeeUncheckedUpdateWithoutPermissionOverrideInput>
+}
+
+export type EmployeeUpdateWithoutPermissionOverrideInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  employeeCode?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  password?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.StringFieldUpdateOperationsInput | string
+  baseSalary?: Prisma.FloatFieldUpdateOperationsInput | number
+  commissionRate?: Prisma.FloatFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  salesRecords?: Prisma.SalesRecordUpdateManyWithoutEmployeeNestedInput
+  salaryHistories?: Prisma.SalaryHistoryUpdateManyWithoutEmployeeNestedInput
+  leaveRequests?: Prisma.LeaveRequestUpdateManyWithoutEmployeeNestedInput
+  department?: Prisma.DepartmentUpdateOneWithoutEmployeesNestedInput
+  attendanceRecords?: Prisma.AttendanceRecordUpdateManyWithoutEmployeeNestedInput
+  workspaces?: Prisma.WorkspaceUpdateManyWithoutEmployeeNestedInput
+}
+
+export type EmployeeUncheckedUpdateWithoutPermissionOverrideInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  employeeCode?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  password?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.StringFieldUpdateOperationsInput | string
+  baseSalary?: Prisma.FloatFieldUpdateOperationsInput | number
+  commissionRate?: Prisma.FloatFieldUpdateOperationsInput | number
+  departmentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  salesRecords?: Prisma.SalesRecordUncheckedUpdateManyWithoutEmployeeNestedInput
+  salaryHistories?: Prisma.SalaryHistoryUncheckedUpdateManyWithoutEmployeeNestedInput
+  leaveRequests?: Prisma.LeaveRequestUncheckedUpdateManyWithoutEmployeeNestedInput
+  attendanceRecords?: Prisma.AttendanceRecordUncheckedUpdateManyWithoutEmployeeNestedInput
+  workspaces?: Prisma.WorkspaceUncheckedUpdateManyWithoutEmployeeNestedInput
 }
 
 export type EmployeeCreateManyDepartmentInput = {
@@ -1160,6 +1291,7 @@ export type EmployeeUpdateWithoutDepartmentInput = {
   leaveRequests?: Prisma.LeaveRequestUpdateManyWithoutEmployeeNestedInput
   attendanceRecords?: Prisma.AttendanceRecordUpdateManyWithoutEmployeeNestedInput
   workspaces?: Prisma.WorkspaceUpdateManyWithoutEmployeeNestedInput
+  permissionOverride?: Prisma.EmployeePermissionOverrideUpdateOneWithoutEmployeeNestedInput
 }
 
 export type EmployeeUncheckedUpdateWithoutDepartmentInput = {
@@ -1177,6 +1309,7 @@ export type EmployeeUncheckedUpdateWithoutDepartmentInput = {
   leaveRequests?: Prisma.LeaveRequestUncheckedUpdateManyWithoutEmployeeNestedInput
   attendanceRecords?: Prisma.AttendanceRecordUncheckedUpdateManyWithoutEmployeeNestedInput
   workspaces?: Prisma.WorkspaceUncheckedUpdateManyWithoutEmployeeNestedInput
+  permissionOverride?: Prisma.EmployeePermissionOverrideUncheckedUpdateOneWithoutEmployeeNestedInput
 }
 
 export type EmployeeUncheckedUpdateManyWithoutDepartmentInput = {
@@ -1275,6 +1408,7 @@ export type EmployeeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   department?: boolean | Prisma.Employee$departmentArgs<ExtArgs>
   attendanceRecords?: boolean | Prisma.Employee$attendanceRecordsArgs<ExtArgs>
   workspaces?: boolean | Prisma.Employee$workspacesArgs<ExtArgs>
+  permissionOverride?: boolean | Prisma.Employee$permissionOverrideArgs<ExtArgs>
   _count?: boolean | Prisma.EmployeeCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["employee"]>
 
@@ -1327,6 +1461,7 @@ export type EmployeeInclude<ExtArgs extends runtime.Types.Extensions.InternalArg
   department?: boolean | Prisma.Employee$departmentArgs<ExtArgs>
   attendanceRecords?: boolean | Prisma.Employee$attendanceRecordsArgs<ExtArgs>
   workspaces?: boolean | Prisma.Employee$workspacesArgs<ExtArgs>
+  permissionOverride?: boolean | Prisma.Employee$permissionOverrideArgs<ExtArgs>
   _count?: boolean | Prisma.EmployeeCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type EmployeeIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1345,6 +1480,7 @@ export type $EmployeePayload<ExtArgs extends runtime.Types.Extensions.InternalAr
     department: Prisma.$DepartmentPayload<ExtArgs> | null
     attendanceRecords: Prisma.$AttendanceRecordPayload<ExtArgs>[]
     workspaces: Prisma.$WorkspacePayload<ExtArgs>[]
+    permissionOverride: Prisma.$EmployeePermissionOverridePayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1757,6 +1893,7 @@ export interface Prisma__EmployeeClient<T, Null = never, ExtArgs extends runtime
   department<T extends Prisma.Employee$departmentArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Employee$departmentArgs<ExtArgs>>): Prisma.Prisma__DepartmentClient<runtime.Types.Result.GetResult<Prisma.$DepartmentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   attendanceRecords<T extends Prisma.Employee$attendanceRecordsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Employee$attendanceRecordsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AttendanceRecordPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   workspaces<T extends Prisma.Employee$workspacesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Employee$workspacesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$WorkspacePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  permissionOverride<T extends Prisma.Employee$permissionOverrideArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Employee$permissionOverrideArgs<ExtArgs>>): Prisma.Prisma__EmployeePermissionOverrideClient<runtime.Types.Result.GetResult<Prisma.$EmployeePermissionOverridePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2328,6 +2465,25 @@ export type Employee$workspacesArgs<ExtArgs extends runtime.Types.Extensions.Int
   take?: number
   skip?: number
   distinct?: Prisma.WorkspaceScalarFieldEnum | Prisma.WorkspaceScalarFieldEnum[]
+}
+
+/**
+ * Employee.permissionOverride
+ */
+export type Employee$permissionOverrideArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the EmployeePermissionOverride
+   */
+  select?: Prisma.EmployeePermissionOverrideSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the EmployeePermissionOverride
+   */
+  omit?: Prisma.EmployeePermissionOverrideOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.EmployeePermissionOverrideInclude<ExtArgs> | null
+  where?: Prisma.EmployeePermissionOverrideWhereInput
 }
 
 /**

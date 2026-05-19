@@ -66,7 +66,10 @@ export const ModelName = {
   ProcessedFolder: 'ProcessedFolder',
   ProcessedFile: 'ProcessedFile',
   WeeklyKPI: 'WeeklyKPI',
-  Workspace: 'Workspace'
+  Workspace: 'Workspace',
+  DepartmentPermission: 'DepartmentPermission',
+  RolePermission: 'RolePermission',
+  EmployeePermissionOverride: 'EmployeePermissionOverride'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -311,6 +314,31 @@ export const WorkspaceScalarFieldEnum = {
 } as const
 
 export type WorkspaceScalarFieldEnum = (typeof WorkspaceScalarFieldEnum)[keyof typeof WorkspaceScalarFieldEnum]
+
+
+export const DepartmentPermissionScalarFieldEnum = {
+  departmentId: 'departmentId',
+  permissions: 'permissions'
+} as const
+
+export type DepartmentPermissionScalarFieldEnum = (typeof DepartmentPermissionScalarFieldEnum)[keyof typeof DepartmentPermissionScalarFieldEnum]
+
+
+export const RolePermissionScalarFieldEnum = {
+  role: 'role',
+  permissions: 'permissions'
+} as const
+
+export type RolePermissionScalarFieldEnum = (typeof RolePermissionScalarFieldEnum)[keyof typeof RolePermissionScalarFieldEnum]
+
+
+export const EmployeePermissionOverrideScalarFieldEnum = {
+  employeeId: 'employeeId',
+  granted: 'granted',
+  revoked: 'revoked'
+} as const
+
+export type EmployeePermissionOverrideScalarFieldEnum = (typeof EmployeePermissionOverrideScalarFieldEnum)[keyof typeof EmployeePermissionOverrideScalarFieldEnum]
 
 
 export const SortOrder = {

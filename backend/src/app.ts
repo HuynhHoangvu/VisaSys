@@ -14,8 +14,9 @@ import docsRoutes from "./routes/docs.routes.js";
 import processedDocsRoutes from "./routes/processedDocs.routes.js";
 import kpiRoutes from "./routes/kpi.routes.js";
 import workspaceRoutes from "./routes/workspace.routes.js";
+import accessRoutes from "./routes/access.routes.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
-import { SESSION_SECRET, isProduction, getCorsOrigins } from "../config/env.js";
+import { SESSION_SECRET, sessionCookieCrossSite, getCorsOrigins } from "../config/env.js";
 
 const app = express();
 
@@ -70,14 +71,16 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: isProduction,
+    /** HTTPS trên Railway — bắt buộc khi SameSite=None */
+    secure: sessionCookieCrossSite,
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000,
-    sameSite: isProduction ? "none" : "lax",
+    sameSite: sessionCookieCrossSite ? "none" : "lax",
   },
 }));
 
 app.use("/api/auth",           authRoutes);
+app.use("/api/access",         accessRoutes);
 app.use("/api/board",          boardRoutes);
 app.use("/api/tasks",          taskRoutes);
 app.use("/api/activities",     activityRoutes);

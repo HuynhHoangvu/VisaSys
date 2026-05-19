@@ -4,20 +4,14 @@ import DepartmentCard from "./DepartmentCard";
 import { INITIAL_DEPARTMENTS, DEPT_TO_TEMPLATE_ID } from "../../utils/constants";
 import { getProgress } from "../../utils/helpers";
 import api from "../../services/api";
+import { hasPermission, P } from "../../utils/access";
 
 interface Props {
   currentUser: AuthUser;
 }
 
 const WeeklyTaskAssignment: React.FC<Props> = ({ currentUser }) => {
-  const isDirector =
-    currentUser.role.toLowerCase().includes("giám đốc") ||
-    currentUser.role.toLowerCase().includes("phó giám đốc") ||
-    currentUser.id === "admin";
-  const isManager =
-    currentUser.role.toLowerCase().includes("quản lý") ||
-    currentUser.role.toLowerCase().includes("trưởng phòng");
-  const canEditAll = isDirector || isManager;
+  const canEditAll = hasPermission(currentUser, P.kpiWeekEdit);
 
   const myTemplateId = DEPT_TO_TEMPLATE_ID[currentUser.department] || "";
 

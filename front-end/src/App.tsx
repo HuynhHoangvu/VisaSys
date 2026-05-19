@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Toaster } from "react-hot-toast";
 import {
   BrowserRouter,
@@ -12,7 +12,13 @@ import {
 import Sidebar from "./components/layout/Sidebar";
 import Header from "./components/layout/Header";
 import Login from "./components/auth/Login";
-import PrivateRoute from "./router/PrivateRoute";
+import PrivateRoute, {
+  accessBossReport,
+  accessMainApp,
+  accessProcessingModule,
+} from "./router/PrivateRoute";
+import api from "./services/api";
+import { defaultHomePath } from "./utils/access";
 import CrmPage from "./pages/CrmPage";
 import BossPage from "./pages/BossPage";
 import HrPage from "./pages/HrPage";
@@ -43,10 +49,25 @@ const PageWrapper: React.FC = () => {
 
 // Layout chung: Sidebar + Header + nội dung trang (Outlet)
 const AppLayout: React.FC = () => {
-  const currentUser: AuthUser = JSON.parse(
-    localStorage.getItem("flyvisa_user")!,
+  const [currentUser, setCurrentUser] = useState<AuthUser>(() =>
+    JSON.parse(localStorage.getItem("flyvisa_user")!),
   );
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .get<AuthUser>("/api/auth/me")
+      .then((res) => {
+        if (cancelled) return;
+        localStorage.setItem("flyvisa_user", JSON.stringify(res.data));
+        setCurrentUser(res.data);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(
     () => localStorage.getItem("flyvisa_sidebar_collapsed") === "true",
   );
@@ -94,19 +115,16 @@ const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const handleLoginSuccess = (user: AuthUser) => {
     localStorage.setItem("flyvisa_user", JSON.stringify(user));
-    navigate(isTeacherDeptUser(user) ? "/hr" : "/dashboard", { replace: true });
+    navigate(defaultHomePath(user), { replace: true });
   };
   return <Login onLoginSuccess={handleLoginSuccess} />;
 };
-
-const isNotTeacherDeptUser = (user: AuthUser) => !isTeacherDeptUser(user);
-
 
 const DefaultRedirect: React.FC = () => {
   const savedUser = localStorage.getItem("flyvisa_user");
   if (!savedUser) return <Navigate to="/login" replace />;
   const currentUser: AuthUser = JSON.parse(savedUser);
-  return <Navigate to={isTeacherDeptUser(currentUser) ? "/hr" : "/dashboard"} replace />;
+  return <Navigate to={defaultHomePath(currentUser)} replace />;
 };
 
 const App: React.FC = () => {
@@ -122,7 +140,7 @@ const App: React.FC = () => {
           <Route element={<AppLayout />}>
             <Route path="/" element={<DefaultRedirect />} />
             <Route path="/hr" element={<HrPage />} />
-            <Route element={<PrivateRoute requiredRole={isNotTeacherDeptUser} />}>
+            <Route element={<PrivateRoute requiredAccess={accessMainApp} />}>
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/crm" element={<CrmPage />} />
@@ -131,13 +149,11 @@ const App: React.FC = () => {
               <Route path="/services" element={<ServicesPage />} />
             </Route>
 
-            {/* Routes chỉ dành cho Boss / Manager */}
-            <Route element={<PrivateRoute requiredRole={isBossOrManager} />}>
+            <Route element={<PrivateRoute requiredAccess={accessBossReport} />}>
               <Route path="/boss" element={<BossPage />} />
             </Route>
 
-            {/* Routes chỉ dành cho bộ phận xử lý hồ sơ */}
-            <Route element={<PrivateRoute requiredRole={isProcessingDept} />}>
+            <Route element={<PrivateRoute requiredAccess={accessProcessingModule} />}>
               <Route path="/processing" element={<ProcessingPage />} />
               <Route path="/processed-docs" element={<ProcessedDocsPage />} />
               <Route path="/recruitment" element={<RecruitmentPage />} />

@@ -3,8 +3,7 @@ import { NavLink } from "react-router-dom";
 import { FaceAvatar } from "../ui/FaceAvatar";
 import type { SidebarProps, Workspace } from "../../types";
 import api from "../../services/api";
-import { isBossOrManager, isProcessingDept, isTeacherDeptUser as checkIsTeacher } from "../../constants/roles";
-
+import { hasPermission, P } from "../../utils/access";
 
 type WsModalMode = "add" | "edit" | "manage" | null;
 
@@ -98,18 +97,17 @@ const Sidebar: React.FC<SidebarProps> = ({
     }
   }, [wsModal]);
 
-  const isTeacherDeptUser = checkIsTeacher(currentUser);
-
+  const showMainNav = hasPermission(currentUser, P.navDashboard);
 
   const [editingWs, setEditingWs] = useState<Workspace | null>(null);
 
   const openAddModal = () => {
-    if (isTeacherDeptUser) return;
+    if (!showMainNav) return;
     setWsFormName(""); setWsFormUrl(""); setWsError(""); setWsModal("add");
   };
 
   const openManageModal = () => {
-    if (isTeacherDeptUser) return;
+    if (!showMainNav) return;
     setWsModal("manage");
   };
 
@@ -193,15 +191,8 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   const handleNavClick = () => { if (onClose) onClose(); };
 
-  const isBoss = isBossOrManager(currentUser);
-  const isDirector = currentUser?.role?.toLowerCase().includes("giám đốc") ||
-                     currentUser?.role?.toLowerCase().includes("admin");
-  const isManager = !isBoss && ["quản lý", "trưởng phòng"].some((r) => currentUser.role?.toLowerCase().includes(r));
-  const isProcessingDeptUser = isProcessingDept(currentUser);
-
-  const canViewBossReport = isBoss || isManager;
-  const canAccessProcessing = isProcessingDeptUser || isDirector;
-
+  const canViewBossReport = hasPermission(currentUser, P.navBoss);
+  const canAccessProcessing = hasPermission(currentUser, P.navProcessing);
 
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
     collapsed
@@ -297,7 +288,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* WORKSPACE — ẩn khi thu gọn */}
-        {!collapsed && (
+        {showMainNav && !collapsed && (
           <div className="px-3 py-3 border-b border-gray-700/50">
             <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 px-1">
               Không gian làm việc
@@ -314,7 +305,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                   </option>
                 ))}
               </select>
-              {!isTeacherDeptUser && (
+              {showMainNav && (
                 <>
                   <button onClick={openManageModal} title="Quản lý" className="w-8 h-8 flex items-center justify-center bg-gray-800 hover:bg-blue-600 border border-gray-700 hover:border-blue-500 rounded-lg transition-colors shrink-0">
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -417,7 +408,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
         {/* NAV CHÍNH */}
         <nav className={`flex-1 py-3 space-y-0.5 overflow-y-auto overflow-x-hidden custom-scrollbar ${collapsed ? "px-2" : "px-3"}`}>
-          {!isTeacherDeptUser && (
+          {showMainNav && hasPermission(currentUser, P.navDashboard) && (
             <NavItem collapsed={collapsed} label="Tổng quan">
               <NavLink to="/dashboard" className={navLinkClass} onClick={handleNavClick}>
                 <Icon d={icons.dashboard} className={collapsed ? "" : "mr-3"} />
@@ -426,7 +417,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             </NavItem>
           )}
 
-          {canViewBossReport && !isTeacherDeptUser && (
+          {canViewBossReport && showMainNav && (
             <NavItem collapsed={collapsed} label="Báo cáo Giám đốc">
               <NavLink to="/boss" className={navLinkClass} onClick={handleNavClick}>
                 <Icon d={icons.boss} className={collapsed ? "text-red-400" : "mr-3 text-red-400"} />
@@ -436,28 +427,28 @@ const Sidebar: React.FC<SidebarProps> = ({
           )}
 
           {/* NHÓM: Kinh doanh */}
-          {!collapsed && !isTeacherDeptUser && (
+          {!collapsed && showMainNav && (
             <div className="pt-4 pb-1.5 px-1">
               <p className="text-[10px] font-bold text-gray-600 uppercase tracking-wider">Kinh doanh</p>
             </div>
           )}
-          {collapsed && !isTeacherDeptUser && <div className="my-2 border-t border-gray-700/50" />}
+          {collapsed && showMainNav && <div className="my-2 border-t border-gray-700/50" />}
 
-          {!isTeacherDeptUser && <NavItem collapsed={collapsed} label="Quản lý Khách hàng">
+          {showMainNav && hasPermission(currentUser, P.navCrm) && <NavItem collapsed={collapsed} label="Quản lý Khách hàng">
             <NavLink to="/crm" className={navLinkClass} onClick={handleNavClick}>
               <Icon d={icons.crm} className={collapsed ? "" : "mr-3"} />
               {!collapsed && "Quản lý Khách hàng"}
             </NavLink>
           </NavItem>}
 
-          {!isTeacherDeptUser && <NavItem collapsed={collapsed} label="Giao việc tuần">
+          {showMainNav && hasPermission(currentUser, P.navKpi) && <NavItem collapsed={collapsed} label="Giao việc tuần">
             <NavLink to="/kpi" className={navLinkClass} onClick={handleNavClick}>
               <Icon d={icons.kpi} className={collapsed ? "" : "mr-3"} />
               {!collapsed && "Giao việc tuần"}
             </NavLink>
           </NavItem>}
 
-          {canAccessProcessing && !isTeacherDeptUser && (
+          {canAccessProcessing && showMainNav && (
             <>
               {!collapsed && (
                 <div className="pt-4 pb-1.5 px-1">
@@ -490,28 +481,30 @@ const Sidebar: React.FC<SidebarProps> = ({
           )}
 
           {/* NHÓM: Quản trị */}
-          {!collapsed && !isTeacherDeptUser && (
+          {!collapsed && showMainNav && (
             <div className="pt-4 pb-1.5 px-1">
               <p className="text-[10px] font-bold text-gray-600 uppercase tracking-wider">Quản trị</p>
             </div>
           )}
-          {collapsed && !isTeacherDeptUser && <div className="my-2 border-t border-gray-700/50" />}
+          {collapsed && showMainNav && <div className="my-2 border-t border-gray-700/50" />}
 
-          {!isTeacherDeptUser && <NavItem collapsed={collapsed} label="Tài liệu công ty">
+          {showMainNav && hasPermission(currentUser, P.navDocuments) && <NavItem collapsed={collapsed} label="Tài liệu công ty">
             <NavLink to="/documents" className={navLinkClass} onClick={handleNavClick}>
               <Icon d={icons.documents} className={collapsed ? "" : "mr-3"} />
               {!collapsed && "Tài liệu công ty"}
             </NavLink>
           </NavItem>}
 
-          <NavItem collapsed={collapsed} label="Chấm công">
-            <NavLink to="/hr" className={navLinkClass} onClick={handleNavClick}>
-              <Icon d={icons.hr} className={collapsed ? "" : "mr-3"} />
-              {!collapsed && "Chấm công"}
-            </NavLink>
-          </NavItem>
+          {hasPermission(currentUser, P.navHr) && (
+            <NavItem collapsed={collapsed} label="Chấm công">
+              <NavLink to="/hr" className={navLinkClass} onClick={handleNavClick}>
+                <Icon d={icons.hr} className={collapsed ? "" : "mr-3"} />
+                {!collapsed && "Chấm công"}
+              </NavLink>
+            </NavItem>
+          )}
 
-          {!isTeacherDeptUser && <NavItem collapsed={collapsed} label="Bảng Giá Dịch Vụ">
+          {showMainNav && hasPermission(currentUser, P.navServices) && <NavItem collapsed={collapsed} label="Bảng Giá Dịch Vụ">
             <NavLink to="/services" className={navLinkClass} onClick={handleNavClick}>
               <Icon d={icons.services} className={collapsed ? "" : "mr-3"} />
               {!collapsed && "Bảng Giá Dịch Vụ"}
@@ -521,7 +514,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
         {/* BOTTOM: Settings + User */}
         <div className={`py-3 border-t border-gray-700/50 space-y-0.5 ${collapsed ? "px-2" : "px-3"}`}>
-          {!isTeacherDeptUser && (
+          {hasPermission(currentUser, P.navSettings) && (
             <NavItem collapsed={collapsed} label="Cài đặt">
               <NavLink to="/settings" className={navLinkClass} onClick={handleNavClick}>
                 <Icon d={icons.settings} className={collapsed ? "" : "mr-3"} />
