@@ -44,12 +44,6 @@ export const getEmployees = asyncHandler(async (req: Request, res: Response) => 
     return res.status(403).json({ error: "Bạn không có quyền thực hiện thao tác này" });
   }
 
-  // Check permissions: if user is in Sales department, they can only view Sales department employees
-  const user = (req.session as any).user;
-  const whereClause = user && user.department === "Sale"
-    ? { department: { name: "Sale" } }
-    : {};
-
   const employees = await prisma.employee.findMany({
     where: whereClause,
     include: {
