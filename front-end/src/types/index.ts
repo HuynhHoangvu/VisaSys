@@ -172,6 +172,8 @@ export interface AuthUser {
   role: string;
   department: string;
   employeeCode: string;
+  /** Quyền hiệu lực từ server (RBAC); nếu thiếu, FE dùng fallback legacy trong utils/access.ts */
+  permissions?: string[];
 }
 
 export interface Notification {

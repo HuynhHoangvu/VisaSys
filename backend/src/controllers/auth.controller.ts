@@ -1,6 +1,15 @@
 // backend/src/controllers/auth.controller.ts
 import { Request, Response } from "express";
 import { prisma } from "../../lib/prisma.js";
+import { buildSessionUserPayload } from "../services/accessResolution.js";
+import { sessionCookieCrossSite } from "../../config/env.js";
+import {
+  REFRESH_COOKIE_MAX_AGE_MS,
+  REFRESH_COOKIE_NAME,
+  getCookieFromRequest,
+  signRefreshToken,
+  verifyRefreshToken,
+} from "../utils/jwtTokens.js";
 
 /**
  * Authenticate an employee session.
@@ -16,7 +25,7 @@ export const login = async (req: Request, res: Response) => {
 
     const employee = await prisma.employee.findUnique({
       where: { email },
-      include: { department: true }
+      include: { department: true },
     });
 
     if (!employee) {
@@ -27,16 +36,21 @@ export const login = async (req: Request, res: Response) => {
       return res.status(401).json({ error: "Mật khẩu không chính xác!" });
     }
 
-    const userData = {
-      id: employee.id,
-      name: employee.name,
-      role: employee.role,
-      department: employee.department?.name || "Khác",
-      employeeCode: employee.employeeCode,
-      email: employee.email
-    };
+    const userData = await buildSessionUserPayload(employee.id);
+    if (!userData) {
+      return res.status(500).json({ error: "Lỗi tải tài khoản" });
+    }
 
     (req.session as any).user = userData;
+
+    const refreshJwt = signRefreshToken(employee.id);
+    res.cookie(REFRESH_COOKIE_NAME, refreshJwt, {
+      httpOnly: true,
+      secure: sessionCookieCrossSite,
+      sameSite: sessionCookieCrossSite ? "none" : "lax",
+      maxAge: REFRESH_COOKIE_MAX_AGE_MS,
+      path: "/",
+    });
 
     res.json(userData);
   } catch (error) {
@@ -54,8 +68,44 @@ export const logout = async (req: Request, res: Response) => {
       return res.status(500).json({ error: "Không thể đăng xuất" });
     }
     res.clearCookie("connect.sid");
+    res.clearCookie(REFRESH_COOKIE_NAME, {
+      httpOnly: true,
+      secure: sessionCookieCrossSite,
+      sameSite: sessionCookieCrossSite ? "none" : "lax",
+      path: "/",
+    });
     res.json({ message: "Đăng xuất thành công" });
   });
+};
+
+/**
+ * Gia hạn phiên đăng nhập nếu refresh JWT còn hạn (7 ngày kể từ lúc đăng nhập).
+ */
+export const refreshSession = async (req: Request, res: Response) => {
+  const raw = getCookieFromRequest(req, REFRESH_COOKIE_NAME);
+  if (!raw) {
+    return res.status(401).json({ error: "Không có refresh token" });
+  }
+  const parsed = verifyRefreshToken(raw);
+  if (!parsed) {
+    return res.status(401).json({ error: "Refresh token không hợp lệ hoặc đã hết hạn" });
+  }
+  const userData = await buildSessionUserPayload(parsed.sub);
+  if (!userData) {
+    return res.status(401).json({ error: "Tài khoản không tồn tại" });
+  }
+  (req.session as any).user = userData;
+
+  const nextRefresh = signRefreshToken(parsed.sub);
+  res.cookie(REFRESH_COOKIE_NAME, nextRefresh, {
+    httpOnly: true,
+    secure: sessionCookieCrossSite,
+    sameSite: sessionCookieCrossSite ? "none" : "lax",
+    maxAge: REFRESH_COOKIE_MAX_AGE_MS,
+    path: "/",
+  });
+
+  res.json(userData);
 };
 
 /**
@@ -64,10 +114,15 @@ export const logout = async (req: Request, res: Response) => {
  */
 export const getCurrentUser = async (req: Request, res: Response) => {
   const user = (req.session as any).user;
-  if (!user) {
+  if (!user?.id) {
     return res.status(401).json({ error: "Chưa đăng nhập" });
   }
-  res.json(user);
+  const fresh = await buildSessionUserPayload(user.id);
+  if (!fresh) {
+    return res.status(401).json({ error: "Phiên không hợp lệ" });
+  }
+  (req.session as any).user = fresh;
+  res.json(fresh);
 };
 
 /**

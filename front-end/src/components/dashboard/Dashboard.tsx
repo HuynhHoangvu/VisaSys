@@ -237,8 +237,8 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
               <p className="text-xs text-gray-500 mt-0.5">Năm {currentYear} • Đơn vị: Triệu đồng</p>
             </div>
           </div>
-          <div className="h-52">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="h-52 min-h-[13rem] w-full min-w-0">
+            <ResponsiveContainer width="100%" height={208} minWidth={0}>
               <BarChart data={revenueData} barSize={20}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#9ca3af" }} />
@@ -265,8 +265,8 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
           <h3 className="font-bold text-gray-800 mb-0.5">Cơ cấu dịch vụ</h3>
           <p className="text-xs text-gray-500 mb-3">Phân bổ theo loại visa</p>
           {visaData.length > 0 ? (
-            <div className="h-52">
-              <ResponsiveContainer width="100%" height="100%">
+            <div className="h-52 min-h-[13rem] w-full min-w-0">
+              <ResponsiveContainer width="100%" height={208} minWidth={0}>
                 <PieChart>
                   <Pie data={visaData} innerRadius={50} outerRadius={75} dataKey="value" stroke="none">
                     {visaData.map((_, i) => (

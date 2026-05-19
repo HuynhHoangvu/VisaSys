@@ -67,6 +67,7 @@ async function moveTaskToColumn(taskId: string, colId: string) {
   await fetch(`${API_BASE_URL}/tasks/${taskId}/processing-move`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
+    credentials: "include",
     body: JSON.stringify({ processingColId: colId }),
   });
 }
@@ -153,7 +154,7 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
   const fetchBoardData = useCallback(async (showSpinner = true) => {
     try {
       if (showSpinner) setIsLoading(true);
-      const res = await fetch(`${API_BASE_URL}/board`);
+      const res = await fetch(`${API_BASE_URL}/board`, { credentials: "include" });
       if (!res.ok) throw new Error("Không thể tải dữ liệu");
       const data: BoardData = await res.json();
       setBoardData(data);

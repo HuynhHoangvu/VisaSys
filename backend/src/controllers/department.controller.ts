@@ -4,7 +4,9 @@ import { getIO } from "../socket.js";
 import { asyncHandler } from "../middlewares/asyncHandler.js";
 
 export const getDepartments = asyncHandler(async (_req: Request, res: Response) => {
-  const departments = await prisma.department.findMany();
+  const departments = await prisma.department.findMany({
+    orderBy: { name: "asc" },
+  });
   res.json(departments);
 });
 

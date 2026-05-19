@@ -17,17 +17,23 @@ import {
   type SalaryHistory,
   type LeaveRequest,
 } from "../../types";
-import { calculateLateFine } from "../../utils/helpers";
 import {
   getVNWallClockMinutes,
   HALF_DAY_SPLIT_MINUTES,
-  STANDARD_WORK_DAYS,
 } from "../../utils/payroll";
 import socket from "../../services/socket";
-import { hasPermission, PERMISSIONS } from "../../constants/roles";
-
+import { hasPermission, P } from "../../utils/access";
+import { canManageOthersAttendanceByRole } from "../../utils/hrRoles";
+import {
+  mergeCatalogWithInUseNames,
+  normalizeDeptKey,
+  isInferredDepartmentId,
+} from "../../utils/hrDepartments";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+
+const hrFetch = (input: string, init?: RequestInit) =>
+  fetch(input, { credentials: "include", ...init });
 
 const getStatusColor = (status: AttendanceStatus): string => {
   switch (status) {
@@ -93,15 +99,35 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
   const canAddPersonnel = hasPermission(currentUser?.role, PERMISSIONS.HR_MANAGE);
   const canDeletePersonnel = isDirector;
 
+  /** Giám đốc / Phó / admin + Trưởng phòng / Quản lý — chấm công thay người khác & xem cả danh sách. */
+  const canManageOthersAttendance = canManageOthersAttendanceByRole(currentUser);
+
+  const canAddPersonnel =
+    !!currentUser &&
+    (hasPermission(currentUser, P.hrWrite) ||
+      isAdmin ||
+      isManager ||
+      isBoss);
+  const canDeletePersonnel =
+    !!currentUser &&
+    (hasPermission(currentUser, P.hrDeleteEmployee) || isAdmin || isBoss);
 
   const fetchData = useCallback(async () => {
     try {
       const [empRes, deptRes] = await Promise.all([
-        fetch(`${API_URL}/api/hr/employees`),
-        fetch(`${API_URL}/api/hr/departments`),
+        hrFetch(`${API_URL}/api/hr/employees`),
+        hrFetch(`${API_URL}/api/hr/departments`),
       ]);
-      setEmployees(await empRes.json());
-      setDepartments(await deptRes.json());
+      const empJson: unknown = await empRes.json();
+      const deptJson: unknown = await deptRes.json();
+      if (!empRes.ok) {
+        console.error("GET /api/hr/employees:", empRes.status, empJson);
+      }
+      if (!deptRes.ok) {
+        console.error("GET /api/hr/departments:", deptRes.status, deptJson);
+      }
+      setEmployees(Array.isArray(empJson) ? empJson : []);
+      setDepartments(Array.isArray(deptJson) ? deptJson : []);
     } catch (error) {
       console.error("Lỗi khi tải dữ liệu:", error);
     }
@@ -125,7 +151,7 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
         ? `${API_URL}/api/hr/employees/${employeeToEdit.id}`
         : `${API_URL}/api/hr/employees`;
       const method = employeeToEdit ? "PUT" : "POST";
-      const response = await fetch(url, {
+      const response = await hrFetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(empData),
@@ -152,7 +178,7 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
       return alert("Chỉ Giám đốc/Admin mới có quyền xóa nhân sự!");
     if (window.confirm("Bạn có chắc chắn muốn xóa nhân viên này?")) {
       try {
-        await fetch(`${API_URL}/api/hr/employees/${id}`, { method: "DELETE" });
+        await hrFetch(`${API_URL}/api/hr/employees/${id}`, { method: "DELETE" });
         fetchData();
       } catch (error) {
         alert("Lỗi khi xóa nhân viên!" + error);
@@ -161,7 +187,7 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
   };
 
   const handleCheckIn = async (empId: string) => {
-    if (!isAdmin && !isManager && currentUser?.id !== empId) {
+    if (!canManageOthersAttendance && currentUser?.id !== empId) {
       return alert("Bạn chỉ có thể tự chấm công cho chính mình!");
     }
     const targetEmployee = employees.find((e) => e.id === empId);
@@ -178,9 +204,6 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
       return;
     }
     const vnMins = getVNWallClockMinutes(now);
-    const halfUnit = Math.round(
-      (targetEmployee.baseSalary || 0) / STANDARD_WORK_DAYS / 2,
-    );
 
     let status: AttendanceStatus;
     let fine = 0;
@@ -188,24 +211,9 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
 
     if (vnMins > HALF_DAY_SPLIT_MINUTES) {
       status = "Nửa ngày chiều";
-      fine = 0;
-      halfDayDeduction = halfUnit;
-      alert(
-        `Check-in sau 12h trưa — làm nửa buổi chiều.\nGiờ vào: ${currentTimeStr}\nTrừ nửa ngày lương: ${new Intl.NumberFormat("vi-VN").format(halfDayDeduction)}đ\n(Không áp phạt đi muộn lũy tiến.)`,
-      );
     } else {
       const isLate = vnMins > 520;
       status = isLate ? "Đi muộn" : "Đúng giờ";
-      fine = isLate
-        ? calculateLateFine(targetEmployee.attendanceRecords, now)
-        : 0;
-      if (isLate) {
-        alert(
-          `Đã đi muộn!\nGiờ Check-in: ${currentTimeStr}\nBị phạt: ${new Intl.NumberFormat("vi-VN").format(fine)}đ`,
-        );
-      } else {
-        alert(`Check-in thành công!\nGiờ Check-in: ${currentTimeStr}`);
-      }
     }
 
     const newRecord = {
@@ -216,32 +224,40 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
       fine,
       halfDayDeduction,
     };
-    setEmployees((prevEmps) =>
-      prevEmps.map((emp) => {
-        if (emp.id !== empId) return emp;
-        return {
-          ...emp,
-          todayStatus: status,
-          attendanceRecords: [
-            newRecord,
-            ...emp.attendanceRecords,
-          ] as AttendanceRecord[],
-        };
-      }),
-    );
     try {
-      await fetch(`${API_URL}/api/hr/employees/${empId}/checkin`, {
+      const res = await hrFetch(`${API_URL}/api/hr/employees/${empId}/checkin`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newRecord),
       });
+      const saved = (await res.json().catch(() => ({}))) as AttendanceRecord & { error?: string };
+      if (!res.ok) {
+        return alert(saved.error || "Lỗi lưu chấm công!");
+      }
+
+      if ((saved.halfDayDeduction || 0) > 0) {
+        alert(
+          `Check-in sau 12h trưa — làm nửa buổi chiều.\nGiờ vào: ${saved.inTime || currentTimeStr}\nTrừ nửa ngày lương: ${new Intl.NumberFormat("vi-VN").format(saved.halfDayDeduction || 0)}đ`,
+        );
+      } else if ((saved.fine || 0) > 0) {
+        alert(
+          `Đã đi muộn!\nGiờ check-in: ${saved.inTime || currentTimeStr}\nBị phạt: ${new Intl.NumberFormat("vi-VN").format(saved.fine || 0)}đ`,
+        );
+      } else if (String(saved.status || "").includes("(có phép)")) {
+        alert(
+          `Check-in thành công lúc ${saved.inTime || currentTimeStr}.\nĐơn ${String(saved.status || "").includes("Vô trễ") ? "Vô trễ" : "xin phép"} đã duyệt nên không bị trừ tiền.`,
+        );
+      } else {
+        alert(`Check-in thành công!\nGiờ Check-in: ${saved.inTime || currentTimeStr}`);
+      }
+      fetchData();
     } catch (error) {
       console.error("Lỗi lưu chấm công:", error);
     }
   };
 
   const handleCheckOut = async (empId: string) => {
-    if (!isAdmin && !isManager && currentUser?.id !== empId) {
+    if (!canManageOthersAttendance && currentUser?.id !== empId) {
       return alert("Bạn chỉ có thể tự check-out cho chính mình!");
     }
     const targetEmployee = employees.find((e) => e.id === empId);
@@ -260,13 +276,17 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
     if (!confirmed) return;
 
     try {
-      const res = await fetch(`${API_URL}/api/hr/employees/${empId}/checkout`, {
+      const res = await hrFetch(`${API_URL}/api/hr/employees/${empId}/checkout`, {
         method: "POST",
       });
       const data = await res.json();
       if (!res.ok) return alert(data.error);
       if (data.isEarlyLeave) {
-        if (data.additionalHalfDayApplied) {
+        if (data.hasLeaveApproval) {
+          alert(
+            `Check-out lúc ${data.outTime} (về sớm có phép).\nĐơn Về sớm đã duyệt nên không bị trừ tiền.`,
+          );
+        } else if (data.additionalHalfDayApplied) {
           alert(
             `Check-out lúc ${data.outTime}.\nKhấu trừ thêm nửa ngày lương: ${new Intl.NumberFormat("vi-VN").format(data.halfDayDeduction)}đ`,
           );
@@ -287,7 +307,7 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
   const handleAddDepartment = async () => {
     if (!canAddPersonnel || !newDeptName.trim()) return;
     try {
-      await fetch(`${API_URL}/api/hr/departments`, {
+      await hrFetch(`${API_URL}/api/hr/departments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: newDeptName.trim() }),
@@ -300,9 +320,15 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
   };
 
   const handleUpdateDepartment = async (id: string) => {
+    if (isInferredDepartmentId(id)) {
+      alert(
+        "Tên này chỉ xuất hiện trên hồ sơ nhân viên (chưa có bản ghi trong danh mục). Hãy bấm «Thêm» để tạo bộ phận cùng tên, hoặc «Sửa» nhân viên để gán đúng bộ phận trong danh mục.",
+      );
+      return;
+    }
     if (!canAddPersonnel || !editDeptName.trim()) return;
     try {
-      await fetch(`${API_URL}/api/hr/departments/${id}`, {
+      await hrFetch(`${API_URL}/api/hr/departments/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: editDeptName.trim() }),
@@ -315,6 +341,12 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
   };
 
   const handleDeleteDepartment = async (id: string) => {
+    if (isInferredDepartmentId(id)) {
+      alert(
+        "Không thể xóa dòng này — đó là tên đang gán trên nhân viên nhưng chưa có trong danh mục bộ phận. Thêm bộ phận trùng tên hoặc sửa nhân viên để gán lại.",
+      );
+      return;
+    }
     if (!canDeletePersonnel)
       return alert("Chỉ Giám đốc mới có quyền xóa phòng ban!");
     if (
@@ -323,7 +355,7 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
       )
     ) {
       try {
-        await fetch(`${API_URL}/api/hr/departments/${id}`, {
+        await hrFetch(`${API_URL}/api/hr/departments/${id}`, {
           method: "DELETE",
         });
         fetchData();
@@ -335,7 +367,7 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
 
   const fetchSalaryHistory = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/hr/salary/history`);
+      const res = await hrFetch(`${API_URL}/api/hr/salary/history`);
       if (res.ok) setSalaryHistories(await res.json());
     } catch (error) {
       console.error("Lỗi lấy lịch sử lương", error);
@@ -346,7 +378,7 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
     if (!finalizeMonth.trim()) return alert("Vui lòng nhập tháng chốt lương!");
     setIsFinalizing(true);
     try {
-      const response = await fetch(`${API_URL}/api/hr/salary/finalize`, {
+      const response = await hrFetch(`${API_URL}/api/hr/salary/finalize`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ monthYear: finalizeMonth }),
@@ -370,7 +402,7 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
     employeeName: string,
   ) => {
     try {
-      const res = await fetch(
+      const res = await hrFetch(
         `${API_URL}/api/hr/salary/slip/${employeeId}/${encodeURIComponent(monthYear)}`,
       );
       if (!res.ok) throw new Error("Lỗi tải phiếu lương");
@@ -387,7 +419,7 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
 
   const handleDownloadSummaryExcel = async (monthYear: string) => {
     try {
-      const res = await fetch(
+      const res = await hrFetch(
         `${API_URL}/api/hr/salary/summary-excel/${encodeURIComponent(monthYear)}`,
       );
       if (!res.ok) throw new Error("Lỗi tải bảng lương tổng Excel");
@@ -404,7 +436,7 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
 
   const fetchLeaveRequests = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/hr/leave-requests`);
+      const res = await hrFetch(`${API_URL}/api/hr/leave-requests`);
       if (res.ok) setLeaveRequests(await res.json());
     } catch (error) {
       console.error("Lỗi lấy danh sách phép:", error);
@@ -417,7 +449,7 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
     )
       return;
     try {
-      const res = await fetch(`${API_URL}/api/hr/leave-requests/${id}/status`, {
+      const res = await hrFetch(`${API_URL}/api/hr/leave-requests/${id}/status`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),
@@ -445,24 +477,19 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
     );
   }
 
-  let filteredDepartments = departments;
+  const departmentBoard = mergeCatalogWithInUseNames(departments, employees);
+
+  let filteredDepartments = departmentBoard;
   let filteredEmployees = employees;
 
-  if (isDirector) {
-    // Giám đốc/Admin → thấy tất cả nhân viên
-  } else if (isHeadOfDepartment && currentUser?.department) {
-    // Trưởng phòng → chỉ thấy nhân viên cùng phòng
-    filteredEmployees = employees.filter(
-      (e) => e.department?.toLowerCase() === currentUser.department.toLowerCase()
-    );
-    filteredDepartments = departments.filter(
-      (d) => d.name?.toLowerCase() === currentUser.department.toLowerCase()
-    );
-  } else if (currentUser) {
-    // Nhân viên thường → chỉ thấy chính mình
+  const canViewAll = hasPermission(currentUser, P.hrRead);
+
+  if (!canViewAll && currentUser) {
     filteredEmployees = employees.filter((e) => e.id === currentUser.id);
-    filteredDepartments = departments.filter(
-      (d) => d.name === currentUser.department,
+    filteredDepartments = departmentBoard.filter(
+      (d) =>
+        normalizeDeptKey(d.name) ===
+        normalizeDeptKey(currentUser.department ?? ""),
     );
   }
 
@@ -470,18 +497,22 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
     .map((dept) => ({
       departmentName: dept.name,
       employees: filteredEmployees.filter(
-        (emp) => emp.department === dept.name,
+        (emp) =>
+          normalizeDeptKey(emp.department) === normalizeDeptKey(dept.name),
       ),
     }))
     .filter((group) => group.employees.length > 0);
 
   const unassignedEmployees = filteredEmployees.filter(
-    (emp) => !departments.some((d) => d.name === emp.department),
+    (emp) =>
+      !filteredDepartments.some(
+        (d) =>
+          normalizeDeptKey(d.name) === normalizeDeptKey(emp.department),
+      ),
   );
   if (
     unassignedEmployees.length > 0 &&
-    (isAdmin ||
-      isManager ||
+    (canViewAll ||
       unassignedEmployees.some((e) => e.id === currentUser?.id))
   ) {
     groupedEmployees.push({
@@ -501,10 +532,17 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
             <p className="text-gray-500 text-xs sm:text-sm mt-1">
               Danh sách nhân viên, bộ phận và phân quyền
             </p>
+            <p className="text-gray-400 text-[11px] sm:text-xs mt-1 max-w-2xl">
+              Trong Cài đặt › Phân quyền (RBAC), ma trận quyền gắn theo{" "}
+              <span className="text-gray-500">bộ phận</span>; cột «Chức vụ» trên bảng là{" "}
+              <span className="text-gray-500">vai trò HR</span> (tách khỏi quyền truy cập). Danh mục bộ phận quản tại
+              «Quản lý bộ phận».
+            </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            {isDirector && (
+            {currentUser &&
+              hasPermission(currentUser, P.hrPayrollFinalize) && (
               <button
                 onClick={() => setShowFinalizeModal(true)}
                 className="flex items-center gap-1.5 sm:gap-2 bg-red-600 hover:bg-red-700 text-white px-3 py-2 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors shadow-sm"
@@ -526,7 +564,8 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
                 <span className="sm:hidden">Chốt Lương</span>
               </button>
             )}
-            {isDirector && (
+            {currentUser &&
+              hasPermission(currentUser, P.hrRead) && (
               <button
                 onClick={() => {
                   fetchSalaryHistory();
@@ -570,23 +609,25 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
                 >
                   + Thêm <span className="hidden sm:inline ml-1">nhân sự</span>
                 </Button>
-                <button
-                  onClick={() => {
-                    fetchLeaveRequests();
-                    setShowLeaveManagerModal(true);
-                  }}
-                  className="flex items-center gap-1.5 sm:gap-2 bg-teal-600 hover:bg-teal-700 text-white px-3 py-2 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors shadow-sm"
-                >
-                  📋 <span className="hidden sm:inline">Duyệt Nghỉ Phép</span>
-                  <Badge
-                    color="failure"
-                    className="px-1.5 py-0.5 rounded-full text-[10px] sm:text-xs"
-                  >
-                    {leaveRequests.filter((r) => r.status === "Chờ duyệt")
-                      .length || ""}
-                  </Badge>
-                </button>
               </>
+            )}
+            {currentUser && hasPermission(currentUser, P.hrLeaveApprove) && (
+              <button
+                onClick={() => {
+                  fetchLeaveRequests();
+                  setShowLeaveManagerModal(true);
+                }}
+                className="flex items-center gap-1.5 sm:gap-2 bg-teal-600 hover:bg-teal-700 text-white px-3 py-2 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors shadow-sm"
+              >
+                📋 <span className="hidden sm:inline">Duyệt Nghỉ Phép</span>
+                <Badge
+                  color="failure"
+                  className="px-1.5 py-0.5 rounded-full text-[10px] sm:text-xs"
+                >
+                  {leaveRequests.filter((r) => r.status === "Chờ duyệt")
+                    .length || ""}
+                </Badge>
+              </button>
             )}
           </div>
         </div>
@@ -632,7 +673,7 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
                       >
                         <span className="mr-2">📁</span>
                         Bộ phận:{" "}
-                        <span className="text-blue-700 uppercase tracking-wide ml-1 text-xs sm:text-sm">
+                        <span className="text-blue-700 ml-1 text-xs sm:text-sm font-semibold tracking-tight">
                           {group.departmentName}
                         </span>
                         <span className="ml-3 text-[10px] sm:text-xs font-semibold text-gray-500 bg-white px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full border border-gray-200 shadow-sm">
@@ -724,7 +765,7 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
           setIsAddEmpModalOpen(false);
           setEmployeeToEdit(null);
         }}
-        departments={departments}
+        departments={departmentBoard}
         onSubmitEmployee={handleSubmitEmployee}
         employeeToEdit={employeeToEdit}
       />
@@ -732,7 +773,7 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
       <DepartmentModal
         show={isDeptModalOpen}
         onClose={() => setIsDeptModalOpen(false)}
-        departments={departments}
+        departments={departmentBoard}
         canAddPersonnel={!!canAddPersonnel}
         canDeletePersonnel={!!canDeletePersonnel}
         newDeptName={newDeptName}
