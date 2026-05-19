@@ -153,8 +153,15 @@ export const finalizeMonthSalary = asyncHandler(async (req: Request, res: Respon
   res.status(200).json({ message: "Chốt lương thành công!" });
 });
 
-export const getSalaryHistory = asyncHandler(async (_req: Request, res: Response) => {
+export const getSalaryHistory = asyncHandler(async (req: Request, res: Response) => {
+  // Check permissions: if user is in Sales department, they can only view Sales department employees' salary history
+  const user = (req.session as any).user;
+  const whereClause = user && user.department === "Sale"
+    ? { employee: { department: { name: "Sale" } } }
+    : {};
+
   const rows = await prisma.salaryHistory.findMany({
+    where: whereClause,
     include: {
       employee: { select: { id: true, name: true, employeeCode: true, department: true } },
     },

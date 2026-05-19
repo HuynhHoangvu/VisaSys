@@ -25,6 +25,8 @@ import RecruitmentPage from "./pages/RecruitmentPage";
 import DashboardPage from "./pages/DashboardPage";
 import SettingsPage from "./pages/SettingsPage";
 import type { AuthUser } from "./types";
+import { isBossOrManager, isProcessingDept, isTeacherDeptUser } from "./constants/roles";
+
 
 // Re-mounts on each route change so the fade-in animation replays
 const PageWrapper: React.FC = () => {
@@ -97,31 +99,8 @@ const LoginPage: React.FC = () => {
   return <Login onLoginSuccess={handleLoginSuccess} />;
 };
 
-const isBossOrManager = (user: AuthUser) =>
-  user.id === "admin" ||
-  ["giám đốc", "phó giám đốc", "quản lý", "trưởng phòng"].some((r) =>
-    user.role?.toLowerCase().includes(r),
-  );
-
-const isProcessingDept = (user: AuthUser) => {
-  const isBoss =
-    user.id === "admin" ||
-    ["giám đốc", "phó giám đốc"].some((r) =>
-      user.role?.toLowerCase().includes(r),
-    );
-  const isManager = ["quản lý", "trưởng phòng"].some((r) =>
-    user.role?.toLowerCase().includes(r),
-  );
-  const isProcessingDeptUser = ["xử lý hồ sơ", "hồ sơ", "trợ lý giám đốc"].some(
-    (d) => user.department?.toLowerCase().includes(d),
-  );
-  return (isBoss || isProcessingDeptUser) && !isManager;
-};
-
-const isTeacherDeptUser = (user: AuthUser) =>
-  user.department?.toLowerCase().includes("giáo viên");
-
 const isNotTeacherDeptUser = (user: AuthUser) => !isTeacherDeptUser(user);
+
 
 const DefaultRedirect: React.FC = () => {
   const savedUser = localStorage.getItem("flyvisa_user");

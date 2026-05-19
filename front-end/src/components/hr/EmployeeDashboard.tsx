@@ -24,6 +24,8 @@ import {
   STANDARD_WORK_DAYS,
 } from "../../utils/payroll";
 import socket from "../../services/socket";
+import { hasPermission, PERMISSIONS } from "../../constants/roles";
+
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
@@ -46,6 +48,9 @@ const getStatusColor = (status: AttendanceStatus): string => {
 interface EmployeeDashboardProps {
   currentUser: AuthUser | null;
 }
+
+
+
 
 const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
   currentUser,
@@ -79,19 +84,15 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
     new Date().toISOString().slice(0, 7),
   );
 
-  const isAdmin =
-    currentUser?.role.toLowerCase().includes("admin") ||
-    currentUser?.role.toLowerCase().includes("giám đốc");
-  const isManager =
-    currentUser?.role.toLowerCase().includes("quản lý") ||
-    currentUser?.role.toLowerCase().includes("trưởng phòng");
-  const isBoss =
-    currentUser?.role.toLowerCase().includes("giám đốc") ||
-    currentUser?.id === "admin" ||
-    currentUser?.role.toLowerCase().includes("phó giám đốc");
+  const isManager = hasPermission(currentUser?.role, PERMISSIONS.HR_VIEW);
+  const isDirector = currentUser?.role?.toLowerCase().includes("giám đốc") ||
+                     currentUser?.role?.toLowerCase().includes("admin");
+  const isHeadOfDepartment = currentUser?.role?.toLowerCase().includes("trưởng phòng");
+  const isAdmin = isDirector;
 
-  const canAddPersonnel = isAdmin || isManager || isBoss;
-  const canDeletePersonnel = isAdmin || isBoss;
+  const canAddPersonnel = hasPermission(currentUser?.role, PERMISSIONS.HR_MANAGE);
+  const canDeletePersonnel = isDirector;
+
 
   const fetchData = useCallback(async () => {
     try {
@@ -447,7 +448,18 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
   let filteredDepartments = departments;
   let filteredEmployees = employees;
 
-  if (!isAdmin && !isManager && currentUser) {
+  if (isDirector) {
+    // Giám đốc/Admin → thấy tất cả nhân viên
+  } else if (isHeadOfDepartment && currentUser?.department) {
+    // Trưởng phòng → chỉ thấy nhân viên cùng phòng
+    filteredEmployees = employees.filter(
+      (e) => e.department?.toLowerCase() === currentUser.department.toLowerCase()
+    );
+    filteredDepartments = departments.filter(
+      (d) => d.name?.toLowerCase() === currentUser.department.toLowerCase()
+    );
+  } else if (currentUser) {
+    // Nhân viên thường → chỉ thấy chính mình
     filteredEmployees = employees.filter((e) => e.id === currentUser.id);
     filteredDepartments = departments.filter(
       (d) => d.name === currentUser.department,
@@ -492,7 +504,7 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            {isBoss && (
+            {isDirector && (
               <button
                 onClick={() => setShowFinalizeModal(true)}
                 className="flex items-center gap-1.5 sm:gap-2 bg-red-600 hover:bg-red-700 text-white px-3 py-2 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors shadow-sm"
@@ -514,7 +526,7 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
                 <span className="sm:hidden">Chốt Lương</span>
               </button>
             )}
-            {isBoss && (
+            {isDirector && (
               <button
                 onClick={() => {
                   fetchSalaryHistory();

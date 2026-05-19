@@ -3,6 +3,8 @@ import { NavLink } from "react-router-dom";
 import { FaceAvatar } from "../ui/FaceAvatar";
 import type { SidebarProps, Workspace } from "../../types";
 import api from "../../services/api";
+import { isBossOrManager, isProcessingDept, isTeacherDeptUser as checkIsTeacher } from "../../constants/roles";
+
 
 type WsModalMode = "add" | "edit" | "manage" | null;
 
@@ -96,7 +98,8 @@ const Sidebar: React.FC<SidebarProps> = ({
     }
   }, [wsModal]);
 
-  const isTeacherDeptUser = currentUser.department?.toLowerCase().includes("giáo viên");
+  const isTeacherDeptUser = checkIsTeacher(currentUser);
+
 
   const [editingWs, setEditingWs] = useState<Workspace | null>(null);
 
@@ -169,7 +172,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         setActiveWorkspaceId(remaining[0].id);
       }
     } catch (e) {
-      alert("Lỗi khi xoá workspace");
+      alert("Lỗi khi xoá workspace: " + e);
     } finally { setWsSaving(false); }
   };
 
@@ -190,12 +193,15 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   const handleNavClick = () => { if (onClose) onClose(); };
 
-  const isBoss = currentUser.id === "admin" || ["giám đốc", "phó giám đốc"].some((r) => currentUser.role?.toLowerCase().includes(r));
-  const isManager = ["quản lý", "trưởng phòng"].some((r) => currentUser.role?.toLowerCase().includes(r));
-  const isProcessingDeptUser = ["xử lý hồ sơ", "hồ sơ", "trợ lý giám đốc"].some((d) => currentUser.department?.toLowerCase().includes(d));
+  const isBoss = isBossOrManager(currentUser);
+  const isDirector = currentUser?.role?.toLowerCase().includes("giám đốc") ||
+                     currentUser?.role?.toLowerCase().includes("admin");
+  const isManager = !isBoss && ["quản lý", "trưởng phòng"].some((r) => currentUser.role?.toLowerCase().includes(r));
+  const isProcessingDeptUser = isProcessingDept(currentUser);
 
   const canViewBossReport = isBoss || isManager;
-  const canAccessProcessing = (isBoss || isProcessingDeptUser) && !isManager;
+  const canAccessProcessing = isProcessingDeptUser || isDirector;
+
 
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
     collapsed

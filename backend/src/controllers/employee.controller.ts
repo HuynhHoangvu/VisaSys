@@ -30,10 +30,17 @@ const generateEmployeeCode = async (): Promise<string> => {
   return `${EMPLOYEE_CODE_PREFIX}${String(max + 1).padStart(3, "0")}`;
 };
 
-export const getEmployees = asyncHandler(async (_req: Request, res: Response) => {
+export const getEmployees = asyncHandler(async (req: Request, res: Response) => {
   const todayStr = new Date().toLocaleDateString("vi-VN");
 
+  // Check permissions: if user is in Sales department, they can only view Sales department employees
+  const user = (req.session as any).user;
+  const whereClause = user && user.department === "Sale"
+    ? { department: { name: "Sale" } }
+    : {};
+
   const employees = await prisma.employee.findMany({
+    where: whereClause,
     include: {
       department: true,
       attendanceRecords: { orderBy: { createdAt: "desc" } },

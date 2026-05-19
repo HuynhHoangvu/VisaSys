@@ -38,6 +38,18 @@ export const downloadSalarySlip = async (req: Request, res: Response) => {
   try {
     const { employeeId, monthYear } = req.params as { employeeId: string; monthYear: string };
 
+    // Check permissions: if user is in Sales department, they can only view Sales department employees
+    const user = (req.session as any).user;
+    if (user && user.department === "Sale") {
+      const targetEmployee = await prisma.employee.findUnique({
+        where: { id: employeeId },
+        include: { department: true },
+      });
+      if (!targetEmployee || targetEmployee.department?.name !== "Sale") {
+        return res.status(403).json({ error: "Bạn chỉ có quyền xem bảng lương của nhân viên phòng Sale" });
+      }
+    }
+
     let scriptPath = path.join(process.cwd(), "src/scripts/gen_salary.py");
     if (!fs.existsSync(scriptPath)) {
       scriptPath = path.join(process.cwd(), "scripts/gen_salary.py");
@@ -193,9 +205,15 @@ export const testSalaryCalculation = async (req: Request, res: Response) => {
 
     const employee = await prisma.employee.findUnique({
       where: { id: employeeId },
-      include: { salesRecords: true, attendanceRecords: true },
+      include: { salesRecords: true, attendanceRecords: true, department: true },
     });
     if (!employee) return res.status(404).json({ error: "Không tìm thấy nhân viên" });
+
+    // Check permissions: if user is in Sales department, they can only view Sales department employees
+    const user = (req.session as any).user;
+    if (user && user.department === "Sale" && employee.department?.name !== "Sale") {
+      return res.status(403).json({ error: "Bạn chỉ có quyền xem bảng lương của nhân viên phòng Sale" });
+    }
 
     const { mm: pm, yyyy: py } = parsePayrollMonthYear(monthYear);
     const monthAttendance = employee.attendanceRecords.filter((r) =>
@@ -281,7 +299,14 @@ export const downloadSalarySummary = async (req: Request, res: Response) => {
       return res.status(500).json({ error: "Không tìm thấy file PDF generator" });
     }
 
+    // Check permissions: if user is in Sales department, filter to only Sales employees
+    const user = (req.session as any).user;
+    const whereClause = user && user.department === "Sale" 
+      ? { department: { name: "Sale" } }
+      : {};
+
     const employees = await prisma.employee.findMany({
+      where: whereClause,
       include: { salesRecords: true, attendanceRecords: true },
       orderBy: { name: "asc" },
     });
@@ -459,11 +484,14 @@ export const getSalaryBreakdown = async (req: Request, res: Response) => {
   try {
     const { monthYear } = req.params as { monthYear: string };
 
+    // Check permissions: if user is in Sales department, filter to only Sales employees
+    const user = (req.session as any).user;
+
     // 1. Check whether this payroll month has been finalized
     // Read finalized snapshot rows from SalaryHistory
     const historyRows = await prisma.salaryHistory.findMany({
       where: { monthYear },
-      include: { employee: { select: { name: true, employeeCode: true, role: true } } },
+      include: { employee: { select: { name: true, employeeCode: true, role: true, department: true } } },
       orderBy: { employee: { name: "asc" } },
     });
     const historyRecords = dedupeSalaryHistoryLatestPerEmployeeMonth(historyRows).sort((a, b) =>
@@ -472,7 +500,11 @@ export const getSalaryBreakdown = async (req: Request, res: Response) => {
 
     // If finalized, return the stored snapshot because raw source data may have been purged
     if (historyRecords.length > 0) {
-      const breakdown = historyRecords.map(h => ({
+      let filteredRecords = historyRecords;
+      if (user && user.department === "Sale") {
+        filteredRecords = historyRecords.filter(h => h.employee?.department?.name === "Sale");
+      }
+      const breakdown = filteredRecords.map(h => ({
         name: h.employee?.name ?? "Nhân viên đã xóa",
         employeeCode: h.employee?.employeeCode ?? "",
         role: h.employee?.role ?? "",
@@ -492,7 +524,11 @@ export const getSalaryBreakdown = async (req: Request, res: Response) => {
     }
 
     // 2. If not finalized, compute the breakdown live from raw records
+    const whereClause = user && user.department === "Sale"
+      ? { department: { name: "Sale" } }
+      : {};
     const employees = await prisma.employee.findMany({
+      where: whereClause,
       include: { salesRecords: true, attendanceRecords: true },
       orderBy: { name: "asc" },
     });
@@ -521,6 +557,9 @@ export const downloadSalarySummaryExcel = async (req: Request, res: Response) =>
   try {
     const { monthYear } = req.params as { monthYear: string };
     
+    // Check permissions: if user is in Sales department, filter to only Sales employees
+    const user = (req.session as any).user;
+    
     let scriptPath = path.join(process.cwd(), "src/scripts/gen_salary.py");
     if (!fs.existsSync(scriptPath)) scriptPath = path.join(process.cwd(), "scripts/gen_salary.py");
     if (!fs.existsSync(scriptPath)) return res.status(500).json({ error: "Không tìm thấy file Python generator" });
@@ -537,9 +576,13 @@ export const downloadSalarySummaryExcel = async (req: Request, res: Response) =>
 
     let employeeData: any[] = [];
 
-    if (historyRecords.length > 0) {
+    // Filter by department if user is in Sales
+    let filteredRecords = historyRecords;
+    if (user && user.department === "Sale") {    }
+
+    if (filteredRecords.length > 0) {
       // Finalized month: use static snapshot data for Python rendering
-      employeeData = historyRecords.map(h => {
+      employeeData = filteredRecords.map(h => {
         // In DB, baseSalary corresponds to insuranceSalary (after the threshold adjustment)
         const ins = h.baseSalary;
         const gross = grossSalaryForLockedPayrollAllowances(h);
@@ -589,7 +632,11 @@ export const downloadSalarySummaryExcel = async (req: Request, res: Response) =>
       });
     } else {
       // Not finalized: calculate live from raw tables
+      const whereClause = user && user.department === "Sale"
+        ? { department: { name: "Sale" } }
+        : {};
       const employees = await prisma.employee.findMany({
+        where: whereClause,
         include: { salesRecords: true, attendanceRecords: true },
         orderBy: { name: "asc" },
       });
@@ -640,11 +687,19 @@ export const downloadSalarySlipsExcel = async (req: Request, res: Response) => {
   let tmpXlsx: string | null = null;
   try {
     const { monthYear } = req.params as { monthYear: string };
+    
+    // Check permissions: if user is in Sales department, filter to only Sales employees
+    const user = (req.session as any).user;
+    
     let scriptPath = path.join(process.cwd(), "src/scripts/gen_salary.py");
     if (!fs.existsSync(scriptPath)) scriptPath = path.join(process.cwd(), "scripts/gen_salary.py");
     if (!fs.existsSync(scriptPath)) return res.status(500).json({ error: "Không tìm thấy file Python generator" });
 
+    const whereClause = user && user.department === "Sale"
+      ? { department: { name: "Sale" } }
+      : {};
     const employees = await prisma.employee.findMany({
+      where: whereClause,
       include: { salesRecords: true, attendanceRecords: true },
       orderBy: { name: "asc" },
     });
