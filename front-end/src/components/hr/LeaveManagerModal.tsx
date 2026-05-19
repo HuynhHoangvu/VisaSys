@@ -1,7 +1,6 @@
 import React from "react";
 import { Modal, Badge } from "flowbite-react";
 import type { LeaveRequest } from "../../types";
-
 interface LeaveManagerModalProps {
   show: boolean;
   onClose: () => void;
@@ -10,7 +9,6 @@ interface LeaveManagerModalProps {
   setLeaveMonthFilter: (v: string) => void;
   onUpdateStatus: (id: string, status: string) => void;
 }
-
 const LeaveManagerModal: React.FC<LeaveManagerModalProps> = ({
   show,
   onClose,
