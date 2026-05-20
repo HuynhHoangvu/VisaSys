@@ -1,6 +1,8 @@
 import express from "express";
 import cors from "cors";
 import session from "express-session";
+import connectPgSimple from "connect-pg-simple";
+import pg from "pg";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import path from "path";
@@ -16,7 +18,7 @@ import kpiRoutes from "./routes/kpi.routes.js";
 import workspaceRoutes from "./routes/workspace.routes.js";
 import accessRoutes from "./routes/access.routes.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
-import { SESSION_SECRET, sessionCookieCrossSite, getCorsOrigins } from "../config/env.js";
+import { SESSION_SECRET, sessionCookieCrossSite, getCorsOrigins, DATABASE_URL } from "../config/env.js";
 
 const app = express();
 
@@ -66,18 +68,60 @@ app.use(cors({
 app.use(express.json({ limit: "1000mb" }));
 app.use(express.urlencoded({ extended: true, limit: "1000mb" }));
 
+// ── Postgres session store ────────────────────────────────────────────────────
+// connect-pg-simple persists sessions in the `session` table so they survive
+// server restarts and scale across multiple instances.  The pool is kept
+// separate from Prisma so the store can manage its own connection lifecycle.
+const PgSession = connectPgSimple(session);
+const sessionPool = new pg.Pool({ connectionString: DATABASE_URL });
+
+sessionPool.on("error", (err) => {
+  console.error("[session-store] Postgres pool error:", err);
+});
+
+const pgStore = new PgSession({
+  pool: sessionPool,
+  tableName: "session",
+  // Automatically create the `session` table if it does not exist yet.
+  createTableIfMissing: true,
+  // Prune expired sessions every hour.
+  pruneSessionInterval: 60 * 60,
+  errorLog: (err) => console.error("[session-store] Store error:", err),
+});
+
 app.use(session({
+  store: pgStore,
+  name: "connect.sid",
   secret: SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
   cookie: {
-    /** HTTPS trên Railway — bắt buộc khi SameSite=None */
+    /** HTTPS on Railway — required when SameSite=None */
     secure: sessionCookieCrossSite,
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000,
     sameSite: sessionCookieCrossSite ? "none" : "lax",
   },
 }));
+
+// ── Session debug middleware ──────────────────────────────────────────────────
+// Logs the incoming session cookie and resolved session state on every request
+// so that 401 failures can be traced back to a missing/invalid cookie or a
+// store lookup miss.  Remove or gate behind NODE_ENV once the issue is resolved.
+app.use((req, _res, next) => {
+  const sid = req.headers.cookie
+    ?.split(";")
+    .map((c) => c.trim())
+    .find((c) => c.startsWith("connect.sid="));
+  const user = (req.session as any)?.user;
+  console.log(
+    `[session] ${req.method} ${req.path}` +
+    ` | sid-cookie=${sid ? "present" : "absent"}` +
+    ` | session-id=${req.sessionID ?? "none"}` +
+    ` | user=${user ? `${user.id} (${user.role})` : "none"}`,
+  );
+  next();
+});
 
 app.use("/api/auth",           authRoutes);
 app.use("/api/access",         accessRoutes);

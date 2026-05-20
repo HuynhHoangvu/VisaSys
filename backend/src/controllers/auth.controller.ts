@@ -43,6 +43,24 @@ export const login = async (req: Request, res: Response) => {
 
     (req.session as any).user = userData;
 
+    // Explicitly save the session before responding so the store has committed
+    // the record before the browser receives the Set-Cookie header.  Without
+    // this, async stores (e.g. connect-pg-simple) may not finish writing before
+    // the client fires its next request, causing a spurious 401.
+    await new Promise<void>((resolve, reject) => {
+      req.session.save((err) => {
+        if (err) {
+          console.error("[auth] login — session.save() failed:", err);
+          reject(err);
+        } else {
+          console.log(
+            `[auth] login — session saved | id=${req.sessionID} | user=${userData.id} (${userData.role})`,
+          );
+          resolve();
+        }
+      });
+    });
+
     const refreshJwt = signRefreshToken(employee.id);
     res.cookie(REFRESH_COOKIE_NAME, refreshJwt, {
       httpOnly: true,
@@ -95,6 +113,22 @@ export const refreshSession = async (req: Request, res: Response) => {
     return res.status(401).json({ error: "Tài khoản không tồn tại" });
   }
   (req.session as any).user = userData;
+
+  // Same explicit save as login — ensures the store has committed the refreshed
+  // session before the response is sent and the client retries protected routes.
+  await new Promise<void>((resolve, reject) => {
+    req.session.save((err) => {
+      if (err) {
+        console.error("[auth] refreshSession — session.save() failed:", err);
+        reject(err);
+      } else {
+        console.log(
+          `[auth] refreshSession — session saved | id=${req.sessionID} | user=${userData.id} (${userData.role})`,
+        );
+        resolve();
+      }
+    });
+  });
 
   const nextRefresh = signRefreshToken(parsed.sub);
   res.cookie(REFRESH_COOKIE_NAME, nextRefresh, {
