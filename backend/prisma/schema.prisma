@@ -12,51 +12,51 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
 model Column {
-  id      String @id
-  title   String
-  order   Int    
-  
-  tasks   Task[] 
+  id    String @id
+  title String
+  order Int
+
+  tasks Task[]
 }
 
 model Task {
-  id             String  @id
-  content        String
-  price          String
-  phone          String
-  email          String?
-  description    String?
-  source         String?
-  assignedTo     String
+  id          String  @id
+  content     String
+  price       String
+  phone       String
+  email       String?
+  description String?
+  source      String?
+  assignedTo  String
 
-  
-  visaType       String?
-  passportNumber String?
-  maritalStatus  String?
-  dependents     Int?
-  priorityDate   String?
-  educationLevel String?
-  englishScore   String?
-  workExperience String?
+  visaType        String?
+  passportNumber  String?
+  maritalStatus   String?
+  dependents      Int?
+  priorityDate    String?
+  educationLevel  String?
+  englishScore    String?
+  workExperience  String?
   jobType         String?    @default("Nhân viên")
   checklistType   String?    @default("tourism")
-  columnId       String?
-  column         Column? @relation(fields: [columnId], references: [id])
-  createdAt DateTime @default(now())
-  documents      Json?      @default("{}")
-  processingColId String    @default("proc-col-1")
-  commissionPaid Boolean @default(false)
+  columnId        String?
+  column          Column?    @relation(fields: [columnId], references: [id])
+  createdAt       DateTime   @default(now())
+  documents       Json?      @default("{}")
+  processingColId String     @default("proc-col-1")
+  commissionPaid  Boolean    @default(false)
   recruitmentStep String?
-  activities     Activity[]
+  activities      Activity[]
 
   @@index([assignedTo])
   @@index([columnId])
 }
 
 model Activity {
-  id        String  @id
-  completed Boolean @default(false)
+  id        String   @id
+  completed Boolean  @default(false)
   type      String
   summary   String
   assignee  String
@@ -65,174 +65,188 @@ model Activity {
   fileUrl   String?
   dueText   String?
   createdAt DateTime @default(now())
-  jobType         String?  @default("Nhân viên")
+  jobType   String?  @default("Nhân viên")
   taskId    String
-  task      Task    @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
 }
+
 model Department {
-  id        String     @id @default(uuid())
-  name      String     @unique // Ví dụ: Sale, Xử lý hồ sơ, Kế toán...
-  
+  id   String @id @default(uuid())
+  name String @unique // Ví dụ: Sale, Xử lý hồ sơ, Kế toán...
+
   // Quan hệ 1 phòng ban có nhiều nhân viên
-  employees Employee[]
-  /** Ma trận quyền RBAC mặc định theo bộ phận (khác với Employee.role). */
+  employees            Employee[]
+  /**
+   * Ma trận quyền RBAC mặc định theo bộ phận (khác với Employee.role).
+   */
   departmentPermission DepartmentPermission?
 }
 
 model Employee {
-  id             String     @id @default(uuid())
-  employeeCode   String     @unique 
-  email          String     @unique
-  name           String
-  password       String     
-  role           String     
-  baseSalary     Float      @default(6000000) 
-  commissionRate Float      @default(0) 
-  salesRecords      SalesRecord[]
-  departmentId   String?
-  salaryHistories   SalaryHistory[]
-  leaveRequests     LeaveRequest[]
-  department     Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  id              String          @id @default(uuid())
+  employeeCode    String          @unique
+  email           String          @unique
+  name            String
+  password        String
+  role            String
+  baseSalary      Float           @default(6000000)
+  commissionRate  Float           @default(0)
+  salesRecords    SalesRecord[]
+  departmentId    String?
+  salaryHistories SalaryHistory[]
+  leaveRequests   LeaveRequest[]
+  department      Department?     @relation(fields: [departmentId], references: [id], onDelete: SetNull)
 
   // [THÊM DÒNG NÀY]: 1 Nhân viên có nhiều lượt chấm công
-  attendanceRecords AttendanceRecord[]
-  workspaces        Workspace[]
+  attendanceRecords  AttendanceRecord[]
+  workspaces         Workspace[]
   permissionOverride EmployeePermissionOverride?
 
-  createdAt      DateTime   @default(now())
+  createdAt DateTime @default(now())
 }
 
 // [THÊM BẢNG MỚI NÀY VÀO CUỐI FILE]
 model AttendanceRecord {
-  id         String   @id @default(uuid())
-  date       String   // Lưu chuỗi ngày: "24/02/2026"
-  inTime     String   // "08:00"
-  outTime    String   // "-"
-  status     String   // "Đúng giờ" | "Đi muộn" | "Vắng không phép"
-  fine       Float    @default(0)
-  halfDayDeduction  Float   @default(0)
-  employeeId String
-  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  id               String   @id @default(uuid())
+  date             String // Lưu chuỗi ngày: "24/02/2026"
+  inTime           String // "08:00"
+  outTime          String // "-"
+  status           String // "Đúng giờ" | "Đi muộn" | "Vắng không phép"
+  fine             Float    @default(0)
+  halfDayDeduction Float    @default(0)
+  employeeId       String
+  employee         Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
 
-  createdAt  DateTime @default(now())
+  createdAt DateTime @default(now())
 
   @@index([employeeId])
   @@index([date])
   @@index([employeeId, date])
 }
+
 model Notification {
   id        String   @id @default(uuid())
-  sender    String   
-  message   String  
+  sender    String
+  message   String
   receiver  String[]
-  isRead    Boolean  @default(false) 
+  isRead    Boolean  @default(false)
   taskId    String?
   createdAt DateTime @default(now())
 }
+
 model SalesRecord {
-  id         String   @id @default(uuid())
-  customer   String
-  service    String
-  profit     Float
-  note       String?
+  id       String  @id @default(uuid())
+  customer String
+  service  String
+  profit   Float
+  note     String?
 
   employeeId String
   employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
 
-  createdAt  DateTime @default(now())
+  createdAt DateTime @default(now())
 
   @@index([employeeId])
   @@index([createdAt])
 }
-model DocFolder {
-  id        String    @id @default(uuid())
-  name      String
-  parentId  String?   // Nếu null nghĩa là thư mục gốc
-  createdAt DateTime  @default(now())
 
-  files     DocFile[] // 1 thư mục có nhiều file
+model DocFolder {
+  id        String   @id @default(uuid())
+  name      String
+  parentId  String? // Nếu null nghĩa là thư mục gốc
+  createdAt DateTime @default(now())
+
+  files DocFile[] // 1 thư mục có nhiều file
 }
 
 model DocFile {
-  id         String    @id @default(uuid())
-  name       String
-  size       String
-  fileUrl    String
-  uploadedBy String
-  createdAt  DateTime  @default(now())
+  id                 String     @id @default(uuid())
+  name               String
+  size               String
+  fileUrl            String
+  uploadedBy         String
+  createdAt          DateTime   @default(now())
   cloudinaryPublicId String?
-  folderId   String?
-  folder     DocFolder? @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  folderId           String?
+  folder             DocFolder? @relation(fields: [folderId], references: [id], onDelete: Cascade)
 }
+
 model SalaryHistory {
-  id              String   @id @default(uuid())
-  monthYear       String   // VD: "02/2026"
-  /** Lương đóng BHXH (snapshot sau quy tắc trừ 2M nếu gross ≥ ngưỡng). */
-  baseSalary      Float
-  totalBonus      Float    // Tổng tiền thưởng + hoa hồng
-  totalDeduction  Float    // Tổng tiền phạt + đi muộn + tạm ứng
-  finalSalary     Float    // Tiền lương thực nhận cuối cùng
+  id             String @id @default(uuid())
+  monthYear      String // VD: "02/2026"
+  /**
+   * Lương đóng BHXH (snapshot sau quy tắc trừ 2M nếu gross ≥ ngưỡng).
+   */
+  baseSalary     Float
+  totalBonus     Float // Tổng tiền thưởng + hoa hồng
+  totalDeduction Float // Tổng tiền phạt + đi muộn + tạm ứng
+  finalSalary    Float // Tiền lương thực nhận cuối cùng
 
   // Breakdown chi tiết để hiển thị lên bảng lịch sử
-  hoaHong                 Float @default(0)
-  thuongKhac              Float @default(0) // Thưởng khác (không gộp vào hoa hồng/KPI)
-  tamUng                  Float @default(0)
-  manualFines             Float @default(0)
-  attendanceFines         Float @default(0)
-  halfDayDeduction        Float @default(0)
-  fullDayAbsenceDeduction Float @default(0)
-  workDays                Int   @default(0)
-  /** Lưu snapshot ngày đi làm đã chốt (DD/MM/YYYY); không xóa cột để tránh mất dữ liệu trên DB. */
+  hoaHong                 Float    @default(0)
+  thuongKhac              Float    @default(0) // Thưởng khác (không gộp vào hoa hồng/KPI)
+  tamUng                  Float    @default(0)
+  manualFines             Float    @default(0)
+  attendanceFines         Float    @default(0)
+  halfDayDeduction        Float    @default(0)
+  fullDayAbsenceDeduction Float    @default(0)
+  workDays                Int      @default(0)
+  /**
+   * Lưu snapshot ngày đi làm đã chốt (DD/MM/YYYY); không xóa cột để tránh mất dữ liệu trên DB.
+   */
   workDates               String[] @default([])
 
-  employeeId      String
-  employee        Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-  createdAt       DateTime @default(now())
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
 
   @@unique([employeeId, monthYear])
   @@index([employeeId])
   @@index([monthYear])
 }
+
 model LeaveRequest {
-  id          String   @id @default(uuid())
-  type        String   // "Nghỉ ốm", "Nghỉ phép năm"...
-  startDate   String   // "YYYY-MM-DD"
-  endDate     String   // "YYYY-MM-DD"
-  reason      String
-  status      String   @default("Chờ duyệt") // Trạng thái: "Chờ duyệt", "Đã duyệt", "Từ chối"
+  id        String @id @default(uuid())
+  type      String // "Nghỉ ốm", "Nghỉ phép năm"...
+  startDate String // "YYYY-MM-DD"
+  endDate   String // "YYYY-MM-DD"
+  reason    String
+  status    String @default("Chờ duyệt") // Trạng thái: "Chờ duyệt", "Đã duyệt", "Từ chối"
 
-  employeeId  String
-  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
 
-  createdAt   DateTime @default(now())
+  createdAt DateTime @default(now())
 
   @@index([employeeId])
   @@index([status])
 }
+
 model ProcessedFolder {
   id        String   @id @default(uuid())
   name      String
-  parentId  String?  // Nếu null nghĩa là thư mục gốc
+  parentId  String? // Nếu null nghĩa là thư mục gốc
   createdAt DateTime @default(now())
 
-  files     ProcessedFile[] // 1 thư mục có nhiều file
+  files ProcessedFile[] // 1 thư mục có nhiều file
 }
 
 model ProcessedFile {
-  id         String   @id @default(uuid())
-  name       String
-  size       String
-  fileUrl    String
-  uploadedBy String
-  createdAt  DateTime @default(now())
+  id                 String           @id @default(uuid())
+  name               String
+  size               String
+  fileUrl            String
+  uploadedBy         String
+  createdAt          DateTime         @default(now())
   cloudinaryPublicId String?
-  folderId   String?
-  folder     ProcessedFolder? @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  folderId           String?
+  folder             ProcessedFolder? @relation(fields: [folderId], references: [id], onDelete: Cascade)
 }
+
 model WeeklyKPI {
   id        String   @id @default(uuid())
   weekLabel String   @unique // Chuỗi lưu tên tuần, ví dụ: "09/03/2026 – 15/03/2026"
-  data      Json     // Lưu toàn bộ mảng các phòng ban và task bên trong
+  data      Json // Lưu toàn bộ mảng các phòng ban và task bên trong
   updatedAt DateTime @updatedAt
 }
 
@@ -247,16 +261,20 @@ model Workspace {
   @@index([employeeId])
 }
 
-/** Ma trận quyền mặc định theo bộ phận (Department). Employee.role chỉ là chức danh HR, không dùng làm khóa ma trận. */
+/**
+ * Ma trận quyền mặc định theo bộ phận (Department). Employee.role chỉ là chức danh HR, không dùng làm khóa ma trận.
+ */
 model DepartmentPermission {
-  departmentId String   @id
+  departmentId String     @id
   permissions  String[]
   department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
 }
 
-/** Cũ: ma trận theo role — không còn dùng trong resolveEffectivePermissions; giữ bảng để migrate an toàn. */
+/**
+ * Cũ: ma trận theo role — không còn dùng trong resolveEffectivePermissions; giữ bảng để migrate an toàn.
+ */
 model RolePermission {
-  role          String   @id
+  role        String   @id
   permissions String[]
 }
 
@@ -266,7 +284,16 @@ model RolePermission {
  */
 model EmployeePermissionOverride {
   employeeId String   @id
-  granted      String[] @default([])
-  revoked      String[] @default([])
-  employee     Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  granted    String[] @default([])
+  revoked    String[] @default([])
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+}
+
+// Added for connect-pg-simple session store
+model session {
+  sid    String   @id @db.VarChar
+  sess   Json     @db.Json
+  expire DateTime @db.Timestamp(6)
+
+  @@index([expire], map: "IDX_session_expire")
 }

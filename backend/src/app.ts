@@ -82,8 +82,8 @@ sessionPool.on("error", (err) => {
 const pgStore = new PgSession({
   pool: sessionPool,
   tableName: "session",
-  // Automatically create the `session` table if it does not exist yet.
-  createTableIfMissing: true,
+  // We manage the session table manually or it is already created.
+  createTableIfMissing: false,
   // Prune expired sessions every hour.
   pruneSessionInterval: 60 * 60,
   errorLog: (err) => console.error("[session-store] Store error:", err),
