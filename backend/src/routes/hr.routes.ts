@@ -2,7 +2,7 @@ import { Router } from "express";
 import { getDepartments, createDepartment, updateDepartment, deleteDepartment } from "../controllers/department.controller.js";
 import { getEmployees, createEmployee, updateEmployee, deleteEmployee } from "../controllers/employee.controller.js";
 import { checkInEmployee, checkOutEmployee, addManualBonus, deleteSalesRecord, excuseScheduledAbsence, penalizeForgotCheckout, waiveAttendanceFine, waiveHalfDayDeduction } from "../controllers/attendance.controller.js";
-import { createLeaveRequest, getLeaveRequests, getLeaveRequestsByEmployee, updateLeaveRequestStatus } from "../controllers/leave.controller.js";
+import { createLeaveRequest, getLeaveRequests, getLeaveRequestsByEmployee, updateLeaveRequestStatus, createBulkLeaveRequest } from "../controllers/leave.controller.js";
 import { finalizeMonthSalary, getSalaryHistory } from "../controllers/salary.controller.js";
 import { downloadSalarySlip, downloadSalarySummary, downloadSalarySummaryExcel, downloadSalarySlipsExcel, testSalaryCalculation, getSalaryBreakdown } from "../controllers/salarySlip.controller.js";
 import { validate } from "../middlewares/validate.js";
@@ -14,6 +14,7 @@ import {
   finalizeMonthSchema,
   leaveRequestSchema,
   updateLeaveStatusSchema,
+  bulkLeaveSchema,
 } from "../schemas/index.js";
 
 const router = Router();
@@ -66,6 +67,7 @@ router.post("/attendance/penalize-forgot-checkout", auth, hrWrite, penalizeForgo
 router.post("/employees/:id/leave", auth, requireHrWriteOrSelfAttendance, validate(leaveRequestSchema), createLeaveRequest);
 router.get("/employees/:id/leave", auth, requireHrReadOrSelfAttendance, getLeaveRequestsByEmployee);
 router.get("/leave-requests", auth, hrRead, getLeaveRequests);
+router.post("/leave-requests/bulk", auth, hrWrite, validate(bulkLeaveSchema), createBulkLeaveRequest);
 router.put("/leave-requests/:id/status", auth, hrLeaveApprove, validate(updateLeaveStatusSchema), updateLeaveRequestStatus);
 
 export default router;

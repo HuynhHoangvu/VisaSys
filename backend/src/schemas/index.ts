@@ -46,7 +46,16 @@ export const finalizeMonthSchema = z.object({
 });
 
 export const leaveRequestSchema = z.object({
-  type: z.enum(["Xin phép nghỉ", "Nửa ngày", "Nghỉ ốm", "Nghỉ việc riêng", "Vô trễ", "Về sớm"], {
+  type: z.enum(["Vô trễ", "Nghỉ không lương", "Nghỉ có lương"], {
+    error: "Loại đơn không hợp lệ"
+  }),
+  startDate: z.string().min(1, "Ngày bắt đầu không được để trống"),
+  endDate: z.string().min(1, "Ngày kết thúc không được để trống"),
+  reason: z.string().min(5, "Lý do phải có ít nhất 5 ký tự")
+});
+
+export const bulkLeaveSchema = z.object({
+  type: z.enum(["Nghỉ không lương", "Nghỉ có lương"], {
     error: "Loại đơn không hợp lệ"
   }),
   startDate: z.string().min(1, "Ngày bắt đầu không được để trống"),
@@ -55,7 +64,7 @@ export const leaveRequestSchema = z.object({
 });
 
 export const updateLeaveStatusSchema = z.object({
-  status: z.enum(["Đã duyệt", "Từ chối", "Chờ duyệt", "Duyệt", "Không duyệt", "Đã hủy"], {
+  status: z.enum(["Đã duyệt", "Từ chối", "Chờ duyệt"], {
     error: "Trạng thái không hợp lệ"
   })
 });

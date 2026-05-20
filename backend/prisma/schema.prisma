@@ -206,12 +206,14 @@ model SalaryHistory {
 }
 
 model LeaveRequest {
-  id        String @id @default(uuid())
-  type      String // "Nghỉ ốm", "Nghỉ phép năm"...
-  startDate String // "YYYY-MM-DD"
-  endDate   String // "YYYY-MM-DD"
-  reason    String
-  status    String @default("Chờ duyệt") // Trạng thái: "Chờ duyệt", "Đã duyệt", "Từ chối"
+  id          String   @id @default(uuid())
+  type        String   // "Vô trễ", "Nghỉ không lương", "Nghỉ có lương"
+  paidType    String   @default("Nghỉ không lương") // "Vô trễ" | "Nghỉ không lương" | "Nghỉ có lương"
+  startDate   String   // "YYYY-MM-DD"
+  endDate     String   // "YYYY-MM-DD"
+  reason      String
+  status      String   @default("Chờ duyệt") // Trạng thái: "Chờ duyệt", "Đã duyệt", "Từ chối"
+  isBulkLeave Boolean  @default(false) // Đánh dấu nghỉ đồng loạt (sếp tạo cho tất cả)
 
   employeeId String
   employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
@@ -220,6 +222,7 @@ model LeaveRequest {
 
   @@index([employeeId])
   @@index([status])
+  @@index([paidType])
 }
 
 model ProcessedFolder {
