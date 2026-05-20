@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Modal, Badge } from "flowbite-react";
 import type { SalaryHistory } from "../../types";
+import { API_URL } from "../../constants/config";
 
 export type EmployeeBreakdown = {
   name: string;
@@ -39,9 +40,7 @@ const SalaryHistoryModal: React.FC<SalaryHistoryModalProps> = ({
   const [breakdownData, setBreakdownData] = useState<Record<string, EmployeeBreakdown[]>>({});
   const [loadingBreakdown, setLoadingBreakdown] = useState<string | null>(null);
   const [expandedBreakdown, setExpandedBreakdown] = useState<string | null>(null);
-  const [expandedWorkDates, setExpandedWorkDates] = useState<Set<string>>(new Set());
-
-  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const [expandedWorkDates, setExpandedWorkDates] = useState<Set<string>>(new Set());
 
   const toggleMonth = (monthYear: string) => {
     setExpandedMonths((prev) =>

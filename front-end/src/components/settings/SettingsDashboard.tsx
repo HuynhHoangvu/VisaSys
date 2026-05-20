@@ -2,8 +2,7 @@ import React, { useState } from "react";
 import type { AuthUser } from "../../types";
 import { canManageRbac } from "../../utils/access";
 import RbacSettingsPanel from "./RbacSettingsPanel";
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+import { API_URL } from "../../constants/config";
 
 interface SettingsDashboardProps {
   currentUser: AuthUser;

@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { Modal, Badge } from "flowbite-react";
+import { API_URL } from "../../constants/config";
 
 interface LeaveRecord {
   id: string;
@@ -16,8 +17,6 @@ interface LeaveHistoryModalProps {
   employeeId: string;
   employeeName: string;
 }
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 const statusConfig: Record<
   LeaveRecord["status"],

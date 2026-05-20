@@ -29,8 +29,9 @@ import {
   normalizeDeptKey,
   isInferredDepartmentId,
 } from "../../utils/hrDepartments";
+import { API_BASE_URL } from "../../constants/config";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const API_URL = API_BASE_URL;
 
 const hrFetch = (input: string, init?: RequestInit) =>
   fetch(input, { credentials: "include", ...init });

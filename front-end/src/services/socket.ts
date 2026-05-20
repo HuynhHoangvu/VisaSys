@@ -7,9 +7,12 @@ function normalizeSocketUrl(raw: string): string {
   return u || "http://localhost:3001";
 }
 
-const SOCKET_URL = normalizeSocketUrl(
-  import.meta.env.VITE_API_URL || "http://localhost:3001",
-);
+// Always use localhost for local development
+const API_URL = import.meta.env.MODE === "production" 
+  ? import.meta.env.VITE_API_URL || "http://localhost:3001" 
+  : "http://localhost:3001";
+
+const SOCKET_URL = normalizeSocketUrl(API_URL);
 
 const socket = io(SOCKET_URL, {
   withCredentials: true,
