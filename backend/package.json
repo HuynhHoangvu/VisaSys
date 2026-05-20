@@ -10,7 +10,7 @@
     "postinstall": "npx prisma generate",
     "dev": "nodemon ",
     "start": "npx tsx src/server.ts",
-    "railway:release": "npx prisma generate && npx prisma migrate deploy",
+    "railway:release": "npx prisma generate && npx tsx src/scripts/fix-migration.ts && npx prisma migrate deploy",
     "build": "npx prisma generate",
     "seed": "npx tsx prisma/seed.ts",
     "migrate:deploy": "npx prisma migrate deploy",
