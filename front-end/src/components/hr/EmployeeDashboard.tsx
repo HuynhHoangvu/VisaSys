@@ -90,6 +90,81 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
     new Date().toISOString().slice(0, 7),
   );
 
+  // Bulk leave modal state
+  const [showBulkLeaveModal, setShowBulkLeaveModal] = useState(false);
+  const [bulkLeaveType, setBulkLeaveType] = useState<"Nghỉ không lương" | "Nghỉ có lương">("Nghỉ có lương");
+  const [bulkStartDate, setBulkStartDate] = useState("");
+  const [bulkEndDate, setBulkEndDate] = useState("");
+  const [bulkReason, setBulkReason] = useState("");
+  const [isSubmittingBulkLeave, setIsSubmittingBulkLeave] = useState(false);
+
+  // Fetch leave requests
+  const fetchLeaveRequests = useCallback(async () => {
+    try {
+      const res = await hrFetch(`${API_URL}/api/hr/leave-requests`);
+      const data = await res.json();
+      setLeaveRequests(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Lỗi khi tải đơn nghỉ phép:", error);
+    }
+  }, []);
+
+  // Handle bulk leave submit
+  const handleBulkLeaveSubmit = async () => {
+    if (!bulkStartDate || !bulkEndDate || !bulkReason) {
+      return alert("Vui lòng điền đầy đủ thông tin!");
+    }
+    if (new Date(bulkEndDate) < new Date(bulkStartDate)) {
+      return alert("Ngày kết thúc không được nhỏ hơn ngày bắt đầu!");
+    }
+    if (!window.confirm(`Bạn có chắc muốn tạo đơn nghỉ đồng loạt cho TẤT CẢ nhân viên từ ${bulkStartDate} đến ${bulkEndDate}?`)) {
+      return;
+    }
+    setIsSubmittingBulkLeave(true);
+    try {
+      const res = await hrFetch(`${API_URL}/api/hr/leave-requests/bulk`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: bulkLeaveType,
+          startDate: bulkStartDate,
+          endDate: bulkEndDate,
+          reason: bulkReason,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Lỗi không xác định");
+      alert(data.message || "Tạo đơn nghỉ đồng loạt thành công!");
+      setShowBulkLeaveModal(false);
+      setBulkStartDate("");
+      setBulkEndDate("");
+      setBulkReason("");
+      fetchData();
+    } catch (error) {
+      alert("Lỗi: " + error);
+    } finally {
+      setIsSubmittingBulkLeave(false);
+    }
+  };
+
+  // Handle update leave status
+  const handleUpdateLeaveStatus = async (id: string, status: string) => {
+    try {
+      const res = await hrFetch(`${API_URL}/api/hr/leave-requests/${id}/status`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Lỗi khi cập nhật trạng thái");
+      }
+      fetchLeaveRequests();
+    } catch (error) {
+      alert("Lỗi: " + error);
+    }
+  };
+
   const isBoss = isAdminLikeForHr(currentUser);
   const isAdmin = isBoss;
   const isManager =
@@ -204,8 +279,8 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
     const vnMins = getVNWallClockMinutes(now);
 
     let status: AttendanceStatus;
-    let fine = 0;
-    let halfDayDeduction = 0;
+    const fine = 0;
+    const halfDayDeduction = 0;
 
     if (vnMins > HALF_DAY_SPLIT_MINUTES) {
       status = "Nửa ngày chiều";
@@ -432,35 +507,6 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
     }
   };
 
-  const fetchLeaveRequests = async () => {
-    try {
-      const res = await hrFetch(`${API_URL}/api/hr/leave-requests`);
-      if (res.ok) setLeaveRequests(await res.json());
-    } catch (error) {
-      console.error("Lỗi lấy danh sách phép:", error);
-    }
-  };
-
-  const handleUpdateLeaveStatus = async (id: string, newStatus: string) => {
-    if (
-      !window.confirm(`Bạn chắc chắn muốn ${newStatus.toUpperCase()} đơn này?`)
-    )
-      return;
-    try {
-      const res = await hrFetch(`${API_URL}/api/hr/leave-requests/${id}/status`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
-      });
-      if (res.ok) {
-        fetchLeaveRequests();
-        fetchData();
-      }
-    } catch (error) {
-      alert("Lỗi cập nhật trạng thái!" + error);
-    }
-  };
-
   if (selectedEmpId) {
     const employee = employees.find((e) => e.id === selectedEmpId);
     if (!employee) return null;
@@ -625,6 +671,14 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
                   {leaveRequests.filter((r) => r.status === "Chờ duyệt")
                     .length || ""}
                 </Badge>
+              </button>
+            )}
+            {isBoss && (
+              <button
+                onClick={() => setShowBulkLeaveModal(true)}
+                className="flex items-center gap-1.5 sm:gap-2 bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors shadow-sm"
+              >
+                🏖️ <span className="hidden sm:inline">Nghỉ Đồng Loạt</span>
               </button>
             )}
           </div>
@@ -810,6 +864,81 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
         setLeaveMonthFilter={setLeaveMonthFilter}
         onUpdateStatus={handleUpdateLeaveStatus}
       />
+
+      {/* Bulk Leave Modal */}
+      {showBulkLeaveModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold text-gray-800">🏖️ Tạo Nghỉ Đồng Loạt</h3>
+              <button
+                onClick={() => setShowBulkLeaveModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Loại nghỉ</label>
+                <select
+                  value={bulkLeaveType}
+                  onChange={(e) => setBulkLeaveType(e.target.value as "Nghỉ không lương" | "Nghỉ có lương")}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                >
+                  <option value="Nghỉ có lương">Nghỉ có lương (Không trừ lương)</option>
+                  <option value="Nghỉ không lương">Nghỉ không lương (Trừ ngày công)</option>
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Từ ngày</label>
+                  <input
+                    type="date"
+                    value={bulkStartDate}
+                    onChange={(e) => setBulkStartDate(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Đến ngày</label>
+                  <input
+                    type="date"
+                    value={bulkEndDate}
+                    onChange={(e) => setBulkEndDate(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Lý do</label>
+                <textarea
+                  value={bulkReason}
+                  onChange={(e) => setBulkReason(e.target.value)}
+                  placeholder="VD: Công ty nghỉ Tết, Nghỉ lễ..."
+                  rows={3}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-6">
+              <button
+                onClick={() => setShowBulkLeaveModal(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleBulkLeaveSubmit}
+                disabled={isSubmittingBulkLeave}
+                className="px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 disabled:opacity-50"
+              >
+                {isSubmittingBulkLeave ? "Đang tạo..." : "Tạo đơn cho tất cả"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -36,13 +36,13 @@ const getTodayIsoInVN = (asOf: Date = new Date()): string => {
 
 const hasApprovedLeaveTypeOnDate = async (
   employeeId: string,
-  leaveType: "Vô trễ" | "Về sớm",
+  leaveType: "Vô trễ" | "Về sớm" | "Nghỉ có lương",
   isoDate: string,
 ): Promise<boolean> => {
   const found = await prisma.leaveRequest.findFirst({
     where: {
       employeeId,
-      type: leaveType,
+      paidType: leaveType,
       status: "Đã duyệt",
       startDate: { lte: isoDate },
       endDate: { gte: isoDate },

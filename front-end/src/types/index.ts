@@ -126,7 +126,7 @@ export interface NewEmployeeData {
   baseSalary: number;
 }
 
-export type LeaveType = "Xin phép nghỉ" | "Nửa ngày" | "Vô trễ" | "Về sớm" | "Nghỉ ốm" | "Nghỉ việc riêng";
+export type LeaveType = "Vô trễ" | "Nghỉ không lương" | "Nghỉ có lương";
 
 export interface LeaveRequestData {
   type: LeaveType | string;
@@ -137,10 +137,19 @@ export interface LeaveRequestData {
 
 export interface LeaveRequest extends LeaveRequestData {
   id: string;
+  paidType: string;
   status: "Chờ duyệt" | "Đã duyệt" | "Từ chối";
+  isBulkLeave?: boolean;
   employeeId: string;
   createdAt: string;
   employee?: { name: string; department: string };
+}
+
+export interface BulkLeaveData {
+  type: "Nghỉ không lương" | "Nghỉ có lương";
+  startDate: string;
+  endDate: string;
+  reason: string;
 }
 
 export interface SalaryHistory {

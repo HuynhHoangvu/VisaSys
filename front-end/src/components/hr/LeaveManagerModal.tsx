@@ -96,7 +96,14 @@ const LeaveManagerModal: React.FC<LeaveManagerModalProps> = ({
                     </p>
                   </td>
                   <td className="px-4 py-3 sm:py-4 font-bold text-blue-700 whitespace-nowrap">
-                    {req.type}
+                    <div className="flex flex-col gap-1">
+                      <span>{req.paidType || req.type}</span>
+                      {req.isBulkLeave && (
+                        <Badge color="purple" className="w-fit text-xs">
+                          Đồng loạt
+                        </Badge>
+                      )}
+                    </div>
                   </td>
                   <td className="px-4 py-3 sm:py-4 font-medium whitespace-nowrap">
                     <div className="text-gray-800 text-xs sm:text-sm">
