@@ -54,6 +54,7 @@ export const createLeaveRequest = asyncHandler(async (req: Request, res: Respons
 
 /**
  * Tạo đơn nghỉ đồng loạt cho tất cả nhân viên (sếp/admin)
+ * - Nghỉ có lương: Tạo attendance records để không bị trừ lương
  */
 export const createBulkLeaveRequest = asyncHandler(async (req: Request, res: Response) => {
   const { type, startDate, endDate, reason } = req.body;
@@ -80,6 +81,45 @@ export const createBulkLeaveRequest = asyncHandler(async (req: Request, res: Res
       isBulkLeave: true,
     })),
   });
+
+  // Nếu là "Nghỉ có lương" -> tạo attendance records cho tất cả nhân viên
+  if (type === "Nghỉ có lương") {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    
+    // Tính danh sách ngày làm việc (T2-T6) trong khoảng
+    const workDates: string[] = [];
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      const day = d.getDay();
+      // Bỏ qua T7, CN
+      if (day === 0 || day === 6) continue;
+      workDates.push(d.toLocaleDateString("vi-VN"));
+    }
+
+    // Tạo attendance records cho mỗi nhân viên
+    for (const emp of employees) {
+      for (const dateStr of workDates) {
+        // Kiểm tra xem đã có record chưa
+        const existing = await prisma.attendanceRecord.findFirst({
+          where: { employeeId: emp.id, date: dateStr },
+        });
+
+        if (!existing) {
+          await prisma.attendanceRecord.create({
+            data: {
+              date: dateStr,
+              inTime: "08:00",
+              outTime: "17:00",
+              status: "Nghỉ có lương",
+              fine: 0,
+              halfDayDeduction: 0,
+              employeeId: emp.id,
+            },
+          });
+        }
+      }
+    }
+  }
 
   // Gửi thông báo
   await prisma.notification.create({
