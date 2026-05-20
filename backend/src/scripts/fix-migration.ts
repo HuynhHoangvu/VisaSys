@@ -44,4 +44,7 @@ async function main() {
   }
 }
 
-main();
+main().catch((err) => {
+  console.error("❌ Fatal error in fix-migration:", err);
+  process.exit(1);
+});
