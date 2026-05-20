@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { type AuthUser } from "../../types";
 import socket from "../../services/socket";
 import { FaceAvatar } from "../ui/FaceAvatar";
+import { API_URL } from "../../constants/config";
 
 interface HeaderProps {
   currentUser: AuthUser;
@@ -16,8 +17,6 @@ interface NotificationItem {
   isRead: boolean;
   createdAt: string;
 }
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 const Header: React.FC<HeaderProps> = ({ currentUser, onToggleSidebar }) => {
   const [showNotifs, setShowNotifs] = useState(false);

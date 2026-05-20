@@ -69,7 +69,8 @@ export const ModelName = {
   Workspace: 'Workspace',
   DepartmentPermission: 'DepartmentPermission',
   RolePermission: 'RolePermission',
-  EmployeePermissionOverride: 'EmployeePermissionOverride'
+  EmployeePermissionOverride: 'EmployeePermissionOverride',
+  session: 'session'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -260,10 +261,12 @@ export type SalaryHistoryScalarFieldEnum = (typeof SalaryHistoryScalarFieldEnum)
 export const LeaveRequestScalarFieldEnum = {
   id: 'id',
   type: 'type',
+  paidType: 'paidType',
   startDate: 'startDate',
   endDate: 'endDate',
   reason: 'reason',
   status: 'status',
+  isBulkLeave: 'isBulkLeave',
   employeeId: 'employeeId',
   createdAt: 'createdAt'
 } as const
@@ -339,6 +342,15 @@ export const EmployeePermissionOverrideScalarFieldEnum = {
 } as const
 
 export type EmployeePermissionOverrideScalarFieldEnum = (typeof EmployeePermissionOverrideScalarFieldEnum)[keyof typeof EmployeePermissionOverrideScalarFieldEnum]
+
+
+export const SessionScalarFieldEnum = {
+  sid: 'sid',
+  sess: 'sess',
+  expire: 'expire'
+} as const
+
+export type SessionScalarFieldEnum = (typeof SessionScalarFieldEnum)[keyof typeof SessionScalarFieldEnum]
 
 
 export const SortOrder = {

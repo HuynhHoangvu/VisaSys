@@ -1010,7 +1010,8 @@ export type $SalaryHistoryPayload<ExtArgs extends runtime.Types.Extensions.Inter
     id: string
     monthYear: string
     /**
-     * * Lương đóng BHXH (snapshot sau quy tắc trừ 2M nếu gross ≥ ngưỡng).
+     * *
+     *    * Lương đóng BHXH (snapshot sau quy tắc trừ 2M nếu gross ≥ ngưỡng).
      */
     baseSalary: number
     totalBonus: number
@@ -1025,7 +1026,8 @@ export type $SalaryHistoryPayload<ExtArgs extends runtime.Types.Extensions.Inter
     fullDayAbsenceDeduction: number
     workDays: number
     /**
-     * * Lưu snapshot ngày đi làm đã chốt (DD/MM/YYYY); không xóa cột để tránh mất dữ liệu trên DB.
+     * *
+     *    * Lưu snapshot ngày đi làm đã chốt (DD/MM/YYYY); không xóa cột để tránh mất dữ liệu trên DB.
      */
     workDates: string[]
     employeeId: string

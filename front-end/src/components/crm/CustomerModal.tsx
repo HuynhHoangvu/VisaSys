@@ -9,6 +9,7 @@ import {
 } from "flowbite-react";
 import { type Task, type Employee } from "../../types";
 import { VISA_SERVICES, CUSTOMER_SOURCES } from "../../utils/constants";
+import { API_URL } from "../../constants/config";
 
 interface CustomerModalProps {
   show: boolean;
@@ -28,8 +29,6 @@ const JOB_TYPES = [
   "Chăm sóc khách hàng",
   "Khác",
 ];
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 interface CustomerFormData {
   name: string;

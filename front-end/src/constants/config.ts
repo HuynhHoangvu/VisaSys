@@ -4,11 +4,18 @@
  * - Uses VITE_API_URL env var (Railway) for production mode
  */
 
+// Helper to normalize the API URL by trimming trailing slashes and stripping /api suffix
+function normalizeApiUrl(raw: string): string {
+  let u = String(raw ?? "").trim().replace(/\/+$/, "");
+  u = u.replace(/\/api\/?$/i, "");
+  return u || "http://localhost:3001";
+}
+
 // Always use localhost for local development
-const BASE_URL = import.meta.env.MODE === "production"
+const rawUrl = import.meta.env.MODE === "production"
   ? import.meta.env.VITE_API_URL || "http://localhost:3001"
   : "http://localhost:3001";
 
-export const API_BASE_URL = `${BASE_URL}/api`;
-export const API_URL = BASE_URL;
-export const SOCKET_URL = BASE_URL;
+export const API_URL = normalizeApiUrl(rawUrl);
+export const API_BASE_URL = `${API_URL}/api`;
+export const SOCKET_URL = API_URL;

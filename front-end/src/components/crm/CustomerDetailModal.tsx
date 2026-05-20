@@ -12,8 +12,7 @@ import type { Task, CustomerDetailModalProps, Employee } from "../../types";
 import { VISA_SERVICES, CUSTOMER_SOURCES } from "../../utils/constants";
 import socket from "../../services/socket";
 import toast from "react-hot-toast";
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+import { API_URL } from "../../constants/config";
 
 const JOB_TYPES = [
   "Nông nghiệp",

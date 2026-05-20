@@ -70,7 +70,10 @@ export const login = async (req: Request, res: Response) => {
       path: "/",
     });
 
-    res.json(userData);
+    res.json({
+      ...userData,
+      token: req.sessionID,
+    });
   } catch (error) {
     console.error("Login error:", error);
     res.status(500).json({ error: "Lỗi server" });
@@ -139,7 +142,10 @@ export const refreshSession = async (req: Request, res: Response) => {
     path: "/",
   });
 
-  res.json(userData);
+  res.json({
+    ...userData,
+    token: req.sessionID,
+  });
 };
 
 /**
@@ -156,7 +162,10 @@ export const getCurrentUser = async (req: Request, res: Response) => {
     return res.status(401).json({ error: "Phiên không hợp lệ" });
   }
   (req.session as any).user = fresh;
-  res.json(fresh);
+  res.json({
+    ...fresh,
+    token: req.sessionID,
+  });
 };
 
 /**

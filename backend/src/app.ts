@@ -89,6 +89,21 @@ const pgStore = new PgSession({
   errorLog: (err) => console.error("[session-store] Store error:", err),
 });
 
+// Chuyển token từ header Authorization thành session ID để express-session nhận diện
+app.use((req, _res, next) => {
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    const token = authHeader.substring(7).trim();
+    if (token) {
+      if (!req.signedCookies) {
+        req.signedCookies = {};
+      }
+      req.signedCookies["connect.sid"] = token;
+    }
+  }
+  next();
+});
+
 app.use(session({
   store: pgStore,
   name: "connect.sid",

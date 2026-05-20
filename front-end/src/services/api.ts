@@ -1,16 +1,27 @@
 import axios from "axios";
-
-// Always use localhost for local development
-const BASE_URL = import.meta.env.MODE === "production" 
-  ? import.meta.env.VITE_API_URL || "http://localhost:3001" 
-  : "http://localhost:3001";
+import { API_URL } from "../constants/config";
 
 const api = axios.create({
-  baseURL: BASE_URL,
+  baseURL: API_URL,
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",
   },
+});
+
+api.interceptors.request.use((config) => {
+  try {
+    const userJson = localStorage.getItem("flyvisa_user");
+    if (userJson) {
+      const user = JSON.parse(userJson);
+      if (user && user.token) {
+        config.headers.Authorization = `Bearer ${user.token}`;
+      }
+    }
+  } catch (err) {
+    console.error("Error attaching auth token to request", err);
+  }
+  return config;
 });
 
 export default api;

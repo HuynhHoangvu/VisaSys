@@ -18,6 +18,7 @@ import type {
 import socket from "../../services/socket";
 import SearchFilterBar from "../filter/SearchFilterBar";
 import { hasPermission, P } from "../../utils/access";
+import { API_URL } from "../../constants/config";
 
 interface KanbanBoardProps {
   onOpenActivityList: (taskId: string) => void;
@@ -28,8 +29,6 @@ interface KanbanBoardProps {
   onOpenAttachments: (taskId: string) => void;
   currentUser: AuthUser | null;
 }
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 const KanbanBoard: React.FC<KanbanBoardProps> = ({
   onOpenActivityList,

@@ -9,8 +9,7 @@ import JSZip from "jszip";
 import { type AuthUser, type DocFolder, type DocFile } from "../../types";
 import { formatFileSize, formatUploadTime } from "../../utils/helpers";
 import socket from "../../services/socket";
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+import { API_URL } from "../../constants/config";
 
 interface DocumentDashboardProps {
   currentUser: AuthUser | null;

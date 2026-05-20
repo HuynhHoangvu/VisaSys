@@ -27,10 +27,12 @@ export type AggregateLeaveRequest = {
 export type LeaveRequestMinAggregateOutputType = {
   id: string | null
   type: string | null
+  paidType: string | null
   startDate: string | null
   endDate: string | null
   reason: string | null
   status: string | null
+  isBulkLeave: boolean | null
   employeeId: string | null
   createdAt: Date | null
 }
@@ -38,10 +40,12 @@ export type LeaveRequestMinAggregateOutputType = {
 export type LeaveRequestMaxAggregateOutputType = {
   id: string | null
   type: string | null
+  paidType: string | null
   startDate: string | null
   endDate: string | null
   reason: string | null
   status: string | null
+  isBulkLeave: boolean | null
   employeeId: string | null
   createdAt: Date | null
 }
@@ -49,10 +53,12 @@ export type LeaveRequestMaxAggregateOutputType = {
 export type LeaveRequestCountAggregateOutputType = {
   id: number
   type: number
+  paidType: number
   startDate: number
   endDate: number
   reason: number
   status: number
+  isBulkLeave: number
   employeeId: number
   createdAt: number
   _all: number
@@ -62,10 +68,12 @@ export type LeaveRequestCountAggregateOutputType = {
 export type LeaveRequestMinAggregateInputType = {
   id?: true
   type?: true
+  paidType?: true
   startDate?: true
   endDate?: true
   reason?: true
   status?: true
+  isBulkLeave?: true
   employeeId?: true
   createdAt?: true
 }
@@ -73,10 +81,12 @@ export type LeaveRequestMinAggregateInputType = {
 export type LeaveRequestMaxAggregateInputType = {
   id?: true
   type?: true
+  paidType?: true
   startDate?: true
   endDate?: true
   reason?: true
   status?: true
+  isBulkLeave?: true
   employeeId?: true
   createdAt?: true
 }
@@ -84,10 +94,12 @@ export type LeaveRequestMaxAggregateInputType = {
 export type LeaveRequestCountAggregateInputType = {
   id?: true
   type?: true
+  paidType?: true
   startDate?: true
   endDate?: true
   reason?: true
   status?: true
+  isBulkLeave?: true
   employeeId?: true
   createdAt?: true
   _all?: true
@@ -168,10 +180,12 @@ export type LeaveRequestGroupByArgs<ExtArgs extends runtime.Types.Extensions.Int
 export type LeaveRequestGroupByOutputType = {
   id: string
   type: string
+  paidType: string
   startDate: string
   endDate: string
   reason: string
   status: string
+  isBulkLeave: boolean
   employeeId: string
   createdAt: Date
   _count: LeaveRequestCountAggregateOutputType | null
@@ -200,10 +214,12 @@ export type LeaveRequestWhereInput = {
   NOT?: Prisma.LeaveRequestWhereInput | Prisma.LeaveRequestWhereInput[]
   id?: Prisma.StringFilter<"LeaveRequest"> | string
   type?: Prisma.StringFilter<"LeaveRequest"> | string
+  paidType?: Prisma.StringFilter<"LeaveRequest"> | string
   startDate?: Prisma.StringFilter<"LeaveRequest"> | string
   endDate?: Prisma.StringFilter<"LeaveRequest"> | string
   reason?: Prisma.StringFilter<"LeaveRequest"> | string
   status?: Prisma.StringFilter<"LeaveRequest"> | string
+  isBulkLeave?: Prisma.BoolFilter<"LeaveRequest"> | boolean
   employeeId?: Prisma.StringFilter<"LeaveRequest"> | string
   createdAt?: Prisma.DateTimeFilter<"LeaveRequest"> | Date | string
   employee?: Prisma.XOR<Prisma.EmployeeScalarRelationFilter, Prisma.EmployeeWhereInput>
@@ -212,10 +228,12 @@ export type LeaveRequestWhereInput = {
 export type LeaveRequestOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   type?: Prisma.SortOrder
+  paidType?: Prisma.SortOrder
   startDate?: Prisma.SortOrder
   endDate?: Prisma.SortOrder
   reason?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  isBulkLeave?: Prisma.SortOrder
   employeeId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   employee?: Prisma.EmployeeOrderByWithRelationInput
@@ -227,10 +245,12 @@ export type LeaveRequestWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.LeaveRequestWhereInput[]
   NOT?: Prisma.LeaveRequestWhereInput | Prisma.LeaveRequestWhereInput[]
   type?: Prisma.StringFilter<"LeaveRequest"> | string
+  paidType?: Prisma.StringFilter<"LeaveRequest"> | string
   startDate?: Prisma.StringFilter<"LeaveRequest"> | string
   endDate?: Prisma.StringFilter<"LeaveRequest"> | string
   reason?: Prisma.StringFilter<"LeaveRequest"> | string
   status?: Prisma.StringFilter<"LeaveRequest"> | string
+  isBulkLeave?: Prisma.BoolFilter<"LeaveRequest"> | boolean
   employeeId?: Prisma.StringFilter<"LeaveRequest"> | string
   createdAt?: Prisma.DateTimeFilter<"LeaveRequest"> | Date | string
   employee?: Prisma.XOR<Prisma.EmployeeScalarRelationFilter, Prisma.EmployeeWhereInput>
@@ -239,10 +259,12 @@ export type LeaveRequestWhereUniqueInput = Prisma.AtLeast<{
 export type LeaveRequestOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   type?: Prisma.SortOrder
+  paidType?: Prisma.SortOrder
   startDate?: Prisma.SortOrder
   endDate?: Prisma.SortOrder
   reason?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  isBulkLeave?: Prisma.SortOrder
   employeeId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   _count?: Prisma.LeaveRequestCountOrderByAggregateInput
@@ -256,10 +278,12 @@ export type LeaveRequestScalarWhereWithAggregatesInput = {
   NOT?: Prisma.LeaveRequestScalarWhereWithAggregatesInput | Prisma.LeaveRequestScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"LeaveRequest"> | string
   type?: Prisma.StringWithAggregatesFilter<"LeaveRequest"> | string
+  paidType?: Prisma.StringWithAggregatesFilter<"LeaveRequest"> | string
   startDate?: Prisma.StringWithAggregatesFilter<"LeaveRequest"> | string
   endDate?: Prisma.StringWithAggregatesFilter<"LeaveRequest"> | string
   reason?: Prisma.StringWithAggregatesFilter<"LeaveRequest"> | string
   status?: Prisma.StringWithAggregatesFilter<"LeaveRequest"> | string
+  isBulkLeave?: Prisma.BoolWithAggregatesFilter<"LeaveRequest"> | boolean
   employeeId?: Prisma.StringWithAggregatesFilter<"LeaveRequest"> | string
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"LeaveRequest"> | Date | string
 }
@@ -267,10 +291,12 @@ export type LeaveRequestScalarWhereWithAggregatesInput = {
 export type LeaveRequestCreateInput = {
   id?: string
   type: string
+  paidType?: string
   startDate: string
   endDate: string
   reason: string
   status?: string
+  isBulkLeave?: boolean
   createdAt?: Date | string
   employee: Prisma.EmployeeCreateNestedOneWithoutLeaveRequestsInput
 }
@@ -278,10 +304,12 @@ export type LeaveRequestCreateInput = {
 export type LeaveRequestUncheckedCreateInput = {
   id?: string
   type: string
+  paidType?: string
   startDate: string
   endDate: string
   reason: string
   status?: string
+  isBulkLeave?: boolean
   employeeId: string
   createdAt?: Date | string
 }
@@ -289,10 +317,12 @@ export type LeaveRequestUncheckedCreateInput = {
 export type LeaveRequestUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
+  paidType?: Prisma.StringFieldUpdateOperationsInput | string
   startDate?: Prisma.StringFieldUpdateOperationsInput | string
   endDate?: Prisma.StringFieldUpdateOperationsInput | string
   reason?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
+  isBulkLeave?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   employee?: Prisma.EmployeeUpdateOneRequiredWithoutLeaveRequestsNestedInput
 }
@@ -300,10 +330,12 @@ export type LeaveRequestUpdateInput = {
 export type LeaveRequestUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
+  paidType?: Prisma.StringFieldUpdateOperationsInput | string
   startDate?: Prisma.StringFieldUpdateOperationsInput | string
   endDate?: Prisma.StringFieldUpdateOperationsInput | string
   reason?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
+  isBulkLeave?: Prisma.BoolFieldUpdateOperationsInput | boolean
   employeeId?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -311,10 +343,12 @@ export type LeaveRequestUncheckedUpdateInput = {
 export type LeaveRequestCreateManyInput = {
   id?: string
   type: string
+  paidType?: string
   startDate: string
   endDate: string
   reason: string
   status?: string
+  isBulkLeave?: boolean
   employeeId: string
   createdAt?: Date | string
 }
@@ -322,20 +356,24 @@ export type LeaveRequestCreateManyInput = {
 export type LeaveRequestUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
+  paidType?: Prisma.StringFieldUpdateOperationsInput | string
   startDate?: Prisma.StringFieldUpdateOperationsInput | string
   endDate?: Prisma.StringFieldUpdateOperationsInput | string
   reason?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
+  isBulkLeave?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type LeaveRequestUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
+  paidType?: Prisma.StringFieldUpdateOperationsInput | string
   startDate?: Prisma.StringFieldUpdateOperationsInput | string
   endDate?: Prisma.StringFieldUpdateOperationsInput | string
   reason?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
+  isBulkLeave?: Prisma.BoolFieldUpdateOperationsInput | boolean
   employeeId?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -353,10 +391,12 @@ export type LeaveRequestOrderByRelationAggregateInput = {
 export type LeaveRequestCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   type?: Prisma.SortOrder
+  paidType?: Prisma.SortOrder
   startDate?: Prisma.SortOrder
   endDate?: Prisma.SortOrder
   reason?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  isBulkLeave?: Prisma.SortOrder
   employeeId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
@@ -364,10 +404,12 @@ export type LeaveRequestCountOrderByAggregateInput = {
 export type LeaveRequestMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   type?: Prisma.SortOrder
+  paidType?: Prisma.SortOrder
   startDate?: Prisma.SortOrder
   endDate?: Prisma.SortOrder
   reason?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  isBulkLeave?: Prisma.SortOrder
   employeeId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
@@ -375,10 +417,12 @@ export type LeaveRequestMaxOrderByAggregateInput = {
 export type LeaveRequestMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   type?: Prisma.SortOrder
+  paidType?: Prisma.SortOrder
   startDate?: Prisma.SortOrder
   endDate?: Prisma.SortOrder
   reason?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  isBulkLeave?: Prisma.SortOrder
   employeeId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
@@ -428,20 +472,24 @@ export type LeaveRequestUncheckedUpdateManyWithoutEmployeeNestedInput = {
 export type LeaveRequestCreateWithoutEmployeeInput = {
   id?: string
   type: string
+  paidType?: string
   startDate: string
   endDate: string
   reason: string
   status?: string
+  isBulkLeave?: boolean
   createdAt?: Date | string
 }
 
 export type LeaveRequestUncheckedCreateWithoutEmployeeInput = {
   id?: string
   type: string
+  paidType?: string
   startDate: string
   endDate: string
   reason: string
   status?: string
+  isBulkLeave?: boolean
   createdAt?: Date | string
 }
 
@@ -477,10 +525,12 @@ export type LeaveRequestScalarWhereInput = {
   NOT?: Prisma.LeaveRequestScalarWhereInput | Prisma.LeaveRequestScalarWhereInput[]
   id?: Prisma.StringFilter<"LeaveRequest"> | string
   type?: Prisma.StringFilter<"LeaveRequest"> | string
+  paidType?: Prisma.StringFilter<"LeaveRequest"> | string
   startDate?: Prisma.StringFilter<"LeaveRequest"> | string
   endDate?: Prisma.StringFilter<"LeaveRequest"> | string
   reason?: Prisma.StringFilter<"LeaveRequest"> | string
   status?: Prisma.StringFilter<"LeaveRequest"> | string
+  isBulkLeave?: Prisma.BoolFilter<"LeaveRequest"> | boolean
   employeeId?: Prisma.StringFilter<"LeaveRequest"> | string
   createdAt?: Prisma.DateTimeFilter<"LeaveRequest"> | Date | string
 }
@@ -488,40 +538,48 @@ export type LeaveRequestScalarWhereInput = {
 export type LeaveRequestCreateManyEmployeeInput = {
   id?: string
   type: string
+  paidType?: string
   startDate: string
   endDate: string
   reason: string
   status?: string
+  isBulkLeave?: boolean
   createdAt?: Date | string
 }
 
 export type LeaveRequestUpdateWithoutEmployeeInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
+  paidType?: Prisma.StringFieldUpdateOperationsInput | string
   startDate?: Prisma.StringFieldUpdateOperationsInput | string
   endDate?: Prisma.StringFieldUpdateOperationsInput | string
   reason?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
+  isBulkLeave?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type LeaveRequestUncheckedUpdateWithoutEmployeeInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
+  paidType?: Prisma.StringFieldUpdateOperationsInput | string
   startDate?: Prisma.StringFieldUpdateOperationsInput | string
   endDate?: Prisma.StringFieldUpdateOperationsInput | string
   reason?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
+  isBulkLeave?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type LeaveRequestUncheckedUpdateManyWithoutEmployeeInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
+  paidType?: Prisma.StringFieldUpdateOperationsInput | string
   startDate?: Prisma.StringFieldUpdateOperationsInput | string
   endDate?: Prisma.StringFieldUpdateOperationsInput | string
   reason?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
+  isBulkLeave?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -530,10 +588,12 @@ export type LeaveRequestUncheckedUpdateManyWithoutEmployeeInput = {
 export type LeaveRequestSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   type?: boolean
+  paidType?: boolean
   startDate?: boolean
   endDate?: boolean
   reason?: boolean
   status?: boolean
+  isBulkLeave?: boolean
   employeeId?: boolean
   createdAt?: boolean
   employee?: boolean | Prisma.EmployeeDefaultArgs<ExtArgs>
@@ -542,10 +602,12 @@ export type LeaveRequestSelect<ExtArgs extends runtime.Types.Extensions.Internal
 export type LeaveRequestSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   type?: boolean
+  paidType?: boolean
   startDate?: boolean
   endDate?: boolean
   reason?: boolean
   status?: boolean
+  isBulkLeave?: boolean
   employeeId?: boolean
   createdAt?: boolean
   employee?: boolean | Prisma.EmployeeDefaultArgs<ExtArgs>
@@ -554,10 +616,12 @@ export type LeaveRequestSelectCreateManyAndReturn<ExtArgs extends runtime.Types.
 export type LeaveRequestSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   type?: boolean
+  paidType?: boolean
   startDate?: boolean
   endDate?: boolean
   reason?: boolean
   status?: boolean
+  isBulkLeave?: boolean
   employeeId?: boolean
   createdAt?: boolean
   employee?: boolean | Prisma.EmployeeDefaultArgs<ExtArgs>
@@ -566,15 +630,17 @@ export type LeaveRequestSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.
 export type LeaveRequestSelectScalar = {
   id?: boolean
   type?: boolean
+  paidType?: boolean
   startDate?: boolean
   endDate?: boolean
   reason?: boolean
   status?: boolean
+  isBulkLeave?: boolean
   employeeId?: boolean
   createdAt?: boolean
 }
 
-export type LeaveRequestOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "type" | "startDate" | "endDate" | "reason" | "status" | "employeeId" | "createdAt", ExtArgs["result"]["leaveRequest"]>
+export type LeaveRequestOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "type" | "paidType" | "startDate" | "endDate" | "reason" | "status" | "isBulkLeave" | "employeeId" | "createdAt", ExtArgs["result"]["leaveRequest"]>
 export type LeaveRequestInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   employee?: boolean | Prisma.EmployeeDefaultArgs<ExtArgs>
 }
@@ -593,10 +659,12 @@ export type $LeaveRequestPayload<ExtArgs extends runtime.Types.Extensions.Intern
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     type: string
+    paidType: string
     startDate: string
     endDate: string
     reason: string
     status: string
+    isBulkLeave: boolean
     employeeId: string
     createdAt: Date
   }, ExtArgs["result"]["leaveRequest"]>
@@ -1025,10 +1093,12 @@ export interface Prisma__LeaveRequestClient<T, Null = never, ExtArgs extends run
 export interface LeaveRequestFieldRefs {
   readonly id: Prisma.FieldRef<"LeaveRequest", 'String'>
   readonly type: Prisma.FieldRef<"LeaveRequest", 'String'>
+  readonly paidType: Prisma.FieldRef<"LeaveRequest", 'String'>
   readonly startDate: Prisma.FieldRef<"LeaveRequest", 'String'>
   readonly endDate: Prisma.FieldRef<"LeaveRequest", 'String'>
   readonly reason: Prisma.FieldRef<"LeaveRequest", 'String'>
   readonly status: Prisma.FieldRef<"LeaveRequest", 'String'>
+  readonly isBulkLeave: Prisma.FieldRef<"LeaveRequest", 'Boolean'>
   readonly employeeId: Prisma.FieldRef<"LeaveRequest", 'String'>
   readonly createdAt: Prisma.FieldRef<"LeaveRequest", 'DateTime'>
 }

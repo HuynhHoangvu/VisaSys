@@ -29,9 +29,7 @@ import {
   normalizeDeptKey,
   isInferredDepartmentId,
 } from "../../utils/hrDepartments";
-import { API_BASE_URL } from "../../constants/config";
-
-const API_URL = API_BASE_URL;
+import { API_URL } from "../../constants/config";
 
 const hrFetch = (input: string, init?: RequestInit) =>
   fetch(input, { credentials: "include", ...init });

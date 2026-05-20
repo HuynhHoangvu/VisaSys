@@ -15,9 +15,8 @@ interface RecruitmentBoardProps {
   onOpenDetail: (taskId: string) => void;
 }
 
-// ==========================================
-// CÁC BƯỚC TUYỂN DỤNG ĐÃ ĐƯỢC RÚT GỌN (7 BƯỚC)
-// ==========================================
+import { API_URL } from "../../constants/config";
+
 const RECRUITMENT_STEPS = [
   {
     id: "rec-1",
@@ -80,7 +79,7 @@ const RECRUITMENT_STEPS = [
 type StepId = (typeof RECRUITMENT_STEPS)[number]["id"];
 const STEP_MAP = Object.fromEntries(RECRUITMENT_STEPS.map((s) => [s.id, s]));
 
-const API_BASE_URL = `${import.meta.env.VITE_API_URL || "http://localhost:3001"}/api`;
+const API_BASE_URL = `${API_URL}/api`;
 
 const AVATAR_COLORS = [
   "#f97316",

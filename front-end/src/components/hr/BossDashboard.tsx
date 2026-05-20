@@ -13,6 +13,7 @@ import type { AuthUser, Task } from "../../types";
 import socket from "../../services/socket";
 import SearchFilterBar from "../filter/SearchFilterBar";
 import { FaceAvatar } from "../ui/FaceAvatar";
+import { API_URL } from "../../constants/config";
 
 interface BossDashboardProps {
   currentUser: AuthUser;
@@ -22,8 +23,6 @@ interface ProfileData extends Task {
   columnId: string;
   columnName: string;
 }
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 const BossDashboard: React.FC<BossDashboardProps> = ({ currentUser }) => {
   const [allProfiles, setAllProfiles] = useState<ProfileData[]>([]);

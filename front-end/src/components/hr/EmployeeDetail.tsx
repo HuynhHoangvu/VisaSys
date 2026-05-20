@@ -27,6 +27,7 @@ import {
   canAdjustAttendanceRecords,
   canAdjustPayrollManualBonus,
 } from "../../utils/hrRoles";
+import { API_URL } from "../../constants/config";
 
 interface EmployeeDetailProps {
   employee: Employee;
@@ -35,8 +36,6 @@ interface EmployeeDetailProps {
   onCheckIn: (id: string) => void;
   onCheckOut: (id: string) => void;
 }
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 const formatVND = (amount: number): string => {
   return new Intl.NumberFormat("vi-VN", {

@@ -441,7 +441,8 @@ export type $DepartmentPayload<ExtArgs extends runtime.Types.Extensions.Internal
   objects: {
     employees: Prisma.$EmployeePayload<ExtArgs>[]
     /**
-     * * Ma trận quyền RBAC mặc định theo bộ phận (khác với Employee.role).
+     * *
+     *    * Ma trận quyền RBAC mặc định theo bộ phận (khác với Employee.role).
      */
     departmentPermission: Prisma.$DepartmentPermissionPayload<ExtArgs> | null
   }

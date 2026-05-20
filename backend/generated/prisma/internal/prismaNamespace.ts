@@ -402,7 +402,8 @@ export const ModelName = {
   Workspace: 'Workspace',
   DepartmentPermission: 'DepartmentPermission',
   RolePermission: 'RolePermission',
-  EmployeePermissionOverride: 'EmployeePermissionOverride'
+  EmployeePermissionOverride: 'EmployeePermissionOverride',
+  session: 'session'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -418,7 +419,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "column" | "task" | "activity" | "department" | "employee" | "attendanceRecord" | "notification" | "salesRecord" | "docFolder" | "docFile" | "salaryHistory" | "leaveRequest" | "processedFolder" | "processedFile" | "weeklyKPI" | "workspace" | "departmentPermission" | "rolePermission" | "employeePermissionOverride"
+    modelProps: "column" | "task" | "activity" | "department" | "employee" | "attendanceRecord" | "notification" | "salesRecord" | "docFolder" | "docFile" | "salaryHistory" | "leaveRequest" | "processedFolder" | "processedFile" | "weeklyKPI" | "workspace" | "departmentPermission" | "rolePermission" | "employeePermissionOverride" | "session"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1828,6 +1829,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    session: {
+      payload: Prisma.$sessionPayload<ExtArgs>
+      fields: Prisma.sessionFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.sessionFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$sessionPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.sessionFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$sessionPayload>
+        }
+        findFirst: {
+          args: Prisma.sessionFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$sessionPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.sessionFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$sessionPayload>
+        }
+        findMany: {
+          args: Prisma.sessionFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$sessionPayload>[]
+        }
+        create: {
+          args: Prisma.sessionCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$sessionPayload>
+        }
+        createMany: {
+          args: Prisma.sessionCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.sessionCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$sessionPayload>[]
+        }
+        delete: {
+          args: Prisma.sessionDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$sessionPayload>
+        }
+        update: {
+          args: Prisma.sessionUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$sessionPayload>
+        }
+        deleteMany: {
+          args: Prisma.sessionDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.sessionUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.sessionUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$sessionPayload>[]
+        }
+        upsert: {
+          args: Prisma.sessionUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$sessionPayload>
+        }
+        aggregate: {
+          args: Prisma.SessionAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateSession>
+        }
+        groupBy: {
+          args: Prisma.sessionGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SessionGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.sessionCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SessionCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -2039,10 +2114,12 @@ export type SalaryHistoryScalarFieldEnum = (typeof SalaryHistoryScalarFieldEnum)
 export const LeaveRequestScalarFieldEnum = {
   id: 'id',
   type: 'type',
+  paidType: 'paidType',
   startDate: 'startDate',
   endDate: 'endDate',
   reason: 'reason',
   status: 'status',
+  isBulkLeave: 'isBulkLeave',
   employeeId: 'employeeId',
   createdAt: 'createdAt'
 } as const
@@ -2118,6 +2195,15 @@ export const EmployeePermissionOverrideScalarFieldEnum = {
 } as const
 
 export type EmployeePermissionOverrideScalarFieldEnum = (typeof EmployeePermissionOverrideScalarFieldEnum)[keyof typeof EmployeePermissionOverrideScalarFieldEnum]
+
+
+export const SessionScalarFieldEnum = {
+  sid: 'sid',
+  sess: 'sess',
+  expire: 'expire'
+} as const
+
+export type SessionScalarFieldEnum = (typeof SessionScalarFieldEnum)[keyof typeof SessionScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -2364,6 +2450,7 @@ export type GlobalOmitConfig = {
   departmentPermission?: Prisma.DepartmentPermissionOmit
   rolePermission?: Prisma.RolePermissionOmit
   employeePermissionOverride?: Prisma.EmployeePermissionOverrideOmit
+  session?: Prisma.sessionOmit
 }
 
 /* Types for Logging */

@@ -14,8 +14,7 @@ import {
   PROCESSED_DOC_UPLOAD_BATCH_SIZE,
   ProcessedDocUploadHttpError,
 } from "../../services/processedDocUpload";
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+import { API_URL } from "../../constants/config";
 
 interface ProcessedDocDashboardProps {
   currentUser: AuthUser | null;
