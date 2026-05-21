@@ -9,6 +9,7 @@ import {
   COMMISSION_RATE_DEFAULT,
   EMPLOYEE_CODE_PREFIX,
 } from "../constants/index.js";
+import { isSaleManager } from "../services/accessResolution.js";
 
 const resolveCommissionRate = (role: string): number => {
   if (role === "Trưởng phòng") return COMMISSION_RATE_MANAGER;
@@ -43,7 +44,12 @@ export const getEmployees = asyncHandler(async (req: Request, res: Response) => 
   } else if (!hasReadFull && !hasSelfRead) {
     return res.status(403).json({ error: "Bạn không có quyền thực hiện thao tác này" });
   } else if (hasReadFull && user?.department === "Sale") {
-    whereClause = { department: { name: "Sale" } };
+    // Trưởng phòng Sale xem được tất cả NV Sale, NV Sale thường chỉ xem của chính mình
+    if (isSaleManager(user)) {
+      whereClause = { department: { name: "Sale" } };
+    } else {
+      whereClause = { id: user.id };
+    }
   }
 
   const employees = await prisma.employee.findMany({

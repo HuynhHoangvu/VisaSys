@@ -17,6 +17,7 @@ import {
   dailyWageFromGrossBase,
   buildLateFineDetailRows,
 } from "../services/attendancePayroll.js";
+import { isSaleManager } from "../services/accessResolution.js";
 
 function parsePayrollMonthYear(monthYear: string): { mm: number; yyyy: number } {
   const [mmStr, yyyyStr] = monthYear.split("/");
@@ -38,9 +39,14 @@ export const downloadSalarySlip = async (req: Request, res: Response) => {
   try {
     const { employeeId, monthYear } = req.params as { employeeId: string; monthYear: string };
 
-    // Check permissions: if user is in Sales department, they can only view Sales department employees
+    // Check permissions: Trưởng phòng Sale xem được tất cả NV Sale, NV Sale thường chỉ xem của mình
     const user = (req.session as any).user;
     if (user && user.department === "Sale") {
+      // Nhân viên Sale thường chỉ xem được bảng lương của chính mình
+      if (!isSaleManager(user) && employeeId !== user.id) {
+        return res.status(403).json({ error: "Bạn chỉ có quyền xem bảng lương của chính mình" });
+      }
+      // Trưởng phòng Sale xem được tất cả NV Sale
       const targetEmployee = await prisma.employee.findUnique({
         where: { id: employeeId },
         include: { department: true },
@@ -209,10 +215,17 @@ export const testSalaryCalculation = async (req: Request, res: Response) => {
     });
     if (!employee) return res.status(404).json({ error: "Không tìm thấy nhân viên" });
 
-    // Check permissions: if user is in Sales department, they can only view Sales department employees
+    // Check permissions: Trưởng phòng Sale xem được tất cả NV Sale, NV Sale thường chỉ xem của mình
     const user = (req.session as any).user;
-    if (user && user.department === "Sale" && employee.department?.name !== "Sale") {
-      return res.status(403).json({ error: "Bạn chỉ có quyền xem bảng lương của nhân viên phòng Sale" });
+    if (user && user.department === "Sale") {
+      // Nhân viên Sale thường chỉ xem được của chính mình
+      if (!isSaleManager(user) && employeeId !== user.id) {
+        return res.status(403).json({ error: "Bạn chỉ có quyền xem bảng lương của chính mình" });
+      }
+      // Trưởng phòng Sale xem được tất cả NV Sale
+      if (employee.department?.name !== "Sale") {
+        return res.status(403).json({ error: "Bạn chỉ có quyền xem bảng lương của nhân viên phòng Sale" });
+      }
     }
 
     const { mm: pm, yyyy: py } = parsePayrollMonthYear(monthYear);
@@ -299,11 +312,19 @@ export const downloadSalarySummary = async (req: Request, res: Response) => {
       return res.status(500).json({ error: "Không tìm thấy file PDF generator" });
     }
 
-    // Check permissions: if user is in Sales department, filter to only Sales employees
+    // Check permissions: Trưởng phòng Sale xem được tất cả NV Sale, NV Sale thường chỉ xem của mình
     const user = (req.session as any).user;
-    const whereClause = user && user.department === "Sale" 
-      ? { department: { name: "Sale" } }
-      : {};
+    let whereClause: Record<string, any> = {};
+    
+    if (user && user.department === "Sale") {
+      if (isSaleManager(user)) {
+        // Trưởng phòng Sale xem được tất cả NV Sale
+        whereClause = { department: { name: "Sale" } };
+      } else {
+        // Nhân viên Sale thường chỉ xem của chính mình
+        whereClause = { id: user.id };
+      }
+    }
 
     const employees = await prisma.employee.findMany({
       where: whereClause,
@@ -484,7 +505,7 @@ export const getSalaryBreakdown = async (req: Request, res: Response) => {
   try {
     const { monthYear } = req.params as { monthYear: string };
 
-    // Check permissions: if user is in Sales department, filter to only Sales employees
+    // Check permissions: Trưởng phòng Sale xem được tất cả NV Sale, NV Sale thường chỉ xem của mình
     const user = (req.session as any).user;
 
     // 1. Check whether this payroll month has been finalized
@@ -502,7 +523,13 @@ export const getSalaryBreakdown = async (req: Request, res: Response) => {
     if (historyRecords.length > 0) {
       let filteredRecords = historyRecords;
       if (user && user.department === "Sale") {
-        filteredRecords = historyRecords.filter(h => h.employee?.department?.name === "Sale");
+        if (isSaleManager(user)) {
+          // Trưởng phòng Sale xem được tất cả NV Sale
+          filteredRecords = historyRecords.filter(h => h.employee?.department?.name === "Sale");
+        } else {
+          // Nhân viên Sale thường chỉ xem của chính mình
+          filteredRecords = historyRecords.filter(h => h.employeeId === user.id);
+        }
       }
       const breakdown = filteredRecords.map(h => ({
         name: h.employee?.name ?? "Nhân viên đã xóa",
@@ -524,9 +551,16 @@ export const getSalaryBreakdown = async (req: Request, res: Response) => {
     }
 
     // 2. If not finalized, compute the breakdown live from raw records
-    const whereClause = user && user.department === "Sale"
-      ? { department: { name: "Sale" } }
-      : {};
+    let whereClause: Record<string, any> = {};
+    if (user && user.department === "Sale") {
+      if (isSaleManager(user)) {
+        // Trưởng phòng Sale xem được tất cả NV Sale
+        whereClause = { department: { name: "Sale" } };
+      } else {
+        // Nhân viên Sale thường chỉ xem của chính mình
+        whereClause = { id: user.id };
+      }
+    }
     const employees = await prisma.employee.findMany({
       where: whereClause,
       include: { salesRecords: true, attendanceRecords: true },
@@ -578,7 +612,15 @@ export const downloadSalarySummaryExcel = async (req: Request, res: Response) =>
 
     // Filter by department if user is in Sales
     let filteredRecords = historyRecords;
-    if (user && user.department === "Sale") {    }
+    if (user && user.department === "Sale") {
+      if (isSaleManager(user)) {
+        // Trưởng phòng Sale xem được tất cả NV Sale
+        filteredRecords = historyRecords.filter(h => h.employee?.department?.name === "Sale");
+      } else {
+        // Nhân viên Sale thường chỉ xem của chính mình
+        filteredRecords = historyRecords.filter(h => h.employeeId === user.id);
+      }
+    }
 
     if (filteredRecords.length > 0) {
       // Finalized month: use static snapshot data for Python rendering
@@ -632,9 +674,16 @@ export const downloadSalarySummaryExcel = async (req: Request, res: Response) =>
       });
     } else {
       // Not finalized: calculate live from raw tables
-      const whereClause = user && user.department === "Sale"
-        ? { department: { name: "Sale" } }
-        : {};
+      let whereClause: Record<string, any> = {};
+      if (user && user.department === "Sale") {
+        if (isSaleManager(user)) {
+          // Trưởng phòng Sale xem được tất cả NV Sale
+          whereClause = { department: { name: "Sale" } };
+        } else {
+          // Nhân viên Sale thường chỉ xem của chính mình
+          whereClause = { id: user.id };
+        }
+      }
       const employees = await prisma.employee.findMany({
         where: whereClause,
         include: { salesRecords: true, attendanceRecords: true },
@@ -688,16 +737,23 @@ export const downloadSalarySlipsExcel = async (req: Request, res: Response) => {
   try {
     const { monthYear } = req.params as { monthYear: string };
     
-    // Check permissions: if user is in Sales department, filter to only Sales employees
+    // Check permissions: Trưởng phòng Sale xem được tất cả NV Sale, NV Sale thường chỉ xem của mình
     const user = (req.session as any).user;
     
     let scriptPath = path.join(process.cwd(), "src/scripts/gen_salary.py");
     if (!fs.existsSync(scriptPath)) scriptPath = path.join(process.cwd(), "scripts/gen_salary.py");
     if (!fs.existsSync(scriptPath)) return res.status(500).json({ error: "Không tìm thấy file Python generator" });
 
-    const whereClause = user && user.department === "Sale"
-      ? { department: { name: "Sale" } }
-      : {};
+    let whereClause: Record<string, any> = {};
+    if (user && user.department === "Sale") {
+      if (isSaleManager(user)) {
+        // Trưởng phòng Sale xem được tất cả NV Sale
+        whereClause = { department: { name: "Sale" } };
+      } else {
+        // Nhân viên Sale thường chỉ xem của chính mình
+        whereClause = { id: user.id };
+      }
+    }
     const employees = await prisma.employee.findMany({
       where: whereClause,
       include: { salesRecords: true, attendanceRecords: true },

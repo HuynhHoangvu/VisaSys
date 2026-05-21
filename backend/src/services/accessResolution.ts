@@ -39,6 +39,15 @@ function isManagerLike(role: string): boolean {
   return roleHas(role, "quản lý") || roleHas(role, "trưởng phòng");
 }
 
+/**
+ * Kiểm tra xem user có phải Trưởng phòng Sale không.
+ * Chỉ Trưởng phòng Sale mới được xem dữ liệu của nhân viên khác trong phòng.
+ * Nhân viên Sale thường chỉ xem được dữ liệu của chính mình.
+ */
+export function isSaleManager(user: { role: string; department: string }): boolean {
+  return user.department === "Sale" && roleHas(user.role, "trưởng phòng");
+}
+
 function isTeacherDept(deptName: string | undefined | null): boolean {
   return norm(deptName).includes("giáo viên");
 }

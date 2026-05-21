@@ -13,6 +13,7 @@ import {
   attendanceDateBelongsToPayrollMonth,
 } from "../services/SalaryService.js";
 import { dedupeSalaryHistoryLatestPerEmployeeMonth } from "../utils/salaryHistoryDedupe.js";
+import { isSaleManager } from "../services/accessResolution.js";
 
 /**
  * Locks payroll for a given month (format: "MM/YYYY").
@@ -154,11 +155,19 @@ export const finalizeMonthSalary = asyncHandler(async (req: Request, res: Respon
 });
 
 export const getSalaryHistory = asyncHandler(async (req: Request, res: Response) => {
-  // Check permissions: if user is in Sales department, they can only view Sales department employees' salary history
+  // Check permissions: Trưởng phòng Sale xem được tất cả NV Sale, NV Sale thường chỉ xem của mình
   const user = (req.session as any).user;
-  const whereClause = user && user.department === "Sale"
-    ? { employee: { department: { name: "Sale" } } }
-    : {};
+  let whereClause: Record<string, any> = {};
+  
+  if (user && user.department === "Sale") {
+    if (isSaleManager(user)) {
+      // Trưởng phòng Sale xem được tất cả NV Sale
+      whereClause = { employee: { department: { name: "Sale" } } };
+    } else {
+      // Nhân viên Sale thường chỉ xem của chính mình
+      whereClause = { employeeId: user.id };
+    }
+  }
 
   const rows = await prisma.salaryHistory.findMany({
     where: whereClause,
