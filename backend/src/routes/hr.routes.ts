@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { getDepartments, createDepartment, updateDepartment, deleteDepartment } from "../controllers/department.controller.js";
-import { getEmployees, createEmployee, updateEmployee, deleteEmployee } from "../controllers/employee.controller.js";
+import { getEmployees, getEmployeesBasic, createEmployee, updateEmployee, deleteEmployee } from "../controllers/employee.controller.js";
 import { checkInEmployee, checkOutEmployee, addManualBonus, deleteSalesRecord, excuseScheduledAbsence, penalizeForgotCheckout, waiveAttendanceFine, waiveHalfDayDeduction } from "../controllers/attendance.controller.js";
 import { createLeaveRequest, getLeaveRequests, getLeaveRequestsByEmployee, updateLeaveRequestStatus, createBulkLeaveRequest } from "../controllers/leave.controller.js";
 import { finalizeMonthSalary, getSalaryHistory } from "../controllers/salary.controller.js";
@@ -48,6 +48,7 @@ router.put("/departments/:id", auth, hrWrite, updateDepartment);
 router.delete("/departments/:id", auth, hrWrite, deleteDepartment);
 
 // Employees
+router.get("/employees/basic", auth, getEmployeesBasic);
 router.get("/employees", auth, hrReadOrSelfAttendance, getEmployees);
 router.post("/employees", auth, hrWrite, validate(createEmployeeSchema), createEmployee);
 router.put("/employees/:id", auth, hrWrite, validate(updateEmployeeSchema), updateEmployee);

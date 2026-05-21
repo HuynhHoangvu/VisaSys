@@ -10,6 +10,7 @@ import {
 import { type Task, type Employee } from "../../types";
 import { VISA_SERVICES, CUSTOMER_SOURCES } from "../../utils/constants";
 import { API_URL } from "../../constants/config";
+import api from "../../services/api";
 
 interface CustomerModalProps {
   show: boolean;
@@ -103,14 +104,9 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
     let cancelled = false;
     (async () => {
       try {
-        const response = await fetch(`${API_URL}/api/hr/employees`, {
-          credentials: "include",
-        });
-        const raw: unknown = await response.json().catch(() => null);
+        const response = await api.get<Employee[]>("/api/hr/employees/basic");
         if (cancelled) return;
-        setStaffList(
-          response.ok && Array.isArray(raw) ? (raw as Employee[]) : [],
-        );
+        setStaffList(Array.isArray(response.data) ? response.data : []);
       } catch (error) {
         console.error("Lỗi khi tải danh sách nhân viên:", error);
         if (!cancelled) setStaffList([]);

@@ -19,6 +19,7 @@ import socket from "../../services/socket";
 import SearchFilterBar from "../filter/SearchFilterBar";
 import { hasPermission, P } from "../../utils/access";
 import { API_URL } from "../../constants/config";
+import api from "../../services/api";
 
 interface KanbanBoardProps {
   onOpenActivityList: (taskId: string) => void;
@@ -83,12 +84,9 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
   useEffect(() => {
     const fetchStaffList = async () => {
       try {
-        const response = await fetch(`${API_URL}/api/hr/employees`, {
-          credentials: "include",
-        });
-        const raw: unknown = await response.json().catch(() => null);
-        if (response.ok && Array.isArray(raw)) {
-          setStaffList(raw as Employee[]);
+        const response = await api.get<Employee[]>("/api/hr/employees/basic");
+        if (Array.isArray(response.data)) {
+          setStaffList(response.data);
         } else {
           setStaffList([]);
         }

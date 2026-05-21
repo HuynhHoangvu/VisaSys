@@ -79,6 +79,32 @@ export const getEmployees = asyncHandler(async (req: Request, res: Response) => 
   );
 });
 
+export const getEmployeesBasic = asyncHandler(async (req: Request, res: Response) => {
+  const employees = await prisma.employee.findMany({
+    select: {
+      id: true,
+      employeeCode: true,
+      name: true,
+      role: true,
+      department: {
+        select: {
+          name: true,
+        },
+      },
+    },
+    orderBy: { name: "asc" },
+  });
+
+  res.json(
+    employees.map((emp) => ({
+      id: emp.id,
+      employeeCode: emp.employeeCode,
+      name: emp.name,
+      role: emp.role,
+      department: emp.department?.name || "Chưa phân bổ / Khác",
+    }))
+  );
+});
 
 export const createEmployee = asyncHandler(async (req: Request, res: Response) => {
   const { name, email, password, department, role, baseSalary } = req.body as {

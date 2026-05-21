@@ -13,6 +13,7 @@ import { VISA_SERVICES, CUSTOMER_SOURCES } from "../../utils/constants";
 import socket from "../../services/socket";
 import toast from "react-hot-toast";
 import { API_URL } from "../../constants/config";
+import api from "../../services/api";
 
 const JOB_TYPES = [
   "Nông nghiệp",
@@ -55,12 +56,9 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
     let cancelled = false;
     (async () => {
       try {
-        const r = await fetch(`${API_URL}/api/hr/employees`, {
-          credentials: "include",
-        });
-        const raw: unknown = await r.json().catch(() => null);
+        const response = await api.get<Employee[]>("/api/hr/employees/basic");
         if (cancelled) return;
-        setStaffList(Array.isArray(raw) ? (raw as Employee[]) : []);
+        setStaffList(Array.isArray(response.data) ? response.data : []);
       } catch {
         if (!cancelled) setStaffList([]);
       }
