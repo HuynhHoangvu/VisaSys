@@ -318,37 +318,33 @@ const DocumentModal: React.FC<DocumentModalProps> = ({ show, onClose, taskId, ta
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
 
+  const [initializedTaskId, setInitializedTaskId] = useState<string | null>(null);
+
   useEffect(() => {
-    if (show && taskId) {
-      const fetchLatestData = async () => {
-        try {
-          const res = await fetch(`${API_URL}/api/board`);
-          const data = await res.json();
-          const currentTask = data.tasks[taskId];
-          if (currentTask) {
-            const vt = currentTask.visaType || "Du lịch visa 600 (Úc)";
-            setVisaType(vt);
-            setJobType(currentTask.jobType || "Nhân viên");
-            setUploadedFiles(currentTask.documents || {});
-            if (currentTask.checklistType) {
-              setChecklistType(currentTask.checklistType);
-            } else {
-              const vtLower = vt.toLowerCase();
-              if (vtLower.includes("lao động") || vtLower.includes("work permit") || vtLower.includes("việc làm")) {
-                setChecklistType("labor");
-              } else if (vtLower.includes("du học") || vtLower.includes("student") || vtLower.includes("học")) {
-                setChecklistType("study");
-              } else {
-                setChecklistType("tourism");
-              }
-            }
+    if (show && taskId && task) {
+      if (initializedTaskId !== taskId) {
+        const vt = task.visaType || "Du lịch visa 600 (Úc)";
+        setVisaType(vt);
+        setJobType(task.jobType || "Nhân viên");
+        setUploadedFiles(task.documents || {});
+        if (task.checklistType) {
+          setChecklistType(task.checklistType);
+        } else {
+          const vtLower = vt.toLowerCase();
+          if (vtLower.includes("lao động") || vtLower.includes("work permit") || vtLower.includes("việc làm")) {
+            setChecklistType("labor");
+          } else if (vtLower.includes("du học") || vtLower.includes("student") || vtLower.includes("học")) {
+            setChecklistType("study");
+          } else {
+            setChecklistType("tourism");
           }
-        } catch (error) {
-          console.error("Lỗi đồng bộ dữ liệu hồ sơ:", error);
         }
-      };
-      fetchLatestData();
+        setInitializedTaskId(taskId);
+      }
     } else if (!show) {
+      if (initializedTaskId !== null) {
+        setInitializedTaskId(null);
+      }
       setUploadedFiles({});
       setJobType("Nhân viên");
       setChecklistType("tourism");
@@ -356,7 +352,7 @@ const DocumentModal: React.FC<DocumentModalProps> = ({ show, onClose, taskId, ta
       setFilterStatus("all");
       setUploadPanel(null);
     }
-  }, [show, taskId]);
+  }, [show, taskId, task, initializedTaskId]);
 
   const handleFileUpload = useCallback(async (reqId: string, fileList: FileList | File[]) => {
     const files = Array.from(fileList);

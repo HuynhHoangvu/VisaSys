@@ -156,6 +156,17 @@ async function main() {
     ],
   });
 
+  console.log("🌱 Seeding default Kanban columns...");
+  await prisma.column.createMany({
+    data: [
+      { id: "col-1", title: "Khách hàng mới", order: 1 },
+      { id: "col-2", title: "Đang Tư Vấn", order: 2 },
+      { id: "col-3", title: "Đã ký hợp đồng", order: 3 },
+      { id: "col-4", title: "Đang thu hồ sơ", order: 4 },
+    ],
+    skipDuplicates: true,
+  });
+
   console.log("✅ Seed hoàn tất!");
   console.log("   admin@flyvisa.com       / admin123   (Giám đốc)");
   console.log("   pho.gd@flyvisa.com      / 123456     (Phó Giám đốc)");

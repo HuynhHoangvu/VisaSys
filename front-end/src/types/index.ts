@@ -259,6 +259,7 @@ export interface CustomerDetailModalProps {
   task: Task | null;
   onUpdateCustomer?: (updatedTask: Task) => void;
   currentUser?: AuthUser | null;
+  staffList?: Employee[];
 }
 
 export interface SidebarProps {

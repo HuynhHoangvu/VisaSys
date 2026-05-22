@@ -124,17 +124,19 @@ app.use(session({
 // so that 401 failures can be traced back to a missing/invalid cookie or a
 // store lookup miss.  Remove or gate behind NODE_ENV once the issue is resolved.
 app.use((req, _res, next) => {
-  const sid = req.headers.cookie
-    ?.split(";")
-    .map((c) => c.trim())
-    .find((c) => c.startsWith("connect.sid="));
-  const user = (req.session as any)?.user;
-  console.log(
-    `[session] ${req.method} ${req.path}` +
-    ` | sid-cookie=${sid ? "present" : "absent"}` +
-    ` | session-id=${req.sessionID ?? "none"}` +
-    ` | user=${user ? `${user.id} (${user.role})` : "none"}`,
-  );
+  if (req.method !== "GET") {
+    const sid = req.headers.cookie
+      ?.split(";")
+      .map((c) => c.trim())
+      .find((c) => c.startsWith("connect.sid="));
+    const user = (req.session as any)?.user;
+    console.log(
+      `[session] ${req.method} ${req.path}` +
+      ` | sid-cookie=${sid ? "present" : "absent"}` +
+      ` | session-id=${req.sessionID ?? "none"}` +
+      ` | user=${user ? `${user.id} (${user.role})` : "none"}`,
+    );
+  }
   next();
 });
 

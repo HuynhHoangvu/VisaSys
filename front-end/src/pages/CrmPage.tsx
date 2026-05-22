@@ -7,12 +7,13 @@ import CustomerDetailModal from "../components/crm/CustomerDetailModal";
 import ActivityListModal from "../components/crm/ActivityListModal";
 import ScheduleActivityModal from "../components/crm/ScheduleActivityModal";
 import DocumentModal from "../components/crm/DocumentModal";
-import type { Task, Activity, BoardData, AuthUser } from "../types";
+import type { Task, Activity, BoardData, AuthUser, Employee } from "../types";
 
 const CrmPage: React.FC = () => {
   const currentUser: AuthUser = JSON.parse(localStorage.getItem("flyvisa_user")!);
   const emptyBoard: BoardData = { tasks: {}, columns: {}, columnOrder: [] };
   const [boardData, setBoardData] = useState<BoardData>(emptyBoard);
+  const [staffList, setStaffList] = useState<Employee[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
   const [activityToEdit, setActivityToEdit] = useState<Activity | null>(null);
@@ -34,7 +35,17 @@ const CrmPage: React.FC = () => {
         setIsLoading(false);
       }
     };
+    const fetchStaffList = async () => {
+      try {
+        const response = await api.get<Employee[]>("/api/hr/employees/basic");
+        setStaffList(Array.isArray(response.data) ? response.data : []);
+      } catch (error) {
+        console.error("Lỗi khi tải danh sách nhân viên:", error);
+        setStaffList([]);
+      }
+    };
     void fetchBoardData();
+    void fetchStaffList();
     socket.on("data_changed", fetchBoardData);
     const handleInstantRefresh = () => { void fetchBoardData(); };
     window.addEventListener("refreshBoard", handleInstantRefresh);
@@ -210,10 +221,11 @@ const CrmPage: React.FC = () => {
           onToggleActivity={handleToggleActivity}
           onOpenAddCustomer={() => setIsModalOpen(true)}
           onOpenAttachments={(taskId) => { setActiveTaskId(taskId); setIsDocumentModalOpen(true); }}
+          staffList={staffList}
         />
       </div>
 
-      <CustomerModal show={isModalOpen} onClose={() => setIsModalOpen(false)} onAddCustomer={handleAddCustomer} />
+      <CustomerModal show={isModalOpen} onClose={() => setIsModalOpen(false)} onAddCustomer={handleAddCustomer} staffList={staffList} />
       <CustomerDetailModal
         key={`detail-${activeTaskId || "none"}`}
         show={isDetailOpen}
@@ -221,6 +233,7 @@ const CrmPage: React.FC = () => {
         task={activeTaskId ? boardData.tasks[activeTaskId] : null}
         onUpdateCustomer={handleUpdateCustomer}
         currentUser={currentUser}
+        staffList={staffList}
       />
       <ActivityListModal
         show={isActivityListOpen}

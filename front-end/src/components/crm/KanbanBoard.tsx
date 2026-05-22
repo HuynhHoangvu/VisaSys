@@ -19,7 +19,6 @@ import socket from "../../services/socket";
 import SearchFilterBar from "../filter/SearchFilterBar";
 import { hasPermission, P } from "../../utils/access";
 import { API_URL } from "../../constants/config";
-import api from "../../services/api";
 
 interface KanbanBoardProps {
   onOpenActivityList: (taskId: string) => void;
@@ -29,6 +28,7 @@ interface KanbanBoardProps {
   onOpenAddCustomer: () => void;
   onOpenAttachments: (taskId: string) => void;
   currentUser: AuthUser | null;
+  staffList: Employee[];
 }
 
 const KanbanBoard: React.FC<KanbanBoardProps> = ({
@@ -39,9 +39,9 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
   onOpenAddCustomer,
   onOpenAttachments,
   currentUser,
+  staffList,
 }) => {
   const [boardData, setBoardData] = useState<BoardData | null>(null);
-  const [staffList, setStaffList] = useState<Employee[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeAlerts, setActiveAlerts] = useState<string[]>([]);
@@ -80,23 +80,6 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
   const canSeeAll =
     (currentUser ? hasPermission(currentUser, P.crmSeeAll) : false) ||
     isMarketingDept;
-
-  useEffect(() => {
-    const fetchStaffList = async () => {
-      try {
-        const response = await api.get<Employee[]>("/api/hr/employees/basic");
-        if (Array.isArray(response.data)) {
-          setStaffList(response.data);
-        } else {
-          setStaffList([]);
-        }
-      } catch (error) {
-        console.error("Lỗi tải danh sách nhân viên:", error);
-        setStaffList([]);
-      }
-    };
-    fetchStaffList();
-  }, []);
 
   useEffect(() => {
     const fetchAlerts = async () => {

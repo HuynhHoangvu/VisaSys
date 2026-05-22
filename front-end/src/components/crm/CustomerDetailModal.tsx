@@ -8,12 +8,11 @@ import {
   Label,
   Spinner,
 } from "flowbite-react";
-import type { Task, CustomerDetailModalProps, Employee } from "../../types";
+import type { Task, CustomerDetailModalProps } from "../../types";
 import { VISA_SERVICES, CUSTOMER_SOURCES } from "../../utils/constants";
 import socket from "../../services/socket";
 import toast from "react-hot-toast";
 import { API_URL } from "../../constants/config";
-import api from "../../services/api";
 
 const JOB_TYPES = [
   "Nông nghiệp",
@@ -34,11 +33,11 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
   task,
   onUpdateCustomer,
   currentUser,
+  staffList = [],
 }) => {
   const [formData, setFormData] = useState<Task | null>(null);
   const [localName, setLocalName] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-  const [staffList, setStaffList] = useState<Employee[]>([]);
 
   const [newNote, setNewNote] = useState("");
   const [isSubmittingNote, setIsSubmittingNote] = useState(false);
@@ -50,23 +49,6 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
     setFormData(task);
     if (task) setLocalName(task.content?.split(" - ")[0] || "");
   }, [task]);
-
-  useEffect(() => {
-    if (!show) return;
-    let cancelled = false;
-    (async () => {
-      try {
-        const response = await api.get<Employee[]>("/api/hr/employees/basic");
-        if (cancelled) return;
-        setStaffList(Array.isArray(response.data) ? response.data : []);
-      } catch {
-        if (!cancelled) setStaffList([]);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [show]);
 
   if (!task || !formData) return null;
 

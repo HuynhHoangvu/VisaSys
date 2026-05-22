@@ -601,7 +601,7 @@ export const downloadSalarySummaryExcel = async (req: Request, res: Response) =>
     // 1. Check finalized payroll history
     const historyRows = await prisma.salaryHistory.findMany({
       where: { monthYear },
-      include: { employee: true },
+      include: { employee: { include: { department: true } } },
       orderBy: { employee: { name: "asc" } },
     });
     const historyRecords = dedupeSalaryHistoryLatestPerEmployeeMonth(historyRows).sort((a, b) =>
