@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   Modal,
   Button,
@@ -9,13 +9,12 @@ import {
 } from "flowbite-react";
 import { type Task, type Employee } from "../../types";
 import { VISA_SERVICES, CUSTOMER_SOURCES } from "../../utils/constants";
-import { API_URL } from "../../constants/config";
-import api from "../../services/api";
 
 interface CustomerModalProps {
   show: boolean;
   onClose: () => void;
   onAddCustomer: (customer: Partial<Task>) => void;
+  staffList: Employee[];
 }
 
 const JOB_TYPES = [
@@ -63,8 +62,8 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
   show,
   onClose,
   onAddCustomer,
+  staffList,
 }) => {
-  const [staffList, setStaffList] = useState<Employee[]>([]);
   const [formData, setFormData] = useState<CustomerFormData>(initialFormState);
 
   const handleChange = (
@@ -98,24 +97,6 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
       checklistType: val === "Khác" ? prev.checklistType : autoChecklist, // Nếu chọn Khác thì giữ nguyên để user tự chọn
     }));
   };
-
-  useEffect(() => {
-    if (!show) return;
-    let cancelled = false;
-    (async () => {
-      try {
-        const response = await api.get<Employee[]>("/api/hr/employees/basic");
-        if (cancelled) return;
-        setStaffList(Array.isArray(response.data) ? response.data : []);
-      } catch (error) {
-        console.error("Lỗi khi tải danh sách nhân viên:", error);
-        if (!cancelled) setStaffList([]);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [show]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
