@@ -17,6 +17,7 @@ import type {
 } from "../../types";
 import socket from "../../services/socket";
 import SearchFilterBar from "../filter/SearchFilterBar";
+import { normalizeVisaType } from "../../utils/constants";
 import { hasPermission, P } from "../../utils/access";
 import { API_URL } from "../../constants/config";
 
@@ -74,6 +75,8 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
   const [filterColumn, setFilterColumn] = useState("all");
   const [filterSource, setFilterSource] = useState("all");
   const [filterDateRange, setFilterDateRange] = useState("all");
+  const [filterStartDate, setFilterStartDate] = useState("");
+  const [filterEndDate, setFilterEndDate] = useState("");
 
   const isMarketingDept =
     currentUser?.department?.toLowerCase().includes("marketing") || false;
@@ -184,12 +187,12 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
     const visaTypes = [
       ...new Set(
         allTasks
-          .map((t) => t.visaType)
-          .filter((val) => val && val.trim() !== ""),
+          .map((t) => normalizeVisaType(t.visaType))
+          .filter((val) => val !== ""),
       ),
     ]
       .sort()
-      .map((v) => ({ value: v!, label: v! }));
+      .map((v) => ({ value: v, label: v }));
 
     const columns = boardData.columnOrder
       .map((colId) => boardData.columns[colId])
@@ -221,7 +224,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
 
         if (filterSale !== "all" && task.assignedTo !== filterSale)
           return false;
-        if (filterVisa !== "all" && task.visaType !== filterVisa) return false;
+        if (filterVisa !== "all" && normalizeVisaType(task.visaType) !== normalizeVisaType(filterVisa)) return false;
 
         if (filterSource !== "all") {
           if (!task.source) return false;
@@ -239,10 +242,27 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
           if (!task.createdAt) return false;
           const taskDate = new Date(task.createdAt);
           if (isNaN(taskDate.getTime())) return false;
-          const diffTime = Math.abs(now.getTime() - taskDate.getTime());
-          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-          if (filterDateRange === "7days" && diffDays > 7) return false;
-          if (filterDateRange === "30days" && diffDays > 30) return false;
+
+          if (filterDateRange === "7days") {
+            const diffTime = Math.abs(now.getTime() - taskDate.getTime());
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            if (diffDays > 7) return false;
+          } else if (filterDateRange === "30days") {
+            const diffTime = Math.abs(now.getTime() - taskDate.getTime());
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            if (diffDays > 30) return false;
+          } else if (filterDateRange === "custom") {
+            if (filterStartDate) {
+              const start = new Date(filterStartDate);
+              start.setHours(0, 0, 0, 0);
+              if (taskDate < start) return false;
+            }
+            if (filterEndDate) {
+              const end = new Date(filterEndDate);
+              end.setHours(23, 59, 59, 999);
+              if (taskDate > end) return false;
+            }
+          }
         }
         return true;
       });
@@ -255,6 +275,8 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
       filterColumn,
       filterSource,
       filterDateRange,
+      filterStartDate,
+      filterEndDate,
     ],
   );
 
@@ -304,7 +326,8 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
       filterVisa !== "all" ||
       filterColumn !== "all" ||
       filterSource !== "all" ||
-      filterDateRange !== "all"
+      (filterDateRange !== "all" &&
+        (filterDateRange !== "custom" || filterStartDate !== "" || filterEndDate !== ""))
     );
   }, [
     searchQuery,
@@ -313,6 +336,8 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
     filterColumn,
     filterSource,
     filterDateRange,
+    filterStartDate,
+    filterEndDate,
   ]);
 
   const handleResetFilter = useCallback(() => {
@@ -322,6 +347,8 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
     setFilterColumn("all");
     setFilterSource("all");
     setFilterDateRange("all");
+    setFilterStartDate("");
+    setFilterEndDate("");
   }, []);
 
   const handleLoadMore = (columnId: string) => {
@@ -618,7 +645,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                     </span>
                     {task.visaType && (
                       <span className="text-[9px] bg-blue-50 text-blue-700 border border-blue-100 px-1.5 py-0.5 rounded font-semibold max-w-[90px] truncate">
-                        {task.visaType}
+                        {normalizeVisaType(task.visaType)}
                       </span>
                     )}
                     {task.jobType && (
@@ -912,6 +939,10 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
           searchPlaceholder="Tìm tên, SĐT, nhân viên..."
           searchValue={searchQuery}
           onSearchChange={setSearchQuery}
+          startDate={filterStartDate}
+          endDate={filterEndDate}
+          onStartDateChange={setFilterStartDate}
+          onEndDateChange={setFilterEndDate}
           filters={[
             ...(canSeeAll
               ? [
@@ -947,6 +978,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
               options: [
                 { value: "7days", label: "7 ngày qua" },
                 { value: "30days", label: "30 ngày qua" },
+                { value: "custom", label: "📅 Chọn khoảng ngày..." },
                 { value: "all", label: "Tất cả thời gian" },
               ],
               onChange: setFilterDateRange,
@@ -1320,7 +1352,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                       <td className="px-4 py-3">
                         <div className="flex flex-col gap-1 items-start">
                           <span className="bg-blue-50 text-blue-600 px-2 py-1 rounded text-xs font-semibold whitespace-nowrap">
-                            {task.visaType || "Chưa rõ"}
+                            {normalizeVisaType(task.visaType) || "Chưa rõ"}
                           </span>
                           {task.jobType && (
                             <span className="bg-emerald-50 text-emerald-600 px-2 py-1 rounded text-[10px] font-semibold whitespace-nowrap">

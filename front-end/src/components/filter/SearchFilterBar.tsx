@@ -21,6 +21,12 @@ export interface SearchFilterConfig {
     icon?: React.ReactNode;
   }[];
 
+  // Các field ngày bổ sung
+  startDate?: string;
+  endDate?: string;
+  onStartDateChange?: (date: string) => void;
+  onEndDateChange?: (date: string) => void;
+
   // Hiện số kết quả
   resultCount?: number;
   totalCount?: number;
@@ -35,6 +41,10 @@ const SearchFilterBar: React.FC<SearchFilterConfig> = ({
   searchValue,
   onSearchChange,
   filters = [],
+  startDate,
+  endDate,
+  onStartDateChange,
+  onEndDateChange,
   resultCount,
   totalCount,
   onReset,
@@ -88,26 +98,45 @@ const SearchFilterBar: React.FC<SearchFilterConfig> = ({
 
       {/* FILTER SELECTS */}
       {filters.map((filter) => (
-        <div key={filter.key} className="relative">
-          <select
-            value={filter.value}
-            onChange={(e) => filter.onChange(e.target.value)}
-            className={`pl-3 pr-8 py-2 text-sm bg-white border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent shadow-sm appearance-none cursor-pointer transition-colors ${
-              filter.value !== "all"
-                ? "border-orange-400 bg-orange-50 text-orange-700 font-semibold"
-                : "border-gray-200 text-gray-600"
-            }`}
-          >
-            <option value="all">{filter.placeholder}</option>
-            {filter.options.map((opt, idx) => (
-              <option
-                key={`${filter.key}-${opt.value}-${idx}`} // Key kết hợp: tiền tố filter + giá trị + chỉ số index
-                value={opt.value}
-              >
-                {opt.label}
-              </option>
-            ))}
-          </select>
+        <div key={filter.key} className="flex items-center gap-2">
+          <div className="relative">
+            <select
+              value={filter.value}
+              onChange={(e) => filter.onChange(e.target.value)}
+              className={`pl-3 pr-8 py-2 text-sm bg-white border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent shadow-sm appearance-none cursor-pointer transition-colors ${
+                filter.value !== "all"
+                  ? "border-orange-400 bg-orange-50 text-orange-700 font-semibold"
+                  : "border-gray-200 text-gray-600"
+              }`}
+            >
+              <option value="all">{filter.placeholder}</option>
+              {filter.options.map((opt, idx) => (
+                <option
+                  key={`${filter.key}-${opt.value}-${idx}`} // Key kết hợp: tiền tố filter + giá trị + chỉ số index
+                  value={opt.value}
+                >
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          {filter.key === "dateRange" && filter.value === "custom" && (
+            <div className="flex items-center gap-1.5 animate-custom-pop">
+              <input
+                type="date"
+                value={startDate || ""}
+                onChange={(e) => onStartDateChange?.(e.target.value)}
+                className="px-2 py-1.5 text-xs bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent shadow-sm text-gray-700 cursor-pointer"
+              />
+              <span className="text-gray-400 text-xs font-semibold">đến</span>
+              <input
+                type="date"
+                value={endDate || ""}
+                onChange={(e) => onEndDateChange?.(e.target.value)}
+                className="px-2 py-1.5 text-xs bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent shadow-sm text-gray-700 cursor-pointer"
+              />
+            </div>
+          )}
         </div>
       ))}
 

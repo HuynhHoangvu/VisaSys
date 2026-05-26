@@ -1,3 +1,4 @@
+import { prisma } from "../../lib/prisma.js";
 import {
   SALARY_THRESHOLD,
   BHXH_NLD_RATE, BHYT_NLD_RATE, BHTN_NLD_RATE,
@@ -16,7 +17,6 @@ export interface SalaryBreakdown {
   anTrua: number;
   hoTroKhac: number;
   hoaHong: number;
-  /** Thưởng khác, kể cả bản ghi cũ service "Thưởng" (legacy). */
   thuongKhac: number;
   manualFines: number;
   tamUng: number;
@@ -40,12 +40,10 @@ interface AttendanceRecord extends AttendancePayrollRow {
 }
 
 export { attendanceDateBelongsToPayrollMonth } from "../utils/payrollDates.js";
+import { attendanceDateBelongsToPayrollMonth } from "../utils/payrollDates.js";
+import { isSaleManager } from "./accessResolution.js";
+import { dedupeSalaryHistoryLatestPerEmployeeMonth } from "../utils/salaryHistoryDedupe.js";
 
-/**
- * Ngày công đi làm: có chấm công vào (inTime) và không phải vắng cả ngày không phép.
- * Không bắt buộc phải checkout — nhiều phiếu lương bị 0 ngày vì outTime vẫn "-" hoặc "Quên checkout".
- * Không có lịch nghỉ lễ cố định: ngày không có bản ghi hoặc không check-in không tính vào ngày công.
- */
 export const getWorkDatesFromAttendance = (attendanceRecords: AttendanceRecord[]): string[] => {
   const byDay = new Map<string, true>();
   for (const r of attendanceRecords) {
@@ -58,23 +56,18 @@ export const getWorkDatesFromAttendance = (attendanceRecords: AttendanceRecord[]
 };
 
 interface SalesRecord {
+  id: string;
   profit: number;
   service: string | null;
   createdAt: Date;
 }
 
-/** Calculates the employee's social/health/unemployment insurance contributions. */
 export const calcInsurance = (insuranceSalary: number) => ({
   bhxhNld: Math.round(insuranceSalary * BHXH_NLD_RATE),
   bhytNld: Math.round(insuranceSalary * BHYT_NLD_RATE),
   bhtnNld: Math.round(insuranceSalary * BHTN_NLD_RATE)
 });
 
-/**
- * Derives the insurance base salary and fixed allowances from gross base salary.
- * Employees earning above SALARY_THRESHOLD have 2M deducted before insurance is applied,
- * and also receive attendance/lunch/other allowances.
- */
 export const calcBaseComponents = (baseSalary: number) => {
   const insuranceSalary = baseSalary >= SALARY_THRESHOLD
     ? baseSalary - 2_000_000
@@ -85,13 +78,8 @@ export const calcBaseComponents = (baseSalary: number) => {
   return { insuranceSalary, chuyenCan, anTrua, hoTroKhac };
 };
 
-/**
- * Gross contract salary used for attendance/lunch/other fixed allowances when rebuilding from SalaryHistory.
- * Legacy rows only stored insurance base in `baseSalary`; infer gross when the snapshot clearly crossed the threshold.
- */
 export function grossSalaryForLockedPayrollAllowances(snapshot: {
   baseSalary: number;
-  /** Helps resolve ambiguous legacy rows where baseSalary is exactly 6M (either gross 6M or gross 8M → insurance 6M). */
   totalBonus?: number;
   hoaHong?: number;
   thuongKhac?: number;
@@ -99,8 +87,7 @@ export function grossSalaryForLockedPayrollAllowances(snapshot: {
   const ins = snapshot.baseSalary;
   if (ins >= SALARY_THRESHOLD) return ins + 2_000_000;
 
-  const fixedSum =
-    BONUS_CHUYÊN_CẦN + BONUS_ĂN_TRƯA + BONUS_HỖ_TRỢ_KHÁC;
+  const fixedSum = BONUS_CHUYÊN_CẦN + BONUS_ĂN_TRƯA + BONUS_HỖ_TRỢ_KHÁC;
   const tb = snapshot.totalBonus ?? 0;
   const hh = snapshot.hoaHong ?? 0;
   const tk = snapshot.thuongKhac ?? 0;
@@ -112,7 +99,6 @@ export function grossSalaryForLockedPayrollAllowances(snapshot: {
 
 const PHU_CAP_SERVICES = new Set(["Chuyên cần", "Ăn trưa", "Hỗ trợ khác"]);
 
-/** Ghi nhận sales thủ công; CRM/doanh số và "Thưởng hoa hồng" → hoaHong; "Thưởng khác"/"Thưởng" → thuongKhac. */
 export const calcSalesBreakdown = (salesRecords: SalesRecord[]) => {
   let hoaHong = 0, thuongKhac = 0, manualFines = 0, tamUng = 0;
   for (const r of salesRecords) {
@@ -120,21 +106,14 @@ export const calcSalesBreakdown = (salesRecords: SalesRecord[]) => {
     const svc = r.service || "";
     if (svc === "Phạt") manualFines += Math.abs(amount);
     else if (svc === "Tạm ứng") tamUng += Math.abs(amount);
-    else if (PHU_CAP_SERVICES.has(svc)) {
-      /* phụ cấp lưu dạng sales — không cộng vào hoa hồng/ thưởng biến đổi */
-    } else if (svc === "Thưởng khác" || svc === "Thưởng") thuongKhac += amount;
+    else if (PHU_CAP_SERVICES.has(svc)) { }
+    else if (svc === "Thưởng khác" || svc === "Thưởng") thuongKhac += amount;
     else if (svc === "Thưởng hoa hồng") hoaHong += amount;
     else hoaHong += amount;
   }
   return { hoaHong, thuongKhac, manualFines, tamUng };
 };
 
-/**
- * Aggregates attendance-based deductions for one payroll month:
- * - Vắng theo lịch T2–T6 (trừ ngày lễ hưởng lương): không có check-in hợp lệ ⇒ trừ 1 ngày lương (= lương cơ bản / 22).
- * - Đi trễ: tổng phạt = Σ (thứ tự lần trong tháng × 50k).
- * - Nửa ngày / quên checkout: giữ theo trường halfDayDeduction trên bản ghi.
- */
 export const calcAttendanceBreakdown = (
   attendanceRecords: AttendanceRecord[],
   grossBaseSalary: number,
@@ -179,7 +158,6 @@ export const calcAttendanceBreakdown = (
   };
 };
 
-/** Computes the full salary breakdown from raw attendance and sales data. */
 export const calcFullSalary = (
   baseSalary: number,
   attendanceRecords: AttendanceRecord[],
@@ -212,4 +190,144 @@ export const calcFullSalary = (
     workDays, workDates,
     finalSalary
   };
+};
+
+export const finalizeMonthSalaryService = async (monthYear: string) => {
+  if (!monthYear) throw new Error("Vui lòng cung cấp tháng chốt lương!");
+
+  const [mmStr, yyyyStr] = monthYear.split("/");
+  const mm   = parseInt(mmStr);
+  const yyyy = parseInt(yyyyStr);
+
+  const monthStart = new Date(yyyy, mm - 1, 1);
+  const monthEnd   = new Date(yyyy, mm, 1);
+
+  const employees = await prisma.employee.findMany({
+    include: {
+      attendanceRecords: {
+        where: {
+          OR: [
+            { date: { contains: `/${String(mm).padStart(2, "0")}/${yyyy}` } },
+            { date: { contains: `/${mm}/${yyyy}` } },
+          ],
+        },
+      },
+      salesRecords: {
+        where: { createdAt: { gte: monthStart, lt: monthEnd } },
+      },
+    },
+  });
+
+  await prisma.$transaction(async (tx) => {
+    const attIdsToDelete: string[]  = [];
+    const saleIdsToDelete: string[] = [];
+
+    for (const emp of employees) {
+      const monthAtt = emp.attendanceRecords.filter((r) =>
+        attendanceDateBelongsToPayrollMonth(r.date, mm, yyyy),
+      ) as any;
+      const monthSales = emp.salesRecords as any;
+
+      monthAtt.forEach((r: any) => attIdsToDelete.push(r.id));
+      monthSales.forEach((r: any) => saleIdsToDelete.push(r.id));
+
+      const {
+        hoaHong: newHoaHong,
+        thuongKhac: newThuongKhac,
+        tamUng: newTamUng,
+        manualFines: newManualFines,
+      } = calcSalesBreakdown(monthSales);
+
+      const totalSalaryBrutto = emp.baseSalary || 0;
+      const ins = totalSalaryBrutto >= SALARY_THRESHOLD ? totalSalaryBrutto - 2_000_000 : totalSalaryBrutto;
+
+      const lastDom = new Date(yyyy, mm, 0).getDate();
+      const attBreakdown = calcAttendanceBreakdown(
+        monthAtt,
+        totalSalaryBrutto,
+        mm,
+        yyyy,
+        lastDom,
+      );
+      const newAttendanceFines = attBreakdown.attendanceFines;
+      const newHalfDay         = attBreakdown.halfDayDeduction;
+      const newFullDay         = attBreakdown.fullDayAbsenceDeduction;
+      const newWorkDates       = attBreakdown.workDates;
+
+      const existing = await tx.salaryHistory.findUnique({
+        where: { employeeId_monthYear: { employeeId: emp.id, monthYear } },
+      });
+
+      const finalHoaHong         = (existing?.hoaHong || 0) + newHoaHong;
+      const finalThuongKhac      = (existing?.thuongKhac || 0) + newThuongKhac;
+      const finalTamUng          = (existing?.tamUng || 0) + newTamUng;
+      const finalManualFines     = (existing?.manualFines || 0) + newManualFines;
+      const finalAttendanceFines = (existing?.attendanceFines || 0) + newAttendanceFines;
+      const finalHalfDay         = (existing?.halfDayDeduction || 0) + newHalfDay;
+      const finalFullDay         = (existing?.fullDayAbsenceDeduction || 0) + newFullDay;
+
+      const finalWorkDates = Array.from(new Set([...(existing?.workDates || []), ...newWorkDates]));
+      const finalWorkDays  = finalWorkDates.length;
+
+      const cc  = totalSalaryBrutto >= SALARY_THRESHOLD ? BONUS_CHUYÊN_CẦN  : 0;
+      const at  = totalSalaryBrutto >= SALARY_THRESHOLD ? BONUS_ĂN_TRƯA     : 0;
+      const htk = totalSalaryBrutto >= SALARY_THRESHOLD ? BONUS_HỖ_TRỢ_KHÁC : 0;
+
+      const bhxhNld  = Math.round(ins * BHXH_NLD_RATE);
+      const bhytNld  = Math.round(ins * BHYT_NLD_RATE);
+      const bhtnNld  = Math.round(ins * BHTN_NLD_RATE);
+      const totalNld = bhxhNld + bhytNld + bhtnNld;
+
+      const totalDeductions = finalManualFines + finalAttendanceFines + finalHalfDay + finalFullDay + totalNld;
+      const finalSalary     = ins + cc + at + htk + finalHoaHong + finalThuongKhac - finalTamUng - totalDeductions;
+
+      const historyData = {
+        baseSalary:              ins,
+        totalBonus:              cc + at + htk + finalHoaHong + finalThuongKhac,
+        totalDeduction:          totalDeductions + finalTamUng,
+        finalSalary,
+        hoaHong:                 finalHoaHong,
+        thuongKhac:              finalThuongKhac,
+        tamUng:                  finalTamUng,
+        manualFines:             finalManualFines,
+        attendanceFines:         finalAttendanceFines,
+        halfDayDeduction:        finalHalfDay,
+        fullDayAbsenceDeduction: finalFullDay,
+        workDays:                finalWorkDays,
+        workDates:               finalWorkDates,
+      };
+
+      await tx.salaryHistory.upsert({
+        where: { employeeId_monthYear: { employeeId: emp.id, monthYear } },
+        create: { ...historyData, monthYear, employeeId: emp.id },
+        update: historyData,
+      });
+    }
+
+    if (attIdsToDelete.length > 0)  await tx.attendanceRecord.deleteMany({ where: { id: { in: attIdsToDelete } } });
+    if (saleIdsToDelete.length > 0) await tx.salesRecord.deleteMany({ where: { id: { in: saleIdsToDelete } } });
+  });
+};
+
+export const getSalaryHistoryService = async (user: any) => {
+  let whereClause: Record<string, any> = {};
+  
+  if (user && user.department === "Sale") {
+    if (isSaleManager(user)) {
+      whereClause = { employee: { department: { name: "Sale" } } };
+    } else {
+      whereClause = { employeeId: user.id };
+    }
+  }
+
+  const rows = await prisma.salaryHistory.findMany({
+    where: whereClause,
+    include: {
+      employee: { select: { id: true, name: true, employeeCode: true, department: true } },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+  const deduped = dedupeSalaryHistoryLatestPerEmployeeMonth(rows);
+  deduped.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  return deduped;
 };

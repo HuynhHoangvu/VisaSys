@@ -114,7 +114,7 @@ app.use(session({
     /** HTTPS on Railway — required when SameSite=None */
     secure: sessionCookieCrossSite,
     httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000,
+    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 ngày
     sameSite: sessionCookieCrossSite ? "none" : "lax",
   },
 }));

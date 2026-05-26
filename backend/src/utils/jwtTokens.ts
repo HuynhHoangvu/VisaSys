@@ -2,12 +2,12 @@ import jwt from "jsonwebtoken";
 import type { Request } from "express";
 import { JWT_REFRESH_SECRET } from "../../config/env.js";
 
-/** Khớp `expiresIn` khi sign — refresh token có hiệu lực 7 ngày. */
-export const REFRESH_TOKEN_EXPIRES = "7d" as const;
+/** Khớp `expiresIn` khi sign — refresh token có hiệu lực 30 ngày. */
+export const REFRESH_TOKEN_EXPIRES = "30d" as const;
 
 /** Cookie HttpOnly chứa JWT refresh (cùng thời hạn với token). */
 export const REFRESH_COOKIE_NAME = "flyvisa_rt";
-export const REFRESH_COOKIE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+export const REFRESH_COOKIE_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 
 const REFRESH_PAYLOAD_TYP = "refresh" as const;
 

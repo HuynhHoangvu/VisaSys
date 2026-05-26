@@ -10,6 +10,7 @@ import { Spinner } from "flowbite-react";
 import type { BoardData, Task } from "../../types";
 import socket from "../../services/socket";
 import SearchFilterBar from "../filter/SearchFilterBar";
+import { normalizeVisaType } from "../../utils/constants";
 
 interface RecruitmentBoardProps {
   onOpenDetail: (taskId: string) => void;
@@ -519,7 +520,7 @@ const RecruitmentBoard: React.FC<RecruitmentBoardProps> = ({
                                       <div className="flex flex-wrap gap-1.5">
                                         {task.visaType && (
                                           <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">
-                                            {task.visaType}
+                                            {normalizeVisaType(task.visaType)}
                                           </span>
                                         )}
                                         {task.jobType && (
@@ -668,7 +669,7 @@ const RecruitmentBoard: React.FC<RecruitmentBoardProps> = ({
                     <div className="w-1/4 pr-4 flex flex-wrap gap-1.5 items-center">
                       {task.visaType && (
                         <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-blue-50 text-blue-600 border border-blue-100">
-                          {task.visaType}
+                          {normalizeVisaType(task.visaType)}
                         </span>
                       )}
                       {task.jobType && (

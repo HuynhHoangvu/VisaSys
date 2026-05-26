@@ -1,5 +1,11 @@
 import { Request, Response } from "express";
-import { prisma } from "../../lib/prisma.js";
+import { asyncHandler } from "../middlewares/asyncHandler.js";
+import {
+  getWorkspacesService,
+  createWorkspaceService,
+  updateWorkspaceService,
+  deleteWorkspaceService,
+} from "../services/workspace.service.js";
 
 // Lấy employeeId từ session (nếu có) hoặc từ query/body
 const getEid = (req: Request): string => {
@@ -9,19 +15,16 @@ const getEid = (req: Request): string => {
   return fromQuery ? String(fromQuery) : "";
 };
 
-export const getWorkspaces = async (req: Request, res: Response) => {
+export const getWorkspaces = asyncHandler(async (req: Request, res: Response) => {
   try {
-    const workspaces = await prisma.workspace.findMany({
-      orderBy: { createdAt: "asc" },
-      select: { id: true, name: true, url: true },
-    });
+    const workspaces = await getWorkspacesService();
     res.json(workspaces);
   } catch {
     res.status(500).json({ error: "Lỗi khi tải danh sách workspace" });
   }
-};
+});
 
-export const createWorkspace = async (req: Request, res: Response) => {
+export const createWorkspace = asyncHandler(async (req: Request, res: Response) => {
   try {
     const employeeId = getEid(req);
     if (!employeeId) return res.status(400).json({ error: "Thiếu thông tin người dùng" });
@@ -29,17 +32,14 @@ export const createWorkspace = async (req: Request, res: Response) => {
     if (!name?.trim()) {
       return res.status(400).json({ error: "Tên workspace không được để trống" });
     }
-    const ws = await prisma.workspace.create({
-      data: { name: name.trim(), url: url?.trim() || null, employeeId },
-      select: { id: true, name: true, url: true },
-    });
+    const ws = await createWorkspaceService(name, url, employeeId);
     res.status(201).json(ws);
   } catch {
     res.status(500).json({ error: "Lỗi khi tạo workspace" });
   }
-};
+});
 
-export const updateWorkspace = async (req: Request, res: Response) => {
+export const updateWorkspace = asyncHandler(async (req: Request, res: Response) => {
   try {
     const employeeId = getEid(req);
     const id = String(req.params.id);
@@ -47,35 +47,27 @@ export const updateWorkspace = async (req: Request, res: Response) => {
     if (!name?.trim()) {
       return res.status(400).json({ error: "Tên workspace không được để trống" });
     }
-    if (employeeId) {
-      const existing = await prisma.workspace.findFirst({ where: { id, employeeId } });
-      if (!existing) return res.status(404).json({ error: "Không tìm thấy workspace" });
-    }
-    const ws = await prisma.workspace.update({
-      where: { id },
-      data: { name: name.trim(), url: url?.trim() || null },
-      select: { id: true, name: true, url: true },
-    });
+    const ws = await updateWorkspaceService(id, name, url, employeeId);
     res.json(ws);
-  } catch {
+  } catch (error: any) {
+    if (error.message === "Không tìm thấy workspace") {
+      return res.status(404).json({ error: error.message });
+    }
     res.status(500).json({ error: "Lỗi khi cập nhật workspace" });
   }
-};
+});
 
-export const deleteWorkspace = async (req: Request, res: Response) => {
+export const deleteWorkspace = asyncHandler(async (req: Request, res: Response) => {
   try {
     const employeeId = getEid(req);
     const id = String(req.params.id);
 
-    const countWhere = employeeId ? { employeeId } : { id };
-    const count = await prisma.workspace.count({ where: countWhere });
-    if (count <= 1) {
-      return res.status(400).json({ error: "Phải có ít nhất 1 workspace" });
-    }
-
-    await prisma.workspace.delete({ where: { id } });
+    await deleteWorkspaceService(id, employeeId);
     res.json({ message: "Đã xoá workspace" });
-  } catch {
+  } catch (error: any) {
+    if (error.message === "Phải có ít nhất 1 workspace") {
+      return res.status(400).json({ error: error.message });
+    }
     res.status(500).json({ error: "Lỗi khi xoá workspace" });
   }
-};
+});

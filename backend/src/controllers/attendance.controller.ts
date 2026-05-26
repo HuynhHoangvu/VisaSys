@@ -1,8 +1,16 @@
 import { Request, Response } from "express";
-import { prisma } from "../../lib/prisma.js";
 import { getIO } from "../socket.js";
 import { asyncHandler } from "../middlewares/asyncHandler.js";
-import { CHECKOUT_HOUR, STANDARD_WORK_DAYS, HALF_DAY_SPLIT_MINUTES } from "../constants/index.js";
+import {
+  checkInEmployeeService,
+  checkOutEmployeeService,
+  addManualBonusService,
+  deleteSalesRecordService,
+  waiveHalfDayDeductionService,
+  waiveAttendanceFineService,
+  excuseScheduledAbsenceService,
+  runPenalizeForgotCheckoutService,
+} from "../services/attendance.service.js";
 
 /** Returns the number of weekdays (Mon–Fri) in a given month. Legacy helper — chỗ khấu nửa ngày dùng STANDARD_WORK_DAYS (22). */
 export const getWorkDaysInMonth = (year: number, month: number): number => {
@@ -15,203 +23,27 @@ export const getWorkDaysInMonth = (year: number, month: number): number => {
   return count;
 };
 
-import { isAfternoonOnlyCheckIn } from "../services/attendancePayroll.js";
-
-const getTodayIsoInVN = (asOf: Date = new Date()): string => {
-  const fmt = new Intl.DateTimeFormat("en-US", {
-    timeZone: "Asia/Ho_Chi_Minh",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  });
-  const parts = fmt.formatToParts(asOf);
-  let y = "", m = "", d = "";
-  for (const p of parts) {
-    if (p.type === "year") y = p.value;
-    if (p.type === "month") m = p.value;
-    if (p.type === "day") d = p.value;
-  }
-  return `${y}-${m}-${d}`;
-};
-
-const hasApprovedLeaveTypeOnDate = async (
-  employeeId: string,
-  leaveType: "Vô trễ" | "Về sớm" | "Nghỉ có lương",
-  isoDate: string,
-): Promise<boolean> => {
-  const found = await prisma.leaveRequest.findFirst({
-    where: {
-      employeeId,
-      paidType: leaveType,
-      status: "Đã duyệt",
-      startDate: { lte: isoDate },
-      endDate: { gte: isoDate },
-    },
-    select: { id: true },
-  });
-  return !!found;
-};
-
 export const checkInEmployee = asyncHandler(async (req: Request, res: Response) => {
   const id = req.params.id as string;
-  let { date, inTime, outTime, status, fine } = req.body;
-
-  const emp = await prisma.employee.findUnique({ where: { id } });
-  const unitHalf = Math.round((emp?.baseSalary || 0) / STANDARD_WORK_DAYS / 2);
-  const todayIsoVN = getTodayIsoInVN();
-  const hasApprovedLateLeave = await hasApprovedLeaveTypeOnDate(id, "Vô trễ", todayIsoVN);
-
-  let halfDayDeduction = 0;
-  let resolvedFine = Number(fine) || 0;
-  let resolvedStatus = String(status || "Đúng giờ");
-
-  if (isAfternoonOnlyCheckIn(inTime) && !hasApprovedLateLeave) {
-    halfDayDeduction = unitHalf;
-    resolvedFine = 0;
-    resolvedStatus = "Nửa ngày chiều";
-  } else if (isAfternoonOnlyCheckIn(inTime) && hasApprovedLateLeave) {
-    halfDayDeduction = 0;
-    resolvedFine = 0;
-    resolvedStatus = "Vô trễ (có phép)";
-  }
-
-  if (hasApprovedLateLeave) {
-    resolvedFine = 0;
-    if (resolvedStatus === "Đi muộn") {
-      resolvedStatus = "Đi muộn (có phép)";
-    }
-  }
-
-  const newRecord = await prisma.attendanceRecord.create({
-    data: {
-      date,
-      inTime,
-      outTime,
-      status: resolvedStatus,
-      fine: resolvedFine,
-      halfDayDeduction,
-      employeeId: id,
-    },
-  });
-
+  const newRecord = await checkInEmployeeService(id, req.body);
   getIO().emit("data_changed");
   res.status(201).json(newRecord);
 });
 
 export const checkOutEmployee = asyncHandler(async (req: Request, res: Response) => {
   const id = req.params.id as string;
-  const now = new Date();
-  const timeZone = "Asia/Ho_Chi_Minh";
-
-  const todayStr = now.toLocaleDateString("vi-VN", { timeZone });
-  const outTime = now.toLocaleTimeString("vi-VN", {
-    timeZone,
-    hour: "2-digit",
-    minute: "2-digit",
-  } as Intl.DateTimeFormatOptions);
-
-  // Parse hour/minute in VN timezone to detect early leave accurately.
-  // Using formatToParts avoids locale-dependent string parsing bugs.
-  const formatter = new Intl.DateTimeFormat("en-US", {
-    timeZone,
-    hour: "numeric",
-    minute: "numeric",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour12: false,
-  } as Intl.DateTimeFormatOptions);
-
-  const parts = formatter.formatToParts(now);
-  let vnHour = 0, vnMinute = 0, vnYear = "", vnMonth = "", vnDay = "";
-  parts.forEach((p) => {
-    if (p.type === "hour") vnHour = parseInt(p.value, 10) % 24;
-    if (p.type === "minute") vnMinute = parseInt(p.value, 10);
-    if (p.type === "year") vnYear = p.value;
-    if (p.type === "month") vnMonth = p.value;
-    if (p.type === "day") vnDay = p.value;
-  });
-
-  const todayRecord = await prisma.attendanceRecord.findFirst({
-    where: { employeeId: id, date: todayStr },
-  });
-
-  if (!todayRecord) {
-    return res.status(400).json({ error: "Chưa check-in hôm nay!" });
+  try {
+    const result = await checkOutEmployeeService(id);
+    getIO().emit("data_changed");
+    res.json({ success: true, ...result });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
   }
-  if (todayRecord.outTime && todayRecord.outTime !== "-") {
-    return res.status(400).json({ error: "Đã check-out rồi!" });
-  }
-
-  // Early checkout before end-of-day hour → tối đa một lần trừ nửa ngày / ngày (lương cơ bản / 22 / 2).
-  const outMinutes = vnHour * 60 + vnMinute;
-  const isEarlyLeave = outMinutes < CHECKOUT_HOUR * 60;
-  const todayIsoVN = `${vnYear}-${vnMonth}-${vnDay}`;
-  const hasApprovedEarlyLeave = await hasApprovedLeaveTypeOnDate(id, "Về sớm", todayIsoVN);
-  const existingHalf = todayRecord.halfDayDeduction || 0;
-  let halfDayDeduction = existingHalf;
-  let newStatus = todayRecord.status;
-  let additionalHalfDayApplied = false;
-
-  if (isEarlyLeave) {
-    if (hasApprovedEarlyLeave) {
-      halfDayDeduction = existingHalf;
-      if (!newStatus.includes("Về sớm (có phép)")) {
-        newStatus = newStatus.includes("Về sớm")
-          ? newStatus.replace("Về sớm", "Về sớm (có phép)")
-          : `${newStatus} + Về sớm (có phép)`;
-      }
-    } else {
-      const employee = await prisma.employee.findUnique({ where: { id } });
-      const unitHalf = Math.round((employee!.baseSalary || 0) / STANDARD_WORK_DAYS / 2);
-
-      if (existingHalf === 0) {
-        additionalHalfDayApplied = true;
-        halfDayDeduction = unitHalf;
-        const morningLeave = outMinutes <= HALF_DAY_SPLIT_MINUTES;
-        const baseOk =
-          todayRecord.status === "Đúng giờ" || todayRecord.status.includes("Có phép");
-        if (morningLeave) {
-          newStatus = baseOk ? "Nửa ngày sáng" : `${todayRecord.status} + Nửa ngày sáng`;
-        } else {
-          newStatus = baseOk ? "Về sớm" : `${todayRecord.status} + Về sớm`;
-        }
-      } else {
-        newStatus =
-          todayRecord.status.includes("Về sớm") || todayRecord.status.includes("Nửa ngày sáng")
-            ? todayRecord.status
-            : `${todayRecord.status} + Về sớm`;
-      }
-    }
-  }
-
-  // Chỉ cập nhật attendanceRecord — halfDayDeduction đã được tính
-  // trong salary.controller qua newHalfDay, không cần tạo salesRecord
-  // riêng để tránh bị trừ 2 lần khi chốt lương.
-  await prisma.attendanceRecord.update({
-    where: { id: todayRecord.id },
-    data: { outTime, status: newStatus, halfDayDeduction },
-  });
-
-  getIO().emit("data_changed");
-  res.json({
-    success: true,
-    isEarlyLeave,
-    halfDayDeduction,
-    outTime,
-    additionalHalfDayApplied,
-    hasLeaveApproval: hasApprovedEarlyLeave,
-  });
 });
 
 export const addManualBonus = asyncHandler(async (req: Request, res: Response) => {
   const id = req.params.id as string;
-  const { customer, service, profit, note } = req.body;
-
-  const newRecord = await prisma.salesRecord.create({
-    data: { employeeId: id, customer, service, profit: Number(profit), note },
-  });
-
+  const newRecord = await addManualBonusService(id, req.body);
   getIO().emit("data_changed");
   res.status(201).json(newRecord);
 });
@@ -220,143 +52,57 @@ export const deleteSalesRecord = asyncHandler(async (req: Request, res: Response
   const employeeId = req.params.id as string;
   const salesRecordId = req.params.salesRecordId as string;
 
-  const existing = await prisma.salesRecord.findFirst({
-    where: { id: salesRecordId, employeeId },
-  });
-  if (!existing) {
-    return res.status(404).json({ error: "Không tìm thấy khoản điều chỉnh." });
+  try {
+    await deleteSalesRecordService(employeeId, salesRecordId);
+    getIO().emit("data_changed");
+    res.json({ success: true });
+  } catch (error: any) {
+    res.status(404).json({ error: error.message });
   }
-
-  await prisma.salesRecord.delete({ where: { id: salesRecordId } });
-  getIO().emit("data_changed");
-  res.json({ success: true });
 });
 
-/**
- * HR/QL: gỡ trừ nửa ngày (quên checkout, về sớm...) — chỉnh halfDayDeduction về 0,
- * không cần giả "Thưởng khác" để bù. Áp dụng cho tháng chưa chốt (bản ghi attendance còn trong DB).
- */
 export const waiveHalfDayDeduction = asyncHandler(async (req: Request, res: Response) => {
   const employeeId = req.params.id as string;
   const recordId = req.params.recordId as string;
 
-  const record = await prisma.attendanceRecord.findFirst({
-    where: { id: recordId, employeeId },
-  });
-  if (!record) {
-    return res.status(404).json({ error: "Không tìm thấy bản ghi chấm công." });
+  try {
+    const updated = await waiveHalfDayDeductionService(employeeId, recordId);
+    getIO().emit("data_changed");
+    res.json(updated);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
   }
-  if ((record.halfDayDeduction || 0) <= 0) {
-    return res.status(400).json({ error: "Bản ghi không có khoản trừ nửa ngày." });
-  }
-
-  const updated = await prisma.attendanceRecord.update({
-    where: { id: recordId },
-    data: { halfDayDeduction: 0 },
-  });
-
-  getIO().emit("data_changed");
-  res.json(updated);
 });
 
 export const waiveAttendanceFine = asyncHandler(async (req: Request, res: Response) => {
   const employeeId = req.params.id as string;
   const recordId = req.params.recordId as string;
 
-  const record = await prisma.attendanceRecord.findFirst({
-    where: { id: recordId, employeeId },
-  });
-  if (!record) {
-    return res.status(404).json({ error: "Không tìm thấy bản ghi chấm công." });
+  try {
+    const updated = await waiveAttendanceFineService(employeeId, recordId);
+    getIO().emit("data_changed");
+    res.json(updated);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
   }
-  if ((record.fine || 0) <= 0) {
-    return res.status(400).json({ error: "Bản ghi không có khoản phạt CI." });
-  }
-
-  const updated = await prisma.attendanceRecord.update({
-    where: { id: recordId },
-    data: { fine: 0 },
-  });
-
-  getIO().emit("data_changed");
-  res.json(updated);
 });
 
-/**
- * HR/QL: hoàn tác khoản "Không điểm danh (1 ngày công)" (tính tự động theo lịch T2–T6).
- * Cách làm: tạo / cập nhật một AttendanceRecord "Có phép" với check-in hợp lệ cho ngày đó,
- * để kỳ lương không còn tính ngày này là vắng.
- */
 export const excuseScheduledAbsence = asyncHandler(async (req: Request, res: Response) => {
   const employeeId = req.params.id as string;
   const { date } = (req.body || {}) as { date?: string };
   const targetDate = String(date || "").trim();
-  if (!targetDate) {
-    return res.status(400).json({ error: "Thiếu ngày cần hoàn tác (date)." });
+
+  try {
+    const record = await excuseScheduledAbsenceService(employeeId, targetDate);
+    getIO().emit("data_changed");
+    res.json(record);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
   }
-
-  const existing = await prisma.attendanceRecord.findFirst({
-    where: { employeeId, date: targetDate },
-  });
-
-  // Dùng giờ vào "08:00" để satisfy hasValidCheckIn(), nhưng không tạo phạt vì status không phải "Đi muộn".
-  const payload = {
-    date: targetDate,
-    inTime: "08:00",
-    outTime: "-",
-    status: "Có phép",
-    fine: 0,
-    halfDayDeduction: 0,
-    employeeId,
-  } as const;
-
-  const record = existing
-    ? await prisma.attendanceRecord.update({
-        where: { id: existing.id },
-        data: {
-          inTime: payload.inTime,
-          outTime: payload.outTime,
-          status: payload.status,
-          fine: payload.fine,
-          halfDayDeduction: payload.halfDayDeduction,
-        },
-      })
-    : await prisma.attendanceRecord.create({ data: payload });
-
-  getIO().emit("data_changed");
-  res.json(record);
 });
 
-/**
- * Pure business logic for penalizing employees who forgot to check out.
- * Extracted from the HTTP controller so the nightly cron job can call it
- * directly without constructing a fake req/res pair.
- */
 export const runPenalizeForgotCheckout = async (): Promise<{ penalized: number }> => {
-  const now = new Date();
-  const todayStr = now.toLocaleDateString("vi-VN");
-
-  const forgotRecords = await prisma.attendanceRecord.findMany({
-    where: { date: todayStr, outTime: "-", halfDayDeduction: 0 },
-    include: { employee: true },
-  });
-
-  if (forgotRecords.length === 0) return { penalized: 0 };
-
-  await prisma.$transaction(async (tx) => {
-    for (const record of forgotRecords) {
-      const halfDayDeduction = Math.round(
-        (record.employee.baseSalary || 0) / STANDARD_WORK_DAYS / 2,
-      );
-
-      await tx.attendanceRecord.update({
-        where: { id: record.id },
-        data: { outTime: "Quên checkout", status: "Quên checkout", halfDayDeduction },
-      });
-    }
-  });
-
-  return { penalized: forgotRecords.length };
+  return runPenalizeForgotCheckoutService();
 };
 
 export const penalizeForgotCheckout = asyncHandler(async (_req: Request, res: Response) => {

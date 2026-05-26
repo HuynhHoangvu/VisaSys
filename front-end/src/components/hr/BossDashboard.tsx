@@ -12,6 +12,7 @@ import {
 import type { AuthUser, Task } from "../../types";
 import socket from "../../services/socket";
 import SearchFilterBar from "../filter/SearchFilterBar";
+import { normalizeVisaType } from "../../utils/constants";
 import { FaceAvatar } from "../ui/FaceAvatar";
 import { API_URL } from "../../constants/config";
 
@@ -113,10 +114,10 @@ const BossDashboard: React.FC<BossDashboardProps> = ({ currentUser }) => {
     ].map(([value, label]) => ({ value, label }));
 
     const visaTypes = [
-      ...new Set(allProfiles.map((p) => p.visaType).filter(Boolean)),
+      ...new Set(allProfiles.map((p) => normalizeVisaType(p.visaType)).filter(Boolean)),
     ]
       .sort()
-      .map((v) => ({ value: v!, label: v! }));
+      .map((v) => ({ value: v, label: v }));
 
     return { sales, columns, visaTypes };
   }, [allProfiles]);
@@ -137,7 +138,7 @@ const BossDashboard: React.FC<BossDashboardProps> = ({ currentUser }) => {
         return false;
       if (filterColumn !== "all" && profile.columnId !== filterColumn)
         return false;
-      if (filterVisa !== "all" && profile.visaType !== filterVisa) return false;
+      if (filterVisa !== "all" && normalizeVisaType(profile.visaType) !== normalizeVisaType(filterVisa)) return false;
       return true;
     });
   }, [allProfiles, searchQuery, filterSale, filterColumn, filterVisa]);
@@ -352,7 +353,7 @@ const BossDashboard: React.FC<BossDashboardProps> = ({ currentUser }) => {
                             : profile.content.split(" - ")[0]}
                         </p>
                         <p className="text-xs font-medium text-gray-500">
-                          {profile.content.split(" - ")[1]}
+                          {normalizeVisaType(profile.visaType || profile.content.split(" - ")[1])}
                         </p>
                         <p className="text-xs font-bold text-blue-600 mt-1">
                           SĐT: {profile.phone}

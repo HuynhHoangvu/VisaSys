@@ -9,7 +9,7 @@ import {
   Spinner,
 } from "flowbite-react";
 import type { Task, CustomerDetailModalProps } from "../../types";
-import { VISA_SERVICES, CUSTOMER_SOURCES } from "../../utils/constants";
+import { VISA_SERVICES, CUSTOMER_SOURCES, normalizeVisaType } from "../../utils/constants";
 import socket from "../../services/socket";
 import toast from "react-hot-toast";
 import { API_URL } from "../../constants/config";
@@ -165,9 +165,9 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
     setIsSaving(true);
 
     try {
-      const visaType = formData.visaType && formData.visaType !== "Khác" ? formData.visaType : "";
+      const visaType = formData.visaType && formData.visaType !== "Khác" ? normalizeVisaType(formData.visaType) : "";
       const composedContent = visaType ? `${localName} - ${visaType}` : localName;
-      const payload = { ...formData, content: composedContent };
+      const payload = { ...formData, visaType, content: composedContent };
       await fetch(`${API_URL}/api/tasks/${formData.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },

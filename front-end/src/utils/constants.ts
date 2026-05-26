@@ -325,3 +325,52 @@ export const DEPT_TO_TEMPLATE_ID: Record<string, string> = {
   Marketing: "marketing",
   "Trợ lý giám đốc": "troly",
 };
+
+export const normalizeVisaType = (val: string | undefined | null): string => {
+  if (!val) return "";
+  const trimmed = val.trim().replace(/\s+/g, " ");
+  if (!trimmed) return "";
+
+  const lower = trimmed.toLowerCase();
+  
+  // 1. So khớp không phân biệt chữ hoa thường với VISA_SERVICES
+  const matchedService = VISA_SERVICES.find(
+    (v) => v.name.toLowerCase() === lower
+  );
+  if (matchedService) {
+    return matchedService.name;
+  }
+
+  // 2. Xử lý một số từ gõ sai/viết tắt/viết thường phổ biến
+  if (lower === "aewv" || lower === "aewv - new" || lower === "aewv-new") {
+    return "AEWV";
+  }
+  if (lower === "new zealand" || lower === "newzealand" || lower === "new zealand") {
+    return "New Zealand";
+  }
+  if (
+    lower === "chưa" ||
+    lower === "chưa biết" ||
+    lower === "kh chưa cung cấp" ||
+    lower === "chưa cung cấp"
+  ) {
+    return "KH chưa cung cấp";
+  }
+  if (lower === "úc" || lower === "462 úc" || lower === "462" || lower === "visa 462") {
+    return "Lao động visa 462 (Úc)";
+  }
+  if (lower === "400" || lower === "visa 400") {
+    return "Visa 400 (Úc)";
+  }
+
+  // 3. Dự phòng: Viết hoa chữ đầu của mỗi từ (Ví dụ: "na uy" -> "Na Uy")
+  return trimmed
+    .split(" ")
+    .map((w) => {
+      if (w.startsWith("(") && w.length > 2) {
+        return "(" + w.charAt(1).toUpperCase() + w.slice(2).toLowerCase();
+      }
+      return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+    })
+    .join(" ");
+};

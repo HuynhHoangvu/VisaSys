@@ -8,7 +8,7 @@ import {
   Textarea,
 } from "flowbite-react";
 import { type Task, type Employee } from "../../types";
-import { VISA_SERVICES, CUSTOMER_SOURCES } from "../../utils/constants";
+import { VISA_SERVICES, CUSTOMER_SOURCES, normalizeVisaType } from "../../utils/constants";
 
 interface CustomerModalProps {
   show: boolean;
@@ -115,7 +115,7 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
     } = formData;
 
     // Lấy tên diện visa cuối cùng (tự nhập hoặc chọn sẵn)
-    const finalService = service === "Khác" ? customService : service;
+    const finalService = normalizeVisaType(service === "Khác" ? customService : service);
 
     if (!name || !finalService || !phone) return;
 

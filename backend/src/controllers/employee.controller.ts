@@ -1,201 +1,63 @@
 import { Request, Response } from "express";
-import bcrypt from "bcryptjs";
-import { prisma } from "../../lib/prisma.js";
 import { getIO } from "../socket.js";
 import { asyncHandler } from "../middlewares/asyncHandler.js";
 import {
-  COMMISSION_RATE_MANAGER,
-  COMMISSION_RATE_SALE,
-  COMMISSION_RATE_DEFAULT,
-  EMPLOYEE_CODE_PREFIX,
-} from "../constants/index.js";
-import { isSaleManager } from "../services/accessResolution.js";
-
-const resolveCommissionRate = (role: string): number => {
-  if (role === "Trưởng phòng") return COMMISSION_RATE_MANAGER;
-  if (role.includes("Sale")) return COMMISSION_RATE_SALE;
-  return COMMISSION_RATE_DEFAULT;
-};
-
-/**
- * Generates the next sequential employee code (e.g. NV001, NV002).
- * Scans all existing codes, finds the highest numeric suffix, and increments it.
- * This is gap-safe: deleted employees do not cause number reuse.
- */
-const generateEmployeeCode = async (): Promise<string> => {
-  const all = await prisma.employee.findMany({ select: { employeeCode: true } });
-  const max = all.reduce((acc, e) => {
-    const n = parseInt(e.employeeCode.replace(EMPLOYEE_CODE_PREFIX, ""), 10);
-    return isNaN(n) ? acc : Math.max(acc, n);
-  }, 0);
-  return `${EMPLOYEE_CODE_PREFIX}${String(max + 1).padStart(3, "0")}`;
-};
+  getEmployeesService,
+  getEmployeesBasicService,
+  createEmployeeService,
+  updateEmployeeService,
+  deleteEmployeeService,
+} from "../services/employee.service.js";
 
 export const getEmployees = asyncHandler(async (req: Request, res: Response) => {
   const todayStr = new Date().toLocaleDateString("vi-VN");
   const user = (req.session as any).user;
-  const perms: string[] = Array.isArray(user?.permissions) ? user.permissions : [];
-  const hasReadFull = perms.includes("hr.registry.read");
-  const hasSelfRead = perms.includes("hr.registry.read_self") || perms.includes("hr.attendance.self");
-
-  let whereClause: Record<string, any> = {};
-  if (!hasReadFull && hasSelfRead && user?.id) {
-    whereClause = { id: user.id };
-  } else if (!hasReadFull && !hasSelfRead) {
-    return res.status(403).json({ error: "Bạn không có quyền thực hiện thao tác này" });
-  } else if (hasReadFull && user?.department === "Sale") {
-    // Trưởng phòng Sale xem được tất cả NV Sale, NV Sale thường chỉ xem của chính mình
-    if (isSaleManager(user)) {
-      whereClause = { department: { name: "Sale" } };
-    } else {
-      whereClause = { id: user.id };
+  
+  try {
+    const employees = await getEmployeesService(user, todayStr);
+    res.json(employees);
+  } catch (error: any) {
+    if (error.message === "Bạn không có quyền thực hiện thao tác này") {
+      return res.status(403).json({ error: error.message });
     }
+    throw error;
   }
-
-  const employees = await prisma.employee.findMany({
-    where: whereClause,
-    include: {
-      department: true,
-      attendanceRecords: { orderBy: { createdAt: "desc" } },
-      salesRecords: { orderBy: { createdAt: "desc" }, take: 50 },
-    },
-    orderBy: { createdAt: "asc" },
-  });
-
-  res.json(
-    employees.map((emp) => ({
-      id: emp.id,
-      employeeCode: emp.employeeCode,
-      name: emp.name,
-      email: emp.email,
-      role: emp.role,
-      baseSalary: emp.baseSalary,
-      commissionRate: emp.commissionRate,
-      department: emp.department?.name || "Chưa phân bổ / Khác",
-      todayStatus: emp.attendanceRecords.find(r => r.date === todayStr)?.status ?? "Chưa Check-in",
-      attendanceRecords: emp.attendanceRecords,
-      salesRecords: emp.salesRecords,
-    }))
-  );
 });
 
-export const getEmployeesBasic = asyncHandler(async (req: Request, res: Response) => {
-  const employees = await prisma.employee.findMany({
-    select: {
-      id: true,
-      employeeCode: true,
-      name: true,
-      role: true,
-      department: {
-        select: {
-          name: true,
-        },
-      },
-    },
-    orderBy: { name: "asc" },
-  });
-
-  res.json(
-    employees.map((emp) => ({
-      id: emp.id,
-      employeeCode: emp.employeeCode,
-      name: emp.name,
-      role: emp.role,
-      department: emp.department?.name || "Chưa phân bổ / Khác",
-    }))
-  );
+export const getEmployeesBasic = asyncHandler(async (_req: Request, res: Response) => {
+  const employees = await getEmployeesBasicService();
+  res.json(employees);
 });
 
 export const createEmployee = asyncHandler(async (req: Request, res: Response) => {
-  const { name, email, password, department, role, baseSalary } = req.body as {
-    name: string; email: string; password: string; department: string; role: string; baseSalary: string;
-  };
-
-  const existing = await prisma.employee.findUnique({ where: { email } });
-  if (existing) {
-    return res.status(400).json({ error: "Email này đã tồn tại trong hệ thống!" });
+  try {
+    const newEmployee = await createEmployeeService(req.body);
+    res.status(201).json(newEmployee);
+  } catch (error: any) {
+    if (error.message === "Email này đã tồn tại trong hệ thống!") {
+      return res.status(400).json({ error: error.message });
+    }
+    throw error;
   }
-
-  const deptName = typeof department === "string" ? department.trim() : "";
-  const dept = deptName
-    ? await prisma.department.findFirst({ where: { name: deptName } })
-    : null;
-  const employeeCode = await generateEmployeeCode();
-  const hashedPassword = await bcrypt.hash(password || "123456", 10);
-
-  const newEmployee = await prisma.employee.create({
-    data: {
-      employeeCode,
-      name,
-      email,
-      password: hashedPassword,
-      role,
-      departmentId: dept?.id || null,
-      baseSalary: baseSalary ? parseFloat(baseSalary) : 5_000_000,
-      commissionRate: resolveCommissionRate(role),
-    },
-    include: { department: true },
-  });
-
-  res.status(201).json({
-    ...newEmployee,
-    department: newEmployee.department?.name || "Chưa phân bổ",
-  });
 });
 
 export const updateEmployee = asyncHandler(async (req: Request, res: Response) => {
   const id = req.params.id as string;
-  const { name, email, password, department, role, baseSalary } = req.body as {
-    name: string; email: string; password: string; department: string; role: string; baseSalary: string;
-  };
-
-  const conflicting = await prisma.employee.findFirst({
-    where: { email, id: { not: id } },
-  });
-  if (conflicting) {
-    return res.status(400).json({ error: "Email này đã được sử dụng bởi nhân viên khác!" });
+  try {
+    const updated = await updateEmployeeService(id, req.body);
+    getIO().emit("data_changed");
+    res.json(updated);
+  } catch (error: any) {
+    if (error.message === "Email này đã được sử dụng bởi nhân viên khác!") {
+      return res.status(400).json({ error: error.message });
+    }
+    throw error;
   }
-
-  const deptName = typeof department === "string" ? department.trim() : "";
-  const dept = deptName
-    ? await prisma.department.findFirst({ where: { name: deptName } })
-    : null;
-
-  const updateData: any = {
-    name,
-    email,
-    role,
-    departmentId: dept?.id || null,
-    baseSalary: baseSalary ? parseFloat(baseSalary) : 5_000_000,
-    commissionRate: resolveCommissionRate(role),
-  };
-
-  if (password?.trim()) {
-    updateData.password = await bcrypt.hash(password, 10);
-  }
-
-  const updated = await prisma.employee.update({
-    where: { id },
-    data: updateData,
-    include: { department: true },
-  });
-  getIO().emit("data_changed");
-  res.json({
-    id: updated.id,
-    employeeCode: updated.employeeCode,
-    name: updated.name,
-    email: updated.email,
-    role: updated.role,
-    baseSalary: updated.baseSalary,
-    commissionRate: updated.commissionRate,
-    department: updated.department?.name || "Chưa phân bổ / Khác",
-    departmentId: updated.departmentId,
-  });
 });
 
 export const deleteEmployee = asyncHandler(async (req: Request, res: Response) => {
   const id = req.params.id as string;
-  await prisma.employee.delete({ where: { id } });
+  await deleteEmployeeService(id);
   getIO().emit("data_changed");
   res.json({ message: "Xóa thành công" });
 });

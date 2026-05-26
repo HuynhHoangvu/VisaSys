@@ -15,6 +15,7 @@ import {
   getRequirementsList,
   getLaborRequirements,
   getStudyAbroadRequirements,
+  normalizeVisaType,
 } from "../../utils/constants";
 import { API_URL } from "../../constants/config";
 
@@ -205,9 +206,9 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
       .sort()
       .map((name) => ({ value: name, label: name }));
 
-    const visaTypes = [...new Set(allTasks.map((t) => t.visaType).filter(Boolean))]
+    const visaTypes = [...new Set(allTasks.map((t) => normalizeVisaType(t.visaType)).filter(Boolean))]
       .sort()
-      .map((v) => ({ value: v!, label: v! }));
+      .map((v) => ({ value: v, label: v }));
 
     return { sales, visaTypes };
   }, [boardData, procColumns]);
@@ -227,7 +228,7 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
       }
 
       if (filterSale !== "all" && task.assignedTo !== filterSale) return false;
-      if (filterVisa !== "all" && task.visaType !== filterVisa) return false;
+      if (filterVisa !== "all" && normalizeVisaType(task.visaType) !== normalizeVisaType(filterVisa)) return false;
 
       if (filterProgress !== "all") {
         const { percent } = getDocProgress(task);
@@ -581,7 +582,7 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
                                         <div className="flex flex-nowrap gap-1 mb-2 overflow-hidden">
                                           {(task.visaType || task.content.split(" - ")[1]) && (
                                             <p className="text-[9px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100 truncate max-w-22.5 shrink-0">
-                                              {task.visaType || task.content.split(" - ")[1]}
+                                              {normalizeVisaType(task.visaType || task.content.split(" - ")[1])}
                                             </p>
                                           )}
                                           {task.jobType && (
@@ -729,7 +730,7 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
 
                         <td className="px-4 py-3">
                           <span className="text-[11px] font-bold px-2 py-0.5 rounded border bg-indigo-50 text-indigo-600 border-indigo-100">
-                            {task.visaType || task.content.split(" - ")[1] || "—"}
+                            {normalizeVisaType(task.visaType || task.content.split(" - ")[1]) || "—"}
                           </span>
                         </td>
 

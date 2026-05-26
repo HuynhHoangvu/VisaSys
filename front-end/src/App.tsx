@@ -12,12 +12,13 @@ import {
 import Sidebar from "./components/layout/Sidebar";
 import Header from "./components/layout/Header";
 import Login from "./components/auth/Login";
+import ReauthModal from "./components/auth/ReauthModal";
 import PrivateRoute, {
   accessBossReport,
   accessMainApp,
   accessProcessingModule,
 } from "./router/PrivateRoute";
-import api from "./services/api";
+import api, { authEvents } from "./services/api";
 import { defaultHomePath } from "./utils/access";
 import CrmPage from "./pages/CrmPage";
 import BossPage from "./pages/BossPage";
@@ -126,6 +127,24 @@ const DefaultRedirect: React.FC = () => {
 };
 
 const App: React.FC = () => {
+  const [showReauthModal, setShowReauthModal] = useState(false);
+
+  useEffect(() => {
+    // Subscribe to auth events (khi token hết hạn)
+    const unsubscribe = authEvents.subscribe(() => {
+      setShowReauthModal(true);
+    });
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
+  const handleReauthSuccess = (_user: AuthUser) => {
+    setShowReauthModal(false);
+    // Reload để cập nhật user data
+    window.location.reload();
+  };
+
   return (
     <BrowserRouter>
       <Toaster position="bottom-right" toastOptions={{ duration: 4000 }} />
@@ -162,6 +181,9 @@ const App: React.FC = () => {
         {/* Fallback */}
         <Route path="*" element={<DefaultRedirect />} />
       </Routes>
+      
+      {/* Popup đăng nhập lại khi token hết hạn */}
+      <ReauthModal isOpen={showReauthModal} onSuccess={handleReauthSuccess} />
     </BrowserRouter>
   );
 };
