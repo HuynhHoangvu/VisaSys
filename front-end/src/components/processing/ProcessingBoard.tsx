@@ -202,9 +202,16 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
       .map((id) => boardData.tasks[id])
       .filter(Boolean);
 
-    const sales = [...new Set(allTasks.map((t) => t.assignedTo).filter(Boolean))]
-      .sort()
-      .map((name) => ({ value: name, label: name }));
+    // Kiểm tra có task nào chưa giao không
+    const hasUnassigned = allTasks.some((t) => !t.assignedTo);
+
+    const sales = [
+      // Thêm option "Chưa giao" nếu có task chưa giao
+      ...(hasUnassigned ? [{ value: "__unassigned__", label: "⚠️ Chưa giao" }] : []),
+      ...[...new Set(allTasks.map((t) => t.assignedTo).filter(Boolean))]
+        .sort()
+        .map((name) => ({ value: name, label: name })),
+    ];
 
     const visaTypes = [...new Set(allTasks.map((t) => normalizeVisaType(t.visaType)).filter(Boolean))]
       .sort()
@@ -227,7 +234,14 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
           return false;
       }
 
-      if (filterSale !== "all" && task.assignedTo !== filterSale) return false;
+      if (filterSale !== "all") {
+        // Xử lý filter "Chưa giao"
+        if (filterSale === "__unassigned__") {
+          if (task.assignedTo) return false;
+        } else {
+          if (task.assignedTo !== filterSale) return false;
+        }
+      }
       if (filterVisa !== "all" && normalizeVisaType(task.visaType) !== normalizeVisaType(filterVisa)) return false;
 
       if (filterProgress !== "all") {
@@ -579,6 +593,13 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
                                           {task.content.split(" - ")[0]}
                                         </h4>
 
+                                        {/* Hiển thị giá tiền */}
+                                        <div className="flex items-center gap-1 mb-1.5">
+                                          <span className="text-[10px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded border border-green-100">
+                                            {task.price || "Chưa báo giá"}
+                                          </span>
+                                        </div>
+
                                         <div className="flex flex-nowrap gap-1 mb-2 overflow-hidden">
                                           {(task.visaType || task.content.split(" - ")[1]) && (
                                             <p className="text-[9px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100 truncate max-w-22.5 shrink-0">
@@ -608,8 +629,8 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
 
                                         <div className="flex items-center justify-between border-t border-gray-100 pt-2 gap-1 mt-1">
                                           <span
-                                            className="text-[9px] font-bold text-gray-700 bg-gray-50 px-1.5 py-1 rounded border border-gray-200 truncate max-w-11.25 shrink-0 text-center"
-                                            title={task.assignedTo || "Trống"}
+                                            className="text-[9px] font-bold text-gray-700 bg-gray-50 px-1.5 py-1 rounded border border-gray-200 truncate max-w-16 shrink-0 text-center cursor-help"
+                                            title={`Sale phụ trách: ${task.assignedTo || "Chưa giao"}`}
                                           >
                                             {task.assignedTo?.split(" ").pop() ?? "Trống"}
                                           </span>
@@ -685,7 +706,7 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
             <table className="w-full text-sm border-collapse">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-200">
-                  {["Khách hàng", "Sale", "Loại Visa", "Tiến độ giấy tờ", "Trạng thái (Cột)", "Chuyển cột"].map(
+                  {["Khách hàng", "Sale", "Loại Visa", "Chi phí", "Tiến độ giấy tờ", "Trạng thái (Cột)", "Chuyển cột"].map(
                     (col) => (
                       <th
                         key={col}
@@ -700,7 +721,7 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
               <tbody className="divide-y divide-gray-100">
                 {filteredTasks.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-10 text-center text-gray-400 italic text-sm">
+                    <td colSpan={7} className="px-4 py-10 text-center text-gray-400 italic text-sm">
                       Không tìm thấy hồ sơ phù hợp
                     </td>
                   </tr>
@@ -731,6 +752,12 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
                         <td className="px-4 py-3">
                           <span className="text-[11px] font-bold px-2 py-0.5 rounded border bg-indigo-50 text-indigo-600 border-indigo-100">
                             {normalizeVisaType(task.visaType || task.content.split(" - ")[1]) || "—"}
+                          </span>
+                        </td>
+
+                        <td className="px-4 py-3">
+                          <span className="text-xs font-bold text-green-600">
+                            {task.price || "—"}
                           </span>
                         </td>
 

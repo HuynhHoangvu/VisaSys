@@ -34,6 +34,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
   onUpdateCustomer,
   currentUser,
   staffList = [],
+  onPingSale,
 }) => {
   const [formData, setFormData] = useState<Task | null>(null);
   const [localName, setLocalName] = useState("");
@@ -236,18 +237,35 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
 
               <label className="flex items-center gap-1.5 text-xs text-gray-400 font-medium">
                 Sale:
-                <select
-                  value={formData.assignedTo || ""}
-                  onChange={(e) => handleChange("assignedTo", e.target.value)}
-                  className="border-0 border-b border-dashed border-gray-300 bg-transparent p-0 text-xs font-semibold text-gray-700 focus:ring-0 focus:border-orange-400 outline-none cursor-pointer"
-                >
-                  <option value="">-- Chọn --</option>
-                  {(Array.isArray(staffList) ? staffList : []).map((staff) => (
-                    <option key={staff.id} value={staff.name}>
-                      {staff.name} - {staff.employeeCode}
-                    </option>
-                  ))}
-                </select>
+                {formData.assignedTo ? (
+                  <span className="flex items-center gap-1.5">
+                    <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-200">
+                      {formData.assignedTo}
+                    </span>
+                    {onPingSale && (
+                      <button
+                        onClick={() => onPingSale(formData)}
+                        className="text-[10px] font-bold text-orange-600 hover:text-white bg-orange-100 hover:bg-orange-500 px-2 py-0.5 rounded-full border border-orange-200 transition-colors"
+                        title="Gửi yêu cầu bổ sung hồ sơ cho Sale"
+                      >
+                        📢 Báo Sale
+                      </button>
+                    )}
+                  </span>
+                ) : (
+                  <select
+                    value={formData.assignedTo || ""}
+                    onChange={(e) => handleChange("assignedTo", e.target.value)}
+                    className="border-0 border-b border-dashed border-gray-300 bg-transparent p-0 text-xs font-semibold text-gray-700 focus:ring-0 focus:border-orange-400 outline-none cursor-pointer"
+                  >
+                    <option value="">-- Chọn --</option>
+                    {staffList.map((staff) => (
+                      <option key={staff.id} value={staff.name}>
+                        {staff.name} - {staff.employeeCode}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </label>
             </div>
           </div>

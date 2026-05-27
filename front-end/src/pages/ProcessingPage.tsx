@@ -4,7 +4,9 @@ import socket from "../services/socket";
 import ProcessingBoard from "../components/processing/ProcessingBoard";
 import CustomerDetailModal from "../components/crm/CustomerDetailModal";
 import DocumentModal from "../components/crm/DocumentModal";
-import type { BoardData, AuthUser } from "../types";
+import type { BoardData, AuthUser, Employee, Task } from "../types";
+import toast from "react-hot-toast";
+import { API_URL } from "../constants/config";
 
 const ProcessingPage: React.FC = () => {
   const currentUser: AuthUser = JSON.parse(localStorage.getItem("flyvisa_user")!);
@@ -13,6 +15,7 @@ const ProcessingPage: React.FC = () => {
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isDocumentModalOpen, setIsDocumentModalOpen] = useState(false);
+  const [staffList, setStaffList] = useState<Employee[]>([]);
 
   useEffect(() => {
     const fetchBoardData = async () => {
@@ -23,10 +26,54 @@ const ProcessingPage: React.FC = () => {
         console.error("Lỗi:", error);
       }
     };
+
+    const fetchStaffList = async () => {
+      try {
+        const { data } = await api.get<Employee[]>("/api/employees");
+        setStaffList(data);
+      } catch (error) {
+        console.error("Lỗi tải danh sách nhân viên:", error);
+      }
+    };
+
     void fetchBoardData();
+    void fetchStaffList();
     socket.on("data_changed", fetchBoardData);
     return () => { socket.off("data_changed", fetchBoardData); };
   }, []);
+
+  const handlePingSale = async (task: Task) => {
+    if (!task.assignedTo) {
+      toast.error("Khách hàng chưa có Sale phụ trách!");
+      return;
+    }
+
+    try {
+      // Tạo activity thông báo
+      const activityData = {
+        taskId: task.id,
+        type: "Yêu cầu",
+        summary: `📢 Yêu cầu bổ sung hồ sơ từ phòng Xử lý (${currentUser.name})`,
+        assignee: currentUser.name,
+        status: "Chờ xử lý",
+        completed: false,
+      };
+
+      const response = await fetch(`${API_URL}/api/activities`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(activityData),
+      });
+
+      if (!response.ok) throw new Error("Lỗi gửi yêu cầu");
+
+      toast.success(`Đã gửi yêu cầu bổ sung hồ sơ cho Sale: ${task.assignedTo}`);
+      socket.emit("data_changed");
+    } catch (error) {
+      console.error(error);
+      toast.error("Lỗi gửi yêu cầu!");
+    }
+  };
 
   return (
     <>
@@ -44,6 +91,8 @@ const ProcessingPage: React.FC = () => {
         onClose={() => setIsDetailOpen(false)}
         task={activeTaskId ? boardData.tasks[activeTaskId] : null}
         currentUser={currentUser}
+        staffList={staffList}
+        onPingSale={handlePingSale}
         onUpdateCustomer={(updated) => {
           setBoardData((prev) => ({
             ...prev,

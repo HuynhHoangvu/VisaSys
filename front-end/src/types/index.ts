@@ -260,6 +260,7 @@ export interface CustomerDetailModalProps {
   onUpdateCustomer?: (updatedTask: Task) => void;
   currentUser?: AuthUser | null;
   staffList?: Employee[];
+  onPingSale?: (task: Task) => void;
 }
 
 export interface SidebarProps {
