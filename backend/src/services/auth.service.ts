@@ -1,6 +1,16 @@
+import bcrypt from "bcryptjs";
 import { prisma } from "../../lib/prisma.js";
 import { buildSessionUserPayload } from "./accessResolution.js";
 import { signRefreshToken, verifyRefreshToken } from "../utils/jwtTokens.js";
+
+export const verifyPassword = async (inputPassword: string, dbPassword?: string): Promise<boolean> => {
+  if (!dbPassword) return false;
+  if (dbPassword.startsWith("$2b$") || dbPassword.startsWith("$2a$")) {
+    return bcrypt.compare(inputPassword, dbPassword);
+  }
+  return inputPassword === dbPassword;
+};
+
 
 export const loginService = async (email?: string, password?: string) => {
   if (!email || !password) {
@@ -16,7 +26,8 @@ export const loginService = async (email?: string, password?: string) => {
     throw new Error("Email không tồn tại!");
   }
 
-  if (password !== employee.password) {
+  const isMatch = await verifyPassword(password, employee.password);
+  if (!isMatch) {
     throw new Error("Mật khẩu không chính xác!");
   }
 
@@ -71,7 +82,8 @@ export const changePasswordService = async (employeeCode?: string, oldPassword?:
     throw new Error("Không tìm thấy nhân viên");
   }
 
-  if (employee.password !== oldPassword) {
+  const isMatch = await verifyPassword(oldPassword, employee.password);
+  if (!isMatch) {
     throw new Error("Mật khẩu hiện tại không đúng");
   }
 
@@ -79,8 +91,52 @@ export const changePasswordService = async (employeeCode?: string, oldPassword?:
     throw new Error("Mật khẩu mới phải có ít nhất 6 ký tự");
   }
 
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
   await prisma.employee.update({
     where: { employeeCode },
-    data: { password: newPassword },
+    data: { password: hashedPassword },
   });
 };
+
+export const requestForgotPasswordService = async (email?: string) => {
+  if (!email) {
+    throw new Error("Vui lòng cung cấp email!");
+  }
+
+  const employee = await prisma.employee.findUnique({
+    where: { email },
+  });
+
+  if (!employee) {
+    throw new Error("Email không tồn tại trên hệ thống!");
+  }
+
+  // Tìm danh sách Admin/Ban Giám đốc nhận thông báo
+  const admins = await prisma.employee.findMany({
+    where: {
+      OR: [
+        { role: "Giám đốc" },
+        { department: { name: "Ban Giám đốc" } },
+      ],
+    },
+    select: { name: true },
+  });
+
+  const receivers = [...new Set(admins.map((a) => a.name).filter(Boolean))];
+  if (receivers.length === 0) {
+    receivers.push("Admin"); // Fallback
+  }
+
+  const message = `Nhân viên ${employee.name} (${employee.email}) yêu cầu khôi phục mật khẩu.`;
+
+  const newNotif = await prisma.notification.create({
+    data: {
+      sender: employee.name,
+      message,
+      receiver: receivers,
+    },
+  });
+
+  return { newNotif, receivers, message };
+};
+

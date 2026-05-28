@@ -11,7 +11,10 @@ import {
   refreshSessionService,
   getCurrentUserService,
   changePasswordService,
+  requestForgotPasswordService,
 } from "../services/auth.service.js";
+import { getIO } from "../socket.js";
+
 
 /**
  * Authenticate an employee session.
@@ -157,3 +160,22 @@ export const changePassword = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Lỗi server" });
   }
 };
+
+export const forgotPassword = async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+    const { message, receivers } = await requestForgotPasswordService(email);
+
+    // Gửi thông báo socket real-time cho các Admin đang online
+    getIO().emit("new_notification", { message, receivers });
+
+    res.json({ message: "Yêu cầu khôi phục mật khẩu đã được gửi đến Admin. Vui lòng liên hệ Admin để nhận mật khẩu mới!" });
+  } catch (error: any) {
+    if (["Vui lòng cung cấp email!", "Email không tồn tại trên hệ thống!"].includes(error.message)) {
+      return res.status(400).json({ error: error.message });
+    }
+    console.error("Forgot password error:", error);
+    res.status(500).json({ error: "Lỗi server" });
+  }
+};
+
