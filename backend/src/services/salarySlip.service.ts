@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import os from "os";
+import { fileURLToPath } from "url";
 import { execSync } from "child_process";
 import { prisma } from "../../lib/prisma.js";
 import {
@@ -99,10 +100,9 @@ export function buildEmployeePayrollData(employees: any[], monthYear: string) {
 }
 
 function getScriptPath() {
-  let scriptPath = path.join(process.cwd(), "src/scripts/gen_salary.py");
-  if (!fs.existsSync(scriptPath)) {
-    scriptPath = path.join(process.cwd(), "scripts/gen_salary.py");
-  }
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+  const scriptPath = path.resolve(__dirname, "../scripts/gen_salary.py");
   if (!fs.existsSync(scriptPath)) {
     throw new Error("Không tìm thấy file generator (gen_salary.py)");
   }

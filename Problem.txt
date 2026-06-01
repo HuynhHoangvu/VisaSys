@@ -1,0 +1,213 @@
+ Dựa trên phân tích code, tôi sẽ đưa ra BÁO CÁO TỔNG QUAN BẢO 
+  MẬT VÀ KHẢ NĂNG MỞ RỘNG:
+
+  ---
+
+  🔒 BÁO CÁO BẢO MẬT & KHẢ NĂNG MỞ RỘNG
+
+  📊 TỔNG QUAN HỆ THỐNG
+
+
+  ┌───────────────┬─────────────────────────────────┐
+  │ Thành phần    │ Công nghệ                       │
+  ├───────────────┼─────────────────────────────────┤
+  │ Backend       │ Node.js 22 + Express 5 + Prisma │
+  │ Database      │ PostgreSQL 15                   │
+  │ Session Store │ connect-pg-simple (PostgreSQL)  │
+  │ Auth          │ Session + JWT Refresh Token     │
+  │ File Storage  │ Google Cloud Storage            │
+  └───────────────┴─────────────────────────────────┘
+
+  ---
+
+  🚨 VẤN ĐỀ BẢO MẬT NGHIÊM TRỌNG
+
+  1. SECRET KEY YẾU (CRITICAL)
+
+  1 SESSION_SECRET=
+    "flyvisa-secret-key-2026-change-in-production"
+  - ❌ Secret key hardcoded trong .env
+  - ❌ Dễ đoán, không random
+  - ❌ Có thể bị lộ trong git history
+
+  2. DATABASE CREDENTIALS YẾU
+
+  1 POSTGRES_USER: admin
+  2 POSTGRES_PASSWORD: admin123
+  - ❌ Password đơn giản, dễ đoán
+  - ❌ Expose qua port 5435
+
+  3. GCS PRIVATE KEY TRONG FILE .ENV
+  - ❌ Private key GCS lưu trực tiếp trong .env
+  - ❌ Nếu lộ file => attacker có toàn quyền truy cập Google Cloud
+    Storage
+
+  4. KHÔNG CÓ HTTPS TRONG DEVELOPMENT
+  - ❌ Cookie secure: false trong dev
+  - ❌ Dễ bị Man-in-the-Middle attack
+
+  5. RATE LIMITING CHƯA ĐỦ MẠNH
+
+  1 max: 500, // 15 phút - quá cao
+  2 max: 20,  // login - OK nhưng chưa có CAPTCHA
+
+  6. KHÔNG CÓ INPUT SANITIZATION
+  - ❌ Không thấy sanitize HTML/SQL injection protection
+  - ❌ Zod chỉ validate, không sanitize
+
+  7. SESSION FIXATION RISK
+  - ❌ Không regenerate session ID sau login
+
+  8. CORS CÓ THỂ BỊ MISCONFIGURED
+
+  1 if (!origin || allowed.includes(origin)) callback(null
+    , true);
+  - ❌ !origin cho phép request không có origin
+
+  ---
+
+  ⚡ VẤN ĐỀ KHI 10,000 NGƯỜI SỬ DỤNG ĐỒNG LÚC
+
+  1. DATABASE CONNECTION POOL
+  - ❌ Không thấy cấu hình connection pool
+  - ❌ Mặc định Prisma: 10 connections → SẼ BỊ OVERLOAD
+
+  2. SESSION STORE BOTTLENECK
+  - ❌ Mỗi request đều query PostgreSQL để check session
+  - ❌ Không có caching layer (Redis)
+
+  3. SINGLE INSTANCE
+  - ❌ Docker compose chỉ chạy 1 backend container
+  - ❌ Không có load balancing
+
+  4. FILE UPLOAD LIMITS
+
+  1 limit: "1000mb" // QUÁ LỚN - DDoS risk
+  - ❌ 1GB body limit = dễ bị memory exhaustion
+
+  5. KHÔNG CÓ CDN
+  - ❌ Static files serve trực tiếp từ backend
+  - ❌ Không có caching cho static assets
+
+  ---
+
+  ✅ ĐIỂM TÍCH CỰC HIỆN CÓ
+
+
+  ┌──────────────────────────┬──────────────────────────┐
+  │ Feature                  │ Status                   │
+  ├──────────────────────────┼──────────────────────────┤
+  │ Helmet.js                │ ✅ Đã có                 │
+  │ Rate Limiting            │ ✅ Đã có (cần cải thiện) │
+  │ bcrypt password hashing  │ ✅ Đã có                 │
+  │ HttpOnly cookies         │ ✅ Đã có                 │
+  │ JWT Refresh Token        │ ✅ Đã có                 │
+  │ Role-based Authorization │ ✅ Đã có                 │
+  │ Permission-based Access  │ ✅ Đã có                 │
+  └──────────────────────────┴──────────────────────────┘
+
+  ---
+
+  🛠️ GIẢI PHÁP ĐỀ XUẤT
+
+  GIAI ĐOẠN 1: BẢO MẬT CƠ BẢN (Ưu tiên cao)
+
+
+  ┌─┬─────────────────┬──────────────────────────────────┐
+  │  │ Giải pháp       │ Mô tả                            │
+  ├─┼─────────────────┼──────────────────────────────────┤
+  │  │ **Environment ... │ Dùng AWS Secrets Manager / Va... │
+  │  │ Strong Secrets  │ Generate random 64-char secre... │
+  │  │ **Database Sec... │ Mật khẩu phức tạp, không expo... │
+  │  │ **HTTPS Everyw... │ SSL/TLS certificate, force HTTPS │
+  │  │ **Input Saniti... │ Thêm express-mongo-sanitize h... │
+  │  │ **Session Rege... │ Regenerate session ID sau log... │
+  └─┴─────────────────┴──────────────────────────────────┘
+
+
+  GIAI ĐOẠN 2: SCALABILITY (Cho 10,000 users)
+
+
+  ┌──┬────────────────┬───────────────────────────────────┐
+  │  │ Giải pháp      │ Mô tả                             │
+  ├──┼────────────────┼───────────────────────────────────┤
+  │  │ **Redis Sessi... │ Thay PostgreSQL session bằng R... │
+  │  │ **Connection ... │ Cấu hình Prisma pool: `{ pool:... │
+  │  │ Load Balancer  │ Nginx / HAProxy / Cloud Load B... │
+  │  │ **Horizontal ... │ Chạy 3-5 backend containers       │
+  │  │ **CDN cho Sta... │ CloudFlare / AWS CloudFront       │
+  │  │ **Database Re... │ 1 write + 2 read replicas         │
+  └──┴────────────────┴───────────────────────────────────┘
+
+
+  GIAI ĐOẠN 3: BẢO MẬT NÂNG CAO
+
+
+  ┌──┬──────────────────────────┬───────────────────────┐
+  │  │ Giải pháp                │ Mô tả                 │
+  ├──┼──────────────────────────┼───────────────────────┤
+  │  │ **WAF (Web Application ... │ CloudFlare WAF / A... │
+  │  │ DDoS Protection          │ CloudFlare / AWS S... │
+  │  │ CAPTCHA                  │ reCAPTCHA v3 cho l... │
+  │  │ 2FA/MFA                  │ TOTP hoặc SMS veri... │
+  │  │ Audit Logging            │ Log mọi action nhạ... │
+  │  │ Security Headers         │ CSP, HSTS, X-Frame... │
+  └──┴──────────────────────────┴───────────────────────┘
+
+  ---
+
+  📐 KIẾN TRÚC ĐỀ XUẤT CHO 10,000 USERS
+
+   1                     ┌─────────────────┐
+   2                     │   CloudFlare    │
+   3                     │  (CDN + WAF)    │
+   4                     └────────┬────────┘
+   5                              │
+   6                     ┌────────▼────────┐
+   7                     │  Load Balancer  │
+   8                     │    (Nginx)      │
+   9                     └────────┬────────┘
+  10                              │
+  11            ┌─────────────────┼─────────────────┐
+  12            │                 │                 │
+  13     ┌──────▼──────┐   ┌──────▼──────┐
+     ┌──────▼──────┐
+  14     │  Backend 1  │   │  Backend 2  │   │  Backend 3
+     │
+  15     │  (Node.js)  │   │  (Node.js)  │   │  (Node.js)
+     │
+  16     └──────┬──────┘   └──────┬──────┘
+     └──────┬──────┘
+  17            │                 │                 │
+  18            └─────────────────┼─────────────────┘
+  19                              │
+  20               ┌──────────────┼──────────────┐
+  21               │              │              │
+  22        ┌──────▼──────┐ ┌─────▼─────┐ ┌──────▼──────┐
+  23        │    Redis    │ │  Postgres │ │     GCS     │
+  24        │  (Session)  │ │   (Data)  │ │  (Files)    │
+  25        └─────────────┘ └───────────┘ └─────────────┘
+
+  ---
+
+  📋 ƯU TIÊN THỰC HIỆN
+
+
+  ┌───────┬────────────────────────────┬───────┬───────┐
+  │ Pr... │ Task                       │ Ef... │ Im... │
+  ├───────┼────────────────────────────┼───────┼───────┤
+  │ 🔴 P0 │ Đổi secrets, không comm... │ 1h    │ Cr... │
+  │ 🔴 P0 │ HTTPS trong production     │ 2h    │ Cr... │
+  │ 🟠 P1 │ Redis session store        │ 4h    │ High  │
+  │ 🟠 P1 │ Connection pool config     │ 1h    │ High  │
+  │ 🟠 P1 │ Rate limiting mạnh hơn     │ 2h    │ High  │
+  │ 🟡 P2 │ Load balancer + horizon... │ 1-... │ Me... │
+  │ 🟡 P2 │ CDN cho static files       │ 4h    │ Me... │
+  │ 🟢 P3 │ WAF + DDoS protection      │ 1 day │ Me... │
+  │ 🟢 P3 │ 2FA authentication         │ 2-... │ Me... │
+  └───────┴────────────────────────────┴───────┴───────┘
+
+  ---
+
+  Bạn muốn tôi đi sâu vào chi tiết giải pháp nào hoặc bắt đầu
+  implement ngay?
