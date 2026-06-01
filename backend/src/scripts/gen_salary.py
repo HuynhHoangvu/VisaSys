@@ -650,7 +650,7 @@ def generate_summary_excel(data, output_path):
             c.number_format = NUM
         ws.row_dimensions[r].height = 16
 
-    TR = DS + len(grouped_employees)
+    TR = DS + len(employees)
     style_merge(ws, f'A{TR}:C{TR}', 'TONG CONG', bold=True, size=10, h='center', fill=ORANGE)
     for col_idx in range(4, 26):
         col = get_column_letter(col_idx)
