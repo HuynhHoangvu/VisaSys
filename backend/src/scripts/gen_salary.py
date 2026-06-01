@@ -129,13 +129,12 @@ def generate(data, output_path):
     it.setStyle(TableStyle([('BOX', (0, 0), (-1, -1), 0.5, colors.black), ('GRID', (0, 0), (-1, -1), 0.3, colors.grey), ('SPAN', (1, 2), (3, 2)), ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'), ('TOPPADDING', (0, 0), (-1, -1), 4), ('BOTTOMPADDING', (0, 0), (-1, -1), 4), ('LEFTPADDING', (0, 0), (-1, -1), 5)]))
     story.append(it)
     work_dates = data.get('workDates') or []
-    if work_dates:
-        ds = ', '.join(str(x) for x in work_dates)
-        if len(ds) > 500:
-            ds = ds[:497] + '...'
-        story.append(Spacer(1, 2*mm))
-        story.append(pb("Chi tiet ngay di lam trong thang:", size=8, align=0))
-        story.append(p(ds, size=7, align=0))
+    ds = ', '.join(str(x) for x in work_dates) if work_dates else '(Khong co)'
+    if len(ds) > 500:
+        ds = ds[:497] + '...'
+    story.append(Spacer(1, 2*mm))
+    story.append(pb("Chi tiet ngay di lam trong thang:", size=8, align=0))
+    story.append(p(ds, size=7, align=0))
     story.append(Spacer(1, 3*mm))
 
     def row(s1, l1, v1, s2='', l2='', v2=''):
@@ -451,13 +450,12 @@ def _add_slip_sheets(wb, employees, month_text):
 
         current_row = 11
         wdates_slip = emp.get('workDates') or []
-        if wdates_slip:
-            ds_slip = ', '.join(str(x) for x in wdates_slip)
-            if len(ds_slip) > 450:
-                ds_slip = ds_slip[:447] + '...'
-            style_merge(ws, f'A{current_row}:G{current_row}', f'Chi tiet ngay di lam: {ds_slip}', size=8)
-            ws.row_dimensions[current_row].height = 28
-            current_row += 1
+        ds_slip = ', '.join(str(x) for x in wdates_slip) if wdates_slip else '(Khong co)'
+        if len(ds_slip) > 450:
+            ds_slip = ds_slip[:447] + '...'
+        style_merge(ws, f'A{current_row}:G{current_row}', f'Chi tiet ngay di lam: {ds_slip}', size=8)
+        ws.row_dimensions[current_row].height = 28
+        current_row += 1
 
         def render_detail_group(title, fill_color, records, fmt_str):
             nonlocal current_row
@@ -564,7 +562,7 @@ def generate_summary_excel(data, output_path):
 
     ORANGE, LT_ORANGE, WHITE = "FFA500", "FFF3E0", "FFFFFF"
     NUM = '#,##0'
-    LAST_COL_LETTER = 'Y'
+    LAST_COL_LETTER = 'Z'
 
     style_merge(ws, f'A1:{LAST_COL_LETTER}1', 'CONG TY TNHH FLY VISA', bold=True, size=11)
     style_merge(ws, f'A2:{LAST_COL_LETTER}2', 'MST: 0316444315', size=9)
@@ -573,7 +571,7 @@ def generate_summary_excel(data, output_path):
     style_merge(ws, f'A6:{LAST_COL_LETTER}6', month_text, bold=True, size=12, h='center')
 
     for r in range(1, 7):
-        for c in range(1, 26): ws.cell(row=r, column=c).border = None
+        for c in range(1, 27): ws.cell(row=r, column=c).border = None
     ws.row_dimensions[5].height, ws.row_dimensions[6].height = 22, 18
 
     HR1, HR2, DS = 8, 9, 10
@@ -594,6 +592,7 @@ def generate_summary_excel(data, output_path):
     style_merge(ws, f'W{HR1}:W{HR2}', 'Tong trich NLD\n(tu cot R)', bold=True, size=8, h='center', fill=ORANGE)
     style_merge(ws, f'X{HR1}:X{HR2}', 'Tong cong tru', bold=True, size=8, h='center', fill=ORANGE)
     style_merge(ws, f'Y{HR1}:Y{HR2}', 'Thuc linh', bold=True, size=8, h='center', fill=ORANGE)
+    style_merge(ws, f'Z{HR1}:Z{HR2}', 'Ngay di lam', bold=True, size=8, h='center', fill=ORANGE)
 
     subs = {
         'E': 'Chuyen can', 'F': 'An trua', 'G': 'Ho tro khac', 'H': 'Hoa hong',
@@ -621,7 +620,8 @@ def generate_summary_excel(data, output_path):
         data_map = {
             'A': (i, 'center'), 'B': (emp.get('name', ''), 'left'), 'C': (emp.get('role', ''), 'left'),
             'D': (base, 'right'), 'E': (cc, 'right'), 'F': (at, 'right'), 'G': (htk, 'right'), 'H': (hh, 'right'),
-            'S': (full_a, 'right'), 'T': (half_d, 'right'), 'U': (att_f, 'right')
+            'S': (full_a, 'right'), 'T': (half_d, 'right'), 'U': (att_f, 'right'),
+            'Z': (emp.get('workDays', 0), 'center')
         }
 
         for col, (val, align) in data_map.items():
@@ -629,10 +629,12 @@ def generate_summary_excel(data, output_path):
                 out_val = val
             elif col == 'A':
                 out_val = i
+            elif col == 'Z':
+                out_val = val
             else:
                 out_val = money_amount(val)
             c = sc(ws, f'{col}{r}', out_val, h=align, fill=fill_c, bdr=True)
-            if col not in ('A', 'B', 'C'):
+            if col not in ('A', 'B', 'C', 'Z'):
                 c.number_format = NUM
 
         formulas = {
@@ -652,13 +654,14 @@ def generate_summary_excel(data, output_path):
 
     TR = DS + len(employees)
     style_merge(ws, f'A{TR}:C{TR}', 'TONG CONG', bold=True, size=10, h='center', fill=ORANGE)
-    for col_idx in range(4, 26):
+    for col_idx in range(4, 27):
         col = get_column_letter(col_idx)
-        cell = sc(ws, f'{col}{TR}', f'=SUM({col}{DS}:{col}{TR-1})', bold=True, h='right', fill=ORANGE, bdr=True)
-        cell.number_format = NUM
+        cell = sc(ws, f'{col}{TR}', f'=SUM({col}{DS}:{col}{TR-1})', bold=True, h='right' if col != 'Z' else 'center', fill=ORANGE, bdr=True)
+        if col != 'Z':
+            cell.number_format = NUM
     ws.row_dimensions[TR].height = 18
 
-    widths = {'A': 5, 'B': 22, 'C': 12, 'D': 14, 'E': 11, 'F': 10, 'G': 11, 'H': 11, 'I': 13, 'J': 13, 'K': 11, 'L': 9, 'M': 9, 'N': 11, 'O': 9, 'P': 9, 'Q': 9, 'R': 11, 'S': 12, 'T': 12, 'U': 12, 'V': 13, 'W': 12, 'X': 12, 'Y': 13}
+    widths = {'A': 5, 'B': 22, 'C': 12, 'D': 14, 'E': 11, 'F': 10, 'G': 11, 'H': 11, 'I': 13, 'J': 13, 'K': 11, 'L': 9, 'M': 9, 'N': 11, 'O': 9, 'P': 9, 'Q': 9, 'R': 11, 'S': 12, 'T': 12, 'U': 12, 'V': 13, 'W': 12, 'X': 12, 'Y': 13, 'Z': 12}
     for c, w in widths.items(): ws.column_dimensions[c].width = w
 
     ws.freeze_panes = f'A{DS}'
