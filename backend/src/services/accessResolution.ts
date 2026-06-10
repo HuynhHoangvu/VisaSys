@@ -232,7 +232,9 @@ export async function resolveEffectivePermissions(
     }
     if (!isBossLike(employee.role, employee.id) && !isManagerLike(employee.role)) {
       base.delete(NAV.boss);
-      base.delete("crm.board.see_all");
+      if (!isProcessingDept(deptName) && !norm(deptName).includes("marketing")) {
+        base.delete("crm.board.see_all");
+      }
       base.delete("kpi.week.edit");
     }
   }

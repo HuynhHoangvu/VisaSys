@@ -107,11 +107,15 @@ function legacyEffectivePermissions(user: AuthUser): Set<string> {
 
 export function hasPermission(user: AuthUser | null | undefined, key: string): boolean {
   if (!user) return false;
-  const fromApi = user.permissions;
-  if (Array.isArray(fromApi) && fromApi.length > 0) {
-    return fromApi.includes(key);
+
+  const legacy = legacyEffectivePermissions(user);
+  const fromApi = Array.isArray(user.permissions) ? user.permissions : [];
+
+  if (fromApi.length > 0) {
+    return fromApi.includes(key) || legacy.has(key);
   }
-  return legacyEffectivePermissions(user).has(key);
+
+  return legacy.has(key);
 }
 
 export function canManageRbac(user: AuthUser | null | undefined): boolean {

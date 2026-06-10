@@ -80,9 +80,14 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
 
   const isMarketingDept =
     currentUser?.department?.toLowerCase().includes("marketing") || false;
+  const isProcessingDept =
+    /xử lý hồ sơ|hồ sơ|trợ lý giám đốc/i.test(
+      currentUser?.department || "",
+    );
   const canSeeAll =
     (currentUser ? hasPermission(currentUser, P.crmSeeAll) : false) ||
-    isMarketingDept;
+    isMarketingDept ||
+    isProcessingDept;
 
   useEffect(() => {
     const fetchAlerts = async () => {
