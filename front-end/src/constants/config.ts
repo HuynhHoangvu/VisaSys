@@ -6,8 +6,16 @@
 
 // Helper to normalize the API URL by trimming trailing slashes and stripping /api suffix
 function normalizeApiUrl(raw: string): string {
-  let u = String(raw ?? "").trim().replace(/\/+$/, "");
-  u = u.replace(/\/api\/?$/i, "");
+  let u = String(raw ?? "").trim();
+  // Keep removing trailing slashes and /api suffix
+  while (true) {
+    u = u.replace(/\/+$/, "");
+    if (u.toLowerCase().endsWith("/api")) {
+      u = u.slice(0, -4);
+    } else {
+      break;
+    }
+  }
   return u || "http://localhost:3001";
 }
 
