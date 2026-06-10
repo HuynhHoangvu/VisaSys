@@ -29,7 +29,7 @@ const ProcessingPage: React.FC = () => {
 
     const fetchStaffList = async () => {
       try {
-        const { data } = await api.get<Employee[]>("/api/employees");
+        const { data } = await api.get<Employee[]>("/api/hr/employees/basic");
         setStaffList(data);
       } catch (error) {
         console.error("Lỗi tải danh sách nhân viên:", error);
