@@ -15,7 +15,19 @@ window.addEventListener('unhandledrejection', (event) => {
 const originalFetch = window.fetch;
 window.fetch = async (input, init) => {
   try {
-    const urlString = typeof input === "string" ? input : (input && (input as Request).url) || "";
+    let urlString = typeof input === "string" ? input : (input && (input as Request).url) || "";
+    
+    // Auto fix duplicated /api/api/ to /api/
+    if (urlString.includes("/api/api/")) {
+      urlString = urlString.replace(/\/api\/api\//g, "/api/");
+      if (typeof input === "string") {
+        input = urlString;
+      } else if (input && typeof input === "object" && "url" in input) {
+        // Create a copy of the request with the new URL
+        input = new Request(urlString, input as Request);
+      }
+    }
+
     const isApi = !/^(https?:)?\/\//i.test(urlString) || urlString.startsWith(API_URL);
 
     if (isApi) {
@@ -30,7 +42,7 @@ window.fetch = async (input, init) => {
           }
           init.headers = headers;
 
-          // Đảm bảo gửi credentials (cookie) nếu được cấu hình hoặc mặc định
+          // Ensure credentials are sent
           if (init.credentials === undefined) {
             init.credentials = "include";
           }
@@ -42,7 +54,6 @@ window.fetch = async (input, init) => {
   }
   return originalFetch(input, init);
 };
-
 // Sử dụng Type Assertion "as HTMLElement" để khẳng định với TS rằng phần tử này chắc chắn tồn tại
 const container = document.getElementById('root') as HTMLElement;
 

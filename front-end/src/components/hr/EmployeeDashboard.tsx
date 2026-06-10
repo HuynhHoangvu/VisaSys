@@ -29,10 +29,22 @@ import {
   normalizeDeptKey,
   isInferredDepartmentId,
 } from "../../utils/hrDepartments";
-import { API_URL } from "../../constants/config";
+import { API_URL, getApiUrl } from "../../constants/config";
 
-const hrFetch = (input: string, init?: RequestInit) =>
-  fetch(input, { credentials: "include", ...init });
+const hrFetch = (input: string, init?: RequestInit) => {
+  let url = input;
+  if (input.includes("/api/")) {
+    const match = input.match(/\/api\/(.+)$/);
+    if (match) {
+      url = getApiUrl(match[1]);
+    } else {
+      url = getApiUrl(input);
+    }
+  } else {
+    url = getApiUrl(input);
+  }
+  return fetch(url, { credentials: "include", ...init });
+};
 
 const getStatusColor = (status: AttendanceStatus): string => {
   switch (status) {
