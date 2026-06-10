@@ -13,6 +13,8 @@ import { VISA_SERVICES, CUSTOMER_SOURCES, normalizeVisaType } from "../../utils/
 import socket from "../../services/socket";
 import toast from "react-hot-toast";
 import { API_URL } from "../../constants/config";
+import JSZip from "jszip";
+import { saveAs } from "file-saver";
 
 const JOB_TYPES = [
   "Nông nghiệp",
@@ -44,7 +46,13 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
   const [isSubmittingNote, setIsSubmittingNote] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [isDownloadingAll, setIsDownloadingAll] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Check if there are any files to download
+  const hasFiles = formData?.activities?.some(
+    (act) => act.fileUrl && act.fileUrl !== "document-icon"
+  );
 
   useEffect(() => {
     setFormData(task);
@@ -185,6 +193,54 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
     }
   };
 
+  const handleDownloadAllFiles = async () => {
+    if (!formData?.activities) return;
+    
+    const filesWithUrls = formData.activities.filter(
+      (act) => act.fileUrl && act.fileUrl !== "document-icon"
+    );
+    
+    if (filesWithUrls.length === 0) return;
+    
+    setIsDownloadingAll(true);
+    
+    try {
+      if (filesWithUrls.length === 1) {
+        // Download single file directly
+        const fileAct = filesWithUrls[0];
+        const response = await fetch(fileAct.fileUrl!);
+        const blob = await response.blob();
+        const fileName = fileAct.fileName || "file";
+        saveAs(blob, fileName);
+      } else {
+        // Download multiple files as ZIP
+        const zip = new JSZip();
+        
+        for (const fileAct of filesWithUrls) {
+          try {
+            const response = await fetch(fileAct.fileUrl!);
+            const blob = await response.blob();
+            const fileName = fileAct.fileName || `file_${fileAct.id}`;
+            zip.file(fileName, blob);
+          } catch (err) {
+            console.error(`Failed to download file: ${fileAct.fileName}`, err);
+          }
+        }
+        
+        const content = await zip.generateAsync({ type: "blob" });
+        const zipName = `${localName || "khach-hang"}_ho_so.zip`;
+        saveAs(content, zipName);
+      }
+      
+      toast.success("Đã tải hồ sơ");
+    } catch (err) {
+      console.error("Download error:", err);
+      toast.error("Lỗi tải hồ sơ");
+    } finally {
+      setIsDownloadingAll(false);
+    }
+  };
+
   // Logic kiểm tra xem Ngành nghề đang lưu có phải là Custom (tự nhập) không
   const currentJobType = formData.jobType || "";
   const isCustomJob =
@@ -273,6 +329,16 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
 
         {/* Actions */}
         <div className="flex items-center gap-2 shrink-0">
+          <Button
+            color="info"
+            size="sm"
+            onClick={handleDownloadAllFiles}
+            disabled={isDownloadingAll || !hasFiles}
+            className="whitespace-nowrap"
+          >
+            {isDownloadingAll ? <Spinner size="sm" className="mr-2" /> : null}
+            {isDownloadingAll ? "Đang tải..." : "📥 Tải hồ sơ"}
+          </Button>
           <Button
             color="success"
             size="sm"

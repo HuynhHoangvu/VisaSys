@@ -18,6 +18,7 @@
     "@types/jszip": "^3.4.0",
     "axios": "^1.13.6",
     "facehash": "^0.1.0",
+    "file-saver": "^2.0.5",
     "flowbite": "^4.0.1",
     "flowbite-react": "^0.12.17",
     "jszip": "^3.10.1",
@@ -32,6 +33,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@types/file-saver": "^2.0.7",
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
