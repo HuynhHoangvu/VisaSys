@@ -51,7 +51,7 @@ export const leaveRequestSchema = z.object({
   }),
   startDate: z.string().min(1, "Ngày bắt đầu không được để trống"),
   endDate: z.string().min(1, "Ngày kết thúc không được để trống"),
-  reason: z.string().min(5, "Lý do phải có ít nhất 5 ký tự")
+  reason: z.string().min(2, "Lý do phải có ít nhất 2 ký tự")
 });
 
 export const bulkLeaveSchema = z.object({
@@ -60,7 +60,7 @@ export const bulkLeaveSchema = z.object({
   }),
   startDate: z.string().min(1, "Ngày bắt đầu không được để trống"),
   endDate: z.string().min(1, "Ngày kết thúc không được để trống"),
-  reason: z.string().min(5, "Lý do phải có ít nhất 5 ký tự")
+  reason: z.string().min(2, "Lý do phải có ít nhất 2 ký tự")
 });
 
 export const updateLeaveStatusSchema = z.object({

@@ -340,7 +340,14 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
         },
       );
 
-      if (!response.ok) throw new Error("Lỗi gửi đơn");
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        let errMsg = errData.error || "Lỗi gửi đơn";
+        if (errData.details && Array.isArray(errData.details)) {
+          errMsg += ": " + errData.details.map((d: any) => d.message).join(", ");
+        }
+        throw new Error(errMsg);
+      }
 
       alert("Đã gửi đơn xin nghỉ phép thành công! Vui lòng chờ Quản lý duyệt.");
 
