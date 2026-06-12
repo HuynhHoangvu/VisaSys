@@ -47,6 +47,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isDownloadingAll, setIsDownloadingAll] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Check if there are any files to download
@@ -224,32 +225,41 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
     }
     
     setIsDownloadingAll(true);
+    setDownloadProgress(`Đang chuẩn bị ${allFiles.length} tệp...`);
     
     try {
       if (allFiles.length === 1) {
         // Download single file directly
         const fileObj = allFiles[0];
+        setDownloadProgress("Đang tải file...");
         const response = await fetch(fileObj.url);
         const blob = await response.blob();
         saveAs(blob, fileObj.name);
       } else {
         // Download multiple files as ZIP
         const zip = new JSZip();
+        let loadedCount = 0;
         
-        for (let i = 0; i < allFiles.length; i++) {
-          const fileObj = allFiles[i];
+        const promises = allFiles.map(async (fileObj, i) => {
           try {
             const response = await fetch(fileObj.url);
             const blob = await response.blob();
-            // Use index to avoid filename collisions
-            zip.file(`${i}_${fileObj.name}`, blob);
+            // Clean filename but keep Vietnamese characters
+            const safeName = fileObj.name.replace(/[\\/:*?"<>|]/g, '_');
+            zip.file(`${i}_${safeName}`, blob);
+            loadedCount++;
+            setDownloadProgress(`Đang tải ${loadedCount}/${allFiles.length} tệp...`);
           } catch (err) {
             console.error(`Failed to download file: ${fileObj.name}`, err);
           }
-        }
+        });
         
+        await Promise.all(promises);
+        
+        setDownloadProgress("Đang nén file .zip...");
         const content = await zip.generateAsync({ type: "blob" });
-        const zipName = `${localName || "khach-hang"}_ho_so.zip`;
+        const safeLocalName = (localName || "khach-hang").replace(/[\\/:*?"<>|]/g, '_');
+        const zipName = `${safeLocalName}_ho_so.zip`;
         saveAs(content, zipName);
       }
       
@@ -259,6 +269,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
       toast.error("Lỗi tải hồ sơ");
     } finally {
       setIsDownloadingAll(false);
+      setDownloadProgress("");
     }
   };
 
@@ -358,7 +369,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
             className="whitespace-nowrap"
           >
             {isDownloadingAll ? <Spinner size="sm" className="mr-2" /> : null}
-            {isDownloadingAll ? "Đang tải..." : "📥 Tải hồ sơ"}
+            {isDownloadingAll ? downloadProgress : "📥 Tải hồ sơ"}
           </Button>
           <Button
             color="success"

@@ -315,6 +315,7 @@ const DocumentModal: React.FC<DocumentModalProps> = ({ show, onClose, taskId, ta
   const [uploadedFiles, setUploadedFiles] = useState<{ [key: string]: SavedFile[] }>({});
   const [isSaving, setIsSaving] = useState(false);
   const [isDownloadingAll, setIsDownloadingAll] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState("");
   const [uploadingRows, setUploadingRows] = useState<Set<string>>(new Set());
   const [uploadPanel, setUploadPanel] = useState<UploadPanel | null>(null);
 
@@ -460,15 +461,30 @@ const DocumentModal: React.FC<DocumentModalProps> = ({ show, onClose, taskId, ta
     setIsDownloadingAll(true);
     try {
       const zip = new JSZip();
-      const folderName = `HoSo_${task.content.split(" - ")[0] || "KhachHang"}`.replace(/[^a-zA-Z0-9]/g, '_');
+      const safeTaskContent = (task.content.split(" - ")[0] || "KhachHang").replace(/[\\/:*?"<>|]/g, '_');
+      const folderName = `HoSo_${safeTaskContent}`;
       const rootFolder = zip.folder(folderName);
 
       const promises: Promise<void>[] = [];
       let totalFiles = 0;
 
+      // First pass: count total files
       Object.entries(uploadedFiles).forEach(([reqId, files]) => {
         if (!files || files.length === 0) return;
         totalFiles += files.length;
+      });
+
+      if (totalFiles === 0) {
+         alert("Không có tài liệu nào để tải!");
+         setIsDownloadingAll(false);
+         return;
+      }
+      
+      setDownloadProgress(`Đang chuẩn bị ${totalFiles} tệp...`);
+      let loadedCount = 0;
+
+      Object.entries(uploadedFiles).forEach(([reqId, files]) => {
+        if (!files || files.length === 0) return;
         
         let reqName = reqId;
         if (reqId.startsWith("extra_")) {
@@ -478,7 +494,8 @@ const DocumentModal: React.FC<DocumentModalProps> = ({ show, onClose, taskId, ta
            if (req) reqName = req.name;
         }
         
-        const subFolder = rootFolder?.folder(reqName.replace(/[^a-zA-Z0-9\s]/g, '_').trim());
+        const safeReqName = reqName.replace(/[\\/:*?"<>|]/g, '_').trim();
+        const subFolder = rootFolder?.folder(safeReqName);
 
         files.forEach((file) => {
           const fullUrl = file.url.startsWith("http") ? file.url : `${API_URL}${file.url}`;
@@ -488,7 +505,10 @@ const DocumentModal: React.FC<DocumentModalProps> = ({ show, onClose, taskId, ta
               return res.blob();
             })
             .then((blob) => {
-              subFolder?.file(file.name, blob);
+              const safeFileName = file.name.replace(/[\\/:*?"<>|]/g, '_');
+              subFolder?.file(safeFileName, blob);
+              loadedCount++;
+              setDownloadProgress(`Đang tải ${loadedCount}/${totalFiles} tệp...`);
             })
             .catch((err) => {
               console.error("Lỗi download file zip:", err);
@@ -497,13 +517,8 @@ const DocumentModal: React.FC<DocumentModalProps> = ({ show, onClose, taskId, ta
         });
       });
 
-      if (totalFiles === 0) {
-         alert("Không có tài liệu nào để tải!");
-         setIsDownloadingAll(false);
-         return;
-      }
-
       await Promise.all(promises);
+      setDownloadProgress("Đang nén file .zip...");
       const content = await zip.generateAsync({ type: "blob" });
       saveAs(content, `${folderName}.zip`);
 
@@ -511,6 +526,7 @@ const DocumentModal: React.FC<DocumentModalProps> = ({ show, onClose, taskId, ta
       alert("Lỗi khi tải hàng loạt: " + error);
     } finally {
       setIsDownloadingAll(false);
+      setDownloadProgress("");
     }
   };
 
@@ -720,7 +736,7 @@ const DocumentModal: React.FC<DocumentModalProps> = ({ show, onClose, taskId, ta
       {/* ── Footer ── */}
       <div className="p-4 border-t border-gray-200 flex justify-end gap-2 bg-gray-50 rounded-b-lg">
         <Button color="light" onClick={handleDownloadAll} disabled={isDownloadingAll || Object.keys(uploadedFiles).length === 0}>
-          {isDownloadingAll ? "Đang nén file..." : "📥 Tải tất cả (.zip)"}
+          {isDownloadingAll ? downloadProgress : "📥 Tải tất cả (.zip)"}
         </Button>
         <Button color="gray" onClick={onClose}>Đóng</Button>
         <Button color="blue" onClick={handleSaveToBackend} disabled={isSaving || uploadingRows.size > 0}>
