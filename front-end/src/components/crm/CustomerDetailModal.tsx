@@ -50,9 +50,9 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Check if there are any files to download
-  const hasFiles = formData?.activities?.some(
+  const hasFiles = (formData?.activities?.some(
     (act) => act.fileUrl && act.fileUrl !== "document-icon"
-  );
+  )) || (formData?.documents && Object.values(formData.documents).some(arr => arr.length > 0));
 
   useEffect(() => {
     setFormData(task);
@@ -194,36 +194,57 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
   };
 
   const handleDownloadAllFiles = async () => {
-    if (!formData?.activities) return;
+    if (!formData) return;
     
-    const filesWithUrls = formData.activities.filter(
+    // 1. Files from activities
+    const activityFiles = (formData.activities || []).filter(
       (act) => act.fileUrl && act.fileUrl !== "document-icon"
-    );
+    ).map(act => ({ url: act.fileUrl!, name: act.fileName || `file_${act.id}` }));
     
-    if (filesWithUrls.length === 0) return;
+    // 2. Files from documents (checklist)
+    const documentFiles: {url: string, name: string}[] = [];
+    if (formData.documents) {
+      Object.values(formData.documents).forEach(files => {
+        files.forEach(f => {
+          if (f.url) {
+            documentFiles.push({
+               url: f.url.startsWith("http") ? f.url : `${API_URL}${f.url}`,
+               name: f.name
+            });
+          }
+        });
+      });
+    }
+
+    const allFiles = [...activityFiles, ...documentFiles];
+    
+    if (allFiles.length === 0) {
+      toast.error("Không có file nào để tải");
+      return;
+    }
     
     setIsDownloadingAll(true);
     
     try {
-      if (filesWithUrls.length === 1) {
+      if (allFiles.length === 1) {
         // Download single file directly
-        const fileAct = filesWithUrls[0];
-        const response = await fetch(fileAct.fileUrl!);
+        const fileObj = allFiles[0];
+        const response = await fetch(fileObj.url);
         const blob = await response.blob();
-        const fileName = fileAct.fileName || "file";
-        saveAs(blob, fileName);
+        saveAs(blob, fileObj.name);
       } else {
         // Download multiple files as ZIP
         const zip = new JSZip();
         
-        for (const fileAct of filesWithUrls) {
+        for (let i = 0; i < allFiles.length; i++) {
+          const fileObj = allFiles[i];
           try {
-            const response = await fetch(fileAct.fileUrl!);
+            const response = await fetch(fileObj.url);
             const blob = await response.blob();
-            const fileName = fileAct.fileName || `file_${fileAct.id}`;
-            zip.file(fileName, blob);
+            // Use index to avoid filename collisions
+            zip.file(`${i}_${fileObj.name}`, blob);
           } catch (err) {
-            console.error(`Failed to download file: ${fileAct.fileName}`, err);
+            console.error(`Failed to download file: ${fileObj.name}`, err);
           }
         }
         
