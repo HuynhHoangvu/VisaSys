@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Modal, Button, Select, Spinner } from "flowbite-react";
+import JSZip from "jszip";
+import { saveAs } from "file-saver";
 import type { Task, Requirement } from "../../types";
 import {
   getRequirementsList,
@@ -312,6 +314,7 @@ const DocumentModal: React.FC<DocumentModalProps> = ({ show, onClose, taskId, ta
 
   const [uploadedFiles, setUploadedFiles] = useState<{ [key: string]: SavedFile[] }>({});
   const [isSaving, setIsSaving] = useState(false);
+  const [isDownloadingAll, setIsDownloadingAll] = useState(false);
   const [uploadingRows, setUploadingRows] = useState<Set<string>>(new Set());
   const [uploadPanel, setUploadPanel] = useState<UploadPanel | null>(null);
 
@@ -451,6 +454,65 @@ const DocumentModal: React.FC<DocumentModalProps> = ({ show, onClose, taskId, ta
     if (checklistType === "study") return getStudyAbroadRequirements();
     return [];
   }, [checklistType, jobType]);
+
+  const handleDownloadAll = async () => {
+    if (!task) return;
+    setIsDownloadingAll(true);
+    try {
+      const zip = new JSZip();
+      const folderName = `HoSo_${task.content.split(" - ")[0] || "KhachHang"}`.replace(/[^a-zA-Z0-9]/g, '_');
+      const rootFolder = zip.folder(folderName);
+
+      const promises: Promise<void>[] = [];
+      let totalFiles = 0;
+
+      Object.entries(uploadedFiles).forEach(([reqId, files]) => {
+        if (!files || files.length === 0) return;
+        totalFiles += files.length;
+        
+        let reqName = reqId;
+        if (reqId.startsWith("extra_")) {
+           reqName = reqId.replace("extra_", "");
+        } else {
+           const req = baseRequirements.find((r) => r.id === reqId);
+           if (req) reqName = req.name;
+        }
+        
+        const subFolder = rootFolder?.folder(reqName.replace(/[^a-zA-Z0-9\s]/g, '_').trim());
+
+        files.forEach((file) => {
+          const fullUrl = file.url.startsWith("http") ? file.url : `${API_URL}${file.url}`;
+          const p = fetch(fullUrl)
+            .then((res) => {
+              if (!res.ok) throw new Error(`Lỗi tải: ${file.name}`);
+              return res.blob();
+            })
+            .then((blob) => {
+              subFolder?.file(file.name, blob);
+            })
+            .catch((err) => {
+              console.error("Lỗi download file zip:", err);
+            });
+          promises.push(p);
+        });
+      });
+
+      if (totalFiles === 0) {
+         alert("Không có tài liệu nào để tải!");
+         setIsDownloadingAll(false);
+         return;
+      }
+
+      await Promise.all(promises);
+      const content = await zip.generateAsync({ type: "blob" });
+      saveAs(content, `${folderName}.zip`);
+
+    } catch (error) {
+      alert("Lỗi khi tải hàng loạt: " + error);
+    } finally {
+      setIsDownloadingAll(false);
+    }
+  };
 
   const filteredRequirements = useMemo(() => {
     return baseRequirements.filter((req) => {
@@ -657,6 +719,9 @@ const DocumentModal: React.FC<DocumentModalProps> = ({ show, onClose, taskId, ta
 
       {/* ── Footer ── */}
       <div className="p-4 border-t border-gray-200 flex justify-end gap-2 bg-gray-50 rounded-b-lg">
+        <Button color="light" onClick={handleDownloadAll} disabled={isDownloadingAll || Object.keys(uploadedFiles).length === 0}>
+          {isDownloadingAll ? "Đang nén file..." : "📥 Tải tất cả (.zip)"}
+        </Button>
         <Button color="gray" onClick={onClose}>Đóng</Button>
         <Button color="blue" onClick={handleSaveToBackend} disabled={isSaving || uploadingRows.size > 0}>
           {isSaving ? "Đang lưu..." : "Lưu Hồ Sơ"}
