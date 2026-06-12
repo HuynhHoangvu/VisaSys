@@ -469,7 +469,7 @@ const DocumentModal: React.FC<DocumentModalProps> = ({ show, onClose, taskId, ta
       let totalFiles = 0;
 
       // First pass: count total files
-      Object.entries(uploadedFiles).forEach(([reqId, files]) => {
+      Object.values(uploadedFiles).forEach((files) => {
         if (!files || files.length === 0) return;
         totalFiles += files.length;
       });
