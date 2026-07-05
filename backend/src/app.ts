@@ -35,10 +35,15 @@ app.set("trust proxy", 1);
 // ── Response time tracking ────────────────────────────────────────────────────
 app.use((_req, res, next) => {
   const start = process.hrtime.bigint();
-  res.on("finish", () => {
-    const ms = Number(process.hrtime.bigint() - start) / 1_000_000;
-    res.setHeader("X-Response-Time", `${ms.toFixed(2)}ms`);
-  });
+  const originalEnd = res.end.bind(res);
+  // @ts-expect-error — override res.end to inject header before response flushes
+  res.end = (...args: Parameters<typeof res.end>) => {
+    if (!res.headersSent) {
+      const ms = Number(process.hrtime.bigint() - start) / 1_000_000;
+      res.setHeader("X-Response-Time", `${ms.toFixed(2)}ms`);
+    }
+    return originalEnd(...args);
+  };
   next();
 });
 
