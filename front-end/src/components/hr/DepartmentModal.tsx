@@ -38,13 +38,13 @@ const DepartmentModal: React.FC<DepartmentModalProps> = ({
 }) => {
   return (
     <Modal show={show} onClose={onClose} size="lg" className="md:p-4">
-      <div className="p-4 sm:p-6 border-b border-gray-200 flex justify-between items-center bg-gray-50 rounded-t-lg">
-        <h3 className="text-lg sm:text-xl font-bold text-gray-800">
+      <div className="p-4 sm:p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50 rounded-t-lg">
+        <h3 className="text-lg sm:text-xl font-bold text-slate-800">
           Quản lý Bộ Phận
         </h3>
         <button
           onClick={onClose}
-          className="text-gray-400 hover:text-gray-900 bg-white hover:bg-gray-200 rounded-full p-1.5 transition-colors border"
+          className="text-slate-400 hover:text-slate-900 bg-white hover:bg-slate-200 rounded-full p-1.5 transition-colors border"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
@@ -63,14 +63,14 @@ const DepartmentModal: React.FC<DepartmentModalProps> = ({
             Thêm
           </Button>
         </div>
-        <p className="text-xs text-gray-600 mb-3">
+        <p className="text-xs text-slate-600 mb-3">
           Danh sách gồm bộ phận trong hệ thống; nếu có tên chỉ xuất hiện trên
           nhân viên mà chưa có trong danh mục, hệ thống hiển thị kèm ghi chú để
           bạn thêm hoặc gán lại cho khớp.
         </p>
-        <div className="max-h-[50vh] sm:max-h-80 overflow-y-auto overflow-x-auto border border-gray-200 rounded-lg shadow-sm custom-scrollbar w-full">
-          <table className="w-full min-w-[400px] text-sm text-left text-gray-500">
-            <thead className="text-xs text-gray-700 uppercase bg-gray-50 border-b">
+        <div className="max-h-[50vh] sm:max-h-80 overflow-y-auto overflow-x-auto border border-slate-200 rounded-lg shadow-sm custom-scrollbar w-full">
+          <table className="w-full min-w-[400px] text-sm text-left text-slate-500">
+            <thead className="text-xs text-slate-700 uppercase bg-slate-50 border-b">
               <tr>
                 <th className="px-4 sm:px-6 py-3 font-bold">Tên bộ phận</th>
                 <th className="px-4 sm:px-6 py-3 text-right font-bold">Hành động</th>
@@ -78,8 +78,8 @@ const DepartmentModal: React.FC<DepartmentModalProps> = ({
             </thead>
             <tbody className="divide-y divide-gray-200">
               {departments.map((dept) => (
-                <tr key={dept.id} className="bg-white hover:bg-gray-50 transition-colors">
-                  <td className="px-4 sm:px-6 py-3 sm:py-4 font-medium text-gray-900">
+                <tr key={dept.id} className="bg-white hover:bg-slate-50 transition-colors">
+                  <td className="px-4 sm:px-6 py-3 sm:py-4 font-medium text-slate-900">
                     {editingDeptId === dept.id ? (
                       <TextInput
                         sizing="sm"
@@ -108,14 +108,14 @@ const DepartmentModal: React.FC<DepartmentModalProps> = ({
                           Lưu
                         </button>
                         <button
-                          className="text-gray-500 hover:underline font-semibold"
+                          className="text-slate-500 hover:underline font-semibold"
                           onClick={() => setEditingDeptId(null)}
                         >
                           Hủy
                         </button>
                       </div>
                     ) : isInferredDepartmentId(dept.id) ? (
-                      <span className="text-xs text-gray-400">—</span>
+                      <span className="text-xs text-slate-400">—</span>
                     ) : (
                       <div className="flex justify-end gap-3 sm:gap-4">
                         {canAddPersonnel && (

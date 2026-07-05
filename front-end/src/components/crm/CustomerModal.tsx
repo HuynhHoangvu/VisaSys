@@ -155,8 +155,8 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
 
   return (
     <Modal show={show} onClose={handleClose} size="3xl" className="md:p-4">
-      <div className="p-4 sm:p-6 border-b border-gray-200">
-        <h3 className="text-lg sm:text-xl font-bold text-gray-800">
+      <div className="p-4 sm:p-6 border-b border-slate-200">
+        <h3 className="text-lg sm:text-xl font-bold text-slate-800">
           Thêm Khách Hàng Mới
         </h3>
       </div>
@@ -368,7 +368,7 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
         </form>
       </div>
 
-      <div className="p-4 sm:p-6 border-t border-gray-200 flex justify-end gap-2">
+      <div className="p-4 sm:p-6 border-t border-slate-200 flex justify-end gap-2">
         <Button color="gray" onClick={handleClose} size="sm">
           Hủy
         </Button>

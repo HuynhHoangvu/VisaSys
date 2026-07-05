@@ -514,9 +514,9 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
   // RENDER
   // ==========================================
   return (
-    <div className="flex-1 p-3 sm:p-6 overflow-y-auto space-y-4 sm:space-y-6 bg-gray-50 h-full relative">
+    <div className="flex-1 p-3 sm:p-6 overflow-y-auto space-y-4 sm:space-y-6 bg-slate-50 h-full relative">
       <div
-        className="flex items-center gap-1.5 sm:gap-2 text-gray-500 hover:text-orange-500 cursor-pointer font-medium w-fit transition-colors text-sm sm:text-base"
+        className="flex items-center gap-1.5 sm:gap-2 text-slate-500 hover:text-orange-500 cursor-pointer font-medium w-fit transition-colors text-sm sm:text-base"
         onClick={onBack}
       >
         <svg
@@ -536,7 +536,7 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
       </div>
 
       {/* HEADER */}
-      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-200 gap-4">
+      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-slate-200 gap-4">
         <div className="flex items-center gap-3 sm:gap-4 w-full xl:w-auto">
           <FaceAvatar
             name={employee.name || employee.employeeCode || "user"}
@@ -545,16 +545,16 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
             className="rounded-full shrink-0 sm:hidden"
           />
           <div className="min-w-0">
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-800 truncate">
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-800 truncate">
               {employee.name}
             </h2>
-            <div className="text-gray-500 font-medium mt-1 flex items-center gap-2 flex-wrap">
-              <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-[10px] sm:text-xs uppercase tracking-wide font-bold">
+            <div className="text-slate-500 font-medium mt-1 flex items-center gap-2 flex-wrap">
+              <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-[10px] sm:text-xs uppercase tracking-wide font-bold">
                 {employee.role}
               </span>
               <span className="text-xs sm:text-sm whitespace-nowrap">
                 • Lương CB:{" "}
-                <strong className="text-gray-800">
+                <strong className="text-slate-800">
                   {formatVND(originalBaseSalary)}
                 </strong>
               </span>
@@ -573,7 +573,7 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
               color="light"
               size="sm"
               onClick={() => setIsBonusModalOpen(true)}
-              className="flex-1 sm:flex-none border-gray-200 text-indigo-600 font-bold focus:ring-0 shadow-sm hover:bg-indigo-50 whitespace-nowrap"
+              className="flex-1 sm:flex-none border-slate-200 text-indigo-600 font-bold focus:ring-0 shadow-sm hover:bg-indigo-50 whitespace-nowrap"
             >
               ✨ Thưởng/Phạt
             </Button>
@@ -582,7 +582,7 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
             color="light"
             size="sm"
             onClick={() => setIsLeaveModalOpen(true)}
-            className="flex-1 sm:flex-none border-gray-200 text-gray-600 focus:ring-0 shadow-sm hover:bg-gray-50 whitespace-nowrap"
+            className="flex-1 sm:flex-none border-slate-200 text-slate-600 focus:ring-0 shadow-sm hover:bg-slate-50 whitespace-nowrap"
           >
             Nghỉ phép
           </Button>
@@ -590,7 +590,7 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
             color="light"
             size="sm"
             onClick={() => setIsLeaveHistoryOpen(true)}
-            className="flex-1 sm:flex-none border-gray-200 text-blue-600 focus:ring-0 shadow-sm hover:bg-blue-50 whitespace-nowrap"
+            className="flex-1 sm:flex-none border-slate-200 text-blue-600 focus:ring-0 shadow-sm hover:bg-blue-50 whitespace-nowrap"
           >
             📋 Lịch sử phép
           </Button>
@@ -627,38 +627,38 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
       {/* KPI CARDS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
         <Card className="border-l-[5px] border-l-blue-500 shadow-sm border-y-0 border-r-0 rounded-xl hover:shadow-md transition-shadow">
-          <p className="text-xs sm:text-sm font-bold text-gray-500 uppercase tracking-wide">
+          <p className="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-wide">
             Lương Thực Nhận (Dự kiến)
           </p>
           <h4 className="text-xl sm:text-2xl font-black text-blue-600 mt-1">
             {formatVND(finalSalary)}
           </h4>
-          <p className="text-[10px] sm:text-xs font-medium text-gray-400 mt-1">
+          <p className="text-[10px] sm:text-xs font-medium text-slate-400 mt-1">
             Dự kiến theo lịch làm việc (VN). Đã trừ tạm ứng và các khoản phạt/khấu trừ bên dưới.
           </p>
         </Card>
 
         <Card className="border-l-[5px] border-l-green-500 shadow-sm border-y-0 border-r-0 rounded-xl hover:shadow-md transition-shadow relative pb-10 sm:pb-4">
-          <p className="text-xs sm:text-sm font-bold text-gray-500 uppercase tracking-wide">
+          <p className="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-wide">
             Thưởng & hoa hồng (dự kiến)
           </p>
           <h4 className="text-xl sm:text-2xl font-black text-green-500 mt-1">
             +{formatVND(totalBonusAndCommission)}
           </h4>
-          <div className="absolute bottom-2 right-4 flex flex-col items-end text-[10px] sm:text-[11px] font-medium text-gray-400">
+          <div className="absolute bottom-2 right-4 flex flex-col items-end text-[10px] sm:text-[11px] font-medium text-slate-400">
             <span>Hoa hồng / KPI: +{formatVND(totalHoaHongVaKpi)}</span>
             <span>Thưởng khác: +{formatVND(totalThuongKhac)}</span>
           </div>
         </Card>
 
         <Card className="border-l-[5px] border-l-red-500 shadow-sm border-y-0 border-r-0 rounded-xl hover:shadow-md transition-shadow relative pb-10 sm:pb-4">
-          <p className="text-xs sm:text-sm font-bold text-gray-500 uppercase tracking-wide">
+          <p className="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-wide">
             Tổng Phạt & Khấu trừ
           </p>
           <h4 className="text-xl sm:text-2xl font-black text-red-500 mt-1">
             -{formatVND(totalFines)}
           </h4>
-          <div className="absolute bottom-2 right-4 flex flex-col items-end text-[10px] sm:text-[11px] font-medium text-gray-400 max-w-[85%] text-right">
+          <div className="absolute bottom-2 right-4 flex flex-col items-end text-[10px] sm:text-[11px] font-medium text-slate-400 max-w-[85%] text-right">
             <span title="Buổi sáng: thang phạt lũy tiến theo tháng hiện tại (VN); tháng khác: theo số ghi trên phiếu.">
               Đi muộn (phạt CI): -{formatVND(attendanceFines)}
             </span>
@@ -676,15 +676,15 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
       {/* BẢNG CHI TIẾT */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
         {/* BẢNG LỊCH SỬ CHẤM CÔNG */}
-        <Card className="shadow-sm border border-gray-200 rounded-xl p-0 overflow-hidden">
-          <div className="p-3 sm:p-4 border-b border-gray-200 bg-gray-50/50">
-            <h5 className="text-base sm:text-lg font-bold text-gray-800">
+        <Card className="shadow-sm border border-slate-200 rounded-xl p-0 overflow-hidden">
+          <div className="p-3 sm:p-4 border-b border-slate-200 bg-slate-50/50">
+            <h5 className="text-base sm:text-lg font-bold text-slate-800">
               Lịch sử Chấm công
             </h5>
           </div>
           <div className="overflow-x-auto max-h-[400px] custom-scrollbar w-full">
-            <table className="w-full min-w-[600px] text-sm text-left text-gray-500">
-              <thead className="text-[10px] sm:text-xs text-gray-700 uppercase border-b border-gray-200 bg-gray-50 sticky top-0 z-10">
+            <table className="w-full min-w-[600px] text-sm text-left text-slate-500">
+              <thead className="text-[10px] sm:text-xs text-slate-700 uppercase border-b border-slate-200 bg-slate-50 sticky top-0 z-10">
                 <tr>
                   <th className="px-3 sm:px-4 py-2 sm:py-3 font-bold">Ngày</th>
                   <th className="px-3 sm:px-4 py-2 sm:py-3 font-bold">
@@ -717,7 +717,7 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
                   <tr>
                     <td
                       colSpan={canWaiveAttendance ? 7 : 6}
-                      className="px-4 py-8 text-center text-gray-400 italic text-xs sm:text-sm"
+                      className="px-4 py-8 text-center text-slate-400 italic text-xs sm:text-sm"
                     >
                       Chưa có dữ liệu chấm công.
                     </td>
@@ -736,20 +736,20 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
                               ? "bg-orange-100 text-orange-700"
                               : record.status === "Quên checkout"
                                 ? "bg-red-100 text-red-700"
-                                : "bg-gray-100 text-gray-600";
+                                : "bg-slate-100 text-slate-600";
 
                     return (
                       <tr
                         key={record.id || `${record.date}-${index}`}
-                        className="border-b border-gray-100 last:border-0 hover:bg-blue-50/30 transition-colors"
+                        className="border-b border-slate-200 last:border-0 hover:bg-blue-50/30 transition-colors"
                       >
-                        <td className="px-3 sm:px-4 py-3 sm:py-4 font-bold text-gray-800 text-xs sm:text-sm">
+                        <td className="px-3 sm:px-4 py-3 sm:py-4 font-bold text-slate-800 text-xs sm:text-sm">
                           {record.date}
                         </td>
-                        <td className="px-3 sm:px-4 py-3 sm:py-4 font-medium text-gray-600 text-xs sm:text-sm">
+                        <td className="px-3 sm:px-4 py-3 sm:py-4 font-medium text-slate-600 text-xs sm:text-sm">
                           {record.inTime}
                         </td>
-                        <td className="px-3 sm:px-4 py-3 sm:py-4 font-medium text-gray-600 text-xs sm:text-sm">
+                        <td className="px-3 sm:px-4 py-3 sm:py-4 font-medium text-slate-600 text-xs sm:text-sm">
                           {record.outTime && record.outTime !== "-"
                             ? record.outTime
                             : "—"}
@@ -762,12 +762,12 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
                           </span>
                         </td>
                         <td
-                          className={`px-3 sm:px-4 py-3 sm:py-4 text-right font-bold text-xs sm:text-sm ${record.fine > 0 ? "text-red-500" : "text-gray-300"}`}
+                          className={`px-3 sm:px-4 py-3 sm:py-4 text-right font-bold text-xs sm:text-sm ${record.fine > 0 ? "text-red-500" : "text-slate-300"}`}
                         >
                           {record.fine > 0 ? `-${formatVND(record.fine)}` : "—"}
                         </td>
                         <td
-                          className={`px-3 sm:px-4 py-3 sm:py-4 text-right font-bold text-xs sm:text-sm ${(record.halfDayDeduction || 0) > 0 ? "text-orange-500" : "text-gray-300"}`}
+                          className={`px-3 sm:px-4 py-3 sm:py-4 text-right font-bold text-xs sm:text-sm ${(record.halfDayDeduction || 0) > 0 ? "text-orange-500" : "text-slate-300"}`}
                         >
                           {(record.halfDayDeduction || 0) > 0
                             ? `-${formatVND(record.halfDayDeduction!)}`
@@ -789,7 +789,7 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
                                   : "Miễn nửa ngày"}
                               </Button>
                             ) : (
-                              <span className="text-gray-300 text-xs">—</span>
+                              <span className="text-slate-300 text-xs">—</span>
                             )}
                           </td>
                         ) : null}
@@ -803,18 +803,18 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
         </Card>
 
         {/* BẢNG BIẾN ĐỘNG THU NHẬP */}
-        <Card className="shadow-sm border border-gray-200 rounded-xl p-0 overflow-hidden">
-          <div className="p-3 sm:p-4 border-b border-gray-200 bg-gray-50/50 flex justify-between items-center">
-            <h5 className="text-base sm:text-lg font-bold text-gray-800">
+        <Card className="shadow-sm border border-slate-200 rounded-xl p-0 overflow-hidden">
+          <div className="p-3 sm:p-4 border-b border-slate-200 bg-slate-50/50 flex justify-between items-center">
+            <h5 className="text-base sm:text-lg font-bold text-slate-800">
               Biến động thu nhập
             </h5>
-            <p className="text-[10px] sm:text-xs text-gray-500 max-w-[55%] text-right hidden sm:block">
+            <p className="text-[10px] sm:text-xs text-slate-500 max-w-[55%] text-right hidden sm:block">
               Hoa hồng, thưởng, phạt, tạm ứng và các khoản trừ theo chấm công
             </p>
           </div>
           <div className="overflow-x-auto max-h-[480px] custom-scrollbar w-full">
-            <table className="w-full min-w-[640px] text-sm text-left text-gray-500">
-              <thead className="text-[10px] sm:text-xs text-gray-700 uppercase border-b border-gray-200 bg-gray-50 sticky top-0 z-10">
+            <table className="w-full min-w-[640px] text-sm text-left text-slate-500">
+              <thead className="text-[10px] sm:text-xs text-slate-700 uppercase border-b border-slate-200 bg-slate-50 sticky top-0 z-10">
                 <tr>
                   <th className="px-3 sm:px-4 py-2 sm:py-3 font-bold whitespace-nowrap w-[100px]">
                     Loại
@@ -835,7 +835,7 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
                   <tr>
                     <td
                       colSpan={4}
-                      className="px-4 py-8 text-center text-gray-400 italic text-xs sm:text-sm"
+                      className="px-4 py-8 text-center text-slate-400 italic text-xs sm:text-sm"
                     >
                       Chưa có dữ liệu biến động trong kỳ.
                     </td>
@@ -844,7 +844,7 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
                   incomeMovementRows.map((row) => (
                     <tr
                       key={row.key}
-                      className="border-b border-gray-100 last:border-0 hover:bg-blue-50/30 transition-colors"
+                      className="border-b border-slate-200 last:border-0 hover:bg-blue-50/30 transition-colors"
                     >
                       <td className="px-3 sm:px-4 py-3 sm:py-4 align-top">
                         <span
@@ -861,17 +861,17 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
                         </span>
                       </td>
                       <td className="px-3 sm:px-4 py-3 sm:py-4 align-top">
-                        <p className="font-bold text-gray-900 text-xs sm:text-sm">{row.tieuDe}</p>
+                        <p className="font-bold text-slate-900 text-xs sm:text-sm">{row.tieuDe}</p>
                         {row.phuDe ? (
-                          <p className="text-[10px] sm:text-xs font-medium text-gray-500 mt-0.5">
+                          <p className="text-[10px] sm:text-xs font-medium text-slate-500 mt-0.5">
                             {row.phuDe}
                           </p>
                         ) : null}
                         {row.chiTietThoiGian ? (
-                          <p className="text-2xs text-gray-400 mt-0.5">{row.chiTietThoiGian}</p>
+                          <p className="text-2xs text-slate-400 mt-0.5">{row.chiTietThoiGian}</p>
                         ) : null}
                       </td>
-                      <td className="px-3 sm:px-4 py-3 sm:py-4 align-top text-[10px] sm:text-xs text-gray-600">
+                      <td className="px-3 sm:px-4 py-3 sm:py-4 align-top text-[10px] sm:text-xs text-slate-600">
                         {row.ghiChu}
                       </td>
                       <td
@@ -880,7 +880,7 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
                             ? "text-green-600"
                             : row.soTien < 0
                               ? "text-red-600"
-                              : "text-gray-500"
+                              : "text-slate-500"
                         }`}
                       >
                         <div className="flex flex-col items-end gap-1">
@@ -901,7 +901,7 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
                                   <Button
                                     size="xs"
                                     color="light"
-                                    className="px-2 py-0.5 text-[10px] font-semibold border-gray-300 text-indigo-700 hover:bg-indigo-50"
+                                    className="px-2 py-0.5 text-[10px] font-semibold border-slate-300 text-indigo-700 hover:bg-indigo-50"
                                     onClick={() => void handleDeleteDeduction(row)}
                                     disabled={deletingDeductionKey === row.key}
                                   >
@@ -930,14 +930,14 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
         size="md"
         className="md:p-4"
       >
-        <div className="p-4 sm:p-5 border-b border-gray-200 bg-indigo-50 rounded-t-lg">
+        <div className="p-4 sm:p-5 border-b border-slate-200 bg-indigo-50 rounded-t-lg">
           <h3 className="text-base sm:text-lg font-bold text-indigo-800">
             Điều chỉnh lương/thưởng thủ công
           </h3>
         </div>
         <div className="p-4 sm:p-5 space-y-3 sm:space-y-4">
           <div>
-            <label className="font-bold text-xs sm:text-sm text-gray-700">
+            <label className="font-bold text-xs sm:text-sm text-slate-700">
               Loại điều chỉnh
             </label>
             <Select
@@ -953,7 +953,7 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
             </Select>
           </div>
           <div>
-            <label className="font-bold text-xs sm:text-sm text-gray-700">
+            <label className="font-bold text-xs sm:text-sm text-slate-700">
               Số tiền (VNĐ)
             </label>
             <TextInput
@@ -966,7 +966,7 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
             />
           </div>
           <div>
-            <label className="font-bold text-xs sm:text-sm text-gray-700">
+            <label className="font-bold text-xs sm:text-sm text-slate-700">
               Lý do / Ghi chú
             </label>
             <TextInput
@@ -978,7 +978,7 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
             />
           </div>
         </div>
-        <div className="p-4 sm:p-5 border-t border-gray-200 flex justify-end gap-2 bg-gray-50 rounded-b-lg">
+        <div className="p-4 sm:p-5 border-t border-slate-200 flex justify-end gap-2 bg-slate-50 rounded-b-lg">
           <Button
             size="sm"
             color="gray"

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { Bell, List, X, SignOut, Warning, CaretDown } from "@phosphor-icons/react";
 import { type AuthUser } from "../../types";
 import socket from "../../services/socket";
 import { FaceAvatar } from "../ui/FaceAvatar";
@@ -6,7 +7,7 @@ import { API_URL } from "../../constants/config";
 
 interface HeaderProps {
   currentUser: AuthUser;
-  onToggleSidebar?: () => void; // Thêm prop để mở Sidebar trên mobile
+  onToggleSidebar?: () => void;
 }
 
 interface NotificationItem {
@@ -30,9 +31,7 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onToggleSidebar }) => {
   const fetchNotifications = useCallback(async () => {
     if (!currentUser?.name) return;
     try {
-      const res = await fetch(
-        `${API_URL}/api/notifications/${currentUser.name}`,
-      );
+      const res = await fetch(`${API_URL}/api/notifications/${currentUser.name}`);
       if (res.ok) {
         const data: NotificationItem[] = await res.json();
         if (data.length > prevCountRef.current && data.length > 0) {
@@ -42,43 +41,24 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onToggleSidebar }) => {
         prevCountRef.current = data.length;
         setNotifications(data);
       }
-    } catch (error) {
-      console.error("Lỗi tải thông báo:", error);
-    }
+    } catch (error) { console.error("Lỗi tải thông báo:", error); }
   }, [currentUser]);
 
   useEffect(() => {
-    // Initial load: setState gọi trong .then() callback — linter cho phép
     if (currentUser?.name) {
       fetch(`${API_URL}/api/notifications/${currentUser.name}`)
         .then((r) => (r.ok ? (r.json() as Promise<NotificationItem[]>) : []))
-        .then((data) => {
-          prevCountRef.current = data.length;
-          setNotifications(data);
-        })
+        .then((data) => { prevCountRef.current = data.length; setNotifications(data); })
         .catch(console.error);
     }
-    // Socket subscription: fetchNotifications gọi như event callback — OK
     socket.on("new_notification", fetchNotifications);
-    return () => {
-      socket.off("new_notification", fetchNotifications);
-    };
+    return () => { socket.off("new_notification", fetchNotifications); };
   }, [currentUser?.name, fetchNotifications]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        notifRef.current &&
-        !notifRef.current.contains(event.target as Node)
-      ) {
-        setShowNotifs(false);
-      }
-      if (
-        userMenuRef.current &&
-        !userMenuRef.current.contains(event.target as Node)
-      ) {
-        setShowUserMenu(false);
-      }
+      if (notifRef.current && !notifRef.current.contains(event.target as Node)) setShowNotifs(false);
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) setShowUserMenu(false);
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -89,144 +69,70 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onToggleSidebar }) => {
       await fetch(`${API_URL}/api/notifications/${id}/read`, { method: "PUT" });
       setNotifications((prev) => prev.filter((n) => n.id !== id));
       if (notifications.length <= 1) setShowNotifs(false);
-    } catch (error) {
-      console.error("Lỗi đánh dấu đã đọc:", error);
-    }
+    } catch (error) { console.error("Lỗi đánh dấu:", error); }
   };
 
   const handleLogout = async () => {
-    try {
-      await fetch(`${API_URL}/api/auth/logout`, { method: "POST" });
-    } catch (error) {
-      console.log("Lỗi gọi API Đăng xuất:", error);
-    }
+    try { await fetch(`${API_URL}/api/auth/logout`, { method: "POST" }); } catch {}
     localStorage.removeItem("flyvisa_user");
     window.location.reload();
   };
 
   return (
-    <header className="h-16 bg-white border-b flex items-center justify-between px-3 md:px-6 shrink-0 shadow-sm relative z-40">
-      {/* NÚT HAMBURGER MENU (Chỉ hiện trên mobile) */}
-      <div className="flex items-center gap-2">
-        <button
-          onClick={onToggleSidebar}
-          className="p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-        >
-          <svg
-            className="w-6 h-6"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M4 6h16M4 12h16M4 18h16"
-            />
-          </svg>
+    <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-3 md:px-6 shrink-0 relative z-40">
+      {/* LEFT: Hamburger (mobile only) */}
+      <div className="flex items-center gap-2 lg:hidden">
+        <button onClick={onToggleSidebar} className="p-2 -ml-2 text-slate-500 hover:bg-slate-100 hover:text-slate-800 rounded-lg transition-colors">
+          <List size={22} />
         </button>
-
-        {/* TRÁI: TIÊU ĐỀ */}
-        <div className="hidden lg:flex items-center gap-2">
-        </div>
       </div>
 
-      {/* GIỮA: BIỂN BÁO LỆNH ĐIỀU HÀNH */}
-      <div
-        className="flex-1 max-w-2xl mx-2 md:mx-4 lg:mx-8 relative"
-        ref={notifRef}
-      >
+      {/* CENTER: Notification */}
+      <div className="flex-1 max-w-2xl mx-2 md:mx-4 lg:mx-8 relative" ref={notifRef}>
         {notifications.length > 0 ? (
           <button
             onClick={() => setShowNotifs(!showNotifs)}
-            className="w-full flex items-center justify-between bg-red-50 hover:bg-red-100 border border-red-200 px-3 py-1.5 md:px-4 md:py-2 rounded-lg transition-colors group"
+            className="w-full flex items-center justify-between bg-red-50 hover:bg-red-100 border border-red-200 px-3 py-1.5 md:px-4 md:py-2 rounded-lg transition-colors"
           >
-            <div className="flex items-center overflow-hidden">
-              <span className="relative flex h-2.5 w-2.5 md:h-3 md:w-3 mr-2 md:mr-3 shrink-0">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 md:h-3 md:w-3 bg-red-500"></span>
+            <div className="flex items-center overflow-hidden gap-2">
+              <span className="relative flex h-2 w-2 shrink-0">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
               </span>
-              <span className="text-red-700 font-bold text-xs md:text-sm mr-1.5 md:mr-2 shrink-0">
-                <span className="hidden sm:inline">
-                  THÔNG BÁO ({notifications.length}):
-                </span>
-                <span className="sm:hidden text-[10px] uppercase">
-                  Lệnh ({notifications.length}):
-                </span>
+              <span className="text-red-700 font-bold text-xs shrink-0">
+                <span className="hidden sm:inline">THÔNG BÁO ({notifications.length}):</span>
+                <span className="sm:hidden">Lệnh ({notifications.length}):</span>
               </span>
-              <span className="text-red-600 text-[11px] md:text-sm font-medium truncate text-left">
+              <span className="text-red-600 text-xs font-medium truncate">
                 {notifications[0].sender}{" "}
-                <span className="hidden sm:inline">
-                  vừa gửi một thông báo mới!
-                </span>
+                <span className="hidden sm:inline">vừa gửi một thông báo mới!</span>
               </span>
             </div>
-            <div className="flex items-center shrink-0 ml-1 md:ml-2">
-              <svg
-                className={`w-4 h-4 md:w-5 md:h-5 text-red-500 transition-transform ${showNotifs ? "rotate-180" : ""}`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M19 9l-7 7-7-7"
-                ></path>
-              </svg>
-            </div>
+            <CaretDown size={13} className={`text-red-400 shrink-0 ml-2 transition-transform ${showNotifs ? "rotate-180" : ""}`} />
           </button>
         ) : (
-          <div className="w-full flex items-center justify-center gap-2 text-gray-400 text-xs md:text-sm italic py-2">
-            <svg
-              className="w-4 h-4 shrink-0"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-              />
-            </svg>
-            <span className="hidden sm:inline">
-              Không có thông báo khẩn nào
-            </span>
+          <div className="w-full flex items-center justify-center gap-2 text-slate-400 text-xs italic py-2">
+            <Bell size={14} />
+            <span className="hidden sm:inline">Không có thông báo khẩn nào</span>
             <span className="sm:hidden">Không có thông báo</span>
           </div>
         )}
 
-        {/* DROPDOWN DANH SÁCH LỆNH CHƯA ĐỌC */}
         {showNotifs && notifications.length > 0 && (
-          <div className="absolute top-full left-0 right-0 md:right-auto mt-2 w-[calc(100vw-24px)] md:w-full max-w-lg bg-white border border-gray-200 shadow-xl rounded-lg overflow-hidden flex flex-col z-50">
-            <div className="bg-gray-50 border-b border-gray-200 px-4 py-3 flex justify-between items-center">
-              <h4 className="font-bold text-gray-800 text-sm md:text-base">
-                Lệnh Điều Hành Chưa Đọc
-              </h4>
+          <div className="absolute top-full left-0 right-0 md:right-auto mt-2 w-[calc(100vw-24px)] md:w-full max-w-lg bg-white border border-slate-200 shadow-lg rounded-xl overflow-hidden z-50">
+            <div className="bg-slate-50 border-b border-slate-200 px-4 py-3">
+              <h4 className="font-bold text-slate-800 text-sm">Lệnh Điều Hành Chưa Đọc</h4>
             </div>
             <div className="max-h-80 overflow-y-auto">
               {notifications.map((notif) => (
-                <div
-                  key={notif.id}
-                  className="px-3 py-3 md:px-4 md:py-4 border-b border-gray-100 hover:bg-red-50 transition-colors flex justify-between items-center gap-2 md:gap-4"
-                >
+                <div key={notif.id} className="px-4 py-3 border-b border-slate-100 hover:bg-red-50 transition-colors flex justify-between items-start gap-3">
                   <div>
-                    <div className="flex items-center mb-1">
-                      <span className="font-bold text-xs md:text-sm text-gray-900 flex items-center gap-1">
-                        👔 {notif.sender}
-                      </span>
-                    </div>
-                    <p className="text-xs md:text-sm text-gray-700 leading-relaxed font-medium">
-                      {notif.message}
-                    </p>
+                    <p className="font-semibold text-xs text-slate-800 mb-1">👔 {notif.sender}</p>
+                    <p className="text-xs text-slate-600 leading-relaxed">{notif.message}</p>
                   </div>
                   <button
                     onClick={() => handleMarkAsRead(notif.id)}
-                    className="shrink-0 bg-white border border-gray-300 text-gray-600 hover:text-green-600 hover:border-green-500 text-[10px] md:text-xs font-bold px-2 py-1 md:px-3 md:py-1.5 rounded-lg transition-colors shadow-sm"
+                    className="shrink-0 bg-white border border-slate-200 text-slate-500 hover:text-emerald-600 hover:border-emerald-400 text-xs font-semibold px-2.5 py-1 rounded-lg transition-colors"
                   >
                     Đã xem
                   </button>
@@ -237,117 +143,55 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onToggleSidebar }) => {
         )}
       </div>
 
-      {/* PHẢI: AVATAR USER VÀ ĐĂNG XUẤT */}
-      <div
-        className="flex items-center space-x-2 md:space-x-4 shrink-0 relative"
-        ref={userMenuRef}
-      >
-        <div className="hidden flex-col items-end mr-2 md:flex">
-          <span className="text-sm font-bold text-gray-800">
-            {currentUser?.name || "Người dùng"}
-          </span>
-          <span className="text-xs font-medium text-gray-500">
-            {currentUser?.role || "Nhân viên"}
-          </span>
+      {/* RIGHT: User */}
+      <div className="flex items-center gap-2 shrink-0 relative" ref={userMenuRef}>
+        <div className="hidden flex-col items-end mr-1 md:flex">
+          <span className="text-sm font-semibold text-slate-800">{currentUser?.name || "Người dùng"}</span>
+          <span className="text-xs text-slate-400">{currentUser?.role || "Nhân viên"}</span>
         </div>
-
         <button
           onClick={() => setShowUserMenu(!showUserMenu)}
-          className="w-8 h-8 md:w-10 md:h-10 rounded-full overflow-hidden border border-orange-200 bg-orange-100 shadow-sm hover:bg-orange-200 transition-colors outline-none focus:ring-2 focus:ring-orange-300"
-          aria-label="User avatar"
+          className="w-9 h-9 rounded-full overflow-hidden border-2 border-orange-200 bg-orange-50 hover:border-orange-400 transition-colors outline-none focus:ring-2 focus:ring-orange-300"
         >
-          <FaceAvatar
-            name={currentUser?.name || currentUser?.employeeCode || "user"}
-            size={40}
-            showInitial={true}
-            color="#ffff"
-          />
+          <FaceAvatar name={currentUser?.name || currentUser?.employeeCode || "user"} size={36} showInitial color="#ffff" />
         </button>
 
         {showUserMenu && (
-          <div className="absolute top-full right-0 mt-3 w-48 bg-white border border-gray-100 shadow-xl rounded-lg overflow-hidden py-1 z-50">
-            <div className="px-4 py-3 border-b border-gray-100 md:hidden">
-              <p className="text-sm font-bold text-gray-800">
-                {currentUser?.name}
-              </p>
-              <p className="text-xs text-gray-500">{currentUser?.role}</p>
+          <div className="absolute top-full right-0 mt-2 w-44 bg-white border border-slate-200 shadow-lg rounded-xl overflow-hidden py-1 z-50">
+            <div className="px-4 py-3 border-b border-slate-100 md:hidden">
+              <p className="text-sm font-bold text-slate-800">{currentUser?.name}</p>
+              <p className="text-xs text-slate-400">{currentUser?.role}</p>
             </div>
             <button
               onClick={handleLogout}
-              className="w-full text-left px-4 py-2.5 text-sm text-red-600 font-bold hover:bg-red-50 transition-colors flex items-center gap-2"
+              className="w-full text-left px-4 py-2.5 text-sm text-red-600 font-semibold hover:bg-red-50 transition-colors flex items-center gap-2"
             >
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                ></path>
-              </svg>
+              <SignOut size={15} />
               Đăng xuất
             </button>
           </div>
         )}
       </div>
 
-      {/* POPUP THÔNG BÁO GÓC MÀN HÌNH - TỐI ƯU MOBILE */}
+      {/* Toast */}
       {latestToast && (
-        <div className="fixed bottom-4 left-4 right-4 md:left-auto md:bottom-5 md:right-5 z-9999 animate-bounce-short flex justify-center">
-          <div className="bg-white border-l-4 border-l-red-500 shadow-2xl rounded-r-lg rounded-l-md flex items-start p-3 md:p-4 pr-8 md:pr-10 w-full max-w-sm relative">
-            <div className="inline-flex h-8 w-8 md:h-10 md:w-10 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-500 mr-2 md:mr-3">
-              <svg
-                className="w-5 h-5 md:w-6 md:h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                ></path>
-              </svg>
+        <div className="fixed bottom-4 left-4 right-4 md:left-auto md:bottom-5 md:right-5 z-9999 flex justify-center">
+          <div className="bg-white border-l-4 border-l-red-500 shadow-xl rounded-r-xl rounded-l-sm flex items-start p-4 pr-10 w-full max-w-sm relative">
+            <div className="w-8 h-8 shrink-0 flex items-center justify-center rounded-full bg-red-100 text-red-500 mr-3">
+              <Warning size={18} />
             </div>
             <div className="flex-1">
-              <h4 className="text-xs md:text-sm font-bold text-red-700 uppercase tracking-wide">
-                Từ: {latestToast.sender}
-              </h4>
-              <p className="text-xs md:text-sm text-gray-800 font-medium mt-0.5 md:mt-1 leading-snug">
-                {latestToast.message}
-              </p>
+              <h4 className="text-xs font-bold text-red-700 uppercase tracking-wide">Từ: {latestToast.sender}</h4>
+              <p className="text-xs text-slate-700 font-medium mt-0.5 leading-snug">{latestToast.message}</p>
             </div>
-            <button
-              onClick={() => setLatestToast(null)}
-              className="absolute top-1 right-1 md:top-2 md:right-2 text-gray-400 hover:text-gray-800 hover:bg-gray-100 rounded-lg p-1.5 transition-colors"
-            >
-              <svg
-                className="w-3.5 h-3.5 md:w-4 md:h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M6 18L18 6M6 6l12 12"
-                ></path>
-              </svg>
+            <button onClick={() => setLatestToast(null)} className="absolute top-2 right-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg p-1.5 transition-colors">
+              <X size={13} />
             </button>
           </div>
         </div>
       )}
       <style>{`
-        @keyframes bounce-short {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-10px); }
-        }
+        @keyframes bounce-short { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
         .animate-bounce-short { animation: bounce-short 1s ease-in-out 3; }
       `}</style>
     </header>

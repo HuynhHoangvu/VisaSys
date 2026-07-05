@@ -1,0 +1,18 @@
+meta {
+  name: Move Task (Kanban drag)
+  type: http
+  seq: 3
+}
+
+put {
+  url: {{base_url}}/api/tasks/{{task_id}}/move
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "columnId": "col-2",
+    "index": 0
+  }
+}

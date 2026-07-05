@@ -1,0 +1,20 @@
+meta {
+  name: Update Task
+  type: http
+  seq: 2
+}
+
+put {
+  url: {{base_url}}/api/tasks/{{task_id}}
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "price": "30.000.000",
+    "visaType": "Visa 482 - Lao động tay nghề",
+    "educationLevel": "Đại học",
+    "workExperience": "3 năm"
+  }
+}

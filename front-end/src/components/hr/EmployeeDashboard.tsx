@@ -577,20 +577,20 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
   }
 
   return (
-    <div className="flex-1 p-3 sm:p-6 overflow-y-auto bg-gray-100 h-full relative">
+    <div className="flex-1 p-3 sm:p-6 overflow-y-auto bg-slate-100 h-full relative">
       <Card className="w-full h-full shadow-sm border-none rounded-xl">
-        <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-4 sm:mb-6 border-b border-gray-200 pb-4 gap-4">
+        <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-4 sm:mb-6 border-b border-slate-200 pb-4 gap-4">
           <div>
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-800">
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-800">
               Quản lý Nhân sự
             </h2>
-            <p className="text-gray-500 text-xs sm:text-sm mt-1">
+            <p className="text-slate-500 text-xs sm:text-sm mt-1">
               Danh sách nhân viên, bộ phận và phân quyền
             </p>
-            <p className="text-gray-400 text-[11px] sm:text-xs mt-1 max-w-2xl">
+            <p className="text-slate-400 text-[11px] sm:text-xs mt-1 max-w-2xl">
               Trong Cài đặt › Phân quyền (RBAC), ma trận quyền gắn theo{" "}
-              <span className="text-gray-500">bộ phận</span>; cột «Chức vụ» trên bảng là{" "}
-              <span className="text-gray-500">vai trò HR</span> (tách khỏi quyền truy cập). Danh mục bộ phận quản tại
+              <span className="text-slate-500">bộ phận</span>; cột «Chức vụ» trên bảng là{" "}
+              <span className="text-slate-500">vai trò HR</span> (tách khỏi quyền truy cập). Danh mục bộ phận quản tại
               «Quản lý bộ phận».
             </p>
           </div>
@@ -651,7 +651,7 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
                   color="light"
                   size="sm"
                   onClick={() => setIsDeptModalOpen(true)}
-                  className="focus:ring-0 border-gray-200 text-gray-700"
+                  className="focus:ring-0 border-slate-200 text-slate-700"
                 >
                   ⚙️{" "}
                   <span className="hidden sm:inline ml-1">Quản lý Bộ phận</span>
@@ -696,8 +696,8 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
         </div>
 
         <div className="overflow-x-auto custom-scrollbar w-full">
-          <table className="w-full min-w-[800px] text-sm text-left text-gray-500">
-            <thead className="text-xs text-gray-700 uppercase bg-gray-50 border-b border-gray-200">
+          <table className="w-full min-w-[800px] text-sm text-left text-slate-500">
+            <thead className="text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200">
               <tr>
                 <th className="px-3 sm:px-4 py-3 sm:py-4 font-bold w-20 sm:w-24">
                   Mã NV
@@ -721,7 +721,7 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
                 <tr>
                   <td
                     colSpan={7}
-                    className="px-4 py-8 text-center italic text-gray-400"
+                    className="px-4 py-8 text-center italic text-slate-400"
                   >
                     Chưa có nhân viên nào.
                   </td>
@@ -729,17 +729,17 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
               ) : (
                 groupedEmployees.map((group) => (
                   <React.Fragment key={group.departmentName}>
-                    <tr className="bg-gray-50 border-b border-gray-200">
+                    <tr className="bg-slate-50 border-b border-slate-200">
                       <td
                         colSpan={7}
-                        className="px-3 sm:px-4 py-2 sm:py-3 font-bold text-gray-800"
+                        className="px-3 sm:px-4 py-2 sm:py-3 font-bold text-slate-800"
                       >
                         <span className="mr-2">📁</span>
                         Bộ phận:{" "}
                         <span className="text-blue-700 ml-1 text-xs sm:text-sm font-semibold tracking-tight">
                           {group.departmentName}
                         </span>
-                        <span className="ml-3 text-[10px] sm:text-xs font-semibold text-gray-500 bg-white px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full border border-gray-200 shadow-sm">
+                        <span className="ml-3 text-[10px] sm:text-xs font-semibold text-slate-500 bg-white px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full border border-slate-200 shadow-sm">
                           {group.employees.length} nhân sự
                         </span>
                       </td>
@@ -749,7 +749,7 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
                         key={emp.id}
                         className="bg-white hover:bg-blue-50 transition-colors duration-150"
                       >
-                        <td className="px-3 sm:px-4 py-3 sm:py-4 font-bold text-gray-900 text-xs sm:text-sm">
+                        <td className="px-3 sm:px-4 py-3 sm:py-4 font-bold text-slate-900 text-xs sm:text-sm">
                           {emp.employeeCode}
                         </td>
                         <td className="px-3 sm:px-4 py-3 sm:py-4">
@@ -760,7 +760,7 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
                               showInitial={true}
                               className="rounded-full shrink-0"
                             />
-                            <span className="font-bold text-gray-800 truncate max-w-[120px] sm:max-w-full text-xs sm:text-sm">
+                            <span className="font-bold text-slate-800 truncate max-w-[120px] sm:max-w-full text-xs sm:text-sm">
                               {emp.name}
                             </span>
                           </div>
@@ -768,10 +768,10 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
                         <td className="px-3 sm:px-4 py-3 sm:py-4 text-blue-600 font-medium text-xs sm:text-sm truncate max-w-[150px] sm:max-w-none">
                           {emp.email || "Chưa cập nhật"}
                         </td>
-                        <td className="px-3 sm:px-4 py-3 sm:py-4 font-medium text-gray-600 text-xs sm:text-sm">
+                        <td className="px-3 sm:px-4 py-3 sm:py-4 font-medium text-slate-600 text-xs sm:text-sm">
                           {emp.department}
                         </td>
-                        <td className="px-3 sm:px-4 py-3 sm:py-4 text-gray-600 text-xs sm:text-sm">
+                        <td className="px-3 sm:px-4 py-3 sm:py-4 text-slate-600 text-xs sm:text-sm">
                           {emp.role}
                         </td>
                         <td className="px-3 sm:px-4 py-3 sm:py-4">
@@ -881,21 +881,21 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 p-6">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-bold text-gray-800">🏖️ Tạo Nghỉ Đồng Loạt</h3>
+              <h3 className="text-lg font-bold text-slate-800">🏖️ Tạo Nghỉ Đồng Loạt</h3>
               <button
                 onClick={() => setShowBulkLeaveModal(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-slate-400 hover:text-slate-600"
               >
                 ✕
               </button>
             </div>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Loại nghỉ</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Loại nghỉ</label>
                 <select
                   value={bulkLeaveType}
                   onChange={(e) => setBulkLeaveType(e.target.value as "Nghỉ không lương" | "Nghỉ có lương")}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
                 >
                   <option value="Nghỉ có lương">Nghỉ có lương (Không trừ lương)</option>
                   <option value="Nghỉ không lương">Nghỉ không lương (Trừ ngày công)</option>
@@ -903,39 +903,39 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Từ ngày</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Từ ngày</label>
                   <input
                     type="date"
                     value={bulkStartDate}
                     onChange={(e) => setBulkStartDate(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Đến ngày</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Đến ngày</label>
                   <input
                     type="date"
                     value={bulkEndDate}
                     onChange={(e) => setBulkEndDate(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Lý do</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Lý do</label>
                 <textarea
                   value={bulkReason}
                   onChange={(e) => setBulkReason(e.target.value)}
                   placeholder="VD: Công ty nghỉ Tết, Nghỉ lễ..."
                   rows={3}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
                 />
               </div>
             </div>
             <div className="flex justify-end gap-2 mt-6">
               <button
                 onClick={() => setShowBulkLeaveModal(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+                className="px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200"
               >
                 Hủy
               </button>

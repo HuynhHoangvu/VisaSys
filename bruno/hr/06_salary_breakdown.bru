@@ -1,0 +1,11 @@
+meta {
+  name: Get Salary Breakdown (tháng cụ thể)
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{base_url}}/api/hr/salary/breakdown/{{month_year}}
+  body: none
+  auth: none
+}

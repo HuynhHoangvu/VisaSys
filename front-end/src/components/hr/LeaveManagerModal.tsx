@@ -27,24 +27,24 @@ const LeaveManagerModal: React.FC<LeaveManagerModalProps> = ({
 
   return (
     <Modal show={show} onClose={onClose} size="6xl" className="md:p-4">
-      <div className="p-4 sm:p-6 border-b border-gray-200 flex flex-wrap justify-between items-center gap-3 bg-gray-50 rounded-t-lg">
-        <h3 className="text-lg sm:text-xl font-bold text-gray-800 flex items-center gap-2">
+      <div className="p-4 sm:p-6 border-b border-slate-200 flex flex-wrap justify-between items-center gap-3 bg-slate-50 rounded-t-lg">
+        <h3 className="text-lg sm:text-xl font-bold text-slate-800 flex items-center gap-2">
           📋 Danh sách Đơn xin nghỉ phép
         </h3>
         <div className="flex items-center gap-2">
-          <label className="text-sm font-medium text-gray-600 whitespace-nowrap">
+          <label className="text-sm font-medium text-slate-600 whitespace-nowrap">
             Lọc tháng:
           </label>
           <input
             type="month"
             value={leaveMonthFilter}
             onChange={(e) => setLeaveMonthFilter(e.target.value)}
-            className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            className="text-sm border border-slate-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
           {leaveMonthFilter && (
             <button
               onClick={() => setLeaveMonthFilter("")}
-              className="text-xs text-gray-500 hover:text-gray-800 px-2 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors whitespace-nowrap"
+              className="text-xs text-slate-500 hover:text-slate-800 px-2 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 transition-colors whitespace-nowrap"
             >
               Tất cả
             </button>
@@ -52,7 +52,7 @@ const LeaveManagerModal: React.FC<LeaveManagerModalProps> = ({
         </div>
         <button
           onClick={onClose}
-          className="text-gray-400 hover:text-gray-900 bg-white hover:bg-gray-200 rounded-full p-1.5 transition-colors border"
+          className="text-slate-400 hover:text-slate-900 bg-white hover:bg-slate-200 rounded-full p-1.5 transition-colors border"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
@@ -60,8 +60,8 @@ const LeaveManagerModal: React.FC<LeaveManagerModalProps> = ({
         </button>
       </div>
       <div className="p-0 overflow-x-auto overflow-y-auto max-h-[70vh] custom-scrollbar w-full">
-        <table className="w-full min-w-[900px] text-sm text-left text-gray-600">
-          <thead className="text-xs text-gray-700 uppercase bg-gray-100 sticky top-0 shadow-sm z-10">
+        <table className="w-full min-w-[900px] text-sm text-left text-slate-600">
+          <thead className="text-xs text-slate-700 uppercase bg-slate-100 sticky top-0 shadow-sm z-10">
             <tr>
               <th className="px-4 py-3 sm:py-4 font-bold whitespace-nowrap">Ngày nộp</th>
               <th className="px-4 py-3 sm:py-4 font-bold whitespace-nowrap">Nhân viên</th>
@@ -75,7 +75,7 @@ const LeaveManagerModal: React.FC<LeaveManagerModalProps> = ({
           <tbody className="divide-y divide-gray-200">
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center italic text-gray-400">
+                <td colSpan={7} className="px-4 py-8 text-center italic text-slate-400">
                   {leaveMonthFilter
                     ? "Không có đơn nào trong tháng này."
                     : "Không có đơn xin nghỉ phép nào."}
@@ -83,13 +83,13 @@ const LeaveManagerModal: React.FC<LeaveManagerModalProps> = ({
               </tr>
             ) : (
               filtered.map((req) => (
-                <tr key={req.id} className="bg-white hover:bg-gray-50">
-                  <td className="px-4 py-3 sm:py-4 font-medium text-gray-500 whitespace-nowrap">
+                <tr key={req.id} className="bg-white hover:bg-slate-50">
+                  <td className="px-4 py-3 sm:py-4 font-medium text-slate-500 whitespace-nowrap">
                     {new Date(req.createdAt).toLocaleDateString("vi-VN")}
                   </td>
                   <td className="px-4 py-3 sm:py-4">
-                    <p className="font-bold text-gray-900 whitespace-nowrap">{req.employee?.name}</p>
-                    <p className="text-[10px] sm:text-xs text-gray-500 whitespace-nowrap">
+                    <p className="font-bold text-slate-900 whitespace-nowrap">{req.employee?.name}</p>
+                    <p className="text-[10px] sm:text-xs text-slate-500 whitespace-nowrap">
                       {typeof req.employee?.department === "object"
                         ? (req.employee?.department as { name: string }).name
                         : req.employee?.department}
@@ -106,14 +106,14 @@ const LeaveManagerModal: React.FC<LeaveManagerModalProps> = ({
                     </div>
                   </td>
                   <td className="px-4 py-3 sm:py-4 font-medium whitespace-nowrap">
-                    <div className="text-gray-800 text-xs sm:text-sm">
+                    <div className="text-slate-800 text-xs sm:text-sm">
                       Từ: {new Date(req.startDate).toLocaleDateString("vi-VN")}
                     </div>
-                    <div className="text-gray-500 text-xs sm:text-sm">
+                    <div className="text-slate-500 text-xs sm:text-sm">
                       Đến: {new Date(req.endDate).toLocaleDateString("vi-VN")}
                     </div>
                   </td>
-                  <td className="px-4 py-3 sm:py-4 text-[10px] sm:text-xs italic text-gray-600 min-w-[150px]">
+                  <td className="px-4 py-3 sm:py-4 text-[10px] sm:text-xs italic text-slate-600 min-w-[150px]">
                     {req.reason}
                   </td>
                   <td className="px-4 py-3 sm:py-4 text-center">
@@ -147,7 +147,7 @@ const LeaveManagerModal: React.FC<LeaveManagerModalProps> = ({
                         </button>
                       </div>
                     ) : (
-                      <span className="text-[10px] sm:text-xs text-gray-400 font-medium whitespace-nowrap">
+                      <span className="text-[10px] sm:text-xs text-slate-400 font-medium whitespace-nowrap">
                         Đã xử lý
                       </span>
                     )}

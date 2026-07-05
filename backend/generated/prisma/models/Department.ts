@@ -160,6 +160,7 @@ export type DepartmentWhereInput = {
   name?: Prisma.StringFilter<"Department"> | string
   employees?: Prisma.EmployeeListRelationFilter
   departmentPermission?: Prisma.XOR<Prisma.DepartmentPermissionNullableScalarRelationFilter, Prisma.DepartmentPermissionWhereInput> | null
+  chatRoom?: Prisma.XOR<Prisma.ChatRoomNullableScalarRelationFilter, Prisma.ChatRoomWhereInput> | null
 }
 
 export type DepartmentOrderByWithRelationInput = {
@@ -167,6 +168,7 @@ export type DepartmentOrderByWithRelationInput = {
   name?: Prisma.SortOrder
   employees?: Prisma.EmployeeOrderByRelationAggregateInput
   departmentPermission?: Prisma.DepartmentPermissionOrderByWithRelationInput
+  chatRoom?: Prisma.ChatRoomOrderByWithRelationInput
 }
 
 export type DepartmentWhereUniqueInput = Prisma.AtLeast<{
@@ -177,6 +179,7 @@ export type DepartmentWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.DepartmentWhereInput | Prisma.DepartmentWhereInput[]
   employees?: Prisma.EmployeeListRelationFilter
   departmentPermission?: Prisma.XOR<Prisma.DepartmentPermissionNullableScalarRelationFilter, Prisma.DepartmentPermissionWhereInput> | null
+  chatRoom?: Prisma.XOR<Prisma.ChatRoomNullableScalarRelationFilter, Prisma.ChatRoomWhereInput> | null
 }, "id" | "name">
 
 export type DepartmentOrderByWithAggregationInput = {
@@ -200,6 +203,7 @@ export type DepartmentCreateInput = {
   name: string
   employees?: Prisma.EmployeeCreateNestedManyWithoutDepartmentInput
   departmentPermission?: Prisma.DepartmentPermissionCreateNestedOneWithoutDepartmentInput
+  chatRoom?: Prisma.ChatRoomCreateNestedOneWithoutDepartmentInput
 }
 
 export type DepartmentUncheckedCreateInput = {
@@ -207,6 +211,7 @@ export type DepartmentUncheckedCreateInput = {
   name: string
   employees?: Prisma.EmployeeUncheckedCreateNestedManyWithoutDepartmentInput
   departmentPermission?: Prisma.DepartmentPermissionUncheckedCreateNestedOneWithoutDepartmentInput
+  chatRoom?: Prisma.ChatRoomUncheckedCreateNestedOneWithoutDepartmentInput
 }
 
 export type DepartmentUpdateInput = {
@@ -214,6 +219,7 @@ export type DepartmentUpdateInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   employees?: Prisma.EmployeeUpdateManyWithoutDepartmentNestedInput
   departmentPermission?: Prisma.DepartmentPermissionUpdateOneWithoutDepartmentNestedInput
+  chatRoom?: Prisma.ChatRoomUpdateOneWithoutDepartmentNestedInput
 }
 
 export type DepartmentUncheckedUpdateInput = {
@@ -221,6 +227,7 @@ export type DepartmentUncheckedUpdateInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   employees?: Prisma.EmployeeUncheckedUpdateManyWithoutDepartmentNestedInput
   departmentPermission?: Prisma.DepartmentPermissionUncheckedUpdateOneWithoutDepartmentNestedInput
+  chatRoom?: Prisma.ChatRoomUncheckedUpdateOneWithoutDepartmentNestedInput
 }
 
 export type DepartmentCreateManyInput = {
@@ -293,16 +300,34 @@ export type DepartmentUpdateOneRequiredWithoutDepartmentPermissionNestedInput = 
   update?: Prisma.XOR<Prisma.XOR<Prisma.DepartmentUpdateToOneWithWhereWithoutDepartmentPermissionInput, Prisma.DepartmentUpdateWithoutDepartmentPermissionInput>, Prisma.DepartmentUncheckedUpdateWithoutDepartmentPermissionInput>
 }
 
+export type DepartmentCreateNestedOneWithoutChatRoomInput = {
+  create?: Prisma.XOR<Prisma.DepartmentCreateWithoutChatRoomInput, Prisma.DepartmentUncheckedCreateWithoutChatRoomInput>
+  connectOrCreate?: Prisma.DepartmentCreateOrConnectWithoutChatRoomInput
+  connect?: Prisma.DepartmentWhereUniqueInput
+}
+
+export type DepartmentUpdateOneWithoutChatRoomNestedInput = {
+  create?: Prisma.XOR<Prisma.DepartmentCreateWithoutChatRoomInput, Prisma.DepartmentUncheckedCreateWithoutChatRoomInput>
+  connectOrCreate?: Prisma.DepartmentCreateOrConnectWithoutChatRoomInput
+  upsert?: Prisma.DepartmentUpsertWithoutChatRoomInput
+  disconnect?: Prisma.DepartmentWhereInput | boolean
+  delete?: Prisma.DepartmentWhereInput | boolean
+  connect?: Prisma.DepartmentWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.DepartmentUpdateToOneWithWhereWithoutChatRoomInput, Prisma.DepartmentUpdateWithoutChatRoomInput>, Prisma.DepartmentUncheckedUpdateWithoutChatRoomInput>
+}
+
 export type DepartmentCreateWithoutEmployeesInput = {
   id?: string
   name: string
   departmentPermission?: Prisma.DepartmentPermissionCreateNestedOneWithoutDepartmentInput
+  chatRoom?: Prisma.ChatRoomCreateNestedOneWithoutDepartmentInput
 }
 
 export type DepartmentUncheckedCreateWithoutEmployeesInput = {
   id?: string
   name: string
   departmentPermission?: Prisma.DepartmentPermissionUncheckedCreateNestedOneWithoutDepartmentInput
+  chatRoom?: Prisma.ChatRoomUncheckedCreateNestedOneWithoutDepartmentInput
 }
 
 export type DepartmentCreateOrConnectWithoutEmployeesInput = {
@@ -325,24 +350,28 @@ export type DepartmentUpdateWithoutEmployeesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   departmentPermission?: Prisma.DepartmentPermissionUpdateOneWithoutDepartmentNestedInput
+  chatRoom?: Prisma.ChatRoomUpdateOneWithoutDepartmentNestedInput
 }
 
 export type DepartmentUncheckedUpdateWithoutEmployeesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   departmentPermission?: Prisma.DepartmentPermissionUncheckedUpdateOneWithoutDepartmentNestedInput
+  chatRoom?: Prisma.ChatRoomUncheckedUpdateOneWithoutDepartmentNestedInput
 }
 
 export type DepartmentCreateWithoutDepartmentPermissionInput = {
   id?: string
   name: string
   employees?: Prisma.EmployeeCreateNestedManyWithoutDepartmentInput
+  chatRoom?: Prisma.ChatRoomCreateNestedOneWithoutDepartmentInput
 }
 
 export type DepartmentUncheckedCreateWithoutDepartmentPermissionInput = {
   id?: string
   name: string
   employees?: Prisma.EmployeeUncheckedCreateNestedManyWithoutDepartmentInput
+  chatRoom?: Prisma.ChatRoomUncheckedCreateNestedOneWithoutDepartmentInput
 }
 
 export type DepartmentCreateOrConnectWithoutDepartmentPermissionInput = {
@@ -365,12 +394,58 @@ export type DepartmentUpdateWithoutDepartmentPermissionInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   employees?: Prisma.EmployeeUpdateManyWithoutDepartmentNestedInput
+  chatRoom?: Prisma.ChatRoomUpdateOneWithoutDepartmentNestedInput
 }
 
 export type DepartmentUncheckedUpdateWithoutDepartmentPermissionInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   employees?: Prisma.EmployeeUncheckedUpdateManyWithoutDepartmentNestedInput
+  chatRoom?: Prisma.ChatRoomUncheckedUpdateOneWithoutDepartmentNestedInput
+}
+
+export type DepartmentCreateWithoutChatRoomInput = {
+  id?: string
+  name: string
+  employees?: Prisma.EmployeeCreateNestedManyWithoutDepartmentInput
+  departmentPermission?: Prisma.DepartmentPermissionCreateNestedOneWithoutDepartmentInput
+}
+
+export type DepartmentUncheckedCreateWithoutChatRoomInput = {
+  id?: string
+  name: string
+  employees?: Prisma.EmployeeUncheckedCreateNestedManyWithoutDepartmentInput
+  departmentPermission?: Prisma.DepartmentPermissionUncheckedCreateNestedOneWithoutDepartmentInput
+}
+
+export type DepartmentCreateOrConnectWithoutChatRoomInput = {
+  where: Prisma.DepartmentWhereUniqueInput
+  create: Prisma.XOR<Prisma.DepartmentCreateWithoutChatRoomInput, Prisma.DepartmentUncheckedCreateWithoutChatRoomInput>
+}
+
+export type DepartmentUpsertWithoutChatRoomInput = {
+  update: Prisma.XOR<Prisma.DepartmentUpdateWithoutChatRoomInput, Prisma.DepartmentUncheckedUpdateWithoutChatRoomInput>
+  create: Prisma.XOR<Prisma.DepartmentCreateWithoutChatRoomInput, Prisma.DepartmentUncheckedCreateWithoutChatRoomInput>
+  where?: Prisma.DepartmentWhereInput
+}
+
+export type DepartmentUpdateToOneWithWhereWithoutChatRoomInput = {
+  where?: Prisma.DepartmentWhereInput
+  data: Prisma.XOR<Prisma.DepartmentUpdateWithoutChatRoomInput, Prisma.DepartmentUncheckedUpdateWithoutChatRoomInput>
+}
+
+export type DepartmentUpdateWithoutChatRoomInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  employees?: Prisma.EmployeeUpdateManyWithoutDepartmentNestedInput
+  departmentPermission?: Prisma.DepartmentPermissionUpdateOneWithoutDepartmentNestedInput
+}
+
+export type DepartmentUncheckedUpdateWithoutChatRoomInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  employees?: Prisma.EmployeeUncheckedUpdateManyWithoutDepartmentNestedInput
+  departmentPermission?: Prisma.DepartmentPermissionUncheckedUpdateOneWithoutDepartmentNestedInput
 }
 
 
@@ -409,6 +484,7 @@ export type DepartmentSelect<ExtArgs extends runtime.Types.Extensions.InternalAr
   name?: boolean
   employees?: boolean | Prisma.Department$employeesArgs<ExtArgs>
   departmentPermission?: boolean | Prisma.Department$departmentPermissionArgs<ExtArgs>
+  chatRoom?: boolean | Prisma.Department$chatRoomArgs<ExtArgs>
   _count?: boolean | Prisma.DepartmentCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["department"]>
 
@@ -431,6 +507,7 @@ export type DepartmentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs
 export type DepartmentInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   employees?: boolean | Prisma.Department$employeesArgs<ExtArgs>
   departmentPermission?: boolean | Prisma.Department$departmentPermissionArgs<ExtArgs>
+  chatRoom?: boolean | Prisma.Department$chatRoomArgs<ExtArgs>
   _count?: boolean | Prisma.DepartmentCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type DepartmentIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -440,11 +517,8 @@ export type $DepartmentPayload<ExtArgs extends runtime.Types.Extensions.Internal
   name: "Department"
   objects: {
     employees: Prisma.$EmployeePayload<ExtArgs>[]
-    /**
-     * *
-     *    * Ma trận quyền RBAC mặc định theo bộ phận (khác với Employee.role).
-     */
     departmentPermission: Prisma.$DepartmentPermissionPayload<ExtArgs> | null
+    chatRoom: Prisma.$ChatRoomPayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -845,6 +919,7 @@ export interface Prisma__DepartmentClient<T, Null = never, ExtArgs extends runti
   readonly [Symbol.toStringTag]: "PrismaPromise"
   employees<T extends Prisma.Department$employeesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Department$employeesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$EmployeePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   departmentPermission<T extends Prisma.Department$departmentPermissionArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Department$departmentPermissionArgs<ExtArgs>>): Prisma.Prisma__DepartmentPermissionClient<runtime.Types.Result.GetResult<Prisma.$DepartmentPermissionPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  chatRoom<T extends Prisma.Department$chatRoomArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Department$chatRoomArgs<ExtArgs>>): Prisma.Prisma__ChatRoomClient<runtime.Types.Result.GetResult<Prisma.$ChatRoomPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1304,6 +1379,25 @@ export type Department$departmentPermissionArgs<ExtArgs extends runtime.Types.Ex
    */
   include?: Prisma.DepartmentPermissionInclude<ExtArgs> | null
   where?: Prisma.DepartmentPermissionWhereInput
+}
+
+/**
+ * Department.chatRoom
+ */
+export type Department$chatRoomArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ChatRoom
+   */
+  select?: Prisma.ChatRoomSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ChatRoom
+   */
+  omit?: Prisma.ChatRoomOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ChatRoomInclude<ExtArgs> | null
+  where?: Prisma.ChatRoomWhereInput
 }
 
 /**

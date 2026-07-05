@@ -1,13 +1,22 @@
 import multer from "multer";
 import fs from "fs";
+import fsPromises from "fs/promises";
+import path from "path";
 import os from "os";
-import { gcsBucket } from "../../config/googleStorage.js";
+import { logger } from "../../lib/logger.js";
 
-export const bucket = gcsBucket;
+// Stub bucket object — kept so existing service imports don't break
+export const bucket = {
+  file: (name: string) => ({
+    delete: async () => {
+      const localPath = path.join(process.cwd(), "uploads", name);
+      await fsPromises.unlink(localPath).catch(() => {});
+    },
+  }),
+  name: "local",
+};
 
-// ==========================================
-// CẤU HÌNH MULTER (LƯU TẠM VÀO DISK - hỗ trợ file lớn)
-// ==========================================
+// ── Multer: save temp file to OS tmpdir ──────────────────────────────────────
 const diskStorage = multer.diskStorage({
   destination: (_req, _file, cb) => cb(null, os.tmpdir()),
   filename: (_req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`),
@@ -21,56 +30,33 @@ const multerUpload = multer({
   limits: { fileSize: PROCESSED_DOC_MAX_FILE_BYTES },
 });
 
-// Export cả 2 tên để fix lỗi SyntaxError ở các file Routes
 export const uploadDoc = multerUpload;
 export const uploadProcessedDoc = multerUpload;
 
-// ==========================================
-// HÀM HELPER UPLOAD DÙNG CHUNG
-// Nhận đường dẫn file tạm trên disk, stream lên GCS rồi xóa file tạm
-// ==========================================
-export const uploadToGCS = (
+// ── Local storage helper (replaces GCS) ─────────────────────────────────────
+// Moves temp file → uploads/{folder}/{timestamp}-{safeName}
+// Returns a relative URL served by Express static middleware
+export const uploadToGCS = async (
   filePath: string,
   folder: string,
-  filename: string
+  filename: string,
 ): Promise<{ url: string; publicId: string }> => {
-  return new Promise((resolve, reject) => {
-    // 1. Chuẩn hóa tên file: Xóa dấu tiếng Việt, thay khoảng trắng bằng gạch dưới
-    const safeName = filename
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/đ/g, 'd').replace(/Đ/g, 'D')
-      .replace(/\s+/g, "_")
-      .replace(/[^a-zA-Z0-9._-]/g, "");
+  const safeName = filename
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/đ/g, "d").replace(/Đ/g, "D")
+    .replace(/\s+/g, "_")
+    .replace(/[^a-zA-Z0-9._-]/g, "");
 
-    const gcsPath = `${folder}/${Date.now()}-${safeName}`;
-    const file = bucket.file(gcsPath);
+  const destName = `${Date.now()}-${safeName}`;
+  const uploadDir = path.join(process.cwd(), "uploads", folder);
+  await fsPromises.mkdir(uploadDir, { recursive: true });
 
-    const cleanup = () => fs.unlink(filePath, () => {});
+  const destPath = path.join(uploadDir, destName);
+  await fsPromises.copyFile(filePath, destPath);
+  fs.unlink(filePath, () => {});
 
-    // 2. Tạo luồng ghi vào GCS (resumable=true cho file lớn)
-    const writeStream = file.createWriteStream({
-      resumable: true,
-      metadata: {
-        cacheControl: 'public, max-age=31536000',
-      }
-    });
-
-    writeStream.on("error", (err) => {
-      cleanup();
-      console.error("❌ GCS Stream Error:", err);
-      reject(err);
-    });
-
-    writeStream.on("finish", () => {
-      cleanup();
-      const publicUrl = `https://storage.googleapis.com/${bucket.name}/${encodeURIComponent(file.name)}`;
-      resolve({ url: publicUrl, publicId: file.name });
-    });
-
-    // 3. Stream từ disk lên GCS (không đọc vào RAM)
-    fs.createReadStream(filePath)
-      .on("error", (err) => { cleanup(); reject(err); })
-      .pipe(writeStream);
-  });
+  const publicId = `${folder}/${destName}`;
+  logger.info({ dest: destPath }, "[storage] file saved locally");
+  return { url: `/uploads/${publicId}`, publicId };
 };

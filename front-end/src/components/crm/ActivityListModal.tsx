@@ -29,20 +29,20 @@ const ActivityListModal: React.FC<ActivityListModalProps> = ({
   const renderActivityItem = (act: Activity) => (
     <div
       key={act.id}
-      className="p-2.5 sm:p-3 flex items-center gap-2 sm:gap-3 hover:bg-gray-50 transition-colors"
+      className="p-2.5 sm:p-3 flex items-center gap-2 sm:gap-3 hover:bg-slate-50 transition-colors"
     >
       <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gray-500 text-white rounded flex items-center justify-center font-bold text-xs sm:text-sm shrink-0">
         {act.assignee.charAt(0)}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="font-bold text-xs sm:text-sm text-gray-800 truncate">
+        <p className="font-bold text-xs sm:text-sm text-slate-800 truncate">
           {act.type}
         </p>
-        <p className="text-[10px] sm:text-xs text-gray-500 truncate">
+        <p className="text-[10px] sm:text-xs text-slate-500 truncate">
           {act.assignee} - {act.summary || act.dueText}
         </p>
       </div>
-      <div className="flex items-center gap-1.5 sm:gap-2 text-gray-400 shrink-0">
+      <div className="flex items-center gap-1.5 sm:gap-2 text-slate-400 shrink-0">
         <button
           onClick={() => onCompleteActivity(act.id)}
           className="p-1 hover:text-green-500"
@@ -106,13 +106,13 @@ const ActivityListModal: React.FC<ActivityListModalProps> = ({
       dismissible
     >
       <div className="bg-white rounded-lg flex flex-col max-h-[85vh] overflow-hidden">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
-          <h3 className="font-bold text-gray-800 text-sm sm:text-base">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200">
+          <h3 className="font-bold text-slate-800 text-sm sm:text-base">
             Hoạt động đã lên lịch
           </h3>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-900 p-1 rounded-md hover:bg-gray-100"
+            className="text-slate-400 hover:text-slate-900 p-1 rounded-md hover:bg-slate-100"
           >
             <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
               <path
@@ -126,7 +126,7 @@ const ActivityListModal: React.FC<ActivityListModalProps> = ({
         <div className="overflow-y-auto custom-scrollbar flex-1">
           {todayActivities.length > 0 && (
             <div>
-              <div className="flex justify-between items-center px-4 py-2 bg-gray-50 border-b border-gray-200">
+              <div className="flex justify-between items-center px-4 py-2 bg-slate-50 border-b border-slate-200">
                 <span className="text-flygold font-semibold text-xs sm:text-sm">
                   Hôm nay
                 </span>
@@ -141,7 +141,7 @@ const ActivityListModal: React.FC<ActivityListModalProps> = ({
           )}
           {plannedActivities.length > 0 && (
             <div>
-              <div className="flex justify-between items-center px-4 py-2 bg-gray-50 border-y border-gray-200 mt-2">
+              <div className="flex justify-between items-center px-4 py-2 bg-slate-50 border-y border-slate-200 mt-2">
                 <span className="text-green-600 font-semibold text-xs sm:text-sm">
                   Đã lên kế hoạch
                 </span>
@@ -155,7 +155,7 @@ const ActivityListModal: React.FC<ActivityListModalProps> = ({
             </div>
           )}
           {todayActivities.length === 0 && plannedActivities.length === 0 && (
-            <div className="p-6 text-center text-gray-500 text-xs sm:text-sm">
+            <div className="p-6 text-center text-slate-500 text-xs sm:text-sm">
               Chưa có hoạt động nào.
             </div>
           )}
@@ -164,7 +164,7 @@ const ActivityListModal: React.FC<ActivityListModalProps> = ({
           onClick={() => {
             onOpenScheduleForm();
           }}
-          className="p-3 bg-gray-100 text-center text-gray-800 font-bold text-xs sm:text-sm cursor-pointer hover:bg-gray-200 border-t border-gray-200 mt-auto"
+          className="p-3 bg-slate-100 text-center text-slate-800 font-bold text-xs sm:text-sm cursor-pointer hover:bg-slate-200 border-t border-slate-200 mt-auto"
         >
           + Lên lịch một hoạt động
         </div>

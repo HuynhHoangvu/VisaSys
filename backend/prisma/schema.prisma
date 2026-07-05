@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client"
   output   = "../generated/prisma"
@@ -72,14 +66,11 @@ model Activity {
 
 model Department {
   id   String @id @default(uuid())
-  name String @unique // Ví dụ: Sale, Xử lý hồ sơ, Kế toán...
+  name String @unique
 
-  // Quan hệ 1 phòng ban có nhiều nhân viên
   employees            Employee[]
-  /**
-   * Ma trận quyền RBAC mặc định theo bộ phận (khác với Employee.role).
-   */
   departmentPermission DepartmentPermission?
+  chatRoom             ChatRoom?
 }
 
 model Employee {
@@ -97,7 +88,6 @@ model Employee {
   leaveRequests   LeaveRequest[]
   department      Department?     @relation(fields: [departmentId], references: [id], onDelete: SetNull)
 
-  // [THÊM DÒNG NÀY]: 1 Nhân viên có nhiều lượt chấm công
   attendanceRecords  AttendanceRecord[]
   workspaces         Workspace[]
   permissionOverride EmployeePermissionOverride?
@@ -105,13 +95,12 @@ model Employee {
   createdAt DateTime @default(now())
 }
 
-// [THÊM BẢNG MỚI NÀY VÀO CUỐI FILE]
 model AttendanceRecord {
   id               String   @id @default(uuid())
-  date             String // Lưu chuỗi ngày: "24/02/2026"
-  inTime           String // "08:00"
-  outTime          String // "-"
-  status           String // "Đúng giờ" | "Đi muộn" | "Vắng không phép"
+  date             String
+  inTime           String
+  outTime          String
+  status           String
   fine             Float    @default(0)
   halfDayDeduction Float    @default(0)
   employeeId       String
@@ -153,10 +142,10 @@ model SalesRecord {
 model DocFolder {
   id        String   @id @default(uuid())
   name      String
-  parentId  String? // Nếu null nghĩa là thư mục gốc
+  parentId  String?
   createdAt DateTime @default(now())
 
-  files DocFile[] // 1 thư mục có nhiều file
+  files DocFile[]
 }
 
 model DocFile {
@@ -173,27 +162,20 @@ model DocFile {
 
 model SalaryHistory {
   id             String @id @default(uuid())
-  monthYear      String // VD: "02/2026"
-  /**
-   * Lương đóng BHXH (snapshot sau quy tắc trừ 2M nếu gross ≥ ngưỡng).
-   */
+  monthYear      String
   baseSalary     Float
-  totalBonus     Float // Tổng tiền thưởng + hoa hồng
-  totalDeduction Float // Tổng tiền phạt + đi muộn + tạm ứng
-  finalSalary    Float // Tiền lương thực nhận cuối cùng
+  totalBonus     Float
+  totalDeduction Float
+  finalSalary    Float
 
-  // Breakdown chi tiết để hiển thị lên bảng lịch sử
   hoaHong                 Float    @default(0)
-  thuongKhac              Float    @default(0) // Thưởng khác (không gộp vào hoa hồng/KPI)
+  thuongKhac              Float    @default(0)
   tamUng                  Float    @default(0)
   manualFines             Float    @default(0)
   attendanceFines         Float    @default(0)
   halfDayDeduction        Float    @default(0)
   fullDayAbsenceDeduction Float    @default(0)
   workDays                Int      @default(0)
-  /**
-   * Lưu snapshot ngày đi làm đã chốt (DD/MM/YYYY); không xóa cột để tránh mất dữ liệu trên DB.
-   */
   workDates               String[] @default([])
 
   employeeId String
@@ -207,13 +189,13 @@ model SalaryHistory {
 
 model LeaveRequest {
   id          String   @id @default(uuid())
-  type        String   // "Vô trễ", "Nghỉ không lương", "Nghỉ có lương"
-  paidType    String   @default("Nghỉ không lương") // "Vô trễ" | "Nghỉ không lương" | "Nghỉ có lương"
-  startDate   String   // "YYYY-MM-DD"
-  endDate     String   // "YYYY-MM-DD"
+  type        String
+  paidType    String   @default("Nghỉ không lương")
+  startDate   String
+  endDate     String
   reason      String
-  status      String   @default("Chờ duyệt") // Trạng thái: "Chờ duyệt", "Đã duyệt", "Từ chối"
-  isBulkLeave Boolean  @default(false) // Đánh dấu nghỉ đồng loạt (sếp tạo cho tất cả)
+  status      String   @default("Chờ duyệt")
+  isBulkLeave Boolean  @default(false)
 
   employeeId String
   employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
@@ -228,10 +210,10 @@ model LeaveRequest {
 model ProcessedFolder {
   id        String   @id @default(uuid())
   name      String
-  parentId  String? // Nếu null nghĩa là thư mục gốc
+  parentId  String?
   createdAt DateTime @default(now())
 
-  files ProcessedFile[] // 1 thư mục có nhiều file
+  files ProcessedFile[]
 }
 
 model ProcessedFile {
@@ -248,8 +230,8 @@ model ProcessedFile {
 
 model WeeklyKPI {
   id        String   @id @default(uuid())
-  weekLabel String   @unique // Chuỗi lưu tên tuần, ví dụ: "09/03/2026 – 15/03/2026"
-  data      Json // Lưu toàn bộ mảng các phòng ban và task bên trong
+  weekLabel String   @unique
+  data      Json
   updatedAt DateTime @updatedAt
 }
 
@@ -264,32 +246,45 @@ model Workspace {
   @@index([employeeId])
 }
 
-/**
- * Ma trận quyền mặc định theo bộ phận (Department). Employee.role chỉ là chức danh HR, không dùng làm khóa ma trận.
- */
 model DepartmentPermission {
   departmentId String     @id
   permissions  String[]
   department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
 }
 
-/**
- * Cũ: ma trận theo role — không còn dùng trong resolveEffectivePermissions; giữ bảng để migrate an toàn.
- */
 model RolePermission {
   role        String   @id
   permissions String[]
 }
 
-/**
- * Ghi đè theo nhân viên: quyền hiệu lực = (theo role ∪ granted) \\ revoked,
- * sau đó giao với catalog và quy tắc phòng ban legacy trên server.
- */
 model EmployeePermissionOverride {
   employeeId String   @id
   granted    String[] @default([])
   revoked    String[] @default([])
   employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+}
+
+model ChatRoom {
+  id           String        @id @default(uuid())
+  name         String
+  departmentId String?       @unique
+  type         String        @default("department")
+  messages     ChatMessage[]
+  createdAt    DateTime      @default(now())
+  department   Department?   @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+}
+
+model ChatMessage {
+  id         String   @id @default(uuid())
+  content    String
+  senderId   String
+  senderName String
+  roomId     String
+  createdAt  DateTime @default(now())
+  room       ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@index([roomId])
+  @@index([createdAt])
 }
 
 // Added for connect-pg-simple session store

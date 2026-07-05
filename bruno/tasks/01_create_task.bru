@@ -1,0 +1,25 @@
+meta {
+  name: Create Task (Hồ sơ mới)
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{base_url}}/api/tasks
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "content": "Nguyễn Văn Test",
+    "phone": "0901234567",
+    "email": "test@gmail.com",
+    "price": "25.000.000",
+    "source": "Giới thiệu",
+    "assignedTo": "Admin",
+    "columnId": "col-1",
+    "visaType": "Visa 500 - Du học",
+    "checklistType": "study"
+  }
+}

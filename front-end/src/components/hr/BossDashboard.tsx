@@ -232,14 +232,14 @@ const BossDashboard: React.FC<BossDashboardProps> = ({ currentUser }) => {
   }
 
   return (
-    <div className="flex-1 p-6 bg-gray-50 overflow-y-auto h-full">
+    <div className="flex-1 p-6 bg-slate-50 overflow-y-auto h-full">
       {/* HEADER */}
       <div className="flex justify-between items-end mb-4">
         <div>
-          <h2 className="text-2xl font-bold text-gray-800">
+          <h2 className="text-2xl font-bold text-slate-800">
             Báo cáo Tổng hợp Khách hàng
           </h2>
-          <p className="text-gray-500 mt-1">
+          <p className="text-slate-500 mt-1">
             Quản lý ngày tạo, người phụ trách và tiến độ thu hồ sơ
           </p>
         </div>
@@ -282,8 +282,8 @@ const BossDashboard: React.FC<BossDashboardProps> = ({ currentUser }) => {
       {/* TABLE */}
       <Card className="border-none shadow-sm rounded-xl overflow-hidden p-0">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left text-gray-500">
-            <thead className="text-xs text-gray-700 uppercase bg-gray-100 border-b border-gray-200">
+          <table className="w-full text-sm text-left text-slate-500">
+            <thead className="text-xs text-slate-700 uppercase bg-slate-100 border-b border-slate-200">
               <tr>
                 <th className="px-5 py-4 font-bold">Ngày tạo</th>
                 <th className="px-5 py-4 font-bold">Khách hàng / Dịch vụ</th>
@@ -301,7 +301,7 @@ const BossDashboard: React.FC<BossDashboardProps> = ({ currentUser }) => {
                 <tr>
                   <td
                     colSpan={5}
-                    className="px-6 py-10 text-center text-gray-400 italic"
+                    className="px-6 py-10 text-center text-slate-400 italic"
                   >
                     {hasActiveFilter
                       ? "Không tìm thấy khách hàng phù hợp."
@@ -325,13 +325,13 @@ const BossDashboard: React.FC<BossDashboardProps> = ({ currentUser }) => {
                       className="bg-white hover:bg-orange-50/30 transition-colors"
                     >
                       <td className="px-5 py-4 whitespace-nowrap">
-                        <span className="font-semibold text-gray-700">
+                        <span className="font-semibold text-slate-700">
                           {formatDate(profile.createdAt)}
                         </span>
                       </td>
 
                       <td className="px-5 py-4">
-                        <p className="font-bold text-gray-900 text-base">
+                        <p className="font-bold text-slate-900 text-base">
                           {/* Highlight search term */}
                           {searchQuery
                             ? profile.content
@@ -352,7 +352,7 @@ const BossDashboard: React.FC<BossDashboardProps> = ({ currentUser }) => {
                                 )
                             : profile.content.split(" - ")[0]}
                         </p>
-                        <p className="text-xs font-medium text-gray-500">
+                        <p className="text-xs font-medium text-slate-500">
                           {normalizeVisaType(profile.visaType || profile.content.split(" - ")[1])}
                         </p>
                         <p className="text-xs font-bold text-blue-600 mt-1">
@@ -369,7 +369,7 @@ const BossDashboard: React.FC<BossDashboardProps> = ({ currentUser }) => {
                               showInitial={false}
                               className="rounded-full"
                             />
-                            <span className="font-bold text-gray-800">
+                            <span className="font-bold text-slate-800">
                               {profile.assignedTo}
                             </span>
                           </div>
@@ -394,7 +394,7 @@ const BossDashboard: React.FC<BossDashboardProps> = ({ currentUser }) => {
                                 className={
                                   percent === 100
                                     ? "text-green-600"
-                                    : "text-gray-500"
+                                    : "text-slate-500"
                                 }
                               >
                                 {percent === 100 ? "✅ Đã đủ hồ sơ" : "Đã thu:"}
@@ -403,7 +403,7 @@ const BossDashboard: React.FC<BossDashboardProps> = ({ currentUser }) => {
                                 className={
                                   percent === 100
                                     ? "text-green-600"
-                                    : "text-gray-500"
+                                    : "text-slate-500"
                                 }
                               >
                                 {doneCount}/{totalCount} mục
@@ -440,20 +440,20 @@ const BossDashboard: React.FC<BossDashboardProps> = ({ currentUser }) => {
 
       {/* MODAL GỬI LỜI NHẮC */}
       <Modal show={isModalOpen} onClose={() => setIsModalOpen(false)} size="md">
-        <div className="p-5 border-b border-gray-200 bg-orange-50 rounded-t-lg">
+        <div className="p-5 border-b border-slate-200 bg-orange-50 rounded-t-lg">
           <h3 className="text-xl font-bold text-orange-700 flex items-center gap-2">
             ⚡ Lệnh điều hành nhanh
           </h3>
           <p className="text-sm text-orange-600 mt-1 font-medium">
             Gửi trực tiếp đến Sale:{" "}
-            <strong className="text-gray-900">
+            <strong className="text-slate-900">
               {selectedProfile?.assignedTo}
             </strong>
           </p>
         </div>
         <div className="p-5 space-y-4">
           <div>
-            <label className="block mb-2 text-sm font-bold text-gray-900">
+            <label className="block mb-2 text-sm font-bold text-slate-900">
               Nội dung nhắc nhở:
             </label>
             <Select
@@ -474,7 +474,7 @@ const BossDashboard: React.FC<BossDashboardProps> = ({ currentUser }) => {
           </div>
           {reminderType === "Khác" && (
             <div>
-              <label className="block mb-2 text-sm font-bold text-gray-900">
+              <label className="block mb-2 text-sm font-bold text-slate-900">
                 Nhập nội dung nhắc nhở:
               </label>
               <Textarea
@@ -486,7 +486,7 @@ const BossDashboard: React.FC<BossDashboardProps> = ({ currentUser }) => {
             </div>
           )}
         </div>
-        <div className="p-5 border-t border-gray-200 flex justify-end gap-2 bg-gray-50 rounded-b-lg">
+        <div className="p-5 border-t border-slate-200 flex justify-end gap-2 bg-slate-50 rounded-b-lg">
           <Button color="gray" onClick={() => setIsModalOpen(false)}>
             Hủy
           </Button>

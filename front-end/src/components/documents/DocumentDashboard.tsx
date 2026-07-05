@@ -647,7 +647,7 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
 
   return (
     <div
-      className={`flex-1 p-6 overflow-y-auto bg-gray-50 h-full relative transition-colors ${
+      className={`flex-1 p-6 overflow-y-auto bg-slate-50 h-full relative transition-colors ${
         isDraggingFile
           ? "bg-blue-50 border-2 border-dashed border-blue-400"
           : ""
@@ -678,20 +678,20 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
       )}
 
       {/* HEADER */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 border-b border-gray-200 pb-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 border-b border-slate-200 pb-4">
         <div>
-          <h2 className="text-2xl font-bold text-gray-800">Tài liệu Công ty</h2>
-          <p className="text-gray-500 text-sm mt-1">
+          <h2 className="text-2xl font-bold text-slate-800">Tài liệu Công ty</h2>
+          <p className="text-slate-500 text-sm mt-1">
             Lưu trữ và chia sẻ file dùng chung cho các phòng ban
           </p>
         </div>
         <div className="flex gap-3">
           <button
             onClick={() => setIsAddFolderModalOpen(true)}
-            className="flex items-center gap-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg font-medium transition-colors shadow-sm"
+            className="flex items-center gap-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-lg font-medium transition-colors shadow-sm"
           >
             <svg
-              className="w-5 h-5 text-gray-500"
+              className="w-5 h-5 text-slate-500"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -792,7 +792,7 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
             setCurrentFolderId(null);
             setSearchQuery("");
           }}
-          className={`font-semibold hover:underline ${!currentFolderId ? "text-gray-800" : "text-blue-600"}`}
+          className={`font-semibold hover:underline ${!currentFolderId ? "text-slate-800" : "text-blue-600"}`}
           onDragOver={(e) => e.preventDefault()}
           onDrop={() => {
             if (draggedFolderId) handleMoveFolder("null");
@@ -805,7 +805,7 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
           <>
             {getFolderPath(currentFolderId).map((folder, index, arr) => (
               <React.Fragment key={folder.id}>
-                <span className="text-gray-400">/</span>
+                <span className="text-slate-400">/</span>
                 {index < arr.length - 1 ? (
                   <button
                     onClick={() => {
@@ -822,7 +822,7 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
                     {folder.name}
                   </button>
                 ) : (
-                  <span className="text-gray-800 font-semibold">
+                  <span className="text-slate-800 font-semibold">
                     {folder.name}
                   </span>
                 )}
@@ -830,7 +830,7 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
             ))}
             <button
               onClick={handleGoBack}
-              className="ml-auto flex items-center gap-1 text-gray-500 hover:text-gray-800 font-medium bg-gray-200 px-3 py-1 rounded-full transition-colors"
+              className="ml-auto flex items-center gap-1 text-slate-500 hover:text-slate-800 font-medium bg-slate-200 px-3 py-1 rounded-full transition-colors"
             >
               <svg
                 className="w-4 h-4"
@@ -855,7 +855,7 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
       <div className="flex items-center gap-3 mb-5">
         <div className="relative flex-1 max-w-sm">
           <svg
-            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
+            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -872,12 +872,12 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Tìm tên file, thư mục, người tải lên..."
-            className="w-full pl-9 pr-8 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent shadow-sm"
+            className="w-full pl-9 pr-8 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent shadow-sm"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery("")}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
             >
               <svg
                 className="w-3.5 h-3.5"
@@ -895,7 +895,7 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
             </button>
           )}
         </div>
-        <span className="text-xs text-gray-400 font-medium">
+        <span className="text-xs text-slate-400 font-medium">
           {searchQuery ? (
             <>
               <span className="text-blue-600 font-bold">{totalDisplay}</span> /{" "}
@@ -903,7 +903,7 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
             </>
           ) : (
             <>
-              <span className="font-bold text-gray-600">{totalDisplay}</span>{" "}
+              <span className="font-bold text-slate-600">{totalDisplay}</span>{" "}
               mục
             </>
           )}
@@ -912,8 +912,8 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
 
       {/* CONTENT */}
       {displayFolders.length === 0 && displayFiles.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 bg-white rounded-xl border border-dashed border-gray-300">
-          <p className="text-gray-500 font-medium">Thư mục này đang trống</p>
+        <div className="flex flex-col items-center justify-center py-20 bg-white rounded-xl border border-dashed border-slate-300">
+          <p className="text-slate-500 font-medium">Thư mục này đang trống</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -939,7 +939,7 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
                 if (draggedFolderId) handleMoveFolder(folder.id);
                 if (draggedDocFileId) handleMoveFile(folder.id);
               }}
-              className={`relative bg-white p-4 rounded-xl border border-gray-200 shadow-sm hover:shadow-md hover:border-blue-300 cursor-pointer transition-all group flex items-center justify-between gap-2
+              className={`relative bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:shadow-md hover:border-blue-300 cursor-pointer transition-all group flex items-center justify-between gap-2
                 ${draggedFolderId === folder.id ? "opacity-50 grayscale" : ""}
               `}
             >
@@ -966,16 +966,16 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
                         onKeyDown={(e) => {
                           if (e.key === "Escape") setEditingFolderId(null);
                         }}
-                        className="text-sm font-bold text-gray-800 border-2 border-blue-400 rounded-md px-2 py-0.5 outline-none bg-white shadow-inner w-full"
+                        className="text-sm font-bold text-slate-800 border-2 border-blue-400 rounded-md px-2 py-0.5 outline-none bg-white shadow-inner w-full"
                       />
                     </form>
                   ) : (
-                    <h4 className="font-bold text-gray-800 wrap-break-word whitespace-normal group-hover:text-blue-600 transition-colors">
+                    <h4 className="font-bold text-slate-800 wrap-break-word whitespace-normal group-hover:text-blue-600 transition-colors">
                       {highlight(folder.name)}
                     </h4>
                   )}
-                  <p className="text-xs text-gray-400 mt-0.5">Thư mục</p>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-slate-400 mt-0.5">Thư mục</p>
+                  <p className="text-xs text-slate-500 mt-1">
                     {formatUploadTime(folder.createdAt)}
                   </p>
                 </div>
@@ -987,7 +987,7 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
                     handleDownloadFolder(folder.id, folder.name);
                   }}
                   disabled={downloadingFolderId === folder.id}
-                  className="text-gray-400 hover:text-green-600 hover:bg-green-50 p-2 rounded-lg transition-all disabled:opacity-50"
+                  className="text-slate-400 hover:text-green-600 hover:bg-green-50 p-2 rounded-lg transition-all disabled:opacity-50"
                   title="Tải xuống toàn bộ thư mục (ZIP)"
                 >
                   {downloadingFolderId === folder.id ? (
@@ -1032,7 +1032,7 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
                     setEditingFolderId(folder.id);
                     setEditFolderName(folder.name);
                   }}
-                  className="text-gray-400 hover:text-blue-500 hover:bg-blue-50 p-2 rounded-lg transition-all"
+                  className="text-slate-400 hover:text-blue-500 hover:bg-blue-50 p-2 rounded-lg transition-all"
                   title="Đổi tên thư mục"
                 >
                   <svg
@@ -1052,7 +1052,7 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
               </div>
               <button
                 onClick={(e) => handleDeleteFolder(e, folder.id)}
-                className="absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 hover:bg-red-50 p-1 rounded-full transition-all"
+                className="absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500 hover:bg-red-50 p-1 rounded-full transition-all"
                 title="Xóa thư mục"
               >
                 <svg
@@ -1082,7 +1082,7 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
                 e.dataTransfer.effectAllowed = "move";
               }}
               onDragEnd={() => setDraggedDocFileId(null)}
-              className={`bg-white p-4 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow relative group flex flex-col cursor-grab active:cursor-grabbing
+              className={`bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow relative group flex flex-col cursor-grab active:cursor-grabbing
                 ${draggedDocFileId === file.id ? "opacity-50 grayscale" : ""}
               `}
             >
@@ -1093,7 +1093,7 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
                     setEditingFileId(file.id);
                     setEditFileName(file.name);
                   }}
-                  className="text-gray-400 hover:text-blue-500 bg-white hover:bg-blue-50 p-1.5 rounded-lg border border-transparent hover:border-blue-200 shadow-sm"
+                  className="text-slate-400 hover:text-blue-500 bg-white hover:bg-blue-50 p-1.5 rounded-lg border border-transparent hover:border-blue-200 shadow-sm"
                   title="Đổi tên"
                 >
                   <svg
@@ -1115,7 +1115,7 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
                     e.stopPropagation();
                     handleDeleteFile(file.id);
                   }}
-                  className="text-gray-400 hover:text-red-500 bg-white hover:bg-red-50 p-1.5 rounded-lg border border-transparent hover:border-red-200 shadow-sm"
+                  className="text-slate-400 hover:text-red-500 bg-white hover:bg-red-50 p-1.5 rounded-lg border border-transparent hover:border-red-200 shadow-sm"
                   title="Xóa"
                 >
                   <svg
@@ -1159,7 +1159,7 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
                         autoFocus
                         value={editFileName}
                         onChange={(e) => setEditFileName(e.target.value)}
-                        className="w-full text-sm font-bold text-gray-800 border-2 border-blue-400 rounded-md px-2 py-1 outline-none bg-white shadow-inner"
+                        className="w-full text-sm font-bold text-slate-800 border-2 border-blue-400 rounded-md px-2 py-1 outline-none bg-white shadow-inner"
                       />
                       <button
                         type="submit"
@@ -1202,20 +1202,20 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
                       </button>
                     </form>
                   ) : (
-                    <h4 className="font-bold text-gray-800 text-sm wrap-break-word whitespace-normal leading-snug">
+                    <h4 className="font-bold text-slate-800 text-sm wrap-break-word whitespace-normal leading-snug">
                       {highlight(file.name)}
                     </h4>
                   )}
-                  <p className="text-xs text-gray-500 mt-1.5">
+                  <p className="text-xs text-slate-500 mt-1.5">
                     {file.size} • {file.uploadedBy}
                   </p>
-                  <p className="text-xs text-gray-400 mt-2">
+                  <p className="text-xs text-slate-400 mt-2">
                     {formatUploadTime(file.createdAt)}
                   </p>
                 </div>
               </div>
-              <div className="mt-auto flex justify-between items-center pt-3 border-t border-gray-100 pointer-events-none">
-                <span className="text-xs text-gray-400">
+              <div className="mt-auto flex justify-between items-center pt-3 border-t border-slate-200 pointer-events-none">
+                <span className="text-xs text-slate-400">
                   {new Date(file.createdAt).toLocaleTimeString("vi-VN", {
                     hour: "2-digit",
                     minute: "2-digit",
@@ -1288,12 +1288,12 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
               </svg>
               Đang tải lên...
             </span>
-            <span className="text-xs font-bold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full border border-gray-200">
+            <span className="text-xs font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full border border-slate-200">
               {singleUploadProgress.current + 1} / {singleUploadProgress.total}
             </span>
           </div>
-          <p className="text-xs text-gray-500 truncate mb-2">{singleUploadProgress.name}</p>
-          <div className="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
+          <p className="text-xs text-slate-500 truncate mb-2">{singleUploadProgress.name}</p>
+          <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
             <div
               className="bg-blue-500 h-1.5 rounded-full transition-all duration-300"
               style={{ width: `${((singleUploadProgress.current + 1) / singleUploadProgress.total) * 100}%` }}
@@ -1328,11 +1328,11 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
               </svg>
               Đang tải lên...
             </span>
-            <span className="text-xs font-bold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full border border-gray-200">
+            <span className="text-xs font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full border border-slate-200">
               {uploadProgress.current} / {uploadProgress.total}
             </span>
           </div>
-          <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden border border-gray-200">
+          <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden border border-slate-200">
             <div
               className="bg-blue-600 h-2.5 rounded-full transition-all duration-300 ease-out relative"
               style={{
@@ -1348,13 +1348,13 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
       {isAddFolderModalOpen && (
         <div className="fixed inset-0 z-100 flex items-center justify-center bg-black bg-opacity-50 p-4 animate-fade-in">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-scale-in">
-            <div className="p-5 border-b border-gray-200 flex justify-between items-center bg-gray-50">
-              <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+            <div className="p-5 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+              <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
                 Tạo Thư Mục Mới
               </h3>
               <button
                 onClick={() => setIsAddFolderModalOpen(false)}
-                className="text-gray-400 hover:text-red-500 bg-gray-100 hover:bg-red-50 p-1.5 rounded-md transition-colors"
+                className="text-slate-400 hover:text-red-500 bg-slate-100 hover:bg-red-50 p-1.5 rounded-md transition-colors"
               >
                 <svg
                   className="w-5 h-5"
@@ -1372,7 +1372,7 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
               </button>
             </div>
             <form onSubmit={handleCreateFolder} className="p-5">
-              <label className="block text-sm font-bold text-gray-700 mb-2">
+              <label className="block text-sm font-bold text-slate-700 mb-2">
                 Tên thư mục
               </label>
               <input
@@ -1381,13 +1381,13 @@ const DocumentDashboard: React.FC<DocumentDashboardProps> = ({
                 placeholder="VD: Biểu mẫu xin việc..."
                 value={newFolderName}
                 onChange={(e) => setNewFolderName(e.target.value)}
-                className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                className="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
               />
               <div className="mt-6 flex justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setIsAddFolderModalOpen(false)}
-                  className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 font-medium transition-colors"
+                  className="px-4 py-2 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 font-medium transition-colors"
                 >
                   Hủy
                 </button>

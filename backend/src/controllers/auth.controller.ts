@@ -1,6 +1,7 @@
 // backend/src/controllers/auth.controller.ts
 import { Request, Response } from "express";
 import { sessionCookieCrossSite } from "../../config/env.js";
+import { logger } from "../../lib/logger.js";
 import {
   REFRESH_COOKIE_MAX_AGE_MS,
   REFRESH_COOKIE_NAME,
@@ -30,12 +31,10 @@ export const login = async (req: Request, res: Response) => {
     await new Promise<void>((resolve, reject) => {
       req.session.save((err) => {
         if (err) {
-          console.error("[auth] login — session.save() failed:", err);
+          logger.error({ err, sessionId: req.sessionID }, "[auth] login — session.save() failed");
           reject(err);
         } else {
-          console.log(
-            `[auth] login — session saved | id=${req.sessionID} | user=${userData.id} (${userData.role})`,
-          );
+          logger.info({ sessionId: req.sessionID, userId: userData.id, role: userData.role }, "[auth] login — session saved");
           resolve();
         }
       });
@@ -57,7 +56,7 @@ export const login = async (req: Request, res: Response) => {
     if (["Email và mật khẩu không được để trống!", "Email không tồn tại!", "Mật khẩu không chính xác!"].includes(error.message)) {
         return res.status(400).json({ error: error.message });
     }
-    console.error("Login error:", error);
+    logger.error({ err: error?.message, ip: req.ip }, "Login error");
     res.status(500).json({ error: "Lỗi server" });
   }
 };
@@ -94,12 +93,10 @@ export const refreshSession = async (req: Request, res: Response) => {
     await new Promise<void>((resolve, reject) => {
       req.session.save((err) => {
         if (err) {
-          console.error("[auth] refreshSession — session.save() failed:", err);
+          logger.error({ err, sessionId: req.sessionID }, "[auth] refreshSession — session.save() failed");
           reject(err);
         } else {
-          console.log(
-            `[auth] refreshSession — session saved | id=${req.sessionID} | user=${userData.id} (${userData.role})`,
-          );
+          logger.info({ sessionId: req.sessionID, userId: userData.id, role: userData.role }, "[auth] refreshSession — session saved");
           resolve();
         }
       });
@@ -156,7 +153,7 @@ export const changePassword = async (req: Request, res: Response) => {
     if (["Thiếu thông tin bắt buộc", "Không tìm thấy nhân viên", "Mật khẩu hiện tại không đúng", "Mật khẩu mới phải có ít nhất 6 ký tự"].includes(error.message)) {
         return res.status(400).json({ error: error.message });
     }
-    console.error("Change password error:", error);
+    logger.error({ err: error?.message }, "Change password error");
     res.status(500).json({ error: "Lỗi server" });
   }
 };
@@ -174,7 +171,7 @@ export const forgotPassword = async (req: Request, res: Response) => {
     if (["Vui lòng cung cấp email!", "Email không tồn tại trên hệ thống!"].includes(error.message)) {
       return res.status(400).json({ error: error.message });
     }
-    console.error("Forgot password error:", error);
+    logger.error({ err: error?.message, email: req.body?.email }, "Forgot password error");
     res.status(500).json({ error: "Lỗi server" });
   }
 };

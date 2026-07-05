@@ -1,0 +1,11 @@
+meta {
+  name: Check In Employee
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{base_url}}/api/hr/employees/{{employee_id}}/checkin
+  body: none
+  auth: none
+}

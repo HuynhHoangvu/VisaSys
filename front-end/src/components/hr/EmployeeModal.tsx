@@ -48,8 +48,8 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({
   };
   return (
     <Modal show={show} onClose={onClose} size="lg">
-      <div className="p-6 border-b border-gray-200">
-        <h3 className="text-xl font-bold text-gray-800">
+      <div className="p-6 border-b border-slate-200">
+        <h3 className="text-xl font-bold text-slate-800">
           {isEditMode ? "Cập Nhật Nhân Sự" : "Thêm Nhân Sự Mới"}
         </h3>
       </div>
@@ -138,7 +138,7 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({
         </form>
       </div>
 
-      <div className="p-6 border-t border-gray-200 flex justify-end gap-2">
+      <div className="p-6 border-t border-slate-200 flex justify-end gap-2">
         <Button color="gray" onClick={onClose}>
           Hủy
         </Button>

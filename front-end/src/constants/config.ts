@@ -1,7 +1,7 @@
 /**
  * Centralized API configuration
  * - Uses localhost for development mode
- * - Uses VITE_API_URL env var (Railway) for production mode
+ * - Uses VITE_API_URL env var for production mode (set in front-end/.env)
  */
 
 // Helper to normalize the API URL by trimming trailing slashes and stripping /api suffix

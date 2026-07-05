@@ -20,11 +20,19 @@ html {
 
 @theme {
   --color-flygold: #F5A21B;
-  /* Màu vàng cam của Fly Visa */
   --color-flygold-hover: #D98C12;
-  /* Màu đậm hơn khi hover chuột */
-  /* THÊM DÒNG NÀY ĐỂ KÍCH HOẠT DARK MODE THEO CLASS */
-    --dark-mode: class;
+  --dark-mode: class;
+
+  /* ── Frost Light Design Tokens ─────────────────── */
+  --color-surface-app: #f8fafc;
+  --color-surface-card: #ffffff;
+  --color-surface-sidebar: #ffffff;
+  --color-border: #e2e8f0;
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #64748b;
+  --color-text-muted: #94a3b8;
+  --color-accent: #f97316;
+  --color-accent-light: #fff7ed;
 }
 
 /* Tùy chỉnh thanh cuộn cho Column */

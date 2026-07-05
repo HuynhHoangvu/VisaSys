@@ -278,10 +278,10 @@ const RecruitmentBoard: React.FC<RecruitmentBoardProps> = ({
       {/* HEADER */}
       <div className="flex justify-between items-start mb-4 shrink-0 flex-wrap gap-3">
         <div>
-          <h2 className="text-2xl font-bold text-gray-800">
+          <h2 className="text-2xl font-bold text-slate-800">
             Tiến độ Tuyển dụng
           </h2>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-slate-500 mt-1">
             Theo dõi hành trình từ ký HĐ đến Visa Granted
           </p>
         </div>
@@ -290,7 +290,7 @@ const RecruitmentBoard: React.FC<RecruitmentBoardProps> = ({
             {
               label: "Tổng",
               value: stats.total,
-              cls: "bg-gray-100 text-gray-700",
+              cls: "bg-slate-100 text-slate-700",
             },
             {
               label: "Đang xử lý",
@@ -320,17 +320,17 @@ const RecruitmentBoard: React.FC<RecruitmentBoardProps> = ({
       </div>
 
       {/* CONTROLS AREA */}
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-4 shrink-0 bg-white p-3 rounded-xl shadow-sm border border-gray-200">
-        <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-4 shrink-0 bg-white p-3 rounded-xl shadow-sm border border-slate-200">
+        <div className="flex gap-1 bg-slate-100 p-1 rounded-lg">
           <button
             onClick={() => setActiveTab("kanban")}
-            className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${activeTab === "kanban" ? "bg-white text-gray-800 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+            className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${activeTab === "kanban" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
           >
             🗂 Kanban Board
           </button>
           <button
             onClick={() => setActiveTab("list")}
-            className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${activeTab === "list" ? "bg-white text-gray-800 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+            className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${activeTab === "list" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
           >
             📄 Danh sách
           </button>
@@ -366,7 +366,7 @@ const RecruitmentBoard: React.FC<RecruitmentBoardProps> = ({
       </div>
 
       {col5Tasks.length === 0 && (
-        <div className="flex flex-col items-center justify-center flex-1 gap-3 text-gray-400">
+        <div className="flex flex-col items-center justify-center flex-1 gap-3 text-slate-400">
           <div className="text-5xl">👷</div>
           <p className="text-lg font-semibold">Chưa có hồ sơ nào</p>
           <p className="text-sm text-center max-w-sm">
@@ -496,22 +496,22 @@ const RecruitmentBoard: React.FC<RecruitmentBoardProps> = ({
                                     onClick={() =>
                                       !hidden && onOpenDetail(task.id)
                                     }
-                                    className={`bg-white rounded-lg p-3.5 border border-gray-100 cursor-grab active:cursor-grabbing transition-all select-none
-                                      ${snapshot.isDragging ? "shadow-2xl rotate-2 z-50 ring-2 ring-blue-400 scale-105" : "shadow-sm hover:shadow-md hover:border-gray-200"}
+                                    className={`bg-white rounded-lg p-3.5 border border-slate-200 cursor-grab active:cursor-grabbing transition-all select-none
+                                      ${snapshot.isDragging ? "shadow-2xl rotate-2 z-50 ring-2 ring-blue-400 scale-105" : "shadow-sm hover:shadow-md hover:border-slate-200"}
                                       ${hidden ? "hidden" : "flex flex-col"} 
                                       ${step.isFail ? "border-l-4 border-l-red-500" : "border-l-4 border-l-transparent hover:border-l-blue-400"}
                                     `}
                                     style={{ ...provided.draggableProps.style }}
                                   >
                                     <p
-                                      className="font-bold text-gray-800 text-sm leading-tight truncate mb-1.5"
+                                      className="font-bold text-slate-800 text-sm leading-tight truncate mb-1.5"
                                       title={task.content}
                                     >
                                       {task.content.split(" - ")[0]}
                                     </p>
 
                                     <div className="flex flex-col gap-1.5 mb-3">
-                                      <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                                      <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
                                         <span>📞</span>{" "}
                                         <span>
                                           {task.phone || "Chưa có SĐT"}
@@ -543,7 +543,7 @@ const RecruitmentBoard: React.FC<RecruitmentBoardProps> = ({
                                         >
                                           {getInitials(task.assignedTo)}
                                         </div>
-                                        <span className="text-xs text-gray-600 font-semibold truncate">
+                                        <span className="text-xs text-slate-600 font-semibold truncate">
                                           {task.assignedTo}
                                         </span>
                                       </div>
@@ -551,7 +551,7 @@ const RecruitmentBoard: React.FC<RecruitmentBoardProps> = ({
 
                                     {/* NÚT SELECT CHUYỂN CỘT THẲNG TRONG CARD */}
                                     <div
-                                      className="mt-auto pt-2 border-t border-gray-100"
+                                      className="mt-auto pt-2 border-t border-slate-200"
                                       onClick={(e) => e.stopPropagation()}
                                     >
                                       <select
@@ -584,7 +584,7 @@ const RecruitmentBoard: React.FC<RecruitmentBoardProps> = ({
                                             }));
                                           }
                                         }}
-                                        className="text-xs font-semibold px-2 py-1.5 rounded border border-gray-200 bg-gray-50/50 outline-none cursor-pointer w-full hover:border-blue-300 transition-colors focus:ring-2 focus:ring-blue-100"
+                                        className="text-xs font-semibold px-2 py-1.5 rounded border border-slate-200 bg-slate-50/50 outline-none cursor-pointer w-full hover:border-blue-300 transition-colors focus:ring-2 focus:ring-blue-100"
                                         style={{ color: step.color }}
                                       >
                                         {RECRUITMENT_STEPS.map((s) => (
@@ -624,8 +624,8 @@ const RecruitmentBoard: React.FC<RecruitmentBoardProps> = ({
       )}
       {/* ==================== LIST VIEW (Flex Layout - Không Dùng Table) ==================== */}
       {activeTab === "list" && col5Tasks.length > 0 && (
-        <div className="flex flex-col flex-1 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="flex items-center px-4 py-3 bg-gray-50 border-b border-gray-200 text-xs font-bold text-gray-500 uppercase tracking-wide">
+        <div className="flex flex-col flex-1 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+          <div className="flex items-center px-4 py-3 bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wide">
             <div className="w-1/4 pr-4">Khách hàng</div>
             <div className="w-1/6 pr-4">SĐT</div>
             <div className="w-1/4 pr-4">Loại Visa & Ngành</div>
@@ -636,7 +636,7 @@ const RecruitmentBoard: React.FC<RecruitmentBoardProps> = ({
 
           <div className="flex-1 overflow-y-auto divide-y divide-gray-100">
             {filteredTasks.length === 0 ? (
-              <div className="px-4 py-10 text-center text-gray-400 italic text-sm">
+              <div className="px-4 py-10 text-center text-slate-400 italic text-sm">
                 Không tìm thấy hồ sơ phù hợp
               </div>
             ) : (
@@ -650,18 +650,18 @@ const RecruitmentBoard: React.FC<RecruitmentBoardProps> = ({
                     onClick={() => onOpenDetail(task.id)}
                   >
                     <div className="w-1/4 pr-4 flex flex-col">
-                      <span className="font-bold text-gray-800 text-sm">
+                      <span className="font-bold text-slate-800 text-sm">
                         {task.content.split(" - ")[0]}
                       </span>
                       {task.content.split(" - ")[1] && (
-                        <span className="text-xs text-gray-400 mt-0.5 truncate">
+                        <span className="text-xs text-slate-400 mt-0.5 truncate">
                           {task.content.split(" - ")[1]}
                         </span>
                       )}
                     </div>
 
                     <div className="w-1/6 pr-4">
-                      <span className="text-sm font-semibold text-gray-600">
+                      <span className="text-sm font-semibold text-slate-600">
                         {task.phone || "—"}
                       </span>
                     </div>
@@ -678,7 +678,7 @@ const RecruitmentBoard: React.FC<RecruitmentBoardProps> = ({
                         </span>
                       )}
                       {!task.visaType && !task.jobType && (
-                        <span className="text-gray-300">—</span>
+                        <span className="text-slate-300">—</span>
                       )}
                     </div>
 
@@ -693,12 +693,12 @@ const RecruitmentBoard: React.FC<RecruitmentBoardProps> = ({
                           >
                             {getInitials(task.assignedTo)}
                           </div>
-                          <span className="text-sm font-medium text-gray-700 truncate">
+                          <span className="text-sm font-medium text-slate-700 truncate">
                             {task.assignedTo}
                           </span>
                         </div>
                       ) : (
-                        <span className="text-gray-300">—</span>
+                        <span className="text-slate-300">—</span>
                       )}
                     </div>
 
@@ -742,7 +742,7 @@ const RecruitmentBoard: React.FC<RecruitmentBoardProps> = ({
                             }));
                           }
                         }}
-                        className="text-xs font-semibold px-2 py-1.5 rounded-lg border border-gray-200 bg-white outline-none cursor-pointer w-full focus:ring-2 focus:ring-blue-100"
+                        className="text-xs font-semibold px-2 py-1.5 rounded-lg border border-slate-200 bg-white outline-none cursor-pointer w-full focus:ring-2 focus:ring-blue-100"
                         style={{ color: step.color }}
                       >
                         {RECRUITMENT_STEPS.map((s) => (
@@ -758,10 +758,10 @@ const RecruitmentBoard: React.FC<RecruitmentBoardProps> = ({
             )}
           </div>
 
-          <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 flex justify-between items-center text-xs">
-            <span className="text-gray-500 font-medium">
+          <div className="px-4 py-3 bg-slate-50 border-t border-slate-200 flex justify-between items-center text-xs">
+            <span className="text-slate-500 font-medium">
               Hiển thị{" "}
-              <span className="font-bold text-gray-700">
+              <span className="font-bold text-slate-700">
                 {filteredTasks.length}
               </span>{" "}
               / {col5Tasks.length} hồ sơ

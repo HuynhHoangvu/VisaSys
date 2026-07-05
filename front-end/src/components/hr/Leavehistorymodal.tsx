@@ -68,7 +68,7 @@ const LeaveHistoryModal: React.FC<LeaveHistoryModalProps> = ({
   return (
     <Modal show={show} onClose={onClose} size="4xl" className="md:p-4">
       {/* Header */}
-      <div className="p-4 sm:p-5 border-b border-gray-200 flex justify-between items-center bg-blue-50 rounded-t-lg">
+      <div className="p-4 sm:p-5 border-b border-slate-200 flex justify-between items-center bg-blue-50 rounded-t-lg">
         <div>
           <h3 className="text-lg sm:text-xl font-bold text-blue-900">
             📋 Lịch sử xin phép
@@ -79,7 +79,7 @@ const LeaveHistoryModal: React.FC<LeaveHistoryModalProps> = ({
         </div>
         <button
           onClick={onClose}
-          className="text-gray-400 hover:text-gray-900 bg-gray-200 hover:bg-gray-300 rounded-full p-1.5 transition-colors"
+          className="text-slate-400 hover:text-slate-900 bg-slate-200 hover:bg-slate-300 rounded-full p-1.5 transition-colors"
         >
           <svg
             className="w-5 h-5"
@@ -100,7 +100,7 @@ const LeaveHistoryModal: React.FC<LeaveHistoryModalProps> = ({
       {/* Body */}
       <div className="p-4 sm:p-5 overflow-y-auto max-h-[65vh]">
         {loading ? (
-          <div className="flex justify-center items-center py-16 text-gray-400">
+          <div className="flex justify-center items-center py-16 text-slate-400">
             <svg
               className="animate-spin w-6 h-6 mr-2"
               fill="none"
@@ -123,7 +123,7 @@ const LeaveHistoryModal: React.FC<LeaveHistoryModalProps> = ({
             Đang tải dữ liệu...
           </div>
         ) : records.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-gray-400">
+          <div className="flex flex-col items-center justify-center py-16 text-slate-400">
             <span className="text-5xl mb-3">📭</span>
             <p className="text-sm font-medium">Chưa có đơn xin phép nào.</p>
           </div>
@@ -156,9 +156,9 @@ const LeaveHistoryModal: React.FC<LeaveHistoryModalProps> = ({
             </div>
 
             {/* Table */}
-            <div className="overflow-x-auto rounded-xl border border-gray-200">
-              <table className="w-full min-w-155 text-sm text-left text-gray-600">
-                <thead className="text-2xs sm:text-xs text-gray-700 uppercase bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
+            <div className="overflow-x-auto rounded-xl border border-slate-200">
+              <table className="w-full min-w-155 text-sm text-left text-slate-600">
+                <thead className="text-2xs sm:text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200 sticky top-0 z-10">
                   <tr>
                     <th className="px-4 py-3 font-bold w-8 text-center">#</th>
                     <th className="px-4 py-3 font-bold">Loại nghỉ phép</th>
@@ -180,21 +180,21 @@ const LeaveHistoryModal: React.FC<LeaveHistoryModalProps> = ({
                     return (
                       <tr
                         key={record.id ?? index}
-                        className="border-b border-gray-100 last:border-0 hover:bg-blue-50/30 transition-colors"
+                        className="border-b border-slate-200 last:border-0 hover:bg-blue-50/30 transition-colors"
                       >
-                        <td className="px-4 py-3 text-center text-gray-400 font-medium text-xs">
+                        <td className="px-4 py-3 text-center text-slate-400 font-medium text-xs">
                           {index + 1}
                         </td>
-                        <td className="px-4 py-3 font-bold text-gray-800 text-xs sm:text-sm">
+                        <td className="px-4 py-3 font-bold text-slate-800 text-xs sm:text-sm">
                           {record.type}
                         </td>
-                        <td className="px-4 py-3 font-medium text-gray-700 text-xs sm:text-sm whitespace-nowrap">
+                        <td className="px-4 py-3 font-medium text-slate-700 text-xs sm:text-sm whitespace-nowrap">
                           {formatDate(record.startDate)}
                         </td>
-                        <td className="px-4 py-3 font-medium text-gray-700 text-xs sm:text-sm whitespace-nowrap">
+                        <td className="px-4 py-3 font-medium text-slate-700 text-xs sm:text-sm whitespace-nowrap">
                           {formatDate(record.endDate)}
                         </td>
-                        <td className="px-4 py-3 text-xs sm:text-sm text-gray-600 max-w-55">
+                        <td className="px-4 py-3 text-xs sm:text-sm text-slate-600 max-w-55">
                           <p className="line-clamp-2 italic">{record.reason}</p>
                         </td>
                         <td className="px-4 py-3 text-center">
@@ -216,10 +216,10 @@ const LeaveHistoryModal: React.FC<LeaveHistoryModalProps> = ({
       </div>
 
       {/* Footer */}
-      <div className="p-4 border-t border-gray-200 flex justify-end bg-gray-50 rounded-b-lg">
+      <div className="p-4 border-t border-slate-200 flex justify-end bg-slate-50 rounded-b-lg">
         <button
           onClick={onClose}
-          className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
+          className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-100 transition-colors"
         >
           Đóng
         </button>

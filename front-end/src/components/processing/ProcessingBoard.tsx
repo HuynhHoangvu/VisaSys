@@ -366,18 +366,18 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
   if (isLoading || !boardData) {
     return (
       <div className="flex flex-col h-full w-full px-4 py-4 sm:px-6 sm:py-6 animate-pulse">
-        <div className="h-8 w-64 bg-gray-200 rounded mb-2" />
-        <div className="h-4 w-40 bg-gray-100 rounded mb-6" />
-        <div className="h-10 w-full bg-gray-100 rounded-lg mb-4" />
+        <div className="h-8 w-64 bg-slate-200 rounded mb-2" />
+        <div className="h-4 w-40 bg-slate-100 rounded mb-6" />
+        <div className="h-10 w-full bg-slate-100 rounded-lg mb-4" />
         <div className="flex gap-4 flex-1 overflow-hidden">
           {[...Array(6)].map((_, i) => (
             <div key={i} className="flex flex-col gap-3 min-w-[220px] w-56 shrink-0">
-              <div className="h-6 w-32 bg-gray-200 rounded" />
+              <div className="h-6 w-32 bg-slate-200 rounded" />
               {[...Array(i === 0 ? 4 : i === 1 ? 3 : 2)].map((_, j) => (
                 <div key={j} className="bg-white rounded-xl p-4 shadow-sm space-y-2">
-                  <div className="h-4 w-3/4 bg-gray-200 rounded" />
-                  <div className="h-3 w-1/2 bg-gray-100 rounded" />
-                  <div className="h-2 w-full bg-gray-100 rounded-full" />
+                  <div className="h-4 w-3/4 bg-slate-200 rounded" />
+                  <div className="h-3 w-1/2 bg-slate-100 rounded" />
+                  <div className="h-2 w-full bg-slate-100 rounded-full" />
                 </div>
               ))}
             </div>
@@ -392,21 +392,21 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
       {/* HEADER */}
       <div className="mb-4 flex justify-between items-end shrink-0">
         <div>
-          <h2 className="text-2xl font-bold text-gray-800">Tiến độ Xử lý Hồ sơ</h2>
-          <p className="text-sm text-gray-500 mt-1">Quản lý hồ sơ đã được Sale bàn giao</p>
+          <h2 className="text-2xl font-bold text-slate-800">Tiến độ Xử lý Hồ sơ</h2>
+          <p className="text-sm text-slate-500 mt-1">Quản lý hồ sơ đã được Sale bàn giao</p>
         </div>
       </div>
 
       {/* TAB SWITCHER */}
-      <div className="flex gap-1 mb-4 shrink-0 bg-gray-200/60 p-1 rounded-lg w-fit">
+      <div className="flex gap-1 mb-4 shrink-0 bg-slate-200/60 p-1 rounded-lg w-fit">
         {(["kanban", "table"] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
             className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${
               activeTab === tab
-                ? "bg-white text-gray-800 shadow-sm"
-                : "text-gray-500 hover:text-gray-700"
+                ? "bg-white text-slate-800 shadow-sm"
+                : "text-slate-500 hover:text-slate-700"
             }`}
           >
             {tab === "kanban" ? "🗂 Kanban" : "📊 Table"}
@@ -469,20 +469,20 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
               return (
                 <div
                   key={columnId}
-                  className={`flex flex-col bg-gray-100/50 rounded-xl h-full shrink-0 border border-gray-200/50 shadow-sm transition-all duration-300 ${
+                  className={`flex flex-col bg-slate-100/50 rounded-xl h-full shrink-0 border border-slate-200/50 shadow-sm transition-all duration-300 ${
                     isCollapsed ? "w-12 min-w-[3rem] overflow-hidden" : "w-64 min-w-[16rem]"
                   }`}
                 >
                   {/* Column header */}
                   <div
-                    className={`p-3 flex items-center bg-white/40 rounded-t-xl border-b border-gray-200/50 ${
+                    className={`p-3 flex items-center bg-white/40 rounded-t-xl border-b border-slate-200/50 ${
                       isCollapsed ? "flex-col h-full justify-start gap-4 pt-4" : "justify-between"
                     }`}
                   >
                     <div className={`flex items-center gap-2 min-w-0 ${isCollapsed ? "flex-col" : ""}`}>
                       <button
                         onClick={() => toggleColumnCollapse(columnId)}
-                        className="p-1 hover:bg-gray-200 rounded transition-colors text-gray-500 shrink-0"
+                        className="p-1 hover:bg-slate-200 rounded transition-colors text-slate-500 shrink-0"
                         title={isCollapsed ? "Mở rộng" : "Thu gọn"}
                       >
                         <svg
@@ -502,7 +502,7 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
                         </svg>
                       </button>
                       <h3
-                        className={`font-bold text-gray-700 uppercase tracking-wide ${
+                        className={`font-bold text-slate-700 uppercase tracking-wide ${
                           isCollapsed ? "text-[10px] whitespace-nowrap" : "text-[12px] truncate"
                         }`}
                         style={isCollapsed ? { writingMode: "vertical-rl", textOrientation: "mixed" } : {}}
@@ -517,7 +517,7 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
                           {visibleCount}/
                         </span>
                       )}
-                      <span className={`bg-gray-300 text-gray-800 font-bold px-2 py-0.5 rounded-full ${isCollapsed ? "text-[10px]" : "text-xs"}`}>
+                      <span className={`bg-slate-300 text-slate-800 font-bold px-2 py-0.5 rounded-full ${isCollapsed ? "text-[10px]" : "text-xs"}`}>
                         {allTasks.length}
                       </span>
                     </div>
@@ -530,7 +530,7 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
                         ref={provided.innerRef}
                         {...provided.droppableProps}
                         className={`flex-1 p-3 space-y-3 overflow-y-auto rounded-b-xl transition-colors duration-200 ${
-                          snapshot.isDraggingOver ? "bg-gray-300/50" : ""
+                          snapshot.isDraggingOver ? "bg-slate-300/50" : ""
                         }`}
                         style={{ minHeight: "150px" }}
                       >
@@ -589,7 +589,7 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
                                           </span>
                                         )}
 
-                                        <h4 className="font-bold text-gray-800 text-xs pr-4 truncate mb-1">
+                                        <h4 className="font-bold text-slate-800 text-xs pr-4 truncate mb-1">
                                           {task.content.split(" - ")[0]}
                                         </h4>
 
@@ -614,7 +614,7 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
                                         </div>
 
                                         <div className="mb-2">
-                                          <div className="flex justify-between text-2xs font-bold text-gray-500 mb-1">
+                                          <div className="flex justify-between text-2xs font-bold text-slate-500 mb-1">
                                             <span>Giấy tờ:</span>
                                             <span className={percent === 100 ? "text-green-500" : "text-red-500"}>
                                               {doneCount}/{totalCount}
@@ -627,9 +627,9 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
                                           />
                                         </div>
 
-                                        <div className="flex items-center justify-between border-t border-gray-100 pt-2 gap-1 mt-1">
+                                        <div className="flex items-center justify-between border-t border-slate-200 pt-2 gap-1 mt-1">
                                           <span
-                                            className="text-[9px] font-bold text-gray-700 bg-gray-50 px-1.5 py-1 rounded border border-gray-200 truncate max-w-16 shrink-0 text-center cursor-help"
+                                            className="text-[9px] font-bold text-slate-700 bg-slate-50 px-1.5 py-1 rounded border border-slate-200 truncate max-w-16 shrink-0 text-center cursor-help"
                                             title={`Sale phụ trách: ${task.assignedTo || "Chưa giao"}`}
                                           >
                                             {task.assignedTo?.split(" ").pop() ?? "Trống"}
@@ -640,7 +640,7 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
                                               taskId={task.id}
                                               currentColId={columnId}
                                               onMoved={() => fetchBoardData(false)}
-                                              className="text-[9px] font-medium px-1 py-1 rounded border border-gray-200 bg-white outline-none cursor-pointer w-full text-gray-700 hover:border-indigo-300 transition-colors"
+                                              className="text-[9px] font-medium px-1 py-1 rounded border border-slate-200 bg-white outline-none cursor-pointer w-full text-slate-700 hover:border-indigo-300 transition-colors"
                                             />
                                           </div>
 
@@ -650,7 +650,7 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
                                                 e.stopPropagation();
                                                 onOpenAttachments(task.id);
                                               }}
-                                              className="w-6 h-6 flex items-center justify-center text-gray-500 hover:text-green-600 bg-gray-50 hover:bg-green-50 rounded border border-gray-200 transition-colors"
+                                              className="w-6 h-6 flex items-center justify-center text-slate-500 hover:text-green-600 bg-slate-50 hover:bg-green-50 rounded border border-slate-200 transition-colors"
                                               title="Xem danh sách tài liệu"
                                             >
                                               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -684,7 +684,7 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
                         {provided.placeholder}
 
                         {hasActiveFilter && visibleCount === 0 && allTasks.length > 0 && (
-                          <p className="text-center py-4 text-gray-300 text-xs italic">
+                          <p className="text-center py-4 text-slate-300 text-xs italic">
                             Không khớp bộ lọc
                           </p>
                         )}
@@ -702,15 +702,15 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
       {/* TABLE VIEW */}
       {activeTab === "table" && (
         <div className="flex-1 overflow-y-auto pb-4">
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
             <table className="w-full text-sm border-collapse">
               <thead>
-                <tr className="bg-gray-50 border-b border-gray-200">
+                <tr className="bg-slate-50 border-b border-slate-200">
                   {["Khách hàng", "Sale", "Loại Visa", "Chi phí", "Tiến độ giấy tờ", "Trạng thái (Cột)", "Chuyển cột"].map(
                     (col) => (
                       <th
                         key={col}
-                        className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide"
+                        className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wide"
                       >
                         {col}
                       </th>
@@ -721,7 +721,7 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
               <tbody className="divide-y divide-gray-100">
                 {filteredTasks.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-10 text-center text-gray-400 italic text-sm">
+                    <td colSpan={7} className="px-4 py-10 text-center text-slate-400 italic text-sm">
                       Không tìm thấy hồ sơ phù hợp
                     </td>
                   </tr>
@@ -737,15 +737,15 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
                         key={task.id}
                         onClick={() => onOpenDetail(task.id)}
                         className={`cursor-pointer transition-colors hover:bg-indigo-50/30 ${
-                          i % 2 === 0 ? "bg-white" : "bg-gray-50/50"
+                          i % 2 === 0 ? "bg-white" : "bg-slate-50/50"
                         }`}
                       >
                         <td className="px-4 py-3">
-                          <p className="font-bold text-gray-800">{task.content.split(" - ")[0]}</p>
-                          <p className="text-xs text-gray-500 mt-0.5 font-medium">{task.phone}</p>
+                          <p className="font-bold text-slate-800">{task.content.split(" - ")[0]}</p>
+                          <p className="text-xs text-slate-500 mt-0.5 font-medium">{task.phone}</p>
                         </td>
 
-                        <td className="px-4 py-3 font-medium text-gray-700">
+                        <td className="px-4 py-3 font-medium text-slate-700">
                           {task.assignedTo?.split(" ").pop() ?? "Trống"}
                         </td>
 
@@ -770,7 +770,7 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
                                 size="sm"
                               />
                             </div>
-                            <span className={`text-xs font-bold ${percent === 100 ? "text-green-600" : "text-gray-500"}`}>
+                            <span className={`text-xs font-bold ${percent === 100 ? "text-green-600" : "text-slate-500"}`}>
                               {doneCount}/{totalCount}
                             </span>
                           </div>
@@ -781,7 +781,7 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
                             className={`text-[11px] font-bold px-2 py-1 rounded-full ${
                               isMissing && currentColId === "proc-col-1"
                                 ? "bg-red-50 text-red-600 border border-red-200"
-                                : "bg-gray-100 text-gray-700"
+                                : "bg-slate-100 text-slate-700"
                             }`}
                           >
                             {columnInfo?.title ?? "Không rõ"}
@@ -793,7 +793,7 @@ const ProcessingBoard: React.FC<ProcessingBoardProps> = ({
                             taskId={task.id}
                             currentColId={currentColId}
                             onMoved={() => fetchBoardData(false)}
-                            className="text-xs font-medium px-2 py-1.5 rounded border border-gray-200 bg-white outline-none cursor-pointer w-full text-gray-700 hover:border-indigo-300 transition-colors"
+                            className="text-xs font-medium px-2 py-1.5 rounded border border-slate-200 bg-white outline-none cursor-pointer w-full text-slate-700 hover:border-indigo-300 transition-colors"
                           />
                         </td>
                       </tr>

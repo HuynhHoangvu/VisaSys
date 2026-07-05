@@ -70,6 +70,8 @@ export const ModelName = {
   DepartmentPermission: 'DepartmentPermission',
   RolePermission: 'RolePermission',
   EmployeePermissionOverride: 'EmployeePermissionOverride',
+  ChatRoom: 'ChatRoom',
+  ChatMessage: 'ChatMessage',
   session: 'session'
 } as const
 
@@ -342,6 +344,29 @@ export const EmployeePermissionOverrideScalarFieldEnum = {
 } as const
 
 export type EmployeePermissionOverrideScalarFieldEnum = (typeof EmployeePermissionOverrideScalarFieldEnum)[keyof typeof EmployeePermissionOverrideScalarFieldEnum]
+
+
+export const ChatRoomScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  departmentId: 'departmentId',
+  type: 'type',
+  createdAt: 'createdAt'
+} as const
+
+export type ChatRoomScalarFieldEnum = (typeof ChatRoomScalarFieldEnum)[keyof typeof ChatRoomScalarFieldEnum]
+
+
+export const ChatMessageScalarFieldEnum = {
+  id: 'id',
+  content: 'content',
+  senderId: 'senderId',
+  senderName: 'senderName',
+  roomId: 'roomId',
+  createdAt: 'createdAt'
+} as const
+
+export type ChatMessageScalarFieldEnum = (typeof ChatMessageScalarFieldEnum)[keyof typeof ChatMessageScalarFieldEnum]
 
 
 export const SessionScalarFieldEnum = {

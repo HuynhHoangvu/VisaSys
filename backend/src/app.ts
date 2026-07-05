@@ -17,16 +17,57 @@ import processedDocsRoutes from "./routes/processedDocs.routes.js";
 import kpiRoutes from "./routes/kpi.routes.js";
 import workspaceRoutes from "./routes/workspace.routes.js";
 import accessRoutes from "./routes/access.routes.js";
+import statsRoutes from "./routes/stats.routes.js";
+import aiRoutes from "./routes/ai.routes.js";
+import chatRoutes from "./routes/chat.routes.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
 import { SESSION_SECRET, sessionCookieCrossSite, getCorsOrigins, DATABASE_URL } from "../config/env.js";
+import { prisma } from "../lib/prisma.js";
+import { redisIsConnected } from "../lib/redis.js";
+import { logger } from "../lib/logger.js";
+import swaggerUi from "swagger-ui-express";
+import { swaggerSpec } from "./swagger.js";
 
 const app = express();
 
 app.set("trust proxy", 1);
 
-/** Railway/proxy health — không đụng DB; giúp kiểm tra tiến trình đã listen. */
-app.get("/health", (_req, res) => {
-  res.status(200).type("text/plain").send("ok");
+// ── Response time tracking ────────────────────────────────────────────────────
+app.use((_req, res, next) => {
+  const start = process.hrtime.bigint();
+  res.on("finish", () => {
+    const ms = Number(process.hrtime.bigint() - start) / 1_000_000;
+    res.setHeader("X-Response-Time", `${ms.toFixed(2)}ms`);
+  });
+  next();
+});
+
+// ── Health check — trả về DB status, uptime, memory ──────────────────────────
+app.get("/health", async (_req, res) => {
+  const mem = process.memoryUsage();
+  const uptimeSec = Math.floor(process.uptime());
+  let dbStatus: "ok" | "error" = "error";
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    dbStatus = "ok";
+  } catch { /* giữ error */ }
+
+  const redisStatus = await redisIsConnected() ? "ok" : (process.env.REDIS_URL ? "error" : "disabled");
+  const degraded = dbStatus === "error";
+
+  res.status(degraded ? 503 : 200).json({
+    status: degraded ? "degraded" : "healthy",
+    uptime: `${Math.floor(uptimeSec / 60)}m ${uptimeSec % 60}s`,
+    database: dbStatus,
+    cache: redisStatus,
+    memory: {
+      heapUsed: `${Math.round(mem.heapUsed / 1024 / 1024)}MB`,
+      heapTotal: `${Math.round(mem.heapTotal / 1024 / 1024)}MB`,
+      rss: `${Math.round(mem.rss / 1024 / 1024)}MB`,
+    },
+    timestamp: new Date().toISOString(),
+    env: process.env.NODE_ENV ?? "development",
+  });
 });
 
 app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
@@ -76,7 +117,7 @@ const PgSession = connectPgSimple(session);
 const sessionPool = new pg.Pool({ connectionString: DATABASE_URL });
 
 sessionPool.on("error", (err) => {
-  console.error("[session-store] Postgres pool error:", err);
+  logger.error({ err: err.message }, "[session-store] Postgres pool error");
 });
 
 const pgStore = new PgSession({
@@ -86,7 +127,7 @@ const pgStore = new PgSession({
   createTableIfMissing: false,
   // Prune expired sessions every hour.
   pruneSessionInterval: 60 * 60,
-  errorLog: (err) => console.error("[session-store] Store error:", err),
+  errorLog: (err) => logger.error({ err: err.message }, "[session-store] Store error"),
 });
 
 // Chuyển token từ header Authorization thành session ID để express-session nhận diện
@@ -119,26 +160,31 @@ app.use(session({
   },
 }));
 
-// ── Session debug middleware ──────────────────────────────────────────────────
-// Logs the incoming session cookie and resolved session state on every request
-// so that 401 failures can be traced back to a missing/invalid cookie or a
-// store lookup miss.  Remove or gate behind NODE_ENV once the issue is resolved.
-app.use((req, _res, next) => {
-  if (req.method !== "GET") {
-    const sid = req.headers.cookie
-      ?.split(";")
-      .map((c) => c.trim())
-      .find((c) => c.startsWith("connect.sid="));
-    const user = (req.session as any)?.user;
-    console.log(
-      `[session] ${req.method} ${req.path}` +
-      ` | sid-cookie=${sid ? "present" : "absent"}` +
-      ` | session-id=${req.sessionID ?? "none"}` +
-      ` | user=${user ? `${user.id} (${user.role})` : "none"}`,
-    );
-  }
-  next();
-});
+// ── Session debug middleware (development only) ───────────────────────────────
+if (process.env.NODE_ENV !== "production") {
+  app.use((req, _res, next) => {
+    if (req.method !== "GET") {
+      const sid = req.headers.cookie
+        ?.split(";")
+        .map((c) => c.trim())
+        .find((c) => c.startsWith("connect.sid="));
+      const user = (req.session as any)?.user;
+      console.log(
+        `[session] ${req.method} ${req.path}` +
+        ` | sid-cookie=${sid ? "present" : "absent"}` +
+        ` | session-id=${req.sessionID ?? "none"}` +
+        ` | user=${user ? `${user.id} (${user.role})` : "none"}`,
+      );
+    }
+    next();
+  });
+}
+
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customSiteTitle: "Fly Visa API Docs",
+  swaggerOptions: { persistAuthorization: true },
+}));
+app.get("/api-docs.json", (_req, res) => res.json(swaggerSpec));
 
 app.use("/api/auth",           authRoutes);
 app.use("/api/access",         accessRoutes);
@@ -151,6 +197,9 @@ app.use("/api/docs",           docsRoutes);
 app.use("/api/processed-docs", processedDocsRoutes);
 app.use("/api/kpi",            kpiRoutes);
 app.use("/api/workspaces",    workspaceRoutes);
+app.use("/api/stats",         statsRoutes);
+app.use("/api/ai",            aiRoutes);
+app.use("/api/chat",          chatRoutes);
 app.use("/uploads",            express.static(path.join(process.cwd(), "uploads")));
 
 app.get("/", (_req, res) => {

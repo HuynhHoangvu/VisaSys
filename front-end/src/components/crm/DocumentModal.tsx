@@ -61,7 +61,7 @@ function FileTypeIcon({ name, className = "w-4 h-4" }: { name: string; className
   if (EXCEL_EXTS.includes(ext))
     return <span className={`font-black text-green-600 text-[10px] leading-none`}>XLS</span>;
   return (
-    <svg className={`${className} text-gray-400`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg className={`${className} text-slate-400`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
     </svg>
   );
@@ -115,14 +115,14 @@ function FileBadge({
       {/* Hover image preview */}
       {isImage(file.name) && !imgErr && (
         <div className="absolute bottom-full right-0 mb-1.5 hidden group-hover/badge:flex z-50 pointer-events-none">
-          <div className="bg-white rounded-xl shadow-2xl border border-gray-200 p-1.5">
+          <div className="bg-white rounded-xl shadow-2xl border border-slate-200 p-1.5">
             <img
               src={file.url}
               alt={file.name}
               className="w-40 h-40 object-contain rounded-lg"
               onError={() => setImgErr(true)}
             />
-            <p className="text-[10px] text-center text-gray-400 mt-1 truncate max-w-[160px]">{file.name}</p>
+            <p className="text-[10px] text-center text-slate-400 mt-1 truncate max-w-[160px]">{file.name}</p>
           </div>
         </div>
       )}
@@ -189,7 +189,7 @@ function UploadPanelOverlay({
       className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/30 backdrop-blur-[2px]"
       onClick={(e) => { if (e.target === e.currentTarget && !isUploading) onClose(); }}
     >
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
         {/* Header */}
         <div className="px-5 py-4 bg-blue-50 border-b border-blue-100 flex items-center justify-between">
           <div>
@@ -197,7 +197,7 @@ function UploadPanelOverlay({
             <p className="text-sm font-bold text-blue-800 mt-0.5 truncate max-w-[300px]">{panel.rowName}</p>
           </div>
           {!isUploading && (
-            <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+            <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -215,8 +215,8 @@ function UploadPanelOverlay({
                 {pendingFiles.map((f, i) => (
                   <div key={i} className="flex items-center gap-2 bg-blue-50 px-3 py-2 rounded-lg">
                     <FileTypeIcon name={f.name} className="w-4 h-4 shrink-0" />
-                    <span className="text-xs text-gray-600 truncate flex-1">{f.name}</span>
-                    <span className="text-xs text-gray-400 shrink-0">{formatSize(f.size)}</span>
+                    <span className="text-xs text-slate-600 truncate flex-1">{f.name}</span>
+                    <span className="text-xs text-slate-400 shrink-0">{formatSize(f.size)}</span>
                   </div>
                 ))}
               </div>
@@ -224,16 +224,16 @@ function UploadPanelOverlay({
           ) : pendingFiles.length > 0 ? (
             /* Files selected – confirm upload */
             <div className="flex flex-col gap-3">
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
                 {pendingFiles.length} tệp đã chọn
               </p>
               <div className="space-y-1.5 max-h-48 overflow-y-auto">
                 {pendingFiles.map((f, i) => (
-                  <div key={i} className="flex items-center gap-2 bg-gray-50 border border-gray-100 px-3 py-2 rounded-lg">
+                  <div key={i} className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-2 rounded-lg">
                     <FileTypeIcon name={f.name} className="w-4 h-4 shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-gray-700 truncate">{f.name}</p>
-                      <p className="text-[10px] text-gray-400">{formatSize(f.size)}</p>
+                      <p className="text-xs font-medium text-slate-700 truncate">{f.name}</p>
+                      <p className="text-[10px] text-slate-400">{formatSize(f.size)}</p>
                     </div>
                     <button
                       onClick={() => setPendingFiles((prev) => prev.filter((_, idx) => idx !== i))}
@@ -249,7 +249,7 @@ function UploadPanelOverlay({
               <div className="flex gap-2 pt-1">
                 <button
                   onClick={() => { setPendingFiles([]); if (inputRef.current) inputRef.current.value = ""; }}
-                  className="flex-1 py-2 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                  className="flex-1 py-2 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
                 >
                   Chọn lại
                 </button>
@@ -271,23 +271,23 @@ function UploadPanelOverlay({
               className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all select-none ${
                 dragActive
                   ? "border-blue-500 bg-blue-50 scale-[1.02]"
-                  : "border-gray-200 bg-gray-50 hover:border-blue-400 hover:bg-blue-50/60"
+                  : "border-slate-200 bg-slate-50 hover:border-blue-400 hover:bg-blue-50/60"
               }`}
             >
               <div className={`text-4xl mb-3 transition-transform ${dragActive ? "scale-125" : ""}`}>
                 {dragActive ? "📥" : "📂"}
               </div>
-              <p className="text-sm font-bold text-gray-700">
+              <p className="text-sm font-bold text-slate-700">
                 {dragActive ? "Thả tệp vào đây!" : "Kéo & thả tệp vào đây"}
               </p>
-              <p className="text-xs text-gray-400 mt-1 mb-4">hoặc</p>
+              <p className="text-xs text-slate-400 mt-1 mb-4">hoặc</p>
               <span className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-semibold shadow transition-colors">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                 </svg>
                 Chọn tệp từ máy
               </span>
-              <p className="text-[11px] text-gray-400 mt-3">PDF, Word, Excel, Ảnh · Tối đa 50MB/tệp</p>
+              <p className="text-[11px] text-slate-400 mt-3">PDF, Word, Excel, Ảnh · Tối đa 50MB/tệp</p>
             </div>
           )}
         </div>
@@ -550,11 +550,11 @@ const DocumentModal: React.FC<DocumentModalProps> = ({ show, onClose, taskId, ta
   return (
     <Modal show={show} onClose={onClose} size="6xl" dismissible>
       {/* ── Header ── */}
-      <div className="p-5 border-b border-gray-200 bg-blue-50/50 rounded-t-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="p-5 border-b border-slate-200 bg-blue-50/50 rounded-t-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h3 className="text-xl font-bold text-blue-800 flex items-center gap-2">
             Thu thập hồ sơ:{" "}
-            <span className="text-gray-800">{task?.content.split(" - ")[0]}</span>
+            <span className="text-slate-800">{task?.content.split(" - ")[0]}</span>
           </h3>
           <p className="text-xs text-blue-600 mt-1 font-bold">Diện dự kiến: {visaType}</p>
         </div>
@@ -585,8 +585,8 @@ const DocumentModal: React.FC<DocumentModalProps> = ({ show, onClose, taskId, ta
 
       {/* ── Table + Upload panel overlay ── */}
       <div className="relative p-0 overflow-y-auto max-h-[50vh]">
-        <table className="w-full text-sm text-left text-gray-600">
-          <thead className="text-xs text-gray-700 uppercase bg-gray-100 sticky top-0 z-10 shadow-sm border-b border-gray-200">
+        <table className="w-full text-sm text-left text-slate-600">
+          <thead className="text-xs text-slate-700 uppercase bg-slate-100 sticky top-0 z-10 shadow-sm border-b border-slate-200">
             <tr>
               <th className="px-4 py-3 w-12 text-center">STT</th>
               <th className="px-4 py-3 w-1/3">Giấy tờ yêu cầu</th>
@@ -598,7 +598,7 @@ const DocumentModal: React.FC<DocumentModalProps> = ({ show, onClose, taskId, ta
           <tbody className="divide-y divide-gray-200">
             {sections.length === 0 ? (
               <tr>
-                <td colSpan={5} className="text-center py-10 text-gray-400 italic">
+                <td colSpan={5} className="text-center py-10 text-slate-400 italic">
                   Không tìm thấy giấy tờ nào phù hợp với bộ lọc.
                 </td>
               </tr>
@@ -609,8 +609,8 @@ const DocumentModal: React.FC<DocumentModalProps> = ({ show, onClose, taskId, ta
                 return (
                   <React.Fragment key={sectionName}>
                     {/* Section header */}
-                    <tr className="bg-gray-50 border-y border-gray-200">
-                      <td colSpan={5} className="px-4 py-2 font-bold text-gray-800 pl-6 uppercase text-[11px] tracking-widest bg-blue-50/30">
+                    <tr className="bg-slate-50 border-y border-slate-200">
+                      <td colSpan={5} className="px-4 py-2 font-bold text-slate-800 pl-6 uppercase text-[11px] tracking-widest bg-blue-50/30">
                         {sectionName}
                       </td>
                     </tr>
@@ -622,10 +622,10 @@ const DocumentModal: React.FC<DocumentModalProps> = ({ show, onClose, taskId, ta
                         const files = uploadedFiles[req.id] || [];
                         return (
                           <tr key={req.id} className={`hover:bg-blue-50/20 transition-colors ${files.length > 0 ? "bg-green-50/10" : ""}`}>
-                            <td className="px-4 py-3 text-center font-medium text-gray-400">{idx + 1}</td>
+                            <td className="px-4 py-3 text-center font-medium text-slate-400">{idx + 1}</td>
                             <td className="px-4 py-3">
                               <div className="flex items-center gap-2 flex-wrap">
-                                <span className="font-bold text-gray-700">{req.name}</span>
+                                <span className="font-bold text-slate-700">{req.name}</span>
                                 {req.templateUrl && (
                                   <a href={req.templateUrl} download target="_blank" rel="noreferrer"
                                     className="flex items-center gap-1 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 px-2 py-0.5 rounded text-[10px] font-bold border border-indigo-200 transition-colors">
@@ -637,11 +637,11 @@ const DocumentModal: React.FC<DocumentModalProps> = ({ show, onClose, taskId, ta
                                 )}
                               </div>
                             </td>
-                            <td className="px-4 py-3 text-xs text-gray-500 italic">{req.note}</td>
+                            <td className="px-4 py-3 text-xs text-slate-500 italic">{req.note}</td>
                             <td className="px-4 py-3 text-center">
                               {req.required
                                 ? <span className="text-red-500 font-bold text-lg">*</span>
-                                : <span className="text-gray-400 text-xs">-</span>}
+                                : <span className="text-slate-400 text-xs">-</span>}
                             </td>
                             <td className="px-4 py-3">
                               <div className="flex flex-col gap-1.5 items-end">
@@ -682,8 +682,8 @@ const DocumentModal: React.FC<DocumentModalProps> = ({ show, onClose, taskId, ta
                       <td className="px-4 py-3">
                         <span className="font-semibold text-yellow-700 italic text-sm">📎 Hồ sơ khác (nếu có)</span>
                       </td>
-                      <td className="px-4 py-3 text-xs text-gray-400 italic">Tài liệu bổ sung thêm</td>
-                      <td className="px-4 py-3 text-center"><span className="text-gray-300 text-xs">-</span></td>
+                      <td className="px-4 py-3 text-xs text-slate-400 italic">Tài liệu bổ sung thêm</td>
+                      <td className="px-4 py-3 text-center"><span className="text-slate-300 text-xs">-</span></td>
                       <td className="px-4 py-3">
                         <div className="flex flex-col gap-1.5 items-end">
                           {extraFiles.map((file, index) => (
@@ -734,7 +734,7 @@ const DocumentModal: React.FC<DocumentModalProps> = ({ show, onClose, taskId, ta
       )}
 
       {/* ── Footer ── */}
-      <div className="p-4 border-t border-gray-200 flex justify-end gap-2 bg-gray-50 rounded-b-lg">
+      <div className="p-4 border-t border-slate-200 flex justify-end gap-2 bg-slate-50 rounded-b-lg">
         <Button color="light" onClick={handleDownloadAll} disabled={isDownloadingAll || Object.keys(uploadedFiles).length === 0}>
           {isDownloadingAll ? downloadProgress : "📥 Tải tất cả (.zip)"}
         </Button>

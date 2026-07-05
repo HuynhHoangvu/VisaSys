@@ -284,13 +284,13 @@ const RbacSettingsPanel: React.FC<{ onSelfPermissionsUpdated?: (u: AuthUser) => 
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-4">
-      <div className="flex flex-wrap gap-2 border-b border-gray-100 pb-3">
+    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-4">
+      <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-3">
         <button
           type="button"
           onClick={() => setSubTab("department")}
           className={`px-4 py-2 rounded-lg text-sm font-semibold ${
-            subTab === "department" ? "bg-orange-500 text-white" : "bg-gray-100 text-gray-700"
+            subTab === "department" ? "bg-orange-500 text-white" : "bg-slate-100 text-slate-700"
           }`}
         >
           Theo bộ phận
@@ -299,7 +299,7 @@ const RbacSettingsPanel: React.FC<{ onSelfPermissionsUpdated?: (u: AuthUser) => 
           type="button"
           onClick={() => setSubTab("employee")}
           className={`px-4 py-2 rounded-lg text-sm font-semibold ${
-            subTab === "employee" ? "bg-orange-500 text-white" : "bg-gray-100 text-gray-700"
+            subTab === "employee" ? "bg-orange-500 text-white" : "bg-slate-100 text-slate-700"
           }`}
         >
           Theo nhân viên
@@ -314,14 +314,14 @@ const RbacSettingsPanel: React.FC<{ onSelfPermissionsUpdated?: (u: AuthUser) => 
 
       {subTab === "department" && (
         <div className="space-y-4">
-          <p className="text-sm text-gray-600 leading-relaxed">
-            Ma trận theo <span className="font-medium text-gray-800">bộ phận</span> (danh mục HR): mọi nhân viên
+          <p className="text-sm text-slate-600 leading-relaxed">
+            Ma trận theo <span className="font-medium text-slate-800">bộ phận</span> (danh mục HR): mọi nhân viên
             trong cùng bộ phận dùng chung tập quyền này, trừ khi có ghi đè ở tab «Theo nhân viên».{" "}
-            <span className="font-medium text-gray-800">Vai trò / chức danh</span> trên hồ sơ NV là phần riêng (HR),
+            <span className="font-medium text-slate-800">Vai trò / chức danh</span> trên hồ sơ NV là phần riêng (HR),
             không còn làm khóa ma trận. Ô trống sau khi lưu = hệ thống dùng mặc định (legacy). Dùng{" "}
-            <span className="font-medium text-gray-800">mẫu nhanh</span>,{" "}
-            <span className="font-medium text-gray-800">sao chép từ bộ phận khác</span> hoặc{" "}
-            <span className="font-medium text-gray-800">tìm kiếm</span> để chỉnh nhanh.
+            <span className="font-medium text-slate-800">mẫu nhanh</span>,{" "}
+            <span className="font-medium text-slate-800">sao chép từ bộ phận khác</span> hoặc{" "}
+            <span className="font-medium text-slate-800">tìm kiếm</span> để chỉnh nhanh.
           </p>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div className="relative flex-1 min-w-0 max-w-md">
@@ -330,7 +330,7 @@ const RbacSettingsPanel: React.FC<{ onSelfPermissionsUpdated?: (u: AuthUser) => 
                 value={permFilter}
                 onChange={(e) => setPermFilter(e.target.value)}
                 placeholder="Tìm theo tên quyền…"
-                className="w-full rounded-lg border border-gray-200 bg-gray-50/80 py-2 px-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-orange-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-orange-400"
+                className="w-full rounded-lg border border-slate-200 bg-slate-50/80 py-2 px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-orange-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-orange-400"
                 autoComplete="off"
               />
             </div>
@@ -338,7 +338,7 @@ const RbacSettingsPanel: React.FC<{ onSelfPermissionsUpdated?: (u: AuthUser) => 
               <button
                 type="button"
                 onClick={() => setPermFilter("")}
-                className="text-sm font-medium text-gray-600 hover:text-gray-900 shrink-0 self-start sm:self-auto"
+                className="text-sm font-medium text-slate-600 hover:text-slate-900 shrink-0 self-start sm:self-auto"
               >
                 Xóa bộ lọc
               </button>
@@ -353,22 +353,22 @@ const RbacSettingsPanel: React.FC<{ onSelfPermissionsUpdated?: (u: AuthUser) => 
               return (
                 <section
                   key={row.departmentId}
-                  className="border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm"
+                  className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm"
                 >
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch sm:justify-between border-b border-gray-100 bg-gradient-to-r from-gray-50/90 to-white px-3 py-2.5 sm:px-4">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch sm:justify-between border-b border-slate-200 bg-slate-50 px-3 py-2.5 sm:px-4">
                     <button
                       type="button"
                       onClick={() => setOpenDepts((p) => ({ ...p, [row.departmentId]: !isOpen }))}
                       className="flex flex-1 min-w-0 items-center gap-2 text-left rounded-lg -m-1 p-1 hover:bg-white/80 transition-colors"
                       aria-expanded={isOpen}
                     >
-                      <span className="text-gray-400 text-xs w-4 shrink-0 select-none" aria-hidden>
+                      <span className="text-slate-400 text-xs w-4 shrink-0 select-none" aria-hidden>
                         {isOpen ? "▼" : "▶"}
                       </span>
                       <div className="min-w-0">
-                        <h4 className="font-semibold text-gray-900 truncate">{row.departmentName}</h4>
-                        <p className="text-xs text-gray-500 mt-0.5">
-                          Đã chọn <span className="font-medium text-gray-700">{selected}</span> / {total} quyền trong
+                        <h4 className="font-semibold text-slate-900 truncate">{row.departmentName}</h4>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          Đã chọn <span className="font-medium text-slate-700">{selected}</span> / {total} quyền trong
                           catalog
                         </p>
                       </div>
@@ -376,7 +376,7 @@ const RbacSettingsPanel: React.FC<{ onSelfPermissionsUpdated?: (u: AuthUser) => 
                     <div className="flex flex-wrap items-center gap-2 sm:justify-end sm:pl-2">
                       <select
                         disabled={busy || catalog.length === 0}
-                        className="text-xs font-medium rounded-md border border-gray-200 bg-white px-2 py-1.5 text-gray-700 max-w-[11rem] disabled:opacity-50"
+                        className="text-xs font-medium rounded-md border border-slate-200 bg-white px-2 py-1.5 text-slate-700 max-w-[11rem] disabled:opacity-50"
                         aria-label={`Mẫu nhanh cho ${row.departmentName}`}
                         value=""
                         onChange={(e) => {
@@ -394,7 +394,7 @@ const RbacSettingsPanel: React.FC<{ onSelfPermissionsUpdated?: (u: AuthUser) => 
                       </select>
                       <select
                         disabled={busy || otherDepts.length === 0}
-                        className="text-xs font-medium rounded-md border border-gray-200 bg-white px-2 py-1.5 text-gray-700 max-w-[11rem] disabled:opacity-50"
+                        className="text-xs font-medium rounded-md border border-slate-200 bg-white px-2 py-1.5 text-slate-700 max-w-[11rem] disabled:opacity-50"
                         aria-label={`Sao chép quyền từ bộ phận khác sang ${row.departmentName}`}
                         value=""
                         onChange={(e) => {
@@ -422,7 +422,7 @@ const RbacSettingsPanel: React.FC<{ onSelfPermissionsUpdated?: (u: AuthUser) => 
                         type="button"
                         disabled={busy}
                         onClick={() => clearAllForDept(row.departmentId)}
-                        className="text-xs font-semibold px-2.5 py-1.5 rounded-md border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                        className="text-xs font-semibold px-2.5 py-1.5 rounded-md border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-50"
                       >
                         Bỏ hết
                       </button>
@@ -431,12 +431,12 @@ const RbacSettingsPanel: React.FC<{ onSelfPermissionsUpdated?: (u: AuthUser) => 
                   {isOpen ? (
                     <div className="p-3 sm:p-4 space-y-4">
                       {catalogByGroupFiltered.length === 0 ? (
-                        <p className="text-sm text-gray-500 py-4 text-center">Không có quyền khớp bộ lọc.</p>
+                        <p className="text-sm text-slate-500 py-4 text-center">Không có quyền khớp bộ lọc.</p>
                       ) : (
                         catalogByGroupFiltered.map(([group, items]) => (
                           <div key={group}>
                             <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-                              <p className="text-xs font-semibold tracking-wide text-gray-600">
+                              <p className="text-xs font-semibold tracking-wide text-slate-600">
                                 {catalogGroupLabel(group)}
                               </p>
                               <div className="flex flex-wrap items-center gap-1.5 shrink-0">
@@ -448,20 +448,20 @@ const RbacSettingsPanel: React.FC<{ onSelfPermissionsUpdated?: (u: AuthUser) => 
                                 >
                                   Chọn nhóm
                                 </button>
-                                <span className="text-gray-300 select-none" aria-hidden>
+                                <span className="text-slate-300 select-none" aria-hidden>
                                   ·
                                 </span>
                                 <button
                                   type="button"
                                   disabled={busy}
                                   onClick={() => removeGroupFromDept(row.departmentId, items)}
-                                  className="text-xs font-medium text-gray-500 hover:text-gray-800 hover:underline disabled:opacity-50"
+                                  className="text-xs font-medium text-slate-500 hover:text-slate-800 hover:underline disabled:opacity-50"
                                 >
                                   Bỏ nhóm
                                 </button>
                               </div>
                             </div>
-                            <div className="rounded-lg border border-gray-100 overflow-hidden">
+                            <div className="rounded-lg border border-slate-200 overflow-hidden">
                               <table className="w-full text-sm border-collapse">
                                 <tbody>
                                   {items.map((item) => {
@@ -477,12 +477,12 @@ const RbacSettingsPanel: React.FC<{ onSelfPermissionsUpdated?: (u: AuthUser) => 
                                             <input
                                               id={rid}
                                               type="checkbox"
-                                              className="mt-0.5 rounded border-gray-300 shrink-0"
+                                              className="mt-0.5 rounded border-slate-300 shrink-0"
                                               checked={checked}
                                               title={item.id}
                                               onChange={() => toggleDeptPerm(row.departmentId, item.id)}
                                             />
-                                            <span className="text-gray-800 leading-snug">{item.label}</span>
+                                            <span className="text-slate-800 leading-snug">{item.label}</span>
                                           </label>
                                         </td>
                                       </tr>
@@ -514,9 +514,9 @@ const RbacSettingsPanel: React.FC<{ onSelfPermissionsUpdated?: (u: AuthUser) => 
       {subTab === "employee" && (
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Chọn nhân viên</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Chọn nhân viên</label>
             <select
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
               value={empId}
               onChange={(e) => {
                 const id = e.target.value;
@@ -536,7 +536,7 @@ const RbacSettingsPanel: React.FC<{ onSelfPermissionsUpdated?: (u: AuthUser) => 
 
           {effectiveData && (
             <>
-              <div className="text-sm text-gray-600 space-y-1">
+              <div className="text-sm text-slate-600 space-y-1">
                 <p>
                   <span className="font-semibold">Bộ phận:</span>{" "}
                   {effectiveData.department || "Chưa gán"}
@@ -556,14 +556,14 @@ const RbacSettingsPanel: React.FC<{ onSelfPermissionsUpdated?: (u: AuthUser) => 
                   value={overridePermFilter}
                   onChange={(e) => setOverridePermFilter(e.target.value)}
                   placeholder="Tìm quyền khi ghi đè…"
-                  className="flex-1 min-w-0 rounded-lg border border-gray-200 bg-gray-50/80 px-3 py-2 text-sm focus:border-orange-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-orange-400"
+                  className="flex-1 min-w-0 rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2 text-sm focus:border-orange-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-orange-400"
                   autoComplete="off"
                 />
                 {overridePermFilter.trim() ? (
                   <button
                     type="button"
                     onClick={() => setOverridePermFilter("")}
-                    className="text-sm font-medium text-gray-600 hover:text-gray-900 shrink-0"
+                    className="text-sm font-medium text-slate-600 hover:text-slate-900 shrink-0"
                   >
                     Xóa bộ lọc
                   </button>
@@ -573,7 +573,7 @@ const RbacSettingsPanel: React.FC<{ onSelfPermissionsUpdated?: (u: AuthUser) => 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-                    <h5 className="font-semibold text-gray-800 text-sm">Bổ sung quyền riêng</h5>
+                    <h5 className="font-semibold text-slate-800 text-sm">Bổ sung quyền riêng</h5>
                     <div className="flex flex-wrap gap-1.5">
                       <button
                         type="button"
@@ -583,35 +583,35 @@ const RbacSettingsPanel: React.FC<{ onSelfPermissionsUpdated?: (u: AuthUser) => 
                       >
                         Chọn tất cả
                       </button>
-                      <span className="text-gray-300 text-xs" aria-hidden>
+                      <span className="text-slate-300 text-xs" aria-hidden>
                         |
                       </span>
                       <button
                         type="button"
                         disabled={busy}
                         onClick={() => setGranted(new Set())}
-                        className="text-xs font-semibold text-gray-500 hover:underline disabled:opacity-50"
+                        className="text-xs font-semibold text-slate-500 hover:underline disabled:opacity-50"
                       >
                         Bỏ hết
                       </button>
                     </div>
                   </div>
-                  <div className="max-h-56 overflow-y-auto border border-gray-100 rounded-lg">
+                  <div className="max-h-56 overflow-y-auto border border-slate-200 rounded-lg">
                     {filteredOverrideCatalog.length === 0 ? (
-                      <p className="text-xs text-gray-500 p-3">Không khớp bộ lọc.</p>
+                      <p className="text-xs text-slate-500 p-3">Không khớp bộ lọc.</p>
                     ) : (
                       <table className="w-full text-xs border-collapse">
                         <tbody>
                           {filteredOverrideCatalog.map((item) => {
                             const gid = `rbac-gr-${item.id}`;
                             return (
-                              <tr key={`g-${item.id}`} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/80">
+                              <tr key={`g-${item.id}`} className="border-b border-gray-50 last:border-0 hover:bg-slate-50/80">
                                 <td colSpan={2} className="px-2 py-1.5">
-                                  <label htmlFor={gid} className="flex items-center gap-2 cursor-pointer text-gray-800">
+                                  <label htmlFor={gid} className="flex items-center gap-2 cursor-pointer text-slate-800">
                                     <input
                                       id={gid}
                                       type="checkbox"
-                                      className="rounded border-gray-300 shrink-0"
+                                      className="rounded border-slate-300 shrink-0"
                                       checked={granted.has(item.id)}
                                       title={item.id}
                                       onChange={() => toggle(granted, item.id, setGranted)}
@@ -629,32 +629,32 @@ const RbacSettingsPanel: React.FC<{ onSelfPermissionsUpdated?: (u: AuthUser) => 
                 </div>
                 <div>
                   <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-                    <h5 className="font-semibold text-gray-800 text-sm">Thu hồi so với mặc định bộ phận</h5>
+                    <h5 className="font-semibold text-slate-800 text-sm">Thu hồi so với mặc định bộ phận</h5>
                     <button
                       type="button"
                       disabled={busy}
                       onClick={() => setRevoked(new Set())}
-                      className="text-xs font-semibold text-gray-500 hover:underline disabled:opacity-50"
+                      className="text-xs font-semibold text-slate-500 hover:underline disabled:opacity-50"
                     >
                       Bỏ hết thu hồi
                     </button>
                   </div>
-                  <div className="max-h-56 overflow-y-auto border border-gray-100 rounded-lg">
+                  <div className="max-h-56 overflow-y-auto border border-slate-200 rounded-lg">
                     {filteredOverrideCatalog.length === 0 ? (
-                      <p className="text-xs text-gray-500 p-3">Không khớp bộ lọc.</p>
+                      <p className="text-xs text-slate-500 p-3">Không khớp bộ lọc.</p>
                     ) : (
                       <table className="w-full text-xs border-collapse">
                         <tbody>
                           {filteredOverrideCatalog.map((item) => {
                             const rid = `rbac-rv-${item.id}`;
                             return (
-                              <tr key={`r-${item.id}`} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/80">
+                              <tr key={`r-${item.id}`} className="border-b border-gray-50 last:border-0 hover:bg-slate-50/80">
                                 <td colSpan={2} className="px-2 py-1.5">
-                                  <label htmlFor={rid} className="flex items-center gap-2 cursor-pointer text-gray-800">
+                                  <label htmlFor={rid} className="flex items-center gap-2 cursor-pointer text-slate-800">
                                     <input
                                       id={rid}
                                       type="checkbox"
-                                      className="rounded border-gray-300 shrink-0"
+                                      className="rounded border-slate-300 shrink-0"
                                       checked={revoked.has(item.id)}
                                       title={item.id}
                                       onChange={() => toggle(revoked, item.id, setRevoked)}
@@ -685,7 +685,7 @@ const RbacSettingsPanel: React.FC<{ onSelfPermissionsUpdated?: (u: AuthUser) => 
                   type="button"
                   disabled={busy}
                   onClick={resetOverride}
-                  className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-lg text-sm"
+                  className="bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold py-2 px-4 rounded-lg text-sm"
                 >
                   Reset về bộ phận
                 </button>

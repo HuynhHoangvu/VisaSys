@@ -55,7 +55,7 @@ const SearchFilterBar: React.FC<SearchFilterConfig> = ({
       {/* SEARCH INPUT */}
       <div className="relative flex-1 min-w-[200px] max-w-[300px]">
         <svg
-          className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
+          className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -72,12 +72,12 @@ const SearchFilterBar: React.FC<SearchFilterConfig> = ({
           value={searchValue}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder={searchPlaceholder}
-          className="w-full pl-9 pr-8 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent placeholder:text-gray-400 shadow-sm"
+          className="w-full pl-9 pr-8 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent placeholder:text-slate-400 shadow-sm"
         />
         {searchValue && (
           <button
             onClick={() => onSearchChange("")}
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
           >
             <svg
               className="w-3.5 h-3.5"
@@ -106,7 +106,7 @@ const SearchFilterBar: React.FC<SearchFilterConfig> = ({
               className={`pl-3 pr-8 py-2 text-sm bg-white border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent shadow-sm appearance-none cursor-pointer transition-colors ${
                 filter.value !== "all"
                   ? "border-orange-400 bg-orange-50 text-orange-700 font-semibold"
-                  : "border-gray-200 text-gray-600"
+                  : "border-slate-200 text-slate-600"
               }`}
             >
               <option value="all">{filter.placeholder}</option>
@@ -126,14 +126,14 @@ const SearchFilterBar: React.FC<SearchFilterConfig> = ({
                 type="date"
                 value={startDate || ""}
                 onChange={(e) => onStartDateChange?.(e.target.value)}
-                className="px-2 py-1.5 text-xs bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent shadow-sm text-gray-700 cursor-pointer"
+                className="px-2 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent shadow-sm text-slate-700 cursor-pointer"
               />
-              <span className="text-gray-400 text-xs font-semibold">đến</span>
+              <span className="text-slate-400 text-xs font-semibold">đến</span>
               <input
                 type="date"
                 value={endDate || ""}
                 onChange={(e) => onEndDateChange?.(e.target.value)}
-                className="px-2 py-1.5 text-xs bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent shadow-sm text-gray-700 cursor-pointer"
+                className="px-2 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent shadow-sm text-slate-700 cursor-pointer"
               />
             </div>
           )}
@@ -144,7 +144,7 @@ const SearchFilterBar: React.FC<SearchFilterConfig> = ({
       {hasActiveFilter && onReset && (
         <button
           onClick={onReset}
-          className="flex items-center gap-1.5 px-3 py-2 text-sm text-gray-500 bg-white border border-gray-200 rounded-lg hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition-all shadow-sm"
+          className="flex items-center gap-1.5 px-3 py-2 text-sm text-slate-500 bg-white border border-slate-200 rounded-lg hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition-all shadow-sm"
         >
           <svg
             className="w-3.5 h-3.5"
@@ -165,7 +165,7 @@ const SearchFilterBar: React.FC<SearchFilterConfig> = ({
 
       {/* KẾT QUẢ */}
       {resultCount !== undefined && totalCount !== undefined && (
-        <span className="text-xs text-gray-400 font-medium ml-auto">
+        <span className="text-xs text-slate-400 font-medium ml-auto">
           {hasActiveFilter ? (
             <>
               <span className="text-orange-500 font-bold">{resultCount}</span> /{" "}
@@ -173,7 +173,7 @@ const SearchFilterBar: React.FC<SearchFilterConfig> = ({
             </>
           ) : (
             <>
-              <span className="font-bold text-gray-600">{totalCount}</span>{" "}
+              <span className="font-bold text-slate-600">{totalCount}</span>{" "}
               khách hàng
             </>
           )}

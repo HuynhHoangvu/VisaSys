@@ -29,6 +29,8 @@ const JOB_TYPES = [
   "Khác",
 ];
 
+const leadScoreCache = new Map<string, { score: number; label: string; reason: string }>();
+
 const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
   show,
   onClose,
@@ -41,6 +43,9 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
   const [formData, setFormData] = useState<Task | null>(null);
   const [localName, setLocalName] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+
+  const [leadScore, setLeadScore] = useState<{ score: number; label: string; reason: string } | null>(null);
+  const [loadingScore, setLoadingScore] = useState(false);
 
   const [newNote, setNewNote] = useState("");
   const [isSubmittingNote, setIsSubmittingNote] = useState(false);
@@ -58,7 +63,26 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
   useEffect(() => {
     setFormData(task);
     if (task) setLocalName(task.content?.split(" - ")[0] || "");
-  }, [task]);
+    if (task?.id && show) {
+      const cached = leadScoreCache.get(task.id);
+      if (cached) {
+        setLeadScore(cached);
+      } else {
+        setLeadScore(null);
+        setLoadingScore(true);
+        fetch(`${API_URL}/api/ai/lead-score`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ taskId: task.id }),
+        })
+          .then((r) => r.json())
+          .then((d) => { leadScoreCache.set(task.id, d); setLeadScore(d); })
+          .catch(() => {})
+          .finally(() => setLoadingScore(false));
+      }
+    }
+  }, [task, show]);
 
   if (!task || !formData) return null;
 
@@ -178,15 +202,32 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
       const visaType = formData.visaType && formData.visaType !== "Khác" ? normalizeVisaType(formData.visaType) : "";
       const composedContent = visaType ? `${localName} - ${visaType}` : localName;
       const payload = { ...formData, visaType, content: composedContent };
-      await fetch(`${API_URL}/api/tasks/${formData.id}`, {
+      const res = await fetch(`${API_URL}/api/tasks/${formData.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(payload),
       });
+      if (!res.ok) throw new Error(`Lỗi server: ${res.status}`);
 
       if (onUpdateCustomer) onUpdateCustomer(payload);
       socket.emit("data_changed");
       toast.success("Đã lưu thông tin khách hàng");
+
+      // Re-fetch lead score vì thông tin khách hàng đã thay đổi
+      leadScoreCache.delete(formData.id);
+      setLeadScore(null);
+      setLoadingScore(true);
+      fetch(`${API_URL}/api/ai/lead-score`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ taskId: formData.id }),
+      })
+        .then((r) => r.json())
+        .then((d) => { leadScoreCache.set(formData.id, d); setLeadScore(d); })
+        .catch(() => {})
+        .finally(() => setLoadingScore(false));
     } catch (err) {
       toast.error("Lỗi lưu: " + (err as Error).message);
     } finally {
@@ -295,7 +336,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
       className="md:p-4"
       dismissible
     >
-      <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4 bg-white gap-4">
+      <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4 bg-white gap-4">
         {/* Avatar + info */}
         <div className="flex items-center gap-4 min-w-0 flex-1">
           <div className="w-11 h-11 shrink-0 rounded-full bg-gradient-to-br from-orange-400 to-rose-500 flex items-center justify-center text-white text-lg font-bold shadow-sm select-none">
@@ -307,23 +348,47 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
               type="text"
               value={localName}
               onChange={(e) => handleNameChange(e.target.value)}
-              className="w-full bg-transparent text-xl font-bold text-gray-800 outline-none border-b border-transparent hover:border-gray-200 focus:border-orange-400 transition-colors pb-0.5 placeholder-gray-400"
+              className="w-full bg-transparent text-xl font-bold text-slate-800 outline-none border-b border-transparent hover:border-slate-200 focus:border-orange-400 transition-colors pb-0.5 placeholder-gray-400"
               placeholder="Nhập tên khách hàng"
             />
 
+            {/* AI Lead Score badge */}
+            {(loadingScore || leadScore) && (
+              <div className="mt-1.5 mb-1">
+                {loadingScore ? (
+                  <span className="inline-flex items-center gap-1.5 text-2xs text-violet-500 bg-violet-50 border border-violet-200 rounded-full px-2.5 py-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse" />
+                    AI đang phân tích sâu...
+                  </span>
+                ) : leadScore && (
+                  <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full border ${
+                    leadScore.label === "Nóng"
+                      ? "bg-red-50 text-red-600 border-red-200"
+                      : leadScore.label === "Ấm"
+                      ? "bg-amber-50 text-amber-700 border-amber-200"
+                      : "bg-slate-50 text-slate-500 border-slate-200"
+                  }`} title="Điểm phân tích dựa trên nguồn khách, tương tác, giá trị hợp đồng và hồ sơ">
+                    {leadScore.label === "Nóng" ? "🔥" : leadScore.label === "Ấm" ? "⚡" : "❄️"}
+                    Tiềm năng: {leadScore.label} {leadScore.score}/10
+                    <span className="font-normal text-2xs opacity-75 max-w-45 truncate">— {leadScore.reason}</span>
+                  </span>
+                )}
+              </div>
+            )}
+
             <div className="flex flex-wrap items-center gap-x-5 gap-y-1 mt-2">
-              <label className="flex items-center gap-1.5 text-xs text-gray-400 font-medium">
+              <label className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
                 Phí:
                 <input
                   type="text"
                   value={formData.price || ""}
                   onChange={(e) => handleChange("price", e.target.value)}
-                  className="border-0 border-b border-dashed border-gray-300 bg-transparent p-0 text-xs font-bold text-gray-700 focus:ring-0 focus:border-orange-400 outline-none w-28"
+                  className="border-0 border-b border-dashed border-slate-300 bg-transparent p-0 text-xs font-bold text-slate-700 focus:ring-0 focus:border-orange-400 outline-none w-28"
                   placeholder="50.000.000 đ"
                 />
               </label>
 
-              <label className="flex items-center gap-1.5 text-xs text-gray-400 font-medium">
+              <label className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
                 Sale:
                 {formData.assignedTo ? (
                   <span className="flex items-center gap-1.5">
@@ -344,7 +409,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
                   <select
                     value={formData.assignedTo || ""}
                     onChange={(e) => handleChange("assignedTo", e.target.value)}
-                    className="border-0 border-b border-dashed border-gray-300 bg-transparent p-0 text-xs font-semibold text-gray-700 focus:ring-0 focus:border-orange-400 outline-none cursor-pointer"
+                    className="border-0 border-b border-dashed border-slate-300 bg-transparent p-0 text-xs font-semibold text-slate-700 focus:ring-0 focus:border-orange-400 outline-none cursor-pointer"
                   >
                     <option value="">-- Chọn --</option>
                     {staffList.map((staff) => (
@@ -383,7 +448,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
           </Button>
           <button
             onClick={onClose}
-            className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
           >
             <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
               <path
@@ -398,13 +463,13 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
 
       <div className="p-0 flex flex-col md:flex-row max-h-[75vh] md:h-[70vh] overflow-hidden">
         {/* CỘT TRÁI - THÔNG TIN CHI TIẾT */}
-        <div className="w-full md:w-[60%] p-4 sm:p-6 border-b md:border-b-0 md:border-r border-gray-200 overflow-y-auto bg-white custom-scrollbar h-[50vh] md:h-full">
+        <div className="w-full md:w-[60%] p-4 sm:p-6 border-b md:border-b-0 md:border-r border-slate-200 overflow-y-auto bg-white custom-scrollbar h-[50vh] md:h-full">
           <h4 className="font-semibold text-orange-600 mb-3 border-b pb-1 text-xs sm:text-sm uppercase">
             Thông tin Liên hệ
           </h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-6">
             <div>
-              <Label className="text-2xs sm:text-xs uppercase text-gray-400">
+              <Label className="text-2xs sm:text-xs uppercase text-slate-400">
                 Số điện thoại
               </Label>
               <TextInput
@@ -415,7 +480,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
               />
             </div>
             <div>
-              <Label className="text-2xs sm:text-xs uppercase text-gray-400">
+              <Label className="text-2xs sm:text-xs uppercase text-slate-400">
                 Email
               </Label>
               <TextInput
@@ -428,7 +493,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
 
             {/* Diện Visa có hỗ trợ tự nhập */}
             <div>
-              <Label className="text-2xs sm:text-xs uppercase text-gray-400">
+              <Label className="text-2xs sm:text-xs uppercase text-slate-400">
                 Diện Visa Quan Tâm
               </Label>
               <Select
@@ -464,7 +529,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
 
             {/* BỔ SUNG: Cho phép chủ động chọn Nhóm bộ hồ sơ */}
             <div>
-              <Label className="text-2xs sm:text-xs uppercase text-gray-400">
+              <Label className="text-2xs sm:text-xs uppercase text-slate-400">
                 Nhóm bộ hồ sơ
               </Label>
               <Select
@@ -481,7 +546,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
 
             {/* CHỌN VÀ NHẬP NGÀNH NGHỀ CHI TIẾT */}
             <div>
-              <Label className="text-2xs sm:text-xs uppercase text-gray-400">
+              <Label className="text-2xs sm:text-xs uppercase text-slate-400">
                 Ngành nghề / Diện đi
               </Label>
               <Select
@@ -516,7 +581,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
             </div>
 
             <div>
-              <Label className="text-2xs sm:text-xs uppercase text-gray-400">
+              <Label className="text-2xs sm:text-xs uppercase text-slate-400">
                 Nguồn khách
               </Label>
               <Select
@@ -540,7 +605,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
           </h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-6">
             <div>
-              <Label className="text-2xs sm:text-xs uppercase text-gray-400">
+              <Label className="text-2xs sm:text-xs uppercase text-slate-400">
                 Tình trạng hôn nhân
               </Label>
               <Select
@@ -556,7 +621,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
               </Select>
             </div>
             <div>
-              <Label className="text-2xs sm:text-xs uppercase text-gray-400">
+              <Label className="text-2xs sm:text-xs uppercase text-slate-400">
                 Số người phụ thuộc (Vợ/Con)
               </Label>
               <TextInput
@@ -568,7 +633,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
               />
             </div>
             <div className="sm:col-span-2">
-              <Label className="text-2xs sm:text-xs uppercase text-gray-400">
+              <Label className="text-2xs sm:text-xs uppercase text-slate-400">
                 Ngày ưu tiên
               </Label>
               <TextInput
@@ -586,7 +651,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
           </h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-6">
             <div>
-              <Label className="text-2xs sm:text-xs uppercase text-gray-400">
+              <Label className="text-2xs sm:text-xs uppercase text-slate-400">
                 Bằng cấp cao nhất
               </Label>
               <Select
@@ -604,7 +669,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
               </Select>
             </div>
             <div>
-              <Label className="text-2xs sm:text-xs uppercase text-gray-400">
+              <Label className="text-2xs sm:text-xs uppercase text-slate-400">
                 Điểm IELTS/PTE
               </Label>
               <TextInput
@@ -615,7 +680,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
               />
             </div>
             <div className="sm:col-span-2">
-              <Label className="text-2xs sm:text-xs uppercase text-gray-400">
+              <Label className="text-2xs sm:text-xs uppercase text-slate-400">
                 Kinh nghiệm làm việc
               </Label>
               <TextInput
@@ -640,9 +705,9 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
         </div>
 
         {/* CỘT PHẢI - NHẬT KÝ TƯƠNG TÁC & UPLOAD */}
-        <div className="w-full md:w-[40%] bg-gray-50 flex flex-col md:border-l border-gray-200 h-[50vh] md:h-full">
-          <div className="p-3 sm:p-4 border-b border-gray-200 bg-white shadow-sm z-10 shrink-0">
-            <p className="text-2xs sm:text-xs font-bold text-gray-400 uppercase mb-2">
+        <div className="w-full md:w-[40%] bg-slate-50 flex flex-col md:border-l border-slate-200 h-[50vh] md:h-full">
+          <div className="p-3 sm:p-4 border-b border-slate-200 bg-white shadow-sm z-10 shrink-0">
+            <p className="text-2xs sm:text-xs font-bold text-slate-400 uppercase mb-2">
               Ghi chú mới
             </p>
 
@@ -651,13 +716,13 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
               rows={2}
               value={newNote}
               onChange={(e) => setNewNote(e.target.value)}
-              className="bg-gray-50 border-none focus:ring-1 focus:ring-orange-500 shadow-inner mb-2 text-xs sm:text-sm"
+              className="bg-slate-50 border-none focus:ring-1 focus:ring-orange-500 shadow-inner mb-2 text-xs sm:text-sm"
             />
 
             {selectedFile && (
               <div className="mb-2 relative inline-block">
                 {previewUrl ? (
-                  <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden border border-gray-300 shadow-sm">
+                  <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden border border-slate-300 shadow-sm">
                     <img
                       src={previewUrl}
                       alt="Preview"
@@ -692,7 +757,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
                 />
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex items-center gap-1 text-xs sm:text-sm font-semibold text-gray-500 hover:text-orange-600 transition-colors bg-gray-100 hover:bg-orange-50 px-2 py-1.5 sm:px-3 sm:py-1.5 rounded-lg"
+                  className="flex items-center gap-1 text-xs sm:text-sm font-semibold text-slate-500 hover:text-orange-600 transition-colors bg-slate-100 hover:bg-orange-50 px-2 py-1.5 sm:px-3 sm:py-1.5 rounded-lg"
                 >
                   <svg
                     className="w-3.5 h-3.5 sm:w-4 sm:h-4"
@@ -728,23 +793,23 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
           </div>
 
           {/* LIST TIMELINE */}
-          <div className="flex-1 p-3 sm:p-5 overflow-y-auto space-y-3 custom-scrollbar bg-gray-50 pb-10">
+          <div className="flex-1 p-3 sm:p-5 overflow-y-auto space-y-3 custom-scrollbar bg-slate-50 pb-10">
             {formData.activities && formData.activities.length > 0 ? (
               formData.activities.map((act) => (
                 <div
                   key={act.id}
-                  className="bg-white p-2.5 sm:p-3 rounded-lg border border-gray-200 shadow-sm"
+                  className="bg-white p-2.5 sm:p-3 rounded-lg border border-slate-200 shadow-sm"
                 >
                   <div className="flex justify-between items-start mb-1.5 sm:mb-2">
                     <div className="flex items-center gap-1.5 sm:gap-2">
                       <div className="w-6 h-6 sm:w-7 sm:h-7 bg-indigo-500 rounded-full flex items-center justify-center text-2xs sm:text-xs text-white font-bold uppercase shadow-sm">
                         {act.assignee?.charAt(0) || "S"}
                       </div>
-                      <span className="text-xs sm:text-sm font-bold text-gray-800">
+                      <span className="text-xs sm:text-sm font-bold text-slate-800">
                         {act.assignee}
                       </span>
                     </div>
-                    <span className="text-[9px] sm:text-[11px] font-medium text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
+                    <span className="text-[9px] sm:text-[11px] font-medium text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
                       {new Date(act.createdAt).toLocaleString("vi-VN", {
                         hour: "2-digit",
                         minute: "2-digit",
@@ -753,7 +818,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
                       })}
                     </span>
                   </div>
-                  <p className="text-xs sm:text-sm text-gray-700 whitespace-pre-wrap ml-7 sm:ml-9">
+                  <p className="text-xs sm:text-sm text-slate-700 whitespace-pre-wrap ml-7 sm:ml-9">
                     {act.summary}
                   </p>
 
@@ -762,7 +827,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
                       <img
                         src={act.fileUrl}
                         alt={act.fileName}
-                        className="rounded-lg border border-gray-200 max-h-32 sm:max-h-48 object-contain cursor-pointer hover:opacity-90 shadow-sm"
+                        className="rounded-lg border border-slate-200 max-h-32 sm:max-h-48 object-contain cursor-pointer hover:opacity-90 shadow-sm"
                       />
                     </div>
                   )}
@@ -777,7 +842,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
                 </div>
               ))
             ) : (
-              <div className="flex flex-col items-center justify-center h-full text-gray-400 space-y-2 opacity-60 mt-6 sm:mt-10 pb-6">
+              <div className="flex flex-col items-center justify-center h-full text-slate-400 space-y-2 opacity-60 mt-6 sm:mt-10 pb-6">
                 <svg
                   className="w-8 h-8 sm:w-12 sm:h-12"
                   fill="none"

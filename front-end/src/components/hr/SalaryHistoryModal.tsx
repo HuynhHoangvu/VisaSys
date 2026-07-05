@@ -106,22 +106,22 @@ const [expandedWorkDates, setExpandedWorkDates] = useState<Set<string>>(new Set(
 
   return (
     <Modal show={show} onClose={onClose} size="7xl" className="md:p-4">
-      <div className="p-4 sm:p-6 border-b border-gray-200 flex justify-between items-center bg-gray-50 rounded-t-lg">
-        <h3 className="text-lg sm:text-xl font-bold text-gray-800 flex items-center gap-2">
+      <div className="p-4 sm:p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50 rounded-t-lg">
+        <h3 className="text-lg sm:text-xl font-bold text-slate-800 flex items-center gap-2">
           📊 Lịch sử chốt lương các tháng
         </h3>
         <button
           onClick={onClose}
-          className="text-gray-400 hover:text-gray-900 bg-white hover:bg-gray-200 rounded-full p-1.5 transition-colors border"
+          className="text-slate-400 hover:text-slate-900 bg-white hover:bg-slate-200 rounded-full p-1.5 transition-colors border"
         >
           <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
       </div>
-      <div className="p-3 sm:p-6 bg-gray-100 overflow-y-auto max-h-[75vh]">
+      <div className="p-3 sm:p-6 bg-slate-100 overflow-y-auto max-h-[75vh]">
         {salaryHistories.length === 0 ? (
-          <p className="text-center italic text-gray-400 py-8 bg-white rounded-lg shadow-sm text-sm">
+          <p className="text-center italic text-slate-400 py-8 bg-white rounded-lg shadow-sm text-sm">
             Chưa có dữ liệu chốt lương nào.
           </p>
         ) : (
@@ -130,7 +130,7 @@ const [expandedWorkDates, setExpandedWorkDates] = useState<Set<string>>(new Set(
             return (
               <div
                 key={monthYear}
-                className="mb-3 sm:mb-4 bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden"
+                className="mb-3 sm:mb-4 bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden"
               >
                 <div
                   className="w-full flex justify-between items-center p-4 sm:p-5 bg-blue-50 hover:bg-blue-100 transition-colors cursor-pointer"
@@ -191,7 +191,7 @@ const [expandedWorkDates, setExpandedWorkDates] = useState<Set<string>>(new Set(
                     <div className="px-4 py-2 text-xs font-bold text-purple-700 uppercase tracking-wide">
                       Chi tiết thưởng / phạt tháng {monthYear}
                     </div>
-                    <table className="w-full min-w-[1000px] text-xs text-left text-gray-600">
+                    <table className="w-full min-w-[1000px] text-xs text-left text-slate-600">
                       <thead className="bg-purple-100 text-purple-800 uppercase">
                         <tr>
                           <th className="px-3 py-2 font-bold">Nhân viên</th>
@@ -260,7 +260,7 @@ const [expandedWorkDates, setExpandedWorkDates] = useState<Set<string>>(new Set(
                                 <tr className="bg-purple-50/50">
                                   <td colSpan={10} className="px-4 py-2 border-b border-purple-100">
                                     <div className="flex flex-wrap gap-1.5">
-                                      <span className="text-xs font-semibold text-gray-500 mr-2 flex items-center">
+                                      <span className="text-xs font-semibold text-slate-500 mr-2 flex items-center">
                                         Ngày đi làm (snapshot chốt):
                                       </span>
                                       {dates.map((d, di) => (
@@ -285,13 +285,13 @@ const [expandedWorkDates, setExpandedWorkDates] = useState<Set<string>>(new Set(
 
                 {isExpanded && (
                   <div className="overflow-x-auto custom-scrollbar border-t border-blue-100 w-full">
-                    <table className="w-full min-w-[900px] text-sm text-left text-gray-600">
-                      <thead className="text-xs text-gray-700 uppercase bg-gray-50 border-b border-gray-200">
+                    <table className="w-full min-w-[900px] text-sm text-left text-slate-600">
+                      <thead className="text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200">
                         <tr>
                           <th className="px-4 sm:px-6 py-3 sm:py-4 font-bold w-20">Mã NV</th>
                           <th className="px-4 sm:px-6 py-3 sm:py-4 font-bold">Nhân viên</th>
                           <th className="px-4 sm:px-6 py-3 sm:py-4 font-bold text-right">Lương CB</th>
-                          <th className="px-4 sm:px-6 py-3 sm:py-4 font-bold text-right text-gray-600">Phụ cấp</th>
+                          <th className="px-4 sm:px-6 py-3 sm:py-4 font-bold text-right text-slate-600">Phụ cấp</th>
                           <th className="px-4 sm:px-6 py-3 sm:py-4 font-bold text-right text-green-600">Hoa hồng</th>
                           <th className="px-4 sm:px-6 py-3 sm:py-4 font-bold text-right text-emerald-700">Thưởng khác</th>
                           <th className="px-4 sm:px-6 py-3 sm:py-4 font-bold text-right text-red-600">Phạt / Trừ</th>
@@ -307,13 +307,13 @@ const [expandedWorkDates, setExpandedWorkDates] = useState<Set<string>>(new Set(
                           const fmt = (n: number) =>
                             new Intl.NumberFormat("vi-VN").format(Math.round(n));
                           return (
-                          <tr key={idx} className="bg-white hover:bg-gray-50 transition-colors">
-                            <td className="px-4 sm:px-6 py-3 sm:py-4 font-bold text-gray-900">
+                          <tr key={idx} className="bg-white hover:bg-slate-50 transition-colors">
+                            <td className="px-4 sm:px-6 py-3 sm:py-4 font-bold text-slate-900">
                               {record.employee?.employeeCode}
                             </td>
-                            <td className="px-4 sm:px-6 py-3 sm:py-4 font-bold text-gray-800">
+                            <td className="px-4 sm:px-6 py-3 sm:py-4 font-bold text-slate-800">
                               {record.employee?.name || "Đã xóa NV"}
-                              <p className="text-xs font-normal text-gray-500 mt-0.5">
+                              <p className="text-xs font-normal text-slate-500 mt-0.5">
                                 {typeof record.employee?.department === "object"
                                   ? (record.employee?.department as { name: string }).name
                                   : record.employee?.department}
@@ -322,7 +322,7 @@ const [expandedWorkDates, setExpandedWorkDates] = useState<Set<string>>(new Set(
                             <td className="px-4 sm:px-6 py-3 sm:py-4 text-right font-medium">
                               {fmt(record.baseSalary)}đ
                             </td>
-                            <td className="px-4 sm:px-6 py-3 sm:py-4 text-right text-gray-700 font-medium">
+                            <td className="px-4 sm:px-6 py-3 sm:py-4 text-right text-slate-700 font-medium">
                               +{fmt(phuCap)}đ
                             </td>
                             <td className="px-4 sm:px-6 py-3 sm:py-4 text-right text-green-600 font-bold">
@@ -360,7 +360,7 @@ const [expandedWorkDates, setExpandedWorkDates] = useState<Set<string>>(new Set(
                       </tbody>
                       <tfoot className="bg-blue-50 border-t-2 border-blue-200">
                         <tr>
-                          <td colSpan={7} className="px-4 sm:px-6 py-3 sm:py-4 text-right font-bold text-gray-700 uppercase tracking-wide text-xs sm:text-sm">
+                          <td colSpan={7} className="px-4 sm:px-6 py-3 sm:py-4 text-right font-bold text-slate-700 uppercase tracking-wide text-xs sm:text-sm">
                             TỔNG LƯƠNG TRẢ TRONG THÁNG:
                           </td>
                           <td colSpan={2} className="px-4 sm:px-6 py-3 sm:py-4 text-left font-black text-blue-800 text-base sm:text-lg">

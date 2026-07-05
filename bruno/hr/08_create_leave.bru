@@ -1,0 +1,21 @@
+meta {
+  name: Create Leave Request
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{base_url}}/api/hr/employees/{{employee_id}}/leave
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "type": "Nghỉ phép năm",
+    "paidType": "Nghỉ có lương",
+    "startDate": "15/07/2026",
+    "endDate": "16/07/2026",
+    "reason": "Việc cá nhân"
+  }
+}

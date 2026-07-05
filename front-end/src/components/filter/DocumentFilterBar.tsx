@@ -23,11 +23,11 @@ const DocumentFilterBar: React.FC<DocumentFilterBarProps> = ({
   const hasActiveFilter = searchQuery !== "" || filterStatus !== "all";
 
   return (
-    <div className="px-5 py-3 bg-white flex flex-col sm:flex-row items-center gap-3 border-b border-gray-100 shrink-0">
+    <div className="px-5 py-3 bg-white flex flex-col sm:flex-row items-center gap-3 border-b border-slate-200 shrink-0">
       {/* Ô Tìm kiếm */}
       <div className="relative w-full sm:w-auto flex-1 max-w-sm">
         <svg
-          className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
+          className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -44,12 +44,12 @@ const DocumentFilterBar: React.FC<DocumentFilterBarProps> = ({
           placeholder="Tìm giấy tờ (VD: CCCD, Khai sinh...)"
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="w-full pl-9 pr-8 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition-all"
+          className="w-full pl-9 pr-8 py-1.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition-all"
         />
         {searchQuery && (
           <button
             onClick={() => onSearchChange("")}
-            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
           >
             <svg
               className="w-3.5 h-3.5"
@@ -90,7 +90,7 @@ const DocumentFilterBar: React.FC<DocumentFilterBarProps> = ({
             Xóa bộ lọc
           </button>
         )}
-        <div className="text-xs text-gray-500 bg-gray-50 px-2.5 py-1.5 rounded-md border border-gray-200 shadow-sm whitespace-nowrap">
+        <div className="text-xs text-slate-500 bg-slate-50 px-2.5 py-1.5 rounded-md border border-slate-200 shadow-sm whitespace-nowrap">
           <span className="font-bold text-blue-600">{filteredCount}</span> /{" "}
           {totalCount} giấy tờ
         </div>

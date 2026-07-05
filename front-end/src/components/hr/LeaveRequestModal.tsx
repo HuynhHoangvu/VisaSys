@@ -54,18 +54,18 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({
   return (
     <Modal show={show} onClose={handleClose} size="md" className="md:p-4">
       {/* Header */}
-      <div className="p-4 sm:p-5 border-b border-gray-200 flex justify-between items-center bg-gray-50 rounded-t-lg">
+      <div className="p-4 sm:p-5 border-b border-slate-200 flex justify-between items-center bg-slate-50 rounded-t-lg">
         <div>
-          <h3 className="text-lg sm:text-xl font-bold text-gray-800">
+          <h3 className="text-lg sm:text-xl font-bold text-slate-800">
             Đơn Xin Phép
           </h3>
-          <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
+          <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
             Nhân viên: <strong className="text-blue-600">{employeeName}</strong>
           </p>
         </div>
         <button
           onClick={handleClose}
-          className="text-gray-400 hover:text-gray-900 bg-gray-200 hover:bg-gray-300 rounded-full p-1.5 transition-colors"
+          className="text-slate-400 hover:text-slate-900 bg-slate-200 hover:bg-slate-300 rounded-full p-1.5 transition-colors"
         >
           <svg
             className="w-5 h-5"
@@ -155,7 +155,7 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({
       </div>
 
       {/* Footer */}
-      <div className="p-4 sm:p-5 border-t border-gray-200 flex justify-end gap-2 bg-gray-50 rounded-b-lg">
+      <div className="p-4 sm:p-5 border-t border-slate-200 flex justify-end gap-2 bg-slate-50 rounded-b-lg">
         <Button color="gray" size="sm" onClick={handleClose}>
           Hủy
         </Button>

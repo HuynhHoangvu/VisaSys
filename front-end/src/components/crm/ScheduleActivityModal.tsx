@@ -101,20 +101,20 @@ const ScheduleActivityModal: React.FC<ScheduleActivityModalProps> = ({
 
   return (
     <Modal show={show} onClose={onClose} size="2xl">
-      <div className="flex items-start justify-between rounded-t border-b border-gray-200 p-5">
+      <div className="flex items-start justify-between rounded-t border-b border-slate-200 p-5">
         <div>
-          <h3 className="text-xl font-bold text-gray-800">
+          <h3 className="text-xl font-bold text-slate-800">
             {isEditMode ? "Sửa hoạt động" : "Lên lịch hoạt động"}
           </h3>
           {taskId && (
-            <p className="text-sm text-gray-500 mt-1 font-mono">
+            <p className="text-sm text-slate-500 mt-1 font-mono">
               Đang xử lý thẻ: {taskId}
             </p>
           )}
         </div>
         <button
           onClick={onClose}
-          className="ml-auto inline-flex items-center rounded-lg bg-transparent p-1.5 text-sm text-gray-400 hover:bg-gray-200"
+          className="ml-auto inline-flex items-center rounded-lg bg-transparent p-1.5 text-sm text-slate-400 hover:bg-slate-200"
         >
           <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
             <path
@@ -127,7 +127,7 @@ const ScheduleActivityModal: React.FC<ScheduleActivityModalProps> = ({
       </div>
 
       <div className="p-6 space-y-6">
-        <div className="flex flex-wrap gap-2 border-b border-gray-200 pb-4">
+        <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-4">
           {activityTypes.map((type) => (
             <button
               key={type.id}
@@ -135,7 +135,7 @@ const ScheduleActivityModal: React.FC<ScheduleActivityModalProps> = ({
               className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
                 activeTab === type.id
                   ? "bg-blue-50 text-blue-700 border-b-2 border-blue-700"
-                  : "text-gray-600 hover:bg-gray-100"
+                  : "text-slate-600 hover:bg-slate-100"
               }`}
             >
               {type.label}
@@ -145,7 +145,7 @@ const ScheduleActivityModal: React.FC<ScheduleActivityModalProps> = ({
 
         <form className="space-y-4">
           <div className="flex items-center gap-4">
-            <Label className="w-32 font-medium text-gray-700">Tóm tắt</Label>
+            <Label className="w-32 font-medium text-slate-700">Tóm tắt</Label>
             <TextInput
               className="flex-1"
               placeholder="Nhập tóm tắt công việc..."
@@ -155,7 +155,7 @@ const ScheduleActivityModal: React.FC<ScheduleActivityModalProps> = ({
           </div>
 
           <div className="flex items-center gap-4">
-            <Label className="w-32 font-medium text-gray-700">
+            <Label className="w-32 font-medium text-slate-700">
               Ngày đến hạn
             </Label>
             <TextInput
@@ -167,14 +167,14 @@ const ScheduleActivityModal: React.FC<ScheduleActivityModalProps> = ({
           </div>
 
           <div className="flex items-center gap-4">
-            <Label className="w-32 font-medium text-gray-700">
+            <Label className="w-32 font-medium text-slate-700">
               Phân công cho
             </Label>
-            <div className="flex items-center gap-2 bg-gray-100 pr-3 rounded-full overflow-hidden border border-gray-200 w-fit">
+            <div className="flex items-center gap-2 bg-slate-100 pr-3 rounded-full overflow-hidden border border-slate-200 w-fit">
               <div className="w-8 h-8 bg-gray-500 text-white flex items-center justify-center font-bold text-sm">
                 {activityToEdit ? activityToEdit.assignee.charAt(0) : "H"}
               </div>
-              <span className="text-sm font-medium text-gray-700">
+              <span className="text-sm font-medium text-slate-700">
                 {activityToEdit ? activityToEdit.assignee : "HoangVu"}
               </span>
             </div>
@@ -182,7 +182,7 @@ const ScheduleActivityModal: React.FC<ScheduleActivityModalProps> = ({
         </form>
       </div>
 
-      <div className="flex items-center gap-3 rounded-b border-t border-gray-200 p-6 bg-gray-50">
+      <div className="flex items-center gap-3 rounded-b border-t border-slate-200 p-6 bg-slate-50">
         <Button style={{ backgroundColor: "#1d4ed8" }} onClick={handleSave}>
           {isEditMode ? "Cập nhật" : "Lưu"}
         </Button>

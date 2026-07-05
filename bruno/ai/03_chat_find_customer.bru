@@ -1,0 +1,17 @@
+meta {
+  name: AI Chat - Tìm khách hàng
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{base_url}}/api/ai/chat
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "message": "Tìm khách Nguyễn Văn An"
+  }
+}

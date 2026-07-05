@@ -1,0 +1,17 @@
+meta {
+  name: AI Chat - Điểm danh
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{base_url}}/api/ai/chat
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "message": "Hôm nay ai chưa điểm danh?"
+  }
+}

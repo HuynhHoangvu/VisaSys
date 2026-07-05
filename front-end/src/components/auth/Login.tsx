@@ -1,6 +1,6 @@
 // frontend/components/auth/Login.tsx
 import React, { useState } from "react";
-import { Card, TextInput, Label, Button } from "flowbite-react";
+import { Globe } from "@phosphor-icons/react";
 import type { AuthUser } from "../../types";
 import { API_URL } from "../../constants/config";
 
@@ -20,25 +20,16 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     e.preventDefault();
     setError("");
     setIsLoading(true);
-
     try {
-      // Gọi API login riêng
       const response = await fetch(`${API_URL}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
-        credentials: "include", // QUAN TRỌNG: để gửi cookie
+        credentials: "include",
       });
-
       const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Đăng nhập thất bại");
-      }
-
-      // THÊM DÒNG NÀY ĐỂ LƯU TÀI KHOẢN VÀO TRÌNH DUYỆT
+      if (!response.ok) throw new Error(data.error || "Đăng nhập thất bại");
       localStorage.setItem("flyvisa_user", JSON.stringify(data));
-
       onLoginSuccess(data);
     } catch (err) {
       setError((err as Error).message || "Không thể kết nối đến máy chủ.");
@@ -49,23 +40,15 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
-    setSuccessMessage("");
-    setIsLoading(true);
-
+    setError(""); setSuccessMessage(""); setIsLoading(true);
     try {
       const response = await fetch(`${API_URL}/api/auth/forgot-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
-
       const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Gửi yêu cầu thất bại");
-      }
-
+      if (!response.ok) throw new Error(data.error || "Gửi yêu cầu thất bại");
       setSuccessMessage(data.message);
     } catch (err) {
       setError((err as Error).message || "Không thể kết nối đến máy chủ.");
@@ -75,36 +58,22 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gray-50 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]">
-      <div className="w-full max-w-md p-4">
+    <div className="min-h-screen w-full flex items-center justify-center bg-slate-50">
+      <div className="w-full max-w-sm px-4">
+        {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-orange-500 text-white rounded-full shadow-lg mb-4">
-            <svg
-              className="w-10 h-10"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
-              ></path>
-            </svg>
+          <div className="inline-flex items-center justify-center w-14 h-14 bg-orange-500 rounded-2xl shadow-md mb-4">
+            <Globe size={28} color="white" weight="bold" />
           </div>
-          <h1 className="text-3xl font-extrabold text-gray-800">
-            Fly Visa CRM
-          </h1>
-          <p className="text-gray-500 mt-2 font-medium">
-            Hệ thống Quản trị Nội bộ
-          </p>
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Fly Visa CRM</h1>
+          <p className="text-slate-400 mt-1 text-sm font-medium">Hệ thống Quản trị Nội bộ</p>
         </div>
 
-        <Card className="shadow-xl border-none rounded-2xl">
+        {/* Card */}
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-6">
           {mode === "login" ? (
-            <form onSubmit={handleLogin} className="flex flex-col gap-5 p-2">
-              <h2 className="text-xl font-bold text-gray-800 border-b pb-2">
+            <form onSubmit={handleLogin} className="flex flex-col gap-4">
+              <h2 className="text-base font-semibold text-slate-800 border-b border-slate-100 pb-3 mb-1">
                 Đăng nhập hệ thống
               </h2>
 
@@ -115,53 +84,49 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
               )}
 
               <div>
-                <div className="mb-2 block">
-                  <Label>Email công ty</Label>
-                </div>
-                <TextInput
+                <label className="block text-xs font-semibold text-slate-600 mb-1.5">Email công ty</label>
+                <input
                   type="email"
                   placeholder="example@flyvisa.com"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  className="w-full bg-white border border-slate-200 text-slate-800 text-sm rounded-lg px-3 py-2.5 outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 placeholder-slate-400 transition-colors"
                 />
               </div>
 
               <div>
-                <div className="mb-2 flex justify-between">
-                  <Label>Mật Khẩu</Label>
+                <div className="flex justify-between items-center mb-1.5">
+                  <label className="text-xs font-semibold text-slate-600">Mật khẩu</label>
                   <button
                     type="button"
-                    onClick={() => {
-                      setMode("forgot");
-                      setError("");
-                      setSuccessMessage("");
-                    }}
-                    className="text-xs text-orange-500 hover:underline bg-transparent border-none cursor-pointer p-0"
+                    onClick={() => { setMode("forgot"); setError(""); setSuccessMessage(""); }}
+                    className="text-xs text-orange-500 hover:text-orange-600 hover:underline transition-colors"
                   >
                     Quên mật khẩu?
                   </button>
                 </div>
-                <TextInput
+                <input
                   type="password"
                   placeholder="••••••••"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  className="w-full bg-white border border-slate-200 text-slate-800 text-sm rounded-lg px-3 py-2.5 outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 placeholder-slate-400 transition-colors"
                 />
               </div>
 
-              <Button
+              <button
                 type="submit"
                 disabled={isLoading}
-                className="mt-2 bg-orange-500 hover:bg-orange-600 focus:ring-4 focus:ring-orange-200"
+                className="mt-1 w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-60 text-white text-sm font-semibold py-2.5 rounded-lg transition-colors"
               >
                 {isLoading ? "Đang xác thực..." : "Đăng Nhập"}
-              </Button>
+              </button>
             </form>
           ) : (
-            <form onSubmit={handleForgotPassword} className="flex flex-col gap-5 p-2">
-              <h2 className="text-xl font-bold text-gray-800 border-b pb-2">
+            <form onSubmit={handleForgotPassword} className="flex flex-col gap-4">
+              <h2 className="text-base font-semibold text-slate-800 border-b border-slate-100 pb-3 mb-1">
                 Khôi phục mật khẩu
               </h2>
 
@@ -170,9 +135,8 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                   ⚠️ {error}
                 </div>
               )}
-
               {successMessage && (
-                <div className="p-3 bg-green-50 text-green-700 text-sm font-medium rounded-lg border border-green-100 leading-relaxed">
+                <div className="p-3 bg-emerald-50 text-emerald-700 text-sm font-medium rounded-lg border border-emerald-100 leading-relaxed">
                   ✅ {successMessage}
                 </div>
               )}
@@ -180,46 +144,38 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
               {!successMessage && (
                 <>
                   <div>
-                    <div className="mb-2 block">
-                      <Label>Nhập Email tài khoản của bạn</Label>
-                    </div>
-                    <TextInput
+                    <label className="block text-xs font-semibold text-slate-600 mb-1.5">Email tài khoản</label>
+                    <input
                       type="email"
                       placeholder="example@flyvisa.com"
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
+                      className="w-full bg-white border border-slate-200 text-slate-800 text-sm rounded-lg px-3 py-2.5 outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 placeholder-slate-400 transition-colors"
                     />
                   </div>
-
-                  <Button
+                  <button
                     type="submit"
                     disabled={isLoading}
-                    className="mt-2 bg-orange-500 hover:bg-orange-600 focus:ring-4 focus:ring-orange-200"
+                    className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-60 text-white text-sm font-semibold py-2.5 rounded-lg transition-colors"
                   >
-                    {isLoading ? "Đang gửi yêu cầu..." : "Gửi yêu cầu khôi phục"}
-                  </Button>
+                    {isLoading ? "Đang gửi..." : "Gửi yêu cầu khôi phục"}
+                  </button>
                 </>
               )}
 
               <button
                 type="button"
-                onClick={() => {
-                  setMode("login");
-                  setError("");
-                  setSuccessMessage("");
-                }}
-                className="text-center text-sm text-gray-500 hover:text-gray-800 bg-transparent border-none cursor-pointer mt-2 hover:underline"
+                onClick={() => { setMode("login"); setError(""); setSuccessMessage(""); }}
+                className="text-sm text-slate-500 hover:text-slate-800 transition-colors text-center hover:underline"
               >
                 Quay lại đăng nhập
               </button>
             </form>
           )}
-        </Card>
+        </div>
 
-        <p className="text-center text-sm text-gray-400 mt-6">
-          © 2026 Fly Visa. All rights reserved.
-        </p>
+        <p className="text-center text-xs text-slate-400 mt-5">© 2026 Fly Visa. All rights reserved.</p>
       </div>
     </div>
   );

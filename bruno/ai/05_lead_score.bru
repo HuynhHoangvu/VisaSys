@@ -1,0 +1,17 @@
+meta {
+  name: AI Lead Score (Chấm điểm khách)
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{base_url}}/api/ai/lead-score
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "taskId": "{{task_id}}"
+  }
+}

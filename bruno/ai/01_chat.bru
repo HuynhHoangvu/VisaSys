@@ -1,0 +1,17 @@
+meta {
+  name: AI Chat (Gemini streaming)
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{base_url}}/api/ai/chat
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "message": "Doanh thu tháng này bao nhiêu?"
+  }
+}

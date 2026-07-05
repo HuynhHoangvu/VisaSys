@@ -4,13 +4,97 @@ import { uploadDoc, uploadToGCS, bucket } from "../middlewares/upload.js";
 
 const router = Router();
 
+/**
+ * @swagger
+ * /api/tasks:
+ *   post:
+ *     tags: [Tasks]
+ *     summary: Tạo hồ sơ khách hàng mới
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [content, phone, price, assignedTo]
+ *             properties:
+ *               content: { type: string, example: Nguyễn Văn A }
+ *               phone: { type: string, example: "0901234567" }
+ *               price: { type: string, example: "25000000" }
+ *               source: { type: string, example: Giới thiệu }
+ *               assignedTo: { type: string, example: Admin }
+ *               columnId: { type: string, example: col-1 }
+ *               visaType: { type: string, example: "Visa 500 - Du học" }
+ *               checklistType: { type: string, enum: [tourism, labor, study] }
+ *     responses:
+ *       201:
+ *         description: Tạo thành công
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/Task' }
+ */
+router.post("/", createTask);
+
+/**
+ * @swagger
+ * /api/tasks/{id}:
+ *   put:
+ *     tags: [Tasks]
+ *     summary: Cập nhật hồ sơ khách hàng
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema: { $ref: '#/components/schemas/Task' }
+ *     responses:
+ *       200:
+ *         description: Cập nhật thành công
+ *   delete:
+ *     tags: [Tasks]
+ *     summary: Xoá hồ sơ khách hàng
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Đã xoá thành công
+ */
+router.put("/:id", updateTask);
+router.delete("/:id", deleteTask);
+
+/**
+ * @swagger
+ * /api/tasks/{id}/move:
+ *   put:
+ *     tags: [Tasks]
+ *     summary: Di chuyển hồ sơ sang cột khác (Kanban drag & drop)
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               columnId: { type: string }
+ *               index: { type: number }
+ *     responses:
+ *       200:
+ *         description: Di chuyển thành công
+ */
+router.put("/:id/move", moveTask);
 router.put("/:id/processing-move", moveProcessingTask);
 router.post("/notifications/send", sendNotification);
-router.post("/", createTask);
-router.put("/:id", updateTask);        
-router.delete("/:id", deleteTask);
-router.put("/:id/move", moveTask);
-router.put("/:id/processing-move", moveProcessingTask); 
 
 // UPLOAD TASK DOCUMENT
 router.post("/upload", uploadDoc.single("file"), async (req, res) => {

@@ -3,3 +3,4 @@ nixPkgs = ["nodejs_22"]
 
 [phases.build]
 cmds = ["npm run build"]
+    

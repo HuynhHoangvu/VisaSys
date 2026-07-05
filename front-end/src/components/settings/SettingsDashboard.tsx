@@ -72,10 +72,10 @@ const SettingsDashboard: React.FC<SettingsDashboardProps> = ({
   };
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-gray-50 space-y-5">
+    <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-50 space-y-5">
       <div>
-        <h1 className="text-2xl font-bold text-gray-800">Cài đặt</h1>
-        <p className="text-sm text-gray-500 mt-0.5">
+        <h1 className="text-2xl font-bold text-slate-800">Cài đặt</h1>
+        <p className="text-sm text-slate-500 mt-0.5">
           {mainTab === "security"
             ? "Đổi mật khẩu và thông tin phiên bản ứng dụng"
             : "Phân quyền theo bộ phận và ghi đè từng nhân viên"}
@@ -90,7 +90,7 @@ const SettingsDashboard: React.FC<SettingsDashboardProps> = ({
             className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
               mainTab === "security"
                 ? "bg-gray-900 text-white"
-                : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50"
+                : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
             }`}
           >
             Bảo mật
@@ -101,7 +101,7 @@ const SettingsDashboard: React.FC<SettingsDashboardProps> = ({
             className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
               mainTab === "rbac"
                 ? "bg-gray-900 text-white"
-                : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50"
+                : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
             }`}
           >
             Phân quyền (RBAC)
@@ -117,7 +117,7 @@ const SettingsDashboard: React.FC<SettingsDashboardProps> = ({
         />
       ) : (
         <div className="max-w-2xl space-y-5">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
             <div className="flex items-center gap-3 mb-5">
               <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center">
                 <svg
@@ -135,8 +135,8 @@ const SettingsDashboard: React.FC<SettingsDashboardProps> = ({
                 </svg>
               </div>
               <div>
-                <h3 className="font-bold text-gray-800">Đổi mật khẩu</h3>
-                <p className="text-xs text-gray-500">
+                <h3 className="font-bold text-slate-800">Đổi mật khẩu</h3>
+                <p className="text-xs text-slate-500">
                   Cập nhật mật khẩu đăng nhập
                 </p>
               </div>
@@ -144,7 +144,7 @@ const SettingsDashboard: React.FC<SettingsDashboardProps> = ({
 
             <form onSubmit={handleChangePassword} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">
                   Mật khẩu hiện tại
                 </label>
                 <input
@@ -153,11 +153,11 @@ const SettingsDashboard: React.FC<SettingsDashboardProps> = ({
                   onChange={(e) => setOldPassword(e.target.value)}
                   required
                   placeholder="Nhập mật khẩu hiện tại"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition"
+                  className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">
                   Mật khẩu mới
                 </label>
                 <input
@@ -166,11 +166,11 @@ const SettingsDashboard: React.FC<SettingsDashboardProps> = ({
                   onChange={(e) => setNewPassword(e.target.value)}
                   required
                   placeholder="Tối thiểu 6 ký tự"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition"
+                  className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">
                   Xác nhận mật khẩu mới
                 </label>
                 <input
@@ -179,7 +179,7 @@ const SettingsDashboard: React.FC<SettingsDashboardProps> = ({
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
                   placeholder="Nhập lại mật khẩu mới"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition"
+                  className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition"
                 />
               </div>
 
@@ -259,7 +259,7 @@ const SettingsDashboard: React.FC<SettingsDashboardProps> = ({
             </form>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
                 <svg
@@ -277,8 +277,8 @@ const SettingsDashboard: React.FC<SettingsDashboardProps> = ({
                 </svg>
               </div>
               <div>
-                <h3 className="font-bold text-gray-800">Thông tin hệ thống</h3>
-                <p className="text-xs text-gray-500">
+                <h3 className="font-bold text-slate-800">Thông tin hệ thống</h3>
+                <p className="text-xs text-slate-500">
                   Phiên bản và thông tin kỹ thuật
                 </p>
               </div>
@@ -290,9 +290,9 @@ const SettingsDashboard: React.FC<SettingsDashboardProps> = ({
                 { label: "Giao thức", value: "Real-time (Socket.io)" },
                 { label: "Lưu trữ", value: "Cloudinary + MongoDB" },
               ].map(({ label, value }) => (
-                <div key={label} className="bg-gray-50 rounded-lg p-3">
-                  <p className="text-xs text-gray-500 mb-0.5">{label}</p>
-                  <p className="text-sm font-semibold text-gray-800">{value}</p>
+                <div key={label} className="bg-slate-50 rounded-lg p-3">
+                  <p className="text-xs text-slate-500 mb-0.5">{label}</p>
+                  <p className="text-sm font-semibold text-slate-800">{value}</p>
                 </div>
               ))}
             </div>
