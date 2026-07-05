@@ -19,8 +19,10 @@ function normalizeApiUrl(raw: string): string {
   return u || "http://localhost:3001";
 }
 
-// VITE_API_URL takes precedence; falls back to localhost for local dev without env var
-const rawUrl = import.meta.env.VITE_API_URL || "http://localhost:3001";
+// VITE_API_URL baked at build time; if empty (Docker prod), use current browser origin
+// so the frontend works with any IP/domain without rebuilding
+const rawUrl = import.meta.env.VITE_API_URL
+  || (typeof window !== "undefined" ? window.location.origin : "http://localhost:3001");
 
 export const API_URL = normalizeApiUrl(rawUrl);
 export const API_BASE_URL = `${API_URL}/api`;
