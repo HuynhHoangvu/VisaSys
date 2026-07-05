@@ -8,8 +8,9 @@ Nhiệm vụ: hỗ trợ nhân viên tra cứu dữ liệu, phân tích kinh doa
 Quy tắc:
 - Luôn trả lời tiếng Việt, ngắn gọn và chuyên nghiệp.
 - Dùng dữ liệu thực tế từ hệ thống được cung cấp bên dưới. KHÔNG bịa số liệu.
-- Dùng ** để in đậm thông tin quan trọng, dùng danh sách - để liệt kê.
-- Nếu không có đủ dữ liệu, thông báo rõ ràng thay vì đoán.`;
+- KHÔNG dùng markdown: không dùng **, không dùng *, không dùng #. Chỉ viết văn xuôi hoặc danh sách với dấu gạch đầu dòng thường.
+- Trả lời thẳng vào câu hỏi, không giải thích dài dòng về giới hạn dữ liệu trừ khi thực sự không có data.
+- Nếu không có đủ dữ liệu, nói ngắn gọn một câu.`;
 
 async function buildContext(question: string): Promise<string> {
   const q = question.toLowerCase();
@@ -124,6 +125,24 @@ async function buildContext(question: string): Promise<string> {
     } else {
       parts.push(`## Tìm "${keyword}"\nKhông tìm thấy hồ sơ nào khớp.`);
     }
+  }
+
+  // ── Loại visa ─────────────────────────────────────────────────────────────
+  if (/loại visa|visa|checklist|tourism|labor|study|du lịch|du học|lao động/.test(q)) {
+    const visaTasks = await prisma.task.groupBy({
+      by: ["checklistType"],
+      _count: { checklistType: true },
+      orderBy: { _count: { checklistType: "desc" } },
+    });
+    const VISA_LABELS: Record<string, string> = {
+      tourism: "Du lịch (Tourism)",
+      labor: "Lao động (Labor)",
+      study: "Du học (Study)",
+    };
+    const lines = visaTasks
+      .map((v) => `- ${VISA_LABELS[v.checklistType ?? ""] ?? v.checklistType}: ${v._count.checklistType} hồ sơ`)
+      .join("\n");
+    parts.push(`## Phân loại visa\n${lines || "Chưa có dữ liệu loại visa"}`);
   }
 
   // ── Khách tiềm năng / hot leads ───────────────────────────────────────────
