@@ -19,58 +19,33 @@ services:
   backend:
     build:
       context: ./backend
-      dockerfile: dockerfile
+      dockerfile: Dockerfile
     container_name: fly-visa-backend
     ports:
       - "3001:3001"
-    # Nạp biến từ file .env (Để GCS_BUCKET_NAME, GCS_PROJECT_ID...)
     env_file:
       - ./backend/.env
     environment:
-      # Kết nối nội bộ giữa các container
       DATABASE_URL: "postgresql://admin:admin123@postgres:5432/crm_db?schema=public"
       NODE_ENV: development
       PORT: 3001
     volumes:
       - ./backend/uploads:/app/uploads
-      # [QUAN TRỌNG] Mount thư mục config để code đọc file google-key.json ở local
-      - ./backend/config:/app/config
     depends_on:
       postgres:
         condition: service_healthy
-    develop:
-      watch:
-        - action: sync
-          path: ./backend
-          target: /app
-          ignore:
-            - node_modules/
-            - uploads/
-            - config/
-        - action: rebuild
-          path: ./backend/package.json
 
   frontend:
     build:
       context: ./front-end
-      dockerfile: dockerfile.dev
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: "https://flyvisa.local"
     container_name: fly-visa-frontend
     ports:
-      - "5173:5173"
-    environment:
-      VITE_API_URL: "http://localhost:3001"
-      VITE_HMR_PORT: "5173"
+      - "80:80"
     depends_on:
       - backend
-    develop:
-      watch:
-        - action: sync
-          path: ./front-end
-          target: /app
-          ignore:
-            - node_modules/
-        - action: rebuild
-          path: ./front-end/package.json
 
 volumes:
   pgdata:
