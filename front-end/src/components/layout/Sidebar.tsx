@@ -3,8 +3,8 @@ import { NavLink } from "react-router-dom";
 import {
   House, ChartBarHorizontal, UsersThree, ClipboardText,
   Briefcase, CheckCircle, UsersFour, FolderOpen, Clock,
-  Tag, Gear, SlidersHorizontal, X, List, Globe,
-  PencilSimple, Trash, Plus, ArrowSquareOut, CaretDown,
+  Gear, X, Globe,
+  PencilSimple, Trash, Plus, CaretDown,
 } from "@phosphor-icons/react";
 import { FaceAvatar } from "../ui/FaceAvatar";
 import type { SidebarProps, Workspace } from "../../types";

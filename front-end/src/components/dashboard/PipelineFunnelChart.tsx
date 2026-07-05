@@ -30,7 +30,7 @@ const PipelineFunnelChart: React.FC = () => {
           <CartesianGrid strokeDasharray="3 3" horizontal={false} />
           <XAxis type="number" tick={{ fontSize: 11 }} />
           <YAxis type="category" dataKey="stage" tick={{ fontSize: 11 }} width={110} />
-          <Tooltip formatter={(v: number) => [`${v} khách`, "Số lượng"]} />
+          <Tooltip formatter={(v: number | undefined) => [`${v ?? 0} khách`, "Số lượng"]} />
           <Bar dataKey="count" radius={[0, 4, 4, 0]}>
             <LabelList dataKey="count" position="right" style={{ fontSize: 11, fill: "#374151" }} />
             {data.map((_, i) => (

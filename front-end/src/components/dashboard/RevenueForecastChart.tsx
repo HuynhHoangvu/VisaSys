@@ -57,7 +57,7 @@ const RevenueForecastChart: React.FC = () => {
           <CartesianGrid strokeDasharray="3 3" vertical={false} />
           <XAxis dataKey="name" tick={{ fontSize: 11 }} />
           <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${v}Tr`} />
-          <Tooltip formatter={(v: number) => [`${v} triệu đồng`]} />
+          <Tooltip formatter={(v: number | undefined) => [`${v ?? 0} triệu đồng`]} />
           <ReferenceLine
             x={data.forecast.label}
             stroke="#f59e0b"

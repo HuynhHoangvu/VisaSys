@@ -36,7 +36,7 @@ const EmployeePerformanceChart: React.FC = () => {
           <CartesianGrid strokeDasharray="3 3" vertical={false} />
           <XAxis dataKey="name" tick={{ fontSize: 11 }} />
           <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${v}Tr`} />
-          <Tooltip formatter={(v: number) => [`${v} triệu đồng`, "Doanh thu"]} />
+          <Tooltip formatter={(v: number | undefined) => [`${v ?? 0} triệu đồng`, "Doanh thu"]} />
           <Bar dataKey="revenue" radius={[4, 4, 0, 0]}>
             {data.map((_, i) => (
               <Cell key={i} fill={COLORS[i % COLORS.length]} />

@@ -120,7 +120,7 @@ const AIChat: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         }
       }
       historyRef.current = [...historyRef.current,
-        { role: "user", parts: msg }, { role: "model", parts: accumulated }].slice(-10);
+        { role: "user" as const, parts: msg }, { role: "model" as const, parts: accumulated }].slice(-10);
     } catch {
       setMessages((prev) => {
         const u = [...prev];
@@ -223,7 +223,7 @@ const ConversationList: React.FC<{
   onNew: () => void;
   onAI: () => void;
   refreshKey: number;
-}> = ({ currentUser, onlineIds, onSelect, onNew, onAI, refreshKey }) => {
+}> = ({ currentUser, onlineIds, onSelect, onAI, refreshKey }) => {
   const [convs, setConvs] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
 

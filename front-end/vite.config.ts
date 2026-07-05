@@ -13,7 +13,7 @@ export default defineConfig({
   server: {
     host: "0.0.0.0",
     port: 5173,
-    allowedHosts: "all",
+    allowedHosts: true,
     hmr: {
       // Khi chạy sau Nginx proxy (VITE_HMR_PORT=443), HMR dùng cổng 443
       // Khi chạy local trực tiếp, để mặc định
