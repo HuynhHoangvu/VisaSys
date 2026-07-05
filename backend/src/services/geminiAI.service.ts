@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI, SchemaType, type Tool, type Part } from "@google/generative-ai";
 import { prisma } from "../../lib/prisma.js";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
@@ -7,18 +7,15 @@ const SYSTEM_PROMPT = `Bạn là trợ lý AI nội bộ của công ty tư vấ
 Nhiệm vụ: hỗ trợ nhân viên tra cứu dữ liệu, phân tích kinh doanh và giải đáp thắc mắc nghiệp vụ visa Úc.
 Quy tắc:
 - Luôn trả lời tiếng Việt, ngắn gọn và chuyên nghiệp.
-- Dùng dữ liệu thực tế từ hệ thống được cung cấp bên dưới. KHÔNG bịa số liệu.
-- KHÔNG dùng markdown: không dùng **, không dùng *, không dùng #. Chỉ viết văn xuôi hoặc danh sách với dấu gạch đầu dòng thường.
-- Trả lời thẳng vào câu hỏi, không giải thích dài dòng về giới hạn dữ liệu trừ khi thực sự không có data.
+- Dùng công cụ để lấy dữ liệu thực tế. KHÔNG bịa số liệu.
+- KHÔNG dùng markdown: không dùng **, không dùng *, không dùng #. Chỉ viết văn xuôi hoặc danh sách với dấu gạch đầu dòng thường (-).
+- Trả lời thẳng vào câu hỏi, không giải thích dài dòng.
 - Nếu không có đủ dữ liệu, nói ngắn gọn một câu.`;
 
-async function buildContext(question: string): Promise<string> {
-  const q = question.toLowerCase();
-  const now = new Date();
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const parts: string[] = [];
+// ── Tool implementations ───────────────────────────────────────────────────────
 
-  // ── Luôn lấy: pipeline tổng quan ──────────────────────────────────────────
+async function getPipeline() {
+  const now = new Date();
   const [columns, taskCount, empCount] = await Promise.all([
     prisma.column.findMany({
       include: { tasks: { select: { price: true, assignedTo: true } } },
@@ -27,185 +24,218 @@ async function buildContext(question: string): Promise<string> {
     prisma.task.count(),
     prisma.employee.count(),
   ]);
-
-  parts.push(
-    `## Tổng quan hệ thống\n- Tổng hồ sơ: ${taskCount} | Tổng nhân viên: ${empCount}`
-  );
-
-  const pipelineLines = columns.map((c) => {
+  const pipeline = columns.map((c) => {
     const rev = c.tasks.reduce((s, t) => s + (parseInt(t.price.replace(/\D/g, "")) || 0), 0);
-    return `- **${c.title}**: ${c.tasks.length} hồ sơ (${(rev / 1_000_000).toFixed(0)}tr VND)`;
+    return { stage: c.title, count: c.tasks.length, revenue_million: parseFloat((rev / 1e6).toFixed(1)) };
   });
-  parts.push(`## Pipeline CRM\n${pipelineLines.join("\n")}`);
-
-  // ── Doanh thu / kinh doanh ─────────────────────────────────────────────────
-  if (/doanh thu|doanh số|bán|sale|profit|lợi nhuận|thu nhập|kinh doanh|tháng/.test(q)) {
-    const sales = await prisma.salesRecord.findMany({
-      where: { createdAt: { gte: startOfMonth } },
-      include: { employee: { select: { name: true } } },
-      orderBy: { profit: "desc" },
-    });
-    const total = sales.reduce((s, r) => s + r.profit, 0);
-    const byEmp: Record<string, number> = {};
-    sales.forEach((s) => { byEmp[s.employee.name] = (byEmp[s.employee.name] || 0) + s.profit; });
-    const empLines = Object.entries(byEmp)
-      .sort((a, b) => b[1] - a[1])
-      .map(([n, p]) => `- ${n}: ${(p / 1e6).toFixed(1)}tr VND`)
-      .join("\n");
-    parts.push(
-      `## Doanh thu tháng ${now.getMonth() + 1}/${now.getFullYear()}\n- **Tổng: ${(total / 1e6).toFixed(1)} triệu VND** (${sales.length} giao dịch)\n${empLines || "- Chưa có giao dịch"}`
-    );
-  }
-
-  // ── Nhân viên ─────────────────────────────────────────────────────────────
-  if (/nhân viên|nhân sự|staff|employee|phụ trách|ai bán|hiệu suất|top/.test(q)) {
-    const employees = await prisma.employee.findMany({
-      select: {
-        name: true,
-        role: true,
-        department: { select: { name: true } },
-        salesRecords: { select: { profit: true }, where: { createdAt: { gte: startOfMonth } } },
-      },
-      orderBy: { name: "asc" },
-    });
-    const lines = employees
-      .map((e) => {
-        const rev = e.salesRecords.reduce((s, r) => s + r.profit, 0);
-        return `- **${e.name}** (${e.role}${e.department ? " – " + e.department.name : ""}): doanh thu tháng ${(rev / 1e6).toFixed(1)}tr`;
-      })
-      .join("\n");
-    parts.push(`## Danh sách nhân viên\n${lines}`);
-  }
-
-  // ── Điểm danh ─────────────────────────────────────────────────────────────
-  if (/điểm danh|chấm công|vắng|muộn|absent|attendance/.test(q)) {
-    const todayStr = now.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
-    const [employees, todayRecords] = await Promise.all([
-      prisma.employee.findMany({ select: { id: true, name: true, role: true } }),
-      prisma.attendanceRecord.findMany({
-        where: { date: todayStr },
-        select: { employeeId: true, status: true, inTime: true },
-      }),
-    ]);
-    const checkedIds = new Set(todayRecords.map((r) => r.employeeId));
-    const notChecked = employees.filter((e) => !checkedIds.has(e.id));
-    const checkedLines = todayRecords
-      .map((r) => {
-        const emp = employees.find((e) => e.id === r.employeeId);
-        return `- ${emp?.name}: ${r.status}${r.inTime ? ` (${r.inTime})` : ""}`;
-      })
-      .join("\n");
-    parts.push(
-      `## Điểm danh hôm nay (${todayStr})\n- **Đã điểm danh:** ${todayRecords.length}/${employees.length} người\n${checkedLines}\n- **Chưa điểm danh (${notChecked.length}):** ${notChecked.map((e) => e.name).join(", ") || "Tất cả đã điểm danh"}`
-    );
-  }
-
-  // ── Tìm khách hàng ────────────────────────────────────────────────────────
-  const searchTerms = question.match(/(?:tìm|khách|hồ sơ|customer|search)\s+([^\s?!,]+(?:\s+[^\s?!,]+)?)/i);
-  if (searchTerms) {
-    const keyword = searchTerms[1].trim();
-    const tasks = await prisma.task.findMany({
-      where: {
-        OR: [
-          { content: { contains: keyword, mode: "insensitive" } },
-          { phone: { contains: keyword } },
-        ],
-      },
-      include: { column: { select: { title: true } }, activities: { select: { completed: true } } },
-      take: 8,
-    });
-    if (tasks.length > 0) {
-      const lines = tasks
-        .map((t) => {
-          const done = t.activities.filter((a) => a.completed).length;
-          return `- **${t.content}** | SĐT: ${t.phone} | Giai đoạn: ${t.column?.title || "?"} | Phụ trách: ${t.assignedTo} | Phí: ${t.price} | Hoạt động: ${done}/${t.activities.length}`;
-        })
-        .join("\n");
-      parts.push(`## Kết quả tìm "${keyword}" (${tasks.length} hồ sơ)\n${lines}`);
-    } else {
-      parts.push(`## Tìm "${keyword}"\nKhông tìm thấy hồ sơ nào khớp.`);
-    }
-  }
-
-  // ── Loại visa ─────────────────────────────────────────────────────────────
-  if (/loại visa|visa|checklist|tourism|labor|study|du lịch|du học|lao động/.test(q)) {
-    const visaTasks = await prisma.task.groupBy({
-      by: ["checklistType"],
-      _count: { checklistType: true },
-      orderBy: { _count: { checklistType: "desc" } },
-    });
-    const VISA_LABELS: Record<string, string> = {
-      tourism: "Du lịch (Tourism)",
-      labor: "Lao động (Labor)",
-      study: "Du học (Study)",
-    };
-    const lines = visaTasks
-      .map((v) => `- ${VISA_LABELS[v.checklistType ?? ""] ?? v.checklistType}: ${v._count.checklistType} hồ sơ`)
-      .join("\n");
-    parts.push(`## Phân loại visa\n${lines || "Chưa có dữ liệu loại visa"}`);
-  }
-
-  // ── Khách tiềm năng / hot leads ───────────────────────────────────────────
-  if (/tiềm năng|nóng|hot|lead|triển vọng/.test(q)) {
-    const tasks = await prisma.task.findMany({
-      where: { source: { in: ["Giới thiệu", "Website"] } },
-      include: {
-        column: { select: { title: true } },
-        activities: { select: { completed: true } },
-      },
-      orderBy: { createdAt: "desc" },
-      take: 10,
-    });
-    const lines = tasks
-      .map((t) => {
-        const done = t.activities.filter((a) => a.completed).length;
-        return `- **${t.content}** | ${t.column?.title || "?"} | Nguồn: ${t.source} | ${done}/${t.activities.length} hoạt động | ${t.price}`;
-      })
-      .join("\n");
-    parts.push(`## Khách hàng tiềm năng\n${lines || "Chưa có dữ liệu"}`);
-  }
-
-  // ── Hồ sơ còn thiếu giấy tờ ──────────────────────────────────────────────
-  if (/thiếu|hồ sơ|giấy tờ|checklist|tài liệu|document/.test(q)) {
-    const nameHint = question.match(/khách\s+(.+?)(?:\s+còn|\s+thiếu|$)/i)?.[1]?.trim();
-    const tasks = await prisma.task.findMany({
-      where: nameHint ? { content: { contains: nameHint, mode: "insensitive" } } : {},
-      select: { content: true, checklistType: true, documents: true },
-      take: nameHint ? 3 : 5,
-    });
-
-    const REQUIRED: Record<string, string[]> = {
-      tourism: ["passport", "photo", "bank_statement", "itinerary", "hotel_booking", "invitation"],
-      labor: ["passport", "photo", "contract", "skill_assessment", "english_cert", "police_check"],
-      study: ["passport", "photo", "coe", "english_cert", "financial_capacity", "health_insurance"],
-    };
-
-    const lines = tasks
-      .map((t) => {
-        const required = REQUIRED[t.checklistType ?? "tourism"] ?? [];
-        const uploaded = Object.keys((t.documents as Record<string, unknown>) ?? {});
-        const missing = required.filter((r) => !uploaded.includes(r));
-        return `- **${t.content}** (${t.checklistType ?? "tourism"}): còn thiếu ${missing.length} giấy tờ – ${missing.join(", ") || "đủ hết"}`;
-      })
-      .join("\n");
-    parts.push(`## Tình trạng hồ sơ\n${lines || "Không có hồ sơ"}`);
-  }
-
-  return parts.join("\n\n");
+  return { total_tasks: taskCount, total_employees: empCount, pipeline, as_of: now.toLocaleDateString("vi-VN") };
 }
+
+async function getVisaTypes() {
+  const rows = await prisma.task.groupBy({
+    by: ["checklistType"],
+    _count: { checklistType: true },
+    orderBy: { _count: { checklistType: "desc" } },
+  });
+  const LABELS: Record<string, string> = {
+    tourism: "Du lịch (Tourism)",
+    labor: "Lao động (Labor)",
+    study: "Du học (Study)",
+  };
+  return rows.map((r) => ({
+    type: LABELS[r.checklistType ?? ""] ?? r.checklistType ?? "Chưa phân loại",
+    count: r._count.checklistType,
+  }));
+}
+
+async function getRevenue(month?: number, year?: number) {
+  const now = new Date();
+  const m = month ?? now.getMonth() + 1;
+  const y = year ?? now.getFullYear();
+  const start = new Date(y, m - 1, 1);
+  const end = new Date(y, m, 0, 23, 59, 59);
+  const sales = await prisma.salesRecord.findMany({
+    where: { createdAt: { gte: start, lte: end } },
+    include: { employee: { select: { name: true } } },
+  });
+  const total = sales.reduce((s, r) => s + r.profit, 0);
+  const byEmp: Record<string, number> = {};
+  sales.forEach((s) => { byEmp[s.employee.name] = (byEmp[s.employee.name] || 0) + s.profit; });
+  return {
+    month: `${m}/${y}`,
+    total_million: parseFloat((total / 1e6).toFixed(1)),
+    transaction_count: sales.length,
+    by_employee: Object.entries(byEmp)
+      .sort((a, b) => b[1] - a[1])
+      .map(([name, profit]) => ({ name, profit_million: parseFloat((profit / 1e6).toFixed(1)) })),
+  };
+}
+
+async function getEmployees() {
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const employees = await prisma.employee.findMany({
+    select: {
+      name: true,
+      role: true,
+      department: { select: { name: true } },
+      salesRecords: { select: { profit: true }, where: { createdAt: { gte: startOfMonth } } },
+    },
+    orderBy: { name: "asc" },
+  });
+  return employees.map((e) => ({
+    name: e.name,
+    role: e.role,
+    department: e.department?.name ?? "Chưa phân bổ",
+    monthly_revenue_million: parseFloat((e.salesRecords.reduce((s, r) => s + r.profit, 0) / 1e6).toFixed(1)),
+  }));
+}
+
+async function getAttendance(date?: string) {
+  const now = new Date();
+  const todayStr = date ?? now.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
+  const [employees, records] = await Promise.all([
+    prisma.employee.findMany({ select: { id: true, name: true } }),
+    prisma.attendanceRecord.findMany({
+      where: { date: todayStr },
+      select: { employeeId: true, status: true, inTime: true },
+    }),
+  ]);
+  const checkedIds = new Set(records.map((r) => r.employeeId));
+  return {
+    date: todayStr,
+    checked: records.map((r) => ({
+      name: employees.find((e) => e.id === r.employeeId)?.name ?? "?",
+      status: r.status,
+      time: r.inTime,
+    })),
+    not_checked: employees.filter((e) => !checkedIds.has(e.id)).map((e) => e.name),
+  };
+}
+
+async function searchCustomer(keyword: string) {
+  const tasks = await prisma.task.findMany({
+    where: {
+      OR: [
+        { content: { contains: keyword, mode: "insensitive" } },
+        { phone: { contains: keyword } },
+      ],
+    },
+    include: { column: { select: { title: true } }, activities: { select: { completed: true } } },
+    take: 8,
+  });
+  return tasks.map((t) => ({
+    name: t.content,
+    phone: t.phone,
+    stage: t.column?.title ?? "?",
+    assigned_to: t.assignedTo,
+    price: t.price,
+    visa_type: t.checklistType,
+    activities_done: t.activities.filter((a) => a.completed).length,
+    activities_total: t.activities.length,
+  }));
+}
+
+// ── Tool definitions for Gemini ────────────────────────────────────────────────
+
+const TOOLS: Tool[] = [
+  {
+    functionDeclarations: [
+      {
+        name: "get_pipeline",
+        description: "Lấy tổng quan pipeline CRM: số hồ sơ và doanh thu theo từng giai đoạn xử lý, tổng nhân viên",
+      },
+      {
+        name: "get_visa_types",
+        description: "Lấy phân loại và số lượng hồ sơ theo từng loại visa: du lịch, lao động, du học",
+      },
+      {
+        name: "get_revenue",
+        description: "Lấy doanh thu theo tháng: tổng và chi tiết theo từng nhân viên",
+        parameters: {
+          type: SchemaType.OBJECT,
+          properties: {
+            month: { type: SchemaType.NUMBER, description: "Tháng (1-12), mặc định tháng hiện tại" },
+            year: { type: SchemaType.NUMBER, description: "Năm 4 chữ số, mặc định năm hiện tại" },
+          },
+        },
+      },
+      {
+        name: "get_employees",
+        description: "Lấy danh sách nhân viên kèm chức vụ, phòng ban và doanh thu tháng hiện tại",
+      },
+      {
+        name: "get_attendance",
+        description: "Lấy tình trạng chấm công theo ngày: ai đã check-in, ai chưa",
+        parameters: {
+          type: SchemaType.OBJECT,
+          properties: {
+            date: { type: SchemaType.STRING, description: "Ngày theo định dạng dd/mm/yyyy, mặc định hôm nay" },
+          },
+        },
+      },
+      {
+        name: "search_customer",
+        description: "Tìm kiếm hồ sơ khách hàng theo tên hoặc số điện thoại",
+        parameters: {
+          type: SchemaType.OBJECT,
+          properties: {
+            keyword: { type: SchemaType.STRING, description: "Từ khóa tìm kiếm: tên hoặc số điện thoại" },
+          },
+          required: ["keyword"],
+        },
+      },
+    ],
+  },
+];
+
+async function executeTool(name: string, args: Record<string, unknown>): Promise<unknown> {
+  switch (name) {
+    case "get_pipeline":    return getPipeline();
+    case "get_visa_types":  return getVisaTypes();
+    case "get_revenue":     return getRevenue(args.month as number | undefined, args.year as number | undefined);
+    case "get_employees":   return getEmployees();
+    case "get_attendance":  return getAttendance(args.date as string | undefined);
+    case "search_customer": return searchCustomer(args.keyword as string);
+    default: return { error: `Unknown tool: ${name}` };
+  }
+}
+
+// ── Main streaming function ────────────────────────────────────────────────────
 
 export async function* streamGeminiResponse(question: string): AsyncGenerator<string> {
   const model = genAI.getGenerativeModel({
     model: process.env.GEMINI_MODEL ?? "gemini-2.0-flash",
     systemInstruction: SYSTEM_PROMPT,
+    tools: TOOLS,
   });
 
-  const context = await buildContext(question);
-  const prompt = `Dữ liệu thực tế từ hệ thống Fly Visa:\n\n${context}\n\n---\nCâu hỏi: ${question}`;
+  const chat = model.startChat();
+  let response = await chat.sendMessage(question);
 
-  const result = await model.generateContentStream(prompt);
-  for await (const chunk of result.stream) {
-    const text = chunk.text();
-    if (text) yield text;
+  // Agentic loop: execute tool calls until Gemini is ready to answer
+  for (let round = 0; round < 5; round++) {
+    const calls = response.response.functionCalls();
+    if (!calls?.length) break;
+
+    const results: Part[] = await Promise.all(
+      calls.map(async (call) => ({
+        functionResponse: {
+          name: call.name,
+          response: { result: await executeTool(call.name, (call.args ?? {}) as Record<string, unknown>) },
+        },
+      }))
+    );
+
+    response = await chat.sendMessage(results);
+  }
+
+  const text = response.response.text();
+  if (!text) { yield "Xin lỗi, không thể tạo câu trả lời lúc này."; return; }
+
+  // Yield in chunks to keep SSE streaming feel
+  const CHUNK = 40;
+  for (let i = 0; i < text.length; i += CHUNK) {
+    yield text.slice(i, i + CHUNK);
   }
 }
