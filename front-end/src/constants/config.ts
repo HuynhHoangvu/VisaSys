@@ -19,10 +19,8 @@ function normalizeApiUrl(raw: string): string {
   return u || "http://localhost:3001";
 }
 
-// Always use localhost for local development
-const rawUrl = import.meta.env.MODE === "production"
-  ? import.meta.env.VITE_API_URL || "http://localhost:3001"
-  : "http://localhost:3001";
+// VITE_API_URL takes precedence; falls back to localhost for local dev without env var
+const rawUrl = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 export const API_URL = normalizeApiUrl(rawUrl);
 export const API_BASE_URL = `${API_URL}/api`;

@@ -10,4 +10,16 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  server: {
+    host: "0.0.0.0",
+    port: 5173,
+    allowedHosts: "all",
+    hmr: {
+      // Khi chạy sau Nginx proxy (VITE_HMR_PORT=443), HMR dùng cổng 443
+      // Khi chạy local trực tiếp, để mặc định
+      ...(process.env.VITE_HMR_PORT
+        ? { clientPort: Number(process.env.VITE_HMR_PORT) }
+        : {}),
+    },
+  },
 })
