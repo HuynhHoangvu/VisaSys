@@ -2,6 +2,7 @@ services:
   postgres:
     image: postgres:15-alpine
     container_name: fly-visa-db
+    restart: always
     environment:
       POSTGRES_DB: crm_db
       POSTGRES_USER: admin
@@ -21,6 +22,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: fly-visa-backend
+    restart: always
     ports:
       - "3001:3001"
     env_file:
@@ -40,12 +42,14 @@ services:
       context: ./front-end
       dockerfile: Dockerfile
     container_name: fly-visa-frontend
+    restart: always
     depends_on:
       - backend
 
   nginx:
     image: nginx:1.25-alpine
     container_name: fly-visa-nginx
+    restart: always
     ports:
       - "80:80"
     volumes:

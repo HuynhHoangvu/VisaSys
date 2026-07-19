@@ -45,7 +45,7 @@ router.post("/insights", getAIInsights);
  *               message: { type: string, example: "Doanh thu tháng này bao nhiêu?" }
  *     responses:
  *       200:
- *         description: SSE stream — mỗi event là `data: {"text":"..."}`, kết thúc bằng `data: [DONE]`
+ *         description: "SSE stream: moi event co dang data: {\"text\":\"...\"}, ket thuc bang data: [DONE]"
  *         content:
  *           text/event-stream:
  *             schema: { type: string }
