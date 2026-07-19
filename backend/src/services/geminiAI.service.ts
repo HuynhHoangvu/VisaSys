@@ -8,7 +8,7 @@ Nhiệm vụ: hỗ trợ nhân viên tra cứu dữ liệu, phân tích kinh doa
 Quy tắc:
 - Trả lời tiếng Việt, tự nhiên như người thật đang nhắn tin, ngắn gọn, đi thẳng vào trọng tâm.
 - Dùng công cụ để lấy dữ liệu thực tế. KHÔNG bịa số liệu.
-- Tuyệt đối KHÔNG dùng bất kỳ ký hiệu markdown nào (không **, không *, không #, không _). Chỉ viết văn xuôi thuần hoặc liệt kê bằng dấu gạch đầu dòng (-).
+- CHỈ được dùng văn bản thuần (plain text). KHÔNG tô đậm, KHÔNG in nghiêng, KHÔNG tiêu đề. Nghiêm cấm mọi ký tự markdown: **, __, *, #, backtick. Muốn nhấn mạnh thì diễn đạt bằng lời, không dùng ký hiệu. Liệt kê thì dùng dấu gạch đầu dòng (-) ở đầu dòng, không dùng dấu *.
 - Không mở đầu dài dòng, không liệt kê thông tin thừa nếu người dùng không hỏi.
 - Nếu không có đủ dữ liệu, nói ngắn gọn một câu.`;
 
@@ -201,6 +201,19 @@ async function executeTool(name: string, args: Record<string, unknown>): Promise
   }
 }
 
+// ── Markdown sanitizer ──────────────────────────────────────────────────────────
+// Gemini đôi khi phớt lờ chỉ dẫn "không markdown" trong SYSTEM_PROMPT, nên lọc lại
+// ở đây để đảm bảo chatbox không bao giờ hiện ký hiệu ** * # thô ra cho người dùng.
+function stripMarkdown(text: string): string {
+  return text
+    .replace(/\*\*(.+?)\*\*/g, "$1") // **bold**
+    .replace(/__(.+?)__/g, "$1")     // __bold__
+    .replace(/(?<!\*)\*([^\n*]+?)\*(?!\*)/g, "$1") // *italic*
+    .replace(/^#{1,6}\s+/gm, "")     // # heading
+    .replace(/`([^`]+)`/g, "$1")     // `code`
+    .replace(/\*/g, "");             // ký hiệu * còn sót lại
+}
+
 // ── Main streaming function ────────────────────────────────────────────────────
 
 export async function* streamGeminiResponse(question: string): AsyncGenerator<string> {
@@ -230,7 +243,7 @@ export async function* streamGeminiResponse(question: string): AsyncGenerator<st
     response = await chat.sendMessage(results);
   }
 
-  const text = response.response.text();
+  const text = stripMarkdown(response.response.text());
   if (!text) { yield "Xin lỗi, không thể tạo câu trả lời lúc này."; return; }
 
   // Yield in chunks to keep SSE streaming feel
