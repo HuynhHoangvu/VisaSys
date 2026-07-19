@@ -91,7 +91,7 @@ const VISA_KB: Record<string, { name: string; desc: string; req: string[]; time:
 };
 
 // ─── Required documents per checklist type ───────────────────────────────────
-const REQUIRED_DOCS: Record<string, { id: string; name: string }[]> = {
+export const REQUIRED_DOCS: Record<string, { id: string; name: string }[]> = {
   tourism: [
     { id: "p1", name: "Hộ chiếu" },
     { id: "p2", name: "CCCD / CMND" },

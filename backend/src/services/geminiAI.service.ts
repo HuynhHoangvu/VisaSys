@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI, SchemaType, type Tool, type Part } from "@google/generative-ai";
 import { prisma } from "../../lib/prisma.js";
+import { REQUIRED_DOCS } from "./ruleBasedAI.service.js";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
@@ -136,6 +137,48 @@ async function searchCustomer(keyword: string) {
   }));
 }
 
+async function getMissingDocuments(keyword: string) {
+  const tasks = await prisma.task.findMany({
+    where: {
+      OR: [
+        { content: { contains: keyword, mode: "insensitive" } },
+        { phone: { contains: keyword } },
+      ],
+    },
+    select: { id: true, content: true, checklistType: true, documents: true, visaType: true, assignedTo: true },
+    take: 3,
+  });
+
+  if (!tasks.length) return { found: false, message: `Không tìm thấy khách hàng "${keyword}" trong hệ thống.` };
+
+  const task = tasks[0];
+  const checklistType = task.checklistType ?? "tourism";
+  const requiredDocs = REQUIRED_DOCS[checklistType] ?? REQUIRED_DOCS["tourism"];
+
+  const uploadedIds = new Set<string>();
+  const docs = task.documents as Record<string, unknown[]> | null;
+  if (docs && typeof docs === "object") {
+    Object.entries(docs).forEach(([key, val]) => {
+      if (Array.isArray(val) && val.length > 0) uploadedIds.add(key);
+    });
+  }
+
+  const missing = requiredDocs.filter((d) => !uploadedIds.has(d.id)).map((d) => d.name);
+  const uploaded = requiredDocs.filter((d) => uploadedIds.has(d.id)).map((d) => d.name);
+
+  return {
+    found: true,
+    customer_name: task.content,
+    visa_type: task.visaType ?? checklistType,
+    assigned_to: task.assignedTo,
+    required_total: requiredDocs.length,
+    uploaded_count: uploaded.length,
+    uploaded_documents: uploaded,
+    missing_count: missing.length,
+    missing_documents: missing,
+  };
+}
+
 // ── Tool definitions for Gemini ────────────────────────────────────────────────
 
 const TOOLS: Tool[] = [
@@ -185,18 +228,30 @@ const TOOLS: Tool[] = [
           required: ["keyword"],
         },
       },
+      {
+        name: "get_missing_documents",
+        description: "Kiểm tra danh sách tài liệu còn thiếu và đã nộp của một khách hàng theo loại visa, dùng khi được hỏi khách hàng còn thiếu hồ sơ gì",
+        parameters: {
+          type: SchemaType.OBJECT,
+          properties: {
+            keyword: { type: SchemaType.STRING, description: "Tên hoặc số điện thoại khách hàng cần kiểm tra" },
+          },
+          required: ["keyword"],
+        },
+      },
     ],
   },
 ];
 
 async function executeTool(name: string, args: Record<string, unknown>): Promise<unknown> {
   switch (name) {
-    case "get_pipeline":    return getPipeline();
-    case "get_visa_types":  return getVisaTypes();
-    case "get_revenue":     return getRevenue(args.month as number | undefined, args.year as number | undefined);
-    case "get_employees":   return getEmployees();
-    case "get_attendance":  return getAttendance(args.date as string | undefined);
-    case "search_customer": return searchCustomer(args.keyword as string);
+    case "get_pipeline":          return getPipeline();
+    case "get_visa_types":        return getVisaTypes();
+    case "get_revenue":           return getRevenue(args.month as number | undefined, args.year as number | undefined);
+    case "get_employees":         return getEmployees();
+    case "get_attendance":        return getAttendance(args.date as string | undefined);
+    case "search_customer":       return searchCustomer(args.keyword as string);
+    case "get_missing_documents": return getMissingDocuments(args.keyword as string);
     default: return { error: `Unknown tool: ${name}` };
   }
 }
